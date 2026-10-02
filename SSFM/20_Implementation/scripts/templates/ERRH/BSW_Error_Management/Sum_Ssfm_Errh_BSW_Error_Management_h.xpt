@@ -1,0 +1,83 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Errh_BSW_Error_Management.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM BSW Error Management
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_ERRH_BSW_ERROR_MANAGEMENT_H
+#define SUM_SSFM_ERRH_BSW_ERROR_MANAGEMENT_H
+
+/**************************************************************************************************************************
+ * Variable DECLARATION
+ **************************************************************************************************************************
+ */
+
+«LET sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS BSW_ERROR_EVENTS-»
+#define SSFM_NUM_OF_BSW_ERRORS	«BSW_ERROR_EVENTS.size»u
+«ENDLET-»
+
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+«IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.size > 0-»
+
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS DEM_EVENT-»
+extern void «DEM_EVENT.sum_Ssfm_EventIdToUpdateError_ref.demCallbackEventUdsStatusChanged.first().demCallbackEventUdsStatusChangedFnc-»(Dem_UdsStatusByteType EventStatusByteOld, Dem_UdsStatusByteType EventStatusByteNew);
+«ENDFOREACH-»
+extern Sum_Ssfm_Errh_BswErrors Sum_Ssfm_BswErrors_Info [SSFM_NUM_OF_BSW_ERRORS];
+extern const Sum_Ssfm_DemEvent Sum_Ssfm_BswError_DemEvents [SSFM_NUM_OF_BSW_ERRORS] ;
+extern Sum_Ssfm_Debouncer Sum_Ssfm_BswError_Debouncers[SSFM_NUM_OF_BSW_ERRORS];
+extern void Sum_Ssfm_Errh_FP_BSW_Error_CbkWindowMoving(Sum_Ssfm_Debouncer* debouncer_instance);
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS DEM_EVENT-»
+«IF DEM_EVENT.sum_Ssfm_Channel_Ref != null-»
+/**
+ * @brief           function to publish BUS of error of CAN channel
+ * @details         To Pointer publish BUS of error of CAN channel
+ *
+ * @param[in]       void
+ * @return          error status
+ */
+extern uint8 Sum_Ssfm_Errh_Publish_«DEM_EVENT.sum_Ssfm_Channel_Ref.shortName-»(void);
+«ENDIF-»
+«ENDFOREACH-»
+«ENDIF-»
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

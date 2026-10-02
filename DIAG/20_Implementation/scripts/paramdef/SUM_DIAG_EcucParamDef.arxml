@@ -1,0 +1,658 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_4-0-3.xsd">
+<!--
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2021 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_DIAG
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr24
+ * Description : ECU Configuration Parameter Definition
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+-->
+  <ADMIN-DATA>
+    <DOC-REVISIONS>
+      <DOC-REVISION>
+        <REVISION-LABEL>4.1.0</REVISION-LABEL>
+        <ISSUED-BY>ETAS</ISSUED-BY>
+        <DATE>2021-03-15</DATE>
+      </DOC-REVISION>
+    </DOC-REVISIONS>
+  </ADMIN-DATA>
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>AUTOSAR_Diag_Diag</SHORT-NAME>
+      <AR-PACKAGES>
+        <AR-PACKAGE>
+          <SHORT-NAME>EcucModuleDefs</SHORT-NAME>
+          <ELEMENTS>
+            <!-- Diag -->
+            <ECUC-MODULE-DEF>
+              <SHORT-NAME>Diag</SHORT-NAME>
+              <LONG-NAME>
+                <L-4 L="EN">Diag</L-4>
+              </LONG-NAME>
+              <DESC>
+                <L-2 L="EN">Configuration of the Diag module.</L-2>
+              </DESC>
+              <CATEGORY>VENDOR_SPECIFIC_MODULE_DEFINITION</CATEGORY>
+              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+              <REFINED-MODULE-DEF-REF DEST="ECUC-MODULE-DEF">/AUTOSAR/EcucDefs/Diag</REFINED-MODULE-DEF-REF>
+              <SUPPORTED-CONFIG-VARIANTS>
+                <SUPPORTED-CONFIG-VARIANT>VARIANT-PRE-COMPILE</SUPPORTED-CONFIG-VARIANT>
+                <SUPPORTED-CONFIG-VARIANT>VARIANT-POST-BUILD</SUPPORTED-CONFIG-VARIANT>
+              </SUPPORTED-CONFIG-VARIANTS>
+              <CONTAINERS>
+                <!-- DiagConfigSet -->
+                <ECUC-PARAM-CONF-CONTAINER-DEF>
+                  <SHORT-NAME>DiagConfigSet</SHORT-NAME>
+                  <LONG-NAME>
+                    <L-4 L="EN">DiagConfigSet</L-4>
+                  </LONG-NAME>
+                  <DESC>
+                    <L-2 L="EN">Defines the data set used during Pre-compile for the DIAG module.</L-2>
+                  </DESC>
+                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                  <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                  <MULTIPLE-CONFIGURATION-CONTAINER>true</MULTIPLE-CONFIGURATION-CONTAINER>
+                  <SUB-CONTAINERS>
+                    <!-- CommChannels -->
+                    <ECUC-PARAM-CONF-CONTAINER-DEF>
+                      <SHORT-NAME>CommChannels</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">CommChannels</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Communication channels configuration</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                      <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                      <SUB-CONTAINERS>
+                        <!-- CommChannel -->
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>CommChannel</SHORT-NAME>
+                          <LONG-NAME>
+                            <L-4 L="EN">CommChannel</L-4>
+                          </LONG-NAME>
+                          <DESC>
+                            <L-2 L="EN">Communication channel</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                          <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                          <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                          <REFERENCES>
+                            <!-- CommChannelRef (to be specified by the role "PRJ") -->
+                            <ECUC-CHOICE-REFERENCE-DEF>
+                              <SHORT-NAME>CommChannelRef</SHORT-NAME>
+                              <LONG-NAME>
+                                <L-4 L="EN">CommChannelRef</L-4>
+                              </LONG-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to Communication Channel configuration</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                              <DESTINATION-REFS>
+                                <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/EcucDefs/ComM/ComMChannel</DESTINATION-REF>
+                                <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_ComM/EcucModuleDefs/ComM/ComMChannel</DESTINATION-REF>
+                                <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/EcucDefs/ComM/ComMConfigSet/ComMChannel</DESTINATION-REF>
+                                <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_ComM/EcucModuleDefs/ComM/ComMConfigSet/ComMChannel</DESTINATION-REF>
+                              </DESTINATION-REFS>
+                            </ECUC-CHOICE-REFERENCE-DEF>
+                          </REFERENCES>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                      </SUB-CONTAINERS>
+                    </ECUC-PARAM-CONF-CONTAINER-DEF>
+                 </SUB-CONTAINERS>
+                </ECUC-PARAM-CONF-CONTAINER-DEF>
+                <!-- DiagGeneral -->
+                <ECUC-PARAM-CONF-CONTAINER-DEF>
+                  <SHORT-NAME>DiagGeneral</SHORT-NAME>
+                  <LONG-NAME>
+                    <L-4 L="EN">DiagGeneral</L-4>
+                  </LONG-NAME>
+                  <DESC>
+                    <L-2 L="EN">General configuration of the DIAG module.</L-2>
+                  </DESC>
+                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                  <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                  <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                  <PARAMETERS>
+                    <!-- EcuAddress (to be specified by the role "PRJ") -->
+                    <ECUC-INTEGER-PARAM-DEF>
+                      <SHORT-NAME>EcuAddress</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">EcuAddress</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">ECU Address</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>16</DEFAULT-VALUE>
+                      <MAX>255</MAX>
+                      <MIN>1</MIN>
+                    </ECUC-INTEGER-PARAM-DEF>
+                    <!-- MecInitialValue (to be specified by the role "PRJ") -->
+                    <ECUC-INTEGER-PARAM-DEF>
+                      <SHORT-NAME>MecInitialValue</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">MecInitialValue</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Manufacturer Enable Counter Initial Value</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>254</DEFAULT-VALUE>
+                      <MAX>254</MAX>
+                      <MIN>1</MIN>
+                    </ECUC-INTEGER-PARAM-DEF>
+                    <!-- PermitExecutionMask (to be specified by the role "PRJ") [$Satisfies $SDD_DIAG 071] -->
+                    <ECUC-INTEGER-PARAM-DEF>
+                      <SHORT-NAME>PermitExecutionMask</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">PermitExecutionMask</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">PermitExecution mask to start execution of the DIAG module.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>254</DEFAULT-VALUE>
+                      <MAX>255</MAX>
+                      <MIN>0</MIN>
+                    </ECUC-INTEGER-PARAM-DEF>
+                    <!-- ReadMemoryByAddress service support(to be specified by the role "PRJ") -->
+                    <ECUC-BOOLEAN-PARAM-DEF>
+                      <SHORT-NAME>RMBA_Support</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">RMBA_Support</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">RMBA_Support is used to check if ECU supports Read Memory by Address service of DCM.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                    </ECUC-BOOLEAN-PARAM-DEF>
+
+                    <ECUC-BOOLEAN-PARAM-DEF>
+                      <SHORT-NAME>DDDI_Support</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">DDDI_Support</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">DDDI_Support is used to check if ECU supports Dynamically Define Data By Memory Address service.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                    </ECUC-BOOLEAN-PARAM-DEF>
+					<!-- [$Satisfies $SDD_DIAG 082] -->
+                    <ECUC-BOOLEAN-PARAM-DEF>
+                      <SHORT-NAME>DiagGenerateInitRunnable</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">DiagGenerateInitRunnable</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">DiagGenerateInitRunnable is used to allow the generation of a periodic runnable that calls the initialization function DIAG_Init only the first time it is invoked.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                    </ECUC-BOOLEAN-PARAM-DEF>
+                    <!-- [$Satisfies $SDD_DIAG 136] MEC Storage variant: NvM or HSM -->
+                    <ECUC-BOOLEAN-PARAM-DEF>
+                      <SHORT-NAME>MecStorageInHsm</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">MecStorageInHsm</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Selects MEC storage variant. TRUE: MEC is stored in HSM Secure Data Store (uses LLSI calls). FALSE: MEC is stored in NvM (uses NvM RAM mirror). Default is TRUE (HSM).</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                    </ECUC-BOOLEAN-PARAM-DEF>
+                    <!-- [$Satisfies $SDD_DIAG 137] HSM MEC Write timeout in milliseconds -->
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>HsmMecWriteTimeout</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">HsmMecWriteTimeout</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Timeout in milliseconds for HSM MEC write polling (CYS4008 Step K). Must be at least 100ms. Only used when MecStorageInHsm is TRUE.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>200.0</DEFAULT-VALUE>
+                      <MAX>10000.0</MAX>
+                      <MIN>100.0</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+                    <ECUC-BOOLEAN-PARAM-DEF>
+                      <SHORT-NAME>Sum_Diag_EnableDID_E0CC</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">Sum_Diag_EnableDID_E0CC</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Sum_Diag_EnableDID_E0CC is used to enable/disable support for DID 0xE0CC (Service Discovery Learning Table Status). When enabled, interfaces and code for DID E0CC are generated. When disabled, SrvcMgr provides alternative implementation.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                    </ECUC-BOOLEAN-PARAM-DEF>
+            <!-- [$Satisfies $SDD_DIAG 109] -->
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>DIAG_TE_Runnable_DIAG_Init_Period</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">DIAG_TE_Runnable_DIAG_Init_Period</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">DIAG_TE_Runnable_DIAG_Init_Period is used to specify the periodicity, in milliseconds, of the initialization runnable entity Runnable_DIAG_Init.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>1000.0</DEFAULT-VALUE>
+                      <MAX>10000.0</MAX>
+                      <MIN>1.0</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+            <!-- [$Satisfies $SDD_DIAG 110] -->
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>DIAG_TE_Main_Period</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">DIAG_TE_Main_Period</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Periodicity value of DiagMain runnable in milliseconds.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>100.0</DEFAULT-VALUE>
+                      <MAX>10000.0</MAX>
+                      <MIN>1.0</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+            <!-- [$Satisfies $SDD_DIAG 111] -->
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>DIAG_TE_Shutdown_Permission_Period</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">DIAG_TE_Shutdown_Permission_Period</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Periodicity value of ShutdownPermission runnable in milliseconds.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>100.0</DEFAULT-VALUE>
+                      <MAX>10000.0</MAX>
+                      <MIN>1.0</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+            <!-- [$Satisfies $SDD_DIAG 112] -->
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>DIAG_TE_BswM_ModeUser_Period</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">DIAG_TE_BswM_ModeUser_Period</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Periodicity value of BswMModeUser runnable in milliseconds.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>100.0</DEFAULT-VALUE>
+                      <MAX>10000.0</MAX>
+                      <MIN>1.0</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+            <!-- [$Satisfies $SDD_DIAG 113] -->
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>DIAG_TE_MEC_Handler_Period</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">DIAG_TE_MEC_Handler_Period</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Periodicity value of MecHandler runnable in milliseconds.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>100.0</DEFAULT-VALUE>
+                      <MAX>10000.0</MAX>
+                      <MIN>1.0</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+            <!-- [$Satisfies $SDD_DIAG 114] -->
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>DIAG_TE_OTA_PSF_Period</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">DIAG_TE_OTA_PSF_Period</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Periodicity value of OtaPsf runnable in milliseconds.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>100.0</DEFAULT-VALUE>
+                      <MAX>10000.0</MAX>
+                      <MIN>1.0</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+                  </PARAMETERS>
+				  <REFERENCES>
+                  <ECUC-REFERENCE-DEF>
+                    <SHORT-NAME>DIAG_DID_F1A0_MEC_Reference</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Reference to DCM MEC value Data </L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspData</DESTINATION-REF>
+                  </ECUC-REFERENCE-DEF>
+                  <ECUC-REFERENCE-DEF>
+                    <SHORT-NAME>DIAG_DID_F1B0_Reference</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Reference to DCM DID F1B0 Data </L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspData</DESTINATION-REF>
+                  </ECUC-REFERENCE-DEF>
+                  <ECUC-REFERENCE-DEF>
+                    <SHORT-NAME>DIAG_DID_E0CC_Reference</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Reference to DCM DID E0CC (Service Discovery Learning Table Status) Data</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspData</DESTINATION-REF>
+                  </ECUC-REFERENCE-DEF>
+                  <ECUC-REFERENCE-DEF>
+                    <SHORT-NAME>DIAG_MEC_NvMRef</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Reference to NvM MEC NvMBlockDescriptor </L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                  </ECUC-REFERENCE-DEF>
+                  <ECUC-REFERENCE-DEF>
+                    <SHORT-NAME>DIAG_OTA_PSF_NvMRef</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Reference to NvM OTA PSF NvMBlockDescriptor </L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                  </ECUC-REFERENCE-DEF>
+  				  <ECUC-CHOICE-REFERENCE-DEF>
+                      <SHORT-NAME>DIAG_BSPMP_RmtProgmActvAuthRef</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">Reference to the Backup System Power Mode Protected : Remote Programming Active Authenticated signal. This signal can be configured as a single signal or as a signal belonging to a group of signals. </L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                      <DESTINATION-REFS>
+                        <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/EcucDefs/Com/ComConfig/ComSignalGroup/ComGroupSignal</DESTINATION-REF>
+                        <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/EcucDefs/Com/ComConfig/ComSignal</DESTINATION-REF>
+                      </DESTINATION-REFS>
+                  </ECUC-CHOICE-REFERENCE-DEF>
+                <ECUC-FOREIGN-REFERENCE-DEF>
+                  <SHORT-NAME>DIAG_ServiceBased_OTA_DataTypeMappingSet</SHORT-NAME>
+                  <LONG-NAME>
+                    <L-4 L="EN">DIAG_ServiceBased_OTA_DataTypeMappingSet</L-4>
+                  </LONG-NAME>
+                  <DESC>
+                    <L-2 L="EN">Foreign reference to the DATA-TYPE-MAPPING-SET in the system extract used for OTA service-based operations. This parameter references the system data type mapping set that defines the structure and format for OTA service-based functionality and data transformations.</L-2>
+                  </DESC>
+                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                  <DESTINATION-TYPE>DATA-TYPE-MAPPING-SET</DESTINATION-TYPE>
+                </ECUC-FOREIGN-REFERENCE-DEF>
+                <ECUC-FOREIGN-REFERENCE-DEF>
+                  <SHORT-NAME>DIAG_ServiceBased_OTA_Ref</SHORT-NAME>
+                  <LONG-NAME>
+                    <L-4 L="EN">DIAG_ServiceBased_OTA_Ref</L-4>
+                  </LONG-NAME>
+                  <DESC>
+                    <L-2 L="EN">The parameter references to the IMPLEMENTATION-DATA-TYPE for Service Based OTA from System Extract from Software-AR-Packages</L-2>
+                  </DESC>
+                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                  <IMPLEMENTATION-CONFIG-CLASSES>
+                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                  </IMPLEMENTATION-CONFIG-CLASSES>
+                  <ORIGIN>RB</ORIGIN>
+                  <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE-ELEMENT</DESTINATION-TYPE>
+                </ECUC-FOREIGN-REFERENCE-DEF>
+				  </REFERENCES>
+                </ECUC-PARAM-CONF-CONTAINER-DEF>
+              </CONTAINERS>
+            </ECUC-MODULE-DEF>
+          </ELEMENTS>
+        </AR-PACKAGE>
+      </AR-PACKAGES>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>

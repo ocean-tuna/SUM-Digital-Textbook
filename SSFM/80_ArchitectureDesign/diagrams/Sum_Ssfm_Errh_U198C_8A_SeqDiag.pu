@@ -1,0 +1,27 @@
+@startuml Sum_Ssfm_Errh_U198C_8A_SeqDiag
+
+participant Dem 
+box SUM_SSFM
+    participant Sum_Ssfm_Errh_U198C_8A_Handler as ERRH_U198C_8A
+end box
+participant Sum_SSC as SSC
+participant Sum_DIAG as DIAG
+
+activate ERRH_U198C_8A
+SSC -> ERRH_U198C_8A: Notification about change in the \n status of the DTC U198C 8A
+ERRH_U198C_8A -> ERRH_U198C_8A: Check vehicle regiong signal availability and FsFA
+alt vehicle region signal is available and has no FsFA
+    ERRH_U198C_8A -> ERRH_U198C_8A: Apply X/Y debouncing filter
+    DIAG --> ERRH_U198C_8A
+    alt Debouncing result valid
+        alt ResetPowerUpRecoveryTimerFlag & BatteryVoltageRecoveryTimerFlag
+            ERRH_U198C_8A -> SSC: Ask for DTC 198C 8A status
+            SSC --> ERRH_U198C_8A
+            ERRH_U198C_8A -> Dem: set/reset the U198C_8A DTC
+        end
+    end		
+end
+
+deactivate ERRH_U198C_8A
+
+@enduml 

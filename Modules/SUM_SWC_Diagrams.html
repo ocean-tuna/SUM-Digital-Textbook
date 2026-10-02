@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RTA-SUM SWC Diagrams</title>
+<style>
+  :root {
+    --primary: #1a5276;
+    --primary-dark: #0e2f44;
+    --accent: #e67e22;
+    --sr-color: #2ecc71;
+    --cs-color: #3498db;
+    --ms-color: #9b59b6;
+    --irv-color: #e74c3c;
+    --runnable-bg: #fef9e7;
+    --dim: 0.2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f3f7; color: #2c3e50; line-height: 1.5; }
+
+  /* Header */
+  .page-header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    color: #fff; padding: 16px 32px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  }
+  .page-header h1 { font-size: 1.2rem; font-weight: 700; }
+  .page-header h1 span { color: var(--accent); }
+  .legend { display: flex; gap: 14px; font-size: 0.72rem; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+
+  /* Nav */
+  .nav-bar {
+    background: #1e2a3a; padding: 8px 32px;
+    display: flex; gap: 4px; flex-wrap: wrap;
+    position: sticky; top: 56px; z-index: 99;
+  }
+  .nav-btn {
+    background: rgba(255,255,255,0.08); color: #b8c9d9; border: none;
+    padding: 6px 14px; border-radius: 4px; cursor: pointer;
+    font-size: 0.78rem; font-weight: 600; transition: all 0.15s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .nav-btn.active { background: var(--accent); color: #fff; }
+
+  .main { max-width: 1600px; margin: 0 auto; padding: 24px; }
+
+  /* Module Section */
+  .module-section { margin-bottom: 28px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+  .module-title-bar {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff; padding: 12px 24px; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between; user-select: none;
+  }
+  .module-title-bar:hover { filter: brightness(1.1); }
+  .module-title-bar h2 { font-size: 1.1rem; }
+  .module-title-bar .tag {
+    background: var(--accent); color: #fff; padding: 2px 10px;
+    border-radius: 4px; font-size: 0.73rem; font-weight: 700; margin-right: 12px;
+  }
+  .module-title-bar .arrow { font-size: 0.8rem; transition: transform 0.3s; }
+  .module-title-bar.open .arrow { transform: rotate(90deg); }
+  .module-body { display: none; padding: 24px; }
+  .module-body.open { display: block; }
+  .module-info {
+    font-size: 0.88rem; color: #7f8c8d; margin-bottom: 16px;
+    padding: 10px 14px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid var(--accent);
+  }
+  .module-info strong { color: #2c3e50; }
+
+  /* Hint bar */
+  .hint-bar {
+    font-size: 0.82rem; color: #95a5a6; text-align: center;
+    padding: 8px; margin-bottom: 12px; border: 1px dashed #d5dbdb; border-radius: 6px;
+    background: #fdfefe;
+  }
+  .hint-bar em { color: var(--accent); font-style: normal; font-weight: 600; }
+
+  /* SWC Diagram */
+  .swc-diagram { display: flex; gap: 0; align-items: stretch; min-height: 300px; }
+  .port-col {
+    width: 340px; flex-shrink: 0; display: flex; flex-direction: column;
+    gap: 4px; padding: 10px 0; justify-content: center;
+  }
+  .port-col.left { align-items: flex-end; }
+  .port-col.right { align-items: flex-start; }
+  .port-section-label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.2px;
+    color: #7f8c8d; font-weight: 700; padding: 6px 8px; text-align: center; width: 100%;
+  }
+  .port-col.left .port-section-label { text-align: right; }
+  .port-col.right .port-section-label { text-align: left; }
+
+  /* Port item */
+  .port-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.82rem; white-space: nowrap; max-width: 340px;
+    transition: opacity 0.25s, transform 0.15s;
+    cursor: pointer; position: relative;
+  }
+  .port-item.dimmed { opacity: var(--dim); }
+  .port-item:hover { transform: scale(1.03); }
+  .port-col.left .port-item { flex-direction: row-reverse; }
+  .port-label {
+    padding: 4px 10px; border-radius: 5px; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; max-width: 280px;
+  }
+  .port-item:hover .port-label, .port-item.highlighted .port-label {
+    max-width: none; z-index: 10; position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .port-label.sr { background: #d5f5e3; color: #1e8449; border: 1px solid #a9dfbf; }
+  .port-label.cs { background: #d6eaf8; color: #1a5276; border: 1px solid #aed6f1; }
+  .port-label.ms { background: #e8daef; color: #6c3483; border: 1px solid #d2b4de; }
+  .port-item.highlighted .port-label.sr { background: #a9dfbf; box-shadow: 0 0 0 2px #27ae60; }
+  .port-item.highlighted .port-label.cs { background: #aed6f1; box-shadow: 0 0 0 2px #2980b9; }
+  .port-item.highlighted .port-label.ms { background: #d2b4de; box-shadow: 0 0 0 2px #8e44ad; }
+  .port-connector { width: 24px; height: 2px; position: relative; flex-shrink: 0; }
+  .port-connector.rp { background: #e74c3c; }
+  .port-connector.pp { background: #27ae60; }
+  .port-connector.rp::after {
+    content: ''; position: absolute; right: -1px; top: -5px;
+    border: 6px solid transparent; border-left: 7px solid #e74c3c;
+  }
+  .port-connector.pp::after {
+    content: ''; position: absolute; right: -1px; top: -5px;
+    border: 6px solid transparent; border-left: 7px solid #27ae60;
+  }
+  .port-col.left .port-connector.rp::after {
+    right: auto; left: -1px; border-left: none; border-right: 7px solid #e74c3c;
+  }
+  .port-type-badge {
+    font-size: 0.65rem; padding: 2px 6px; border-radius: 3px;
+    font-weight: 700; flex-shrink: 0;
+  }
+  .badge-sr { background: var(--sr-color); color: #fff; }
+  .badge-cs { background: var(--cs-color); color: #fff; }
+  .badge-ms { background: var(--ms-color); color: #fff; }
+
+  /* SWC Block */
+  .swc-block {
+    flex: 1; border: 3px solid var(--primary); border-radius: 8px;
+    background: #fafcfe; display: flex; flex-direction: column; min-width: 320px;
+  }
+  .swc-block-header {
+    background: var(--primary); color: #fff; padding: 10px 16px;
+    font-weight: 700; font-size: 1.05rem; text-align: center; border-radius: 5px 5px 0 0;
+  }
+  .swc-block-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Runnables */
+  .runnables-section h4, .irv-section h4 {
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;
+    color: #7f8c8d; margin-bottom: 6px;
+  }
+  .runnable-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px; background: var(--runnable-bg); border-radius: 5px;
+    border-left: 4px solid var(--accent); font-size: 0.84rem;
+    margin-bottom: 4px; cursor: pointer; transition: all 0.2s;
+    user-select: none;
+  }
+  .runnable-item:hover { background: #fcf3cf; transform: translateX(3px); }
+  .runnable-item.active {
+    background: #f9e79f; border-left-color: #d35400;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .runnable-item.dimmed { opacity: var(--dim); }
+  .runnable-name { font-weight: 600; color: #2c3e50; flex: 1; }
+  .runnable-info-btn {
+    width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #3b82f6;
+    background: #eff6ff; color: #3b82f6; font-size: 12px; font-weight: 800;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s; line-height: 1; font-family: Georgia, serif;
+  }
+  .runnable-info-btn:hover { background: #3b82f6; color: #fff; transform: scale(1.15); }
+  .runnable-trigger {
+    font-size: 0.72rem; padding: 2px 8px; border-radius: 3px; font-weight: 600; white-space: nowrap;
+  }
+  .trigger-periodic { background: #d5f5e3; color: #1e8449; }
+  .trigger-init { background: #fdebd0; color: #b7950b; }
+  .trigger-event { background: #fadbd8; color: #922b21; }
+  .trigger-cs { background: #d6eaf8; color: #1a5276; }
+
+  /* IRV */
+  .irv-section { margin-top: 8px; padding-top: 10px; border-top: 1px dashed #bdc3c7; }
+  .irv-section h4 { color: var(--irv-color); }
+  .irv-item {
+    display: inline-block; padding: 3px 10px; background: #fdedec;
+    border: 1px solid #f5b7b1; border-radius: 4px; font-size: 0.78rem;
+    color: #922b21; margin: 2px 3px; font-weight: 500;
+  }
+
+  /* Detail Panel (port info popup) */
+  .detail-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3); z-index: 500;
+  }
+  .detail-overlay.show { display: flex; align-items: center; justify-content: center; }
+  .detail-panel {
+    background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    max-width: 580px; width: 92%; max-height: 80vh; overflow-y: auto;
+    padding: 0; position: relative;
+  }
+  .detail-panel-header {
+    padding: 14px 20px; border-radius: 12px 12px 0 0;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 2;
+  }
+  .detail-panel-header.sr-header { background: #d5f5e3; border-bottom: 2px solid #27ae60; }
+  .detail-panel-header.cs-header { background: #d6eaf8; border-bottom: 2px solid #2980b9; }
+  .detail-panel-header.ms-header { background: #e8daef; border-bottom: 2px solid #8e44ad; }
+  .detail-panel-header h3 { font-size: 1.05rem; color: #2c3e50; }
+  .detail-close {
+    width: 28px; height: 28px; border-radius: 50%; border: none;
+    background: rgba(0,0,0,0.1); color: #2c3e50; font-size: 1.1rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .detail-close:hover { background: rgba(0,0,0,0.2); }
+  .detail-body { padding: 16px 20px; }
+  .detail-row {
+    display: flex; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid #f2f3f4; font-size: 0.9rem;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { font-weight: 700; color: #7f8c8d; width: 120px; flex-shrink: 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail-value { color: #2c3e50; flex: 1; }
+  .detail-tag {
+    display: inline-block; padding: 3px 10px; border-radius: 4px;
+    font-size: 0.82rem; font-weight: 600;
+  }
+  .detail-tag.sr-tag { background: #d5f5e3; color: #1e8449; }
+  .detail-tag.cs-tag { background: #d6eaf8; color: #1a5276; }
+  .detail-tag.ms-tag { background: #e8daef; color: #6c3483; }
+  .detail-tag.rp-tag { background: #fadbd8; color: #922b21; }
+  .detail-tag.pp-tag { background: #d5f5e3; color: #1e8449; }
+  .detail-runnables-list { margin-top: 4px; }
+  .detail-runnables-list .mini-runnable {
+    display: inline-block; padding: 3px 10px; margin: 2px;
+    background: var(--runnable-bg); border: 1px solid #f0d78c;
+    border-radius: 4px; font-size: 0.8rem; font-weight: 500; color: #7d6608;
+  }
+
+  /* Reset filter button */
+  .reset-filter-btn {
+    display: none; margin: 0 auto 10px; padding: 6px 20px;
+    background: var(--accent); color: #fff; border: none; border-radius: 5px;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  }
+  .reset-filter-btn.show { display: block; }
+  .reset-filter-btn:hover { filter: brightness(1.1); }
+
+  /* Subgroup Tabs */
+  .subgroup-tabs {
+    display: flex; gap: 4px; justify-content: center; margin-bottom: 14px;
+    padding: 6px; background: #eef2f7; border-radius: 8px;
+  }
+  .subgroup-tab {
+    padding: 6px 18px; border: 2px solid transparent; border-radius: 6px;
+    font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    background: #fff; color: #7f8c8d; transition: all 0.2s;
+  }
+  .subgroup-tab:hover { color: var(--primary); border-color: #bdc3c7; }
+  .subgroup-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .subgroup-tab .tab-badge {
+    display: inline-block; font-size: 0.68rem; padding: 1px 6px;
+    border-radius: 10px; margin-left: 5px; font-weight: 600;
+  }
+  .subgroup-tab.active .tab-badge { background: rgba(255,255,255,0.3); color: #fff; }
+  .subgroup-tab:not(.active) .tab-badge { background: #e8e8e8; color: #777; }
+  .sg-badge {
+    font-size: 0.62rem; padding: 1px 6px; border-radius: 3px;
+    font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0;
+  }
+  .sg-ssm { background: #d1ecf1; color: #0c5460; }
+  .sg-errh { background: #f8d7da; color: #721c24; }
+  .sg-both { background: #e2e3e5; color: #383d41; }
+
+  /* Runnable Info Popup */
+  .ri-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:600; justify-content:center; align-items:center; }
+  .ri-overlay.show { display:flex; }
+  .ri-popup { background:#fff; border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,0.25); max-width:680px; width:92vw; max-height:82vh; overflow-y:auto; animation:riPopIn .2s ease-out; }
+  @keyframes riPopIn { from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
+  .ri-header { background:linear-gradient(135deg,#1e3a5f,#1a56db); color:#fff; padding:14px 20px 12px; border-radius:10px 10px 0 0; display:flex; justify-content:space-between; align-items:flex-start; }
+  .ri-header h3 { margin:0; font-size:15px; font-weight:700; word-break:break-all; }
+  .ri-close { background:none; border:none; color:#fff; font-size:22px; cursor:pointer; line-height:1; padding:0 0 0 12px; opacity:.8; }
+  .ri-close:hover { opacity:1; }
+  .ri-body { padding:16px 20px 20px; }
+  .ri-body table { width:100%; border-collapse:collapse; font-size:13px; }
+  .ri-body th { text-align:left; padding:7px 10px; background:#f0f4ff; color:#1e3a5f; font-weight:600; border-bottom:1px solid #e2e8f0; white-space:nowrap; width:150px; vertical-align:top; }
+  .ri-body td { padding:7px 10px; border-bottom:1px solid #f1f5f9; color:#334155; vertical-align:top; }
+  .ri-body td code { background:#f1f5f9; padding:1px 5px; border-radius:3px; font-size:12px; }
+  .ri-body ul { margin:2px 0; padding-left:18px; }
+  .ri-body ul li { margin:2px 0; font-size:12.5px; }
+  .ri-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .ri-b-timing { background:#dbeafe; color:#1e40af; }
+  .ri-b-datarcv { background:#d1fae5; color:#065f46; }
+  .ri-b-opinvoke { background:#fef3c7; color:#92400e; }
+  .ri-b-mode { background:#ede9fe; color:#5b21b6; }
+  .ri-b-init { background:#e0e7ff; color:#3730a3; }
+
+  @media (max-width: 1200px) {
+    .swc-diagram { flex-direction: column; align-items: center; }
+    .port-col { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: center; padding: 8px; }
+    .port-col.left .port-item { flex-direction: row; }
+    .port-connector { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>RTA-<span>SUM</span> &mdash; SWC Component Diagrams</h1>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#d5f5e3;border:1px solid #a9dfbf;"></div> S/R Port</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d6eaf8;border:1px solid #aed6f1;"></div> C/S Port</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e8daef;border:1px solid #d2b4de;"></div> Mode-Switch</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e74c3c;"></div> R-Port (In)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#27ae60;"></div> P-Port (Out)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--runnable-bg);border:1px solid #f0d78c;"></div> Runnable</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fdedec;border:1px solid #f5b7b1;"></div> IRV</div>
+  </div>
+</div>
+<div class="nav-bar" id="navBar"></div>
+
+<!-- Detail Overlay -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detailPanel" onclick="event.stopPropagation()">
+    <div class="detail-panel-header" id="detailHeader">
+      <h3 id="detailTitle"></h3>
+      <button class="detail-close" onclick="closeDetail()">&times;</button>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
+<!-- Runnable Info Overlay -->
+<div class="ri-overlay" id="riOverlay">
+  <div class="ri-popup" onclick="event.stopPropagation()">
+    <div class="ri-header">
+      <h3 id="riTitle"></h3>
+      <button class="ri-close" id="riClose">&times;</button>
+    </div>
+    <div class="ri-body" id="riBody"></div>
+  </div>
+</div>
+
+<div class="main" id="mainContent"></div>
+
+<script>
+// =========================================================================
+// DATA MODEL - Each module defines: runnables, ports, IRVs, and links
+// =========================================================================
+const MODULES = [
+// ------ SUSD ------
+{
+  id: 'mod-susd', tag: 'SUSD', name: 'Start Up / Shut Down Coordinator',
+  swcName: 'SUM_SUSD', layer: 'Application',
+  desc: 'Centralized ECU lifecycle manager. Controls startup sequencing, shutdown voting, battery voltage classification, and vehicle power mode determination for all SUM modules.',
+  runnables: [
+    { id:'susd_init', name:'RE_SUSD_Init', trigger:'init', triggerLabel:'INIT', ports:['susd_rp1','susd_pp1','susd_pp2','susd_pp3','susd_pp4','susd_pp5','susd_pp6','susd_pp7','susd_pp8','susd_pp9'] },
+    { id:'susd_app', name:'RE_SUSD_AppStateManager', trigger:'periodic', triggerLabel:'PERIODIC', ports:['susd_rp2','susd_rp3','susd_rp4','susd_rp5','susd_rp6','susd_rp7','susd_rp8','susd_rp9','susd_rp10','susd_rp11','susd_pp1','susd_pp2','susd_pp3','susd_pp4','susd_pp5','susd_pp6','susd_pp7','susd_pp8','susd_pp9','susd_pp10'] },
+    { id:'susd_batt', name:'RE_SUSD_BatteryNotifications', trigger:'periodic', triggerLabel:'PERIODIC', ports:['susd_rp1','susd_pp11','susd_pp12'] },
+    { id:'susd_vpm', name:'RE_SUSD_VehiclePowerMode', trigger:'periodic', triggerLabel:'PERIODIC', ports:['susd_rp12','susd_rp13','susd_rp14','susd_pp13'] },
+    { id:'susd_rc', name:'RE_SUSD_RunCrankManagement', trigger:'periodic', triggerLabel:'PERIODIC', ports:['susd_rp14'] },
+    { id:'susd_timer', name:'RE_Manage_RESETExecution_TIMER', trigger:'periodic', triggerLabel:'PERIODIC', ports:['susd_rp15'] },
+    { id:'susd_ar', name:'RE_SUSD_ActivityRecord_Handler', trigger:'periodic', triggerLabel:'PERIODIC', ports:['susd_rp16','susd_pp14'] },
+    { id:'susd_reprg', name:'RE_SUSD_DiagReprogrammingReq', trigger:'event', triggerLabel:'EVENT', ports:['susd_rp15'] },
+    { id:'susd_didrst', name:'RE_SUSD_DiagResetRequest', trigger:'event', triggerLabel:'EVENT', ports:['susd_pp15'] },
+  ],
+  rports: [
+    { id:'susd_rp1', label:'Battery Voltage (Com)', ptype:'sr', dataType:'uint16 (raw ADC)', desc:'Analog battery voltage from CAN signal via Com module' },
+    { id:'susd_rp12', label:'PMM Power Mode (Com)', ptype:'sr', dataType:'uint8 (Power Mode enum)', desc:'Primary Power Mode from Power Mode Master ECU' },
+    { id:'susd_rp13', label:'BPMM Backup Power Mode', ptype:'sr', dataType:'uint8 (Power Mode enum)', desc:'Backup Power Mode Master signal for failsafe' },
+    { id:'susd_rp14', label:'Run/Crank HW Input', ptype:'sr', dataType:'boolean / uint8', desc:'Hardware input for Run/Crank status, used as fail-soft fallback' },
+    { id:'susd_rp16', label:'RP_TCS_SWC_Clock', ptype:'sr', dataType:'uint64 (GlobalTime)', desc:'Current ECU timestamp from TCS module' },
+    { id:'susd_rp2', label:'RP_SSC_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown vote from SSC: 0-3=Disable(rolling), 255=Enable' },
+    { id:'susd_rp3', label:'RP_SPM_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown vote from SPM: 254=SPM_Shutdown_Ready special value' },
+    { id:'susd_rp4', label:'RP_SrvcMgr_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown vote from SrvcMgr' },
+    { id:'susd_rp5', label:'RP_SSFM_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown vote from SSFM' },
+    { id:'susd_rp6', label:'RP_SOH_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown vote from SOH' },
+    { id:'susd_rp7', label:'RP_TCS_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown vote from TCS' },
+    { id:'susd_rp8', label:'RP_DIAG_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown vote from DIAG' },
+    { id:'susd_rp9', label:'RP_PNC_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown vote from PNC (per PN)' },
+    { id:'susd_rp10', label:'RP_LNM_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown vote from LNM' },
+    { id:'susd_rp11', label:'EcuM Wakeup Source', ptype:'ms', dataType:'EcuM_WakeupSourceType', desc:'Wakeup source identification from EcuM' },
+    { id:'susd_rp15', label:'BswM Mode Request', ptype:'cs', dataType:'Std_ReturnType', desc:'Mode switch requests to/from BswM' },
+  ],
+  pports: [
+    { id:'susd_pp1', label:'PP_SUSD_PermitExecution (SSC)', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask: Bit0=WakeupActive, Bit1=ShutdownTarget, Bit5=BattOK, Bit6=ResetReq(inv)' },
+    { id:'susd_pp2', label:'PP_SUSD_PermitExecution (SPM)', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask sent to SPM module' },
+    { id:'susd_pp3', label:'PP_SUSD_PermitExecution (SrvcMgr)', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask sent to SrvcMgr' },
+    { id:'susd_pp4', label:'PP_SUSD_PermitExecution (SSFM)', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask sent to SSFM' },
+    { id:'susd_pp5', label:'PP_SUSD_PermitExecution (SOH)', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask sent to SOH' },
+    { id:'susd_pp6', label:'PP_SUSD_PermitExecution (TCS)', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask sent to TCS' },
+    { id:'susd_pp7', label:'PP_SUSD_PermitExecution (DIAG)', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask sent to DIAG' },
+    { id:'susd_pp8', label:'PP_SUSD_PermitExecution (PNC)', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask sent to PNC' },
+    { id:'susd_pp9', label:'PP_SUSD_PermitExecution (LNM)', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask sent to LNM' },
+    { id:'susd_pp10', label:'PP_SUSD_ECUOperatingMode', ptype:'sr', dataType:'CurrentECUOperatingModeType (uint8)', desc:'Values: SUM_INIT(0), SUM_RUN(1), SUM_SLEEP(2), SUM_RESET(3), SUM_BOOT(4), SUM_SHUTDOWN(5)' },
+    { id:'susd_pp11', label:'PP_SUSD_BatteryVoltageStatus', ptype:'sr', dataType:'Voltage classification (uint8)', desc:'Classified voltage range with hysteresis; default 9V-16V' },
+    { id:'susd_pp12', label:'PP_SUSD_DisableNVMWrite', ptype:'sr', dataType:'boolean', desc:'TRUE = battery voltage too low, NvM writes disabled' },
+    { id:'susd_pp13', label:'PP_SUSD_VehiclePowerMode', ptype:'sr', dataType:'uint8 (VehiclePowerMode enum)', desc:'OFF(0), ACCESSORY(1), RUN(2), START(3), PROPULSION(4)' },
+    { id:'susd_pp14', label:'PP_SUSD_ResetOccurred', ptype:'sr', dataType:'SUSD_SOH_ResetOccurredType (uint8)', desc:'0x00=Default, 0x01=DelayedReset, 0x02=ImmediateReset' },
+    { id:'susd_pp15', label:'DID F09E/F088/F089 (Dcm)', ptype:'cs', dataType:'uint8[] / structs', desc:'Wakeup Detection Records, Control Module Input Power, Shutdown Prohibit' },
+  ],
+  irvs: ['ECU Operating Mode','BattVoltage Classification','VPM State','Run/Crank Debounce','Shutdown Vote Collector','Activity Records (NvM)']
+},
+// ------ SSC ------
+{
+  id:'mod-ssc', tag:'SSC', name:'Security Service Coordinator',
+  swcName:'SUM_SSC_IVNA', layer:'Application',
+  desc:'Manages SecOC freshness values, MAC counters, key provisioning (SHE/HSM), SBAT validation, and ECU unlock services. Central security hub.',
+  runnables:[
+    { id:'ssc_init', name:'RE_SSC_Init', trigger:'init', triggerLabel:'INIT', ports:['ssc_rp1','ssc_rp5','ssc_pp1'] },
+    { id:'ssc_main', name:'Runnable_Ssc_Main', trigger:'periodic', triggerLabel:'5ms', ports:['ssc_rp1','ssc_rp2','ssc_rp3','ssc_rp5','ssc_pp1','ssc_pp2','ssc_pp3','ssc_pp4','ssc_pp5','ssc_pp8'] },
+    { id:'ssc_txfv', name:'GetTxFreshness', trigger:'event', triggerLabel:'SecOC CB', ports:['ssc_pp6'] },
+    { id:'ssc_txfvt', name:'GetTxFreshnessTruncData', trigger:'event', triggerLabel:'SecOC CB', ports:['ssc_pp6'] },
+    { id:'ssc_rxfv', name:'GetRxFreshness', trigger:'event', triggerLabel:'SecOC CB', ports:['ssc_pp6'] },
+    { id:'ssc_txcf', name:'SPduTxConfirmation', trigger:'event', triggerLabel:'SecOC CB', ports:['ssc_pp6'] },
+    { id:'ssc_ver', name:'VerificationStatusService', trigger:'event', triggerLabel:'SecOC CB', ports:['ssc_pp6'] },
+    { id:'ssc_did', name:'DID F081/F084/E0Bx', trigger:'cs', triggerLabel:'DCM', ports:['ssc_pp7'] },
+  ],
+  rports:[
+    { id:'ssc_rp1', label:'RP_SUSD_PermitExecution', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask from SUSD' },
+    { id:'ssc_rp2', label:'RP_DIAG_SetInitialReflashFlag', ptype:'sr', dataType:'boolean', desc:'Initial reflash flag from DIAG module' },
+    { id:'ssc_rp3', label:'RP_DIAG_GetMEC', ptype:'sr', dataType:'uint8 (0-254)', desc:'MEC value broadcast from DIAG' },
+    { id:'ssc_rp4', label:'SPM Service Activation', ptype:'sr', dataType:'boolean/enum', desc:'Service activation status from SPM' },
+    { id:'ssc_rp5', label:'Csm_MacGenerate/Verify', ptype:'cs', dataType:'Std_ReturnType', desc:'Crypto Service Manager APIs for MAC operations' },
+    { id:'ssc_rp6', label:'Csm_Encrypt/Decrypt/Hash', ptype:'cs', dataType:'Std_ReturnType', desc:'CSM encryption, decryption, and hashing services' },
+    { id:'ssc_rp7', label:'Csm_RbSheLoadKeySlot', ptype:'cs', dataType:'Std_ReturnType', desc:'SHE key slot loading via CSM' },
+    { id:'ssc_rp8', label:'NvM Read/Write (19+ blocks)', ptype:'cs', dataType:'Std_ReturnType / uint8[]', desc:'Persistent storage for counters, provisioning, SBAT images' },
+  ],
+  pports:[
+    { id:'ssc_pp1', label:'PP_SSC_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown permission: 0-3=Disable(rolling), 255=Enable' },
+    { id:'ssc_pp2', label:'PP_SSC_SecurityAccessError', ptype:'sr', dataType:'uint8', desc:'Security access failure flag reported to SOH' },
+    { id:'ssc_pp3', label:'PP_SSC_MacAuthEnable', ptype:'sr', dataType:'boolean (per signal)', desc:'MAC authentication enable flag per serial data signal' },
+    { id:'ssc_pp4', label:'PP_SSC_KeySlotVerifyStatus', ptype:'sr', dataType:'KeySlotStatus struct', desc:'SecOC key slot verification status per key slot' },
+    { id:'ssc_pp5', label:'PP_SSC_SecureMsgEvents', ptype:'sr', dataType:'uint8 (MAC type 1/2/3)', desc:'MAC failure type classification reported to SOH' },
+    { id:'ssc_pp6', label:'SecOC Freshness APIs', ptype:'cs', dataType:'uint64 / uint8[]', desc:'GetTxFreshness, GetTxFreshnessTruncData, GetRxFreshness, SPduTxConfirmation, VerifyStatus' },
+    { id:'ssc_pp7', label:'DID/RID Diag Services', ptype:'cs', dataType:'uint8[] (variable)', desc:'DID F081/F084/E0B1-E0B4, GetActiveCounter, InitialReflashFlag' },
+    { id:'ssc_pp8', label:'Dem_SetEventStatus', ptype:'cs', dataType:'EventStatusType', desc:'Report DTCs to Diagnostic Event Manager' },
+  ],
+  irvs:['EIRV_ExecutionState','Counter Values (uint64)','MACT Config Table','Acceptance Window Mask (128-bit)']
+},
+// ------ SPM ------
+{
+  id:'mod-spm', tag:'SPM', name:'Software/Power Manager',
+  swcName:'Sum_Spm (SM + PM)', layer:'Application (SM) + CDD (PM)',
+  desc:'Manages SOME/IP service profiles (activation/deactivation), Ethernet heartbeat monitoring, device power states, and Wake-Up Frame handling across VLANs.',
+  runnables:[
+    { id:'spm_sm', name:'RE_SPM_SoftMgr_MainFunction', trigger:'periodic', triggerLabel:'1000ms', ports:['spm_rp1','spm_rp2','spm_rp3','spm_rp6','spm_rp7','spm_pp1','spm_pp2','spm_pp4','spm_pp5'] },
+    { id:'spm_pm', name:'RE_SPM_PowerManager_MainFunction', trigger:'periodic', triggerLabel:'5ms', ports:['spm_rp1','spm_rp4','spm_rp5','spm_pp3','spm_pp6'] },
+    { id:'spm_act', name:'SPM_ActivateProfile', trigger:'cs', triggerLabel:'C/S', ports:['spm_pp7'] },
+    { id:'spm_deact', name:'SPM_DeactivateProfile', trigger:'cs', triggerLabel:'C/S', ports:['spm_pp7'] },
+    { id:'spm_getst', name:'SPM_GetProfileState', trigger:'cs', triggerLabel:'C/S', ports:['spm_pp8'] },
+    { id:'spm_did', name:'DID E0DD/E0DE/E0DF', trigger:'cs', triggerLabel:'DCM', ports:['spm_rp6','spm_rp7'] },
+    { id:'spm_sdl', name:'SdLearningStatusIndication', trigger:'event', triggerLabel:'DRE', ports:['spm_pp9'] },
+  ],
+  rports:[
+    { id:'spm_rp1', label:'RP_SUSD_PermitExecution', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission bitmask from SUSD' },
+    { id:'spm_rp2', label:'RP_SUSD_VehiclePowerMode', ptype:'sr', dataType:'uint8 (VehiclePowerMode enum)', desc:'Current vehicle power mode from SUSD' },
+    { id:'spm_rp3', label:'SM Frame Rx (per VLAN)', ptype:'sr', dataType:'Binary SM Frame payload', desc:'Software Manager frame received from peer ECUs via Com' },
+    { id:'spm_rp4', label:'HB Heartbeat Rx (per VLAN)', ptype:'sr', dataType:'Heartbeat struct (SrcPM_ID:4B + Counter:4B + NumActive:2B)', desc:'Power Manager heartbeat from peer ECUs' },
+    { id:'spm_rp5', label:'ETH WakeUp Frame Rx', ptype:'sr', dataType:'WUF A/B/C (8 bytes each)', desc:'Ethernet Wake-Up Frames received per VLAN' },
+    { id:'spm_rp6', label:'RP_SPM_Dcm_E0DE/E0DF_Write', ptype:'cs', dataType:'uint8* (35/40 bytes)', desc:'NvM/Dcm WriteBlock for activity record DIDs' },
+    { id:'spm_rp7', label:'RP_SPM_GetDeviceVariantInfo', ptype:'cs', dataType:'uint8 variant', desc:'Runtime variant configuration query from SrvcMgr' },
+    { id:'spm_rp8', label:'CommunicationReady (BswM)', ptype:'ms', dataType:'Mode notification', desc:'Ethernet stack readiness notification from BswM' },
+  ],
+  pports:[
+    { id:'spm_pp1', label:'PP_SPM_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown readiness signal to SUSD: 0-3=Disable(rolling), 0xFE=SPM_Ready, 0xFF=Enable' },
+    { id:'spm_pp2', label:'PP_SPM_StatusNotification', ptype:'sr', dataType:'Service activation status + DTC flags', desc:'Active services list notification to SSFM' },
+    { id:'spm_pp3', label:'PP_SPM_LossOfNodeIndication', ptype:'sr', dataType:'uint32 Node DTC code + status', desc:'Node loss-of-communication status to SSFM' },
+    { id:'spm_pp4', label:'SM Frame Tx (per VLAN)', ptype:'sr', dataType:'Binary SM Frame payload', desc:'Software Manager frame transmitted to peers via Com' },
+    { id:'spm_pp5', label:'Heartbeat Tx (per VLAN)', ptype:'sr', dataType:'Heartbeat struct (10 bytes)', desc:'PM heartbeat burst/steady-state transmission' },
+    { id:'spm_pp6', label:'ETH WakeUp Frame Tx', ptype:'sr', dataType:'WUF A/B/C (8 bytes each)', desc:'Ethernet Wake-Up Frame transmission per VLAN' },
+    { id:'spm_pp7', label:'Activate/Deactivate Profile', ptype:'cs', dataType:'Std_ReturnType (uint16 AppIntfID)', desc:'C/S server: request profile activation or deactivation' },
+    { id:'spm_pp8', label:'GetProfileState/GetPermission', ptype:'cs', dataType:'Std_ReturnType (uint8* state, boolean* perm)', desc:'C/S server: query profile state or activation permission' },
+    { id:'spm_pp9', label:'GetDTCIdentifier', ptype:'cs', dataType:'void (uint32 ipAddr, uint16* dtcCode)', desc:'Get DTC code for a target IP address' },
+    { id:'spm_pp10', label:'PP_SPM_ComIpduGroupSwitch', ptype:'ms', dataType:'Enable/Disable PDU groups', desc:'Control PDU group activation for Ethernet to BswM' },
+  ],
+  irvs:['Spm_LastActReqID','Spm_LastDeactReqID','Spm_DevicePowerState','Spm_Learning_Status','Spm_LastActReqFlag','Spm_LastDeactReqFlag']
+},
+// ------ SrvcMgr ------
+{
+  id:'mod-srvcmgr', tag:'SrvcMgr', name:'Service Manager',
+  swcName:'SUM_SrvcMgr', layer:'Application',
+  desc:'Manages SOME/IP Service Discovery lifecycle, learning sessions (RID 0654), calibration-based enable/disable of services, and service group management.',
+  runnables:[
+    { id:'sm_init', name:'Runnable_SrvcMgr_Init', trigger:'init', triggerLabel:'INIT', ports:['sm_rp1'] },
+    { id:'sm_exec', name:'Runnable_SrvcMgr_ExecutionManager', trigger:'periodic', triggerLabel:'PERIODIC', ports:['sm_rp1','sm_rp2','sm_pp1','sm_pp2','sm_pp3','sm_pp4'] },
+    { id:'sm_actv', name:'Runnable_SrvcMgr_ActivateServices', trigger:'event', triggerLabel:'SPM CALL', ports:['sm_rp1'] },
+    { id:'sm_rid654', name:'Runnable_SrvcMgr_RID_0654', trigger:'cs', triggerLabel:'DCM', ports:['sm_rp3','sm_rp6'] },
+    { id:'sm_rid612', name:'Runnable_SrvcMgr_RID_0612', trigger:'cs', triggerLabel:'DCM', ports:[] },
+    { id:'sm_did', name:'DID E0CC/E0CD/E0CE Read', trigger:'cs', triggerLabel:'DCM', ports:[] },
+    { id:'sm_dis', name:'DisableService/DisableServiceGroup', trigger:'cs', triggerLabel:'C/S', ports:['sm_pp5','sm_pp6'] },
+    { id:'sm_clr', name:'SSFM_ClearDiagReq', trigger:'event', triggerLabel:'DRE', ports:['sm_pp2','sm_pp3'] },
+    { id:'sm_miss', name:'SSFM_SDMissingMessage', trigger:'event', triggerLabel:'DRE', ports:['sm_rp4'] },
+  ],
+  rports:[
+    { id:'sm_rp1', label:'RP_SUSD_PermitExecution', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission from SUSD, checks wakeup/reset bits' },
+    { id:'sm_rp2', label:'RP_SUSD_BatteryVoltageStatus', ptype:'sr', dataType:'boolean', desc:'Battery voltage availability status for DTC evaluation' },
+    { id:'sm_rp3', label:'RP_SSFM_FsFA_VSAD_PSA', ptype:'sr', dataType:'boolean', desc:'Failed Safety Fault Active status from SSFM' },
+    { id:'sm_rp4', label:'RP_SSFM_SDMissingMessage', ptype:'sr', dataType:'uint16 (ServiceID)', desc:'SD missing service ID reported by SSFM' },
+    { id:'sm_rp5', label:'Com: PropSysActv, VehSpdAvg', ptype:'sr', dataType:'boolean / uint16', desc:'Propulsion system active status & avg driven vehicle speed' },
+    { id:'sm_rp6', label:'RP_SPM_SdLearningStatusInd', ptype:'cs', dataType:'SPM_SDLearningStatus enum', desc:'Notify SPM of learning result: PENDING/SUCCESSFUL/FAILED' },
+  ],
+  pports:[
+    { id:'sm_pp1', label:'PP_SrvcMgr_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown permission to SUSD with rolling alive counter' },
+    { id:'sm_pp2', label:'PP_SrvcMgr_U19A6_57_Status', ptype:'sr', dataType:'boolean (TRUE=fail)', desc:'DTC U19A6_57: Invalid/incompatible SW component to SSFM' },
+    { id:'sm_pp3', label:'PP_SrvcMgr_LearningTableStatus', ptype:'sr', dataType:'LearningTableStatusType struct', desc:'DTC U19A6_87: Learning table status + event context to SSFM' },
+    { id:'sm_pp4', label:'PP_SrvcMgr_U19A6_54_Status', ptype:'sr', dataType:'boolean (TRUE=fail)', desc:'DTC U19A6_54: Missing setup/learn status to ERRH' },
+    { id:'sm_pp5', label:'DisableService (Server)', ptype:'cs', dataType:'Std_ReturnType (uint16 SrvcId)', desc:'C/S server: disable single service via calibration' },
+    { id:'sm_pp6', label:'DisableServiceGroup (Server)', ptype:'cs', dataType:'Std_ReturnType (uint16 GrpId)', desc:'C/S server: disable entire service group' },
+  ],
+  irvs:['Execution_State (FSM 4-state)','SrvcInfo[] (13 services)','ActivateServiceReq','LearningSessionReq','MissingServiceIds[] (max 400)','DtcActionsDoneOnce']
+},
+// ------ SSFM ------
+{
+  id:'mod-ssfm', tag:'SSFM', name:'Signal Status & Fault Monitor (SSM + ERRH)',
+  swcName:'SSFM (SSM + ERRH)', layer:'Application',
+  desc:'SSM monitors signal availability (timeout, E2E, SecOC). ERRH evaluates faults with X-of-Y debouncing. Provides Fault Indication flags (FcI/FoI/FpI/FsI/Av) per signal to consumer SWCs.',
+  subgroups:['All','SSM','ERRH'],
+  runnables:[
+    { id:'ssfm_init', name:'Runnable_SSFM_Init', trigger:'init', triggerLabel:'INIT', ports:['ssfm_rp1','ssfm_rp10'], subgroup:'both' },
+    { id:'ssfm_exec', name:'Runnable_SSFM_ExecutionManager', trigger:'periodic', triggerLabel:'100ms', ports:['ssfm_rp1','ssfm_rp2','ssfm_rp5','ssfm_rp6','ssfm_rp7','ssfm_pp1','ssfm_pp2','ssfm_pp3','ssfm_pp4','ssfm_pp5','ssfm_pp6','ssfm_pp7','ssfm_pp9'], subgroup:'both' },
+    { id:'ssfm_rx', name:'Received_SerialData_<name>', trigger:'event', triggerLabel:'CbkRxAck', ports:['ssfm_rp8','ssfm_rp9','ssfm_pp1','ssfm_pp2','ssfm_pp3','ssfm_pp4','ssfm_pp5','ssfm_pp6'], subgroup:'SSM' },
+    { id:'ssfm_pn', name:'PNStatusChanged_<PN_ID>', trigger:'event', triggerLabel:'DRE', ports:['ssfm_rp2'], subgroup:'SSM' },
+    { id:'ssfm_diag', name:'DIAG_DisableNormalCommChanged', trigger:'event', triggerLabel:'DRE', ports:['ssfm_rp5'], subgroup:'SSM' },
+    { id:'ssfm_lin', name:'LINInfo_StatusChanged', trigger:'event', triggerLabel:'DRE', ports:['ssfm_rp3'], subgroup:'SSM' },
+    { id:'ssfm_svc', name:'ServiceActivationStatusReceived', trigger:'event', triggerLabel:'DRE', ports:['ssfm_rp7'], subgroup:'SSM' },
+    { id:'ssfm_did', name:'DID E0B8/E0B9/E0BA/E0BB', trigger:'cs', triggerLabel:'DCM', ports:['ssfm_rp10','ssfm_pp10'], subgroup:'ERRH' },
+    { id:'ssfm_rid', name:'RID 02C0 Start/Stop/Results', trigger:'cs', triggerLabel:'DCM', ports:['ssfm_pp10'], subgroup:'ERRH' },
+  ],
+  rports:[
+    { id:'ssfm_rp1', label:'RP_SUSD_PermitExecution', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Startup/shutdown state from SUSD' },
+    { id:'ssfm_rp2', label:'RP_PNC_PartialNetworkStatus', ptype:'sr', dataType:'boolean / enum (per PN)', desc:'PN active/inactive status from PNC module' },
+    { id:'ssfm_rp3', label:'RP_LNM_LINNodeStatus', ptype:'sr', dataType:'LIN node status enum', desc:'LIN responder node status from LNM module' },
+    { id:'ssfm_rp4', label:'RP_SSC_MacAuthEnable', ptype:'sr', dataType:'boolean (per signal)', desc:'MAC authentication enable flag per signal from SSC' },
+    { id:'ssfm_rp5', label:'RP_DIAG_DisableNormalComm', ptype:'sr', dataType:'boolean (per channel)', desc:'Disable normal comm flag per CAN channel from DIAG' },
+    { id:'ssfm_rp6', label:'RP_DIAG_GetMEC', ptype:'sr', dataType:'uint8 (0-254)', desc:'Manufacturing Enable Counter from DIAG for DTC enable logic' },
+    { id:'ssfm_rp7', label:'RP_SrvcMgr_ServiceActivation', ptype:'sr', dataType:'boolean / enum', desc:'SOME/IP service activation status from SrvcMgr' },
+    { id:'ssfm_rp8', label:'Com Signal Rx Data', ptype:'sr', dataType:'Signal payload (various)', desc:'Raw received signal data from COM module' },
+    { id:'ssfm_rp9', label:'E2E TransformerError', ptype:'sr', dataType:'uint8 (E2E error code)', desc:'E2E ARC/CRC validation status from E2EXf' },
+    { id:'ssfm_rp10', label:'NvM Read/Write (DIDs)', ptype:'cs', dataType:'uint8[] / struct', desc:'Persistent storage for DID E0B8/E0BA/E0BB data' },
+  ],
+  pports:[
+    { id:'ssfm_pp1', label:'FcI (Security Fault) per signal', ptype:'sr', dataType:'boolean', desc:'Security Fault Indication: MAC authentication failure (SecOC)' },
+    { id:'ssfm_pp2', label:'FoI (Alive Counter Fault)', ptype:'sr', dataType:'boolean', desc:'Continuous Operation Fault: E2E alive counter sequence error' },
+    { id:'ssfm_pp3', label:'FpI (CRC Fault)', ptype:'sr', dataType:'boolean', desc:'Protection Fault Indication: E2E CRC integrity failure' },
+    { id:'ssfm_pp4', label:'FsI (Safety Composite)', ptype:'sr', dataType:'boolean', desc:'Safety Fault Indication: FoI OR FpI composite' },
+    { id:'ssfm_pp5', label:'FcFA (Fault Active) per signal', ptype:'sr', dataType:'boolean', desc:'DTC confirmed state for security fault per signal' },
+    { id:'ssfm_pp6', label:'Av (Signal Availability)', ptype:'sr', dataType:'SUM_SSFM_SigSts_Type (uint8)', desc:'Disabled(0), Uninitialized(1), Unavailable(2), Available(3)' },
+    { id:'ssfm_pp7', label:'PP_SSFM_BSW_Error', ptype:'sr', dataType:'uint16 (bitmask)', desc:'BSW error notification (NvM + WdgM DEM errors) to SOH' },
+    { id:'ssfm_pp8', label:'PP_SSFM_ClearDiagReq', ptype:'sr', dataType:'uint8', desc:'Clear diagnostic request on UDS Service 0x14 to SOH/SrvcMgr' },
+    { id:'ssfm_pp9', label:'Dem_SetEventStatus (DTC)', ptype:'cs', dataType:'EventID + EventStatus', desc:'Report PASSED/FAILED DTC status to Dem module' },
+    { id:'ssfm_pp10', label:'DID/RID Services (Dcm)', ptype:'cs', dataType:'uint8[] (variable)', desc:'DID E0B8-E0BB read/write, RID 02C0 start/stop/results' },
+  ],
+  irvs:['SerialData[] (per signal)','FxI Fault Indications','X-of-Y Debouncer State','DTC Triggered Queue','LINSignalInfo','ServiceInfo_SerialData']
+},
+// ------ PNC ------
+{
+  id:'mod-pnc', tag:'PNC', name:'Partial Network Controller',
+  swcName:'SUM_PNC', layer:'Application',
+  desc:'Manages partial network activation/deactivation FSM per PN, PDU group control (Rx/Tx), deadline monitoring, DTC-allowed timers, wakeup reason tracking, NM frame indication.',
+  runnables:[
+    { id:'pnc_init', name:'RE_PNC_Init', trigger:'init', triggerLabel:'INIT', ports:['pnc_rp1'] },
+    { id:'pnc_main', name:'RE_PNC_MainFunction', trigger:'periodic', triggerLabel:'6.25ms', ports:['pnc_rp1','pnc_rp2','pnc_rp3','pnc_rp4','pnc_rp7','pnc_rp8','pnc_pp1','pnc_pp2','pnc_pp3','pnc_pp4','pnc_pp5','pnc_pp6','pnc_pp7'] },
+    { id:'pnc_rsig', name:'RE_PNC_RemoteSignals', trigger:'periodic', triggerLabel:'10ms', ports:['pnc_rp5'] },
+    { id:'pnc_nm', name:'PNC_NM_Frame_Indication', trigger:'event', triggerLabel:'NM CB', ports:['pnc_pp8'] },
+  ],
+  rports:[
+    { id:'pnc_rp1', label:'RP_SUSD_PermitExecution', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'SUSD startup gate permission mask' },
+    { id:'pnc_rp2', label:'RP_BswM_CurrentPNCModeUser', ptype:'sr', dataType:'PNC_Mode (enum)', desc:'Current PN mode read from BswM' },
+    { id:'pnc_rp3', label:'RP_ComM_CurrentModeUser', ptype:'sr', dataType:'ComMChannel_State', desc:'ComM channel communication state' },
+    { id:'pnc_rp4', label:'RP_DIAG_DisableNormalComm', ptype:'sr', dataType:'boolean (per channel)', desc:'DIAG inhibit flag for remote activation' },
+    { id:'pnc_rp5', label:'RP_Act_Signal_x (remote, per PN)', ptype:'sr', dataType:'boolean + validity (per signal)', desc:'Activation signal values from remote ECUs, polled at 10ms' },
+    { id:'pnc_rp6', label:'RP_SUM_C_Disable (SSFM per PDU)', ptype:'sr', dataType:'boolean (per PDU)', desc:'Individual PDU disable flags from SSFM' },
+    { id:'pnc_rp7', label:'RP_Act_Sensor_CS (local, per PN)', ptype:'cs', dataType:'Criteria_Struct', desc:'Local sensor activation criteria via C/S call (one per sensor per PN)' },
+    { id:'pnc_rp8', label:'RP_BswM_PduGroupSwitch/DM', ptype:'cs', dataType:'Std_ReturnType', desc:'BswM switch PDU groups and deadline monitoring control' },
+  ],
+  pports:[
+    { id:'pnc_pp1', label:'PP_PNC_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Per-PN shutdown permission to SUSD' },
+    { id:'pnc_pp2', label:'PP_BswM_PNCModeReq', ptype:'sr', dataType:'PNC_Mode (enum 0-5)', desc:'Request PN mode change to BswM' },
+    { id:'pnc_pp3', label:'PP_PduGroupSwitch Rx/Tx', ptype:'sr', dataType:'PduGroup_State (START/STOP)', desc:'Rx and Tx PDU group enable/disable to BswM' },
+    { id:'pnc_pp4', label:'PP_PNC_ActivePDUEnable', ptype:'sr', dataType:'boolean', desc:'PDU group active state for SSFM/SOH/ERRH monitoring' },
+    { id:'pnc_pp5', label:'PP_PNC_DTC_Allowed', ptype:'sr', dataType:'boolean (per PN)', desc:'DTC reporting permission per PN to SSFM' },
+    { id:'pnc_pp6', label:'PP_PNC_DM_Switch', ptype:'sr', dataType:'PNC_DM_State (ENABLE/DISABLE)', desc:'Deadline monitoring state control to BswM' },
+    { id:'pnc_pp7', label:'PP_PNC_UpdateRecord', ptype:'sr', dataType:'Record info struct', desc:'Wakeup reason records sent to SUSD diagnostics' },
+    { id:'pnc_pp8', label:'NM_RxIndication (callback)', ptype:'cs', dataType:'void (NetworkHandleType)', desc:'Callback invoked by CanNm/UdpNm to process NM PDU for remote activation' },
+  ],
+  irvs:['SUM_GaaPNC[] (FSM per PN)','Criteria_Sensor_Act[]','Criteria_Signal_Act[]','Criteria_NM_Act_Remote[]','Shutdown_Permission[]','DM timers / DTC timers']
+},
+// ------ LNM ------
+{
+  id:'mod-lnm', tag:'LNM', name:'LIN Network Manager',
+  swcName:'SUM_LNM', layer:'Application',
+  desc:'Manages LIN network activation, schedule table management, MSCL (responder presence map), fault detection (LoC Device/Bus, IEF), CyberFill security padding, DID F1BE diagnostics.',
+  runnables:[
+    { id:'lnm_init', name:'Runnable_LNM_Init', trigger:'init', triggerLabel:'INIT', ports:['lnm_rp1','lnm_rp9'] },
+    { id:'lnm_main', name:'Runnable_MainFunction', trigger:'periodic', triggerLabel:'10ms', ports:['lnm_rp1','lnm_rp2','lnm_rp8','lnm_pp1'] },
+    { id:'lnm_net', name:'Runnable_NetworkStatus', trigger:'periodic', triggerLabel:'10ms', ports:['lnm_rp3','lnm_rp6','lnm_rp7'] },
+    { id:'lnm_sched', name:'Runnable_ScheduleManagement', trigger:'periodic', triggerLabel:'10ms', ports:['lnm_rp6','lnm_pp7'] },
+    { id:'lnm_fault', name:'Runnable_NetworkFaultManager', trigger:'periodic', triggerLabel:'10ms', ports:['lnm_rp4','lnm_rp5','lnm_pp3','lnm_pp4','lnm_pp5','lnm_pp6'] },
+    { id:'lnm_actv', name:'Activation_LIN_Network_N', trigger:'event', triggerLabel:'DRE', ports:['lnm_rp3'] },
+    { id:'lnm_ap', name:'APINFO2/3 per Responder', trigger:'event', triggerLabel:'DRE', ports:['lnm_rp4','lnm_rp5'] },
+    { id:'lnm_did', name:'DID_MSCL_ReadData (F1BE)', trigger:'cs', triggerLabel:'DCM', ports:['lnm_pp2','lnm_pp8'] },
+  ],
+  rports:[
+    { id:'lnm_rp1', label:'RP_SUSD_PermitExecution', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Startup/shutdown permission from SUSD' },
+    { id:'lnm_rp2', label:'RP_SUSD_VehiclePowerMode', ptype:'sr', dataType:'uint8 (VehiclePowerMode enum)', desc:'Vehicle power mode state from SUSD' },
+    { id:'lnm_rp3', label:'RP_Com_Activation_LIN_Net_N', ptype:'sr', dataType:'boolean (per network)', desc:'Network activation signals from Com per network' },
+    { id:'lnm_rp4', label:'RP_SSM_APINFO2 (per resp)', ptype:'sr', dataType:'uint8 (reset detection)', desc:'Reset detection signal from SSM per responder' },
+    { id:'lnm_rp5', label:'RP_SSM_APINFO3/4 (per resp)', ptype:'sr', dataType:'uint8', desc:'Not-configured and application status signals from SSM' },
+    { id:'lnm_rp6', label:'BswM_LinSM_CurrentSchedule', ptype:'ms', dataType:'Schedule table ID (enum)', desc:'Current active schedule table per network from LinSM' },
+    { id:'lnm_rp7', label:'BswM_LinSM_CurrentState', ptype:'ms', dataType:'Network state (enum)', desc:'LIN network status per network (SLEEP/FULL_COMM/NO_COMM)' },
+    { id:'lnm_rp8', label:'WdgM_CheckpointReached', ptype:'cs', dataType:'Std_ReturnType (cpId)', desc:'Watchdog checkpoint reporting' },
+    { id:'lnm_rp9', label:'NvM_WriteBlock (MSCL)', ptype:'cs', dataType:'Std_ReturnType', desc:'Non-volatile MSCL block persistence' },
+  ],
+  pports:[
+    { id:'lnm_pp1', label:'PP_LNM_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Aliveness indication to SUSD (shutdown coordination)' },
+    { id:'lnm_pp2', label:'PP_LNM_MSCL_Notify', ptype:'sr', dataType:'MSCL Bitmap', desc:'Responder presence notification to SSFM/SSM' },
+    { id:'lnm_pp3', label:'PP_LNM_LoC_Device', ptype:'sr', dataType:'Fault event', desc:'Loss-of-Communication (Device) fault to SSFM/ERRH' },
+    { id:'lnm_pp4', label:'PP_LNM_LoC_Bus', ptype:'sr', dataType:'Fault event', desc:'Loss-of-Communication (Bus) fault to SSFM/ERRH' },
+    { id:'lnm_pp5', label:'PP_LNM_IEF', ptype:'sr', dataType:'Fault event', desc:'Internal Electronic Failure fault to SSFM/ERRH' },
+    { id:'lnm_pp6', label:'PP_LNM_NotConfigured', ptype:'sr', dataType:'Fault event', desc:'Responder Not Configured fault to SSFM/ERRH' },
+    { id:'lnm_pp7', label:'PP_LNM_ScheduleRequest', ptype:'ms', dataType:'Schedule table request', desc:'Request schedule table change to LinSM per network' },
+    { id:'lnm_pp8', label:'DID F1BE (Dcm Server)', ptype:'cs', dataType:'uint8[] (MSCL data)', desc:'Diagnostic read service for DID F1BE' },
+  ],
+  irvs:['Network_Status[] (per net)','schedule_enabled','commander/responder timers','ief_reset_counter','not_configured_counter','MSCL Bitmap','CyberFill value']
+},
+// ------ SUM_SOH ------
+{
+  id:'mod-soh', tag:'SUM_SOH', name:'State of Health',
+  swcName:'SUM_SOH', layer:'Application',
+  desc:'Monitors ECU health via detectors (OS errors, WdgM, MAC failures, security access, reset events). Applies threshold/time-window filtering and reports reliability metrics via DIDs and NvM.',
+  runnables:[
+    { id:'soh_init', name:'Runnable_SOH_Init', trigger:'init', triggerLabel:'INIT/1000ms', ports:['soh_rp1','soh_rp10','soh_rp11'] },
+    { id:'soh_main', name:'Runnable_SOH_Main', trigger:'periodic', triggerLabel:'100ms', ports:['soh_rp1','soh_rp3','soh_rp7','soh_rp11','soh_pp1'] },
+    { id:'soh_time', name:'Runnable_SOH_Timing', trigger:'periodic', triggerLabel:'PERIODIC', ports:[] },
+    { id:'soh_mac3', name:'Runnable_SOH_MacFailType3Delay', trigger:'periodic', triggerLabel:'PERIODIC', ports:['soh_rp8'] },
+    { id:'soh_reset', name:'Runnable_SOH_ImmeDelayedReset', trigger:'event', triggerLabel:'DRE', ports:['soh_rp2'] },
+    { id:'soh_drst', name:'Runnable_SOH_DiagReset', trigger:'event', triggerLabel:'DRE', ports:['soh_rp5'] },
+    { id:'soh_bsw', name:'Runnable_SOH_ERRH_BswEvent', trigger:'event', triggerLabel:'DRE', ports:['soh_rp4'] },
+    { id:'soh_sec', name:'Runnable_SOH_SecurityAccess', trigger:'event', triggerLabel:'DRE', ports:['soh_rp6'] },
+    { id:'soh_mac', name:'Runnable_SOH_MacFailType123', trigger:'event', triggerLabel:'DRE', ports:['soh_rp8'] },
+    { id:'soh_secp', name:'Runnable_SOH_SecP', trigger:'event', triggerLabel:'DRE', ports:['soh_rp9'] },
+    { id:'soh_did', name:'DID Read/Write (Dcm)', trigger:'cs', triggerLabel:'DCM', ports:['soh_pp2'] },
+    { id:'soh_rid', name:'RID 02C0 Clear Logs', trigger:'cs', triggerLabel:'DCM', ports:['soh_pp3','soh_pp4'] },
+  ],
+  rports:[
+    { id:'soh_rp1', label:'RP_SUSD_PermitExecution', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'ECU operational status bitfield from SUSD' },
+    { id:'soh_rp2', label:'RP_SUSD_ResetOccurred', ptype:'sr', dataType:'SUSD_SOH_ResetOccurredType (uint8)', desc:'Reset type notification: 0x01=Delayed, 0x02=Immediate' },
+    { id:'soh_rp3', label:'RP_SUSD_DisableNVMWrite', ptype:'sr', dataType:'boolean', desc:'Battery voltage guard flag from SUSD' },
+    { id:'soh_rp4', label:'RP_SSFM_BSW_Error', ptype:'sr', dataType:'uint16 (bitmask)', desc:'NvM + WdgM DEM error bitmask from SSFM/ERRH' },
+    { id:'soh_rp5', label:'RP_DIAG_ResetRequest', ptype:'sr', dataType:'boolean', desc:'Diagnostic reset request from DIAG module' },
+    { id:'soh_rp6', label:'RP_SSC_SecurityAccessError', ptype:'sr', dataType:'uint8', desc:'Security access failure flag from SSC' },
+    { id:'soh_rp7', label:'RP_DIAG_GetMEC', ptype:'sr', dataType:'uint8 (0-254)', desc:'MEC value from DIAG; triggers clear on 0-transition' },
+    { id:'soh_rp8', label:'RP_SSC_SecureMsgEvents', ptype:'sr', dataType:'uint8 (MAC type 1/2/3)', desc:'MAC failure type classification from SSC' },
+    { id:'soh_rp9', label:'SecP ErrorStatus (BswM)', ptype:'ms', dataType:'Mode enum', desc:'Security Processor (HSM) error status' },
+    { id:'soh_rp10', label:'WdgM_IndividualMode', ptype:'ms', dataType:'Mode enum (per entity)', desc:'Per-entity watchdog supervision mode' },
+    { id:'soh_rp11', label:'NvMService (Read/Write)', ptype:'cs', dataType:'Std_ReturnType', desc:'NvM block read/write/status operations' },
+  ],
+  pports:[
+    { id:'soh_pp1', label:'PP_SOH_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown readiness signal to SUSD' },
+    { id:'soh_pp2', label:'DID Read/Write (Dcm)', ptype:'cs', dataType:'uint8[] (variable)', desc:'SOH diagnostic data read/write via Dcm' },
+    { id:'soh_pp3', label:'RID 02C0 Clear Logs', ptype:'cs', dataType:'Std_ReturnType', desc:'Clear SOH diagnostic logs routine' },
+    { id:'soh_pp4', label:'PP_SOH_ClearRID02C0', ptype:'cs', dataType:'Std_ReturnType', desc:'Clear ERRH-side metrics coordination' },
+  ],
+  irvs:['ExecutionState (FSM)','SOH_Detector[] (counters)','SOH_Filter (Threshold/TW)','DID Counters (NvM)','ShutdownPermission','MEC value']
+},
+// ------ SUM_DIAG ------
+{
+  id:'mod-diag', tag:'SUM_DIAG', name:'Diagnostics Module',
+  swcName:'SUM_DIAG', layer:'Application',
+  desc:'Gatekeeper for UDS diagnostic services. Manages MEC (Manufacturer Enable Counter), communication control per channel (CAN/LIN/ETH), OTA PSF flag, DID F1A0/F1B0 services.',
+  runnables:[
+    { id:'diag_init', name:'Runnable_DIAG_Init', trigger:'periodic', triggerLabel:'1000ms', ports:['diag_rp4','diag_rp5','diag_pp4','diag_pp5','diag_pp6'] },
+    { id:'diag_main', name:'Runnable_DIAG_Main', trigger:'periodic', triggerLabel:'100ms', ports:['diag_rp1'] },
+    { id:'diag_shut', name:'Runnable_Shutdown_Permission', trigger:'periodic', triggerLabel:'100ms', ports:['diag_pp1'] },
+    { id:'diag_bswm', name:'Runnable_BswM_ModeUser', trigger:'periodic', triggerLabel:'100ms', ports:['diag_rp3','diag_pp7'] },
+    { id:'diag_mec', name:'Runnable_MEC_Handler', trigger:'periodic', triggerLabel:'100ms', ports:['diag_rp2','diag_rp4','diag_pp4','diag_pp5','diag_pp6'] },
+    { id:'diag_ota', name:'Runnable_OTA_PSF', trigger:'periodic', triggerLabel:'100ms', ports:['diag_rp4','diag_rp5'] },
+    { id:'diag_def', name:'SwitchedToDefaultSession', trigger:'event', triggerLabel:'MSE', ports:['diag_rp3'] },
+    { id:'diag_dtc', name:'ControlDTCSetting En/Disabled', trigger:'event', triggerLabel:'MSE', ports:['diag_rp3'] },
+    { id:'diag_rh', name:'RequestHandler Ind/Conf', trigger:'cs', triggerLabel:'DCM', ports:['diag_pp8'] },
+    { id:'diag_f1a0', name:'DID F1A0 Read/Write/Check', trigger:'cs', triggerLabel:'DCM', ports:['diag_rp4','diag_pp8'] },
+    { id:'diag_f1b0', name:'DID F1B0 ReadData', trigger:'cs', triggerLabel:'DCM', ports:['diag_pp8'] },
+  ],
+  rports:[
+    { id:'diag_rp1', label:'RP_SUSD_PermitExecution', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission mask from SUSD, checks bits 1-7' },
+    { id:'diag_rp2', label:'RP_SUSD_VehiclePowerMode', ptype:'sr', dataType:'uint8 (VehiclePowerMode enum)', desc:'Vehicle power mode: OFF/ACCESSORY/RUN/START/PROPULSION' },
+    { id:'diag_rp3', label:'BswM_DiagSession / CommMode', ptype:'ms', dataType:'Diag Session Mode + CommMode (x3 ch)', desc:'DEFAULT_SESSION / PROGRAMMING / EXTENDED + per-channel comm mode' },
+    { id:'diag_rp4', label:'NvM Read/Write (MEC, OTA)', ptype:'cs', dataType:'Std_ReturnType / uint8', desc:'NvM block operations for MEC counter and OTA PSF flag' },
+    { id:'diag_rp5', label:'Dem EnableCondition_OTA_PSF', ptype:'cs', dataType:'Std_ReturnType', desc:'Set/Get DTC enable condition for OTA PSF in Dem' },
+  ],
+  pports:[
+    { id:'diag_pp1', label:'PP_DIAG_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown readiness with active diagnostic request tracking' },
+    { id:'diag_pp2', label:'PP_DIAG_ResetRequest', ptype:'sr', dataType:'boolean', desc:'Reset request signal to SOH module' },
+    { id:'diag_pp3', label:'PP_DIAG_SetInitialReflashFlag', ptype:'sr', dataType:'boolean', desc:'Initial reflash flag for SSC security operations' },
+    { id:'diag_pp4', label:'PP_DIAG_GetMEC (SSC)', ptype:'sr', dataType:'uint8 (0-254)', desc:'MEC value broadcast to SSC' },
+    { id:'diag_pp5', label:'PP_DIAG_GetMEC (SOH)', ptype:'sr', dataType:'uint8 (0-254)', desc:'MEC value broadcast to SOH' },
+    { id:'diag_pp6', label:'PP_DIAG_GetMEC (SSFM)', ptype:'sr', dataType:'uint8 (0-254)', desc:'MEC value broadcast to SSFM' },
+    { id:'diag_pp7', label:'PP_DIAG_DisableNormalComm', ptype:'sr', dataType:'boolean (per channel)', desc:'Comm mode per channel (CAN/LIN/ETH) to SSFM/PNC' },
+    { id:'diag_pp8', label:'DID F1A0/F1B0 + RequestHandler', ptype:'cs', dataType:'uint8 (MEC) / uint8 (ECU Addr=16)', desc:'DID services and DCM request/confirmation callbacks' },
+  ],
+  irvs:['IR_Normal_msg_transmission','IR_NumberActiveDiagReq','IR_Sub_function','IR_DIAG_ControlDTCsetting']
+},
+// ------ TCS ------
+{
+  id:'mod-tcs', tag:'TCS', name:'Timing Client Service',
+  swcName:'SUM_TCS', layer:'Application',
+  desc:'Maintains local ECU clock synchronized with a Time Leader ECU. Provides global time to consumer SW-Cs, DID F129, and Dem timestamps. Persists time across power cycles via NvM.',
+  runnables:[
+    { id:'tcs_init', name:'TCS_Init', trigger:'init', triggerLabel:'INIT/1000ms', ports:['tcs_rp3','tcs_rp5'] },
+    { id:'tcs_poll', name:'Runnable_TCS_MasterClockPolling', trigger:'periodic', triggerLabel:'100ms', ports:['tcs_rp1','tcs_rp2','tcs_rp5'] },
+    { id:'tcs_time', name:'Runnable_TCS_TimeManagement', trigger:'periodic', triggerLabel:'100ms', ports:['tcs_pp1'] },
+    { id:'tcs_shut', name:'Runnable_TCS_PermitExecShutdown', trigger:'periodic', triggerLabel:'100ms', ports:['tcs_rp3','tcs_rp4','tcs_rp5','tcs_pp2'] },
+    { id:'tcs_dem', name:'Runnable_TCS_Dem_Clock', trigger:'cs', triggerLabel:'DEM CB', ports:['tcs_pp4'] },
+    { id:'tcs_did', name:'TCS_TotalVehicleTimeRead (F129)', trigger:'cs', triggerLabel:'DCM', ports:['tcs_pp3'] },
+  ],
+  rports:[
+    { id:'tcs_rp1', label:'RP_TCS_TimeSyncMessage (Com)', ptype:'sr', dataType:'uint64 (via SOME/IP, ComGroupSignal, or ComSignal)', desc:'Master clock signal from Time Leader ECU. Wire format: 5-byte big-endian' },
+    { id:'tcs_rp2', label:'RP_TCS_TimeSyncMessage_Av (SSM)', ptype:'sr', dataType:'uint8 (SignalAvailability)', desc:'Signal availability status from SSM: SIG_STATUS_AVAILABLE check' },
+    { id:'tcs_rp3', label:'RP_SUSD_PermitExecution', ptype:'sr', dataType:'SUSD_SWC_ExecutionStatusType (uint8)', desc:'Execution permission from SUSD; Bit0=WakeupActive ignored' },
+    { id:'tcs_rp4', label:'RP_SUSD_DisableNVMWrite', ptype:'sr', dataType:'boolean', desc:'Battery voltage gate for NvM write protection from SUSD' },
+    { id:'tcs_rp5', label:'NvMService (GetErr/SetRam/Write)', ptype:'cs', dataType:'Std_ReturnType', desc:'NvM block access for persistent time storage (SumTCSInitValue[5])' },
+  ],
+  pports:[
+    { id:'tcs_pp1', label:'PP_TCS_SWC_Clock', ptype:'sr', dataType:'uint64 (36-bit range: 0-0x0FFFFFFFFF)', desc:'Current local time (GlobalTime) output to all consumer SW-Cs' },
+    { id:'tcs_pp2', label:'PP_TCS_ShutdownPermission', ptype:'sr', dataType:'SUSD_UserRequestType (uint8)', desc:'Shutdown readiness vote to SUSD' },
+    { id:'tcs_pp3', label:'DID F129 ReadData (Dcm)', ptype:'cs', dataType:'uint8[5] (5-byte big-endian)', desc:'Total Vehicle Time value for UDS ReadDataByIdentifier 0xF129' },
+    { id:'tcs_pp4', label:'Dem Timestamp Callback', ptype:'cs', dataType:'uint8[5] (5-byte big-endian)', desc:'Dem timestamp callback for DTC record timestamping' },
+  ],
+  irvs:['EA_Localtime_Clock (uint64)','EA_SubCounter (uint32)','EA: EA_Clock_Update (Exclusive Area)']
+}
+];
+
+// =========================================================================
+// RENDERING
+// =========================================================================
+function renderAll() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '';
+  MODULES.forEach((mod, idx) => {
+    const sec = document.createElement('div');
+    sec.className = 'module-section';
+    sec.id = mod.id;
+    const isFirst = idx === 0;
+    sec.innerHTML = `
+      <div class="module-title-bar${isFirst?' open':''}" onclick="toggleModule(this)">
+        <div style="display:flex;align-items:center;"><span class="tag">${mod.tag}</span><h2>${mod.name}</h2></div>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="module-body${isFirst?' open':''}">
+        <div class="module-info"><strong>SWC:</strong> ${mod.swcName} &bull; <strong>Layer:</strong> ${mod.layer}<br>${mod.desc}</div>
+        <div class="hint-bar">Click a <em>Runnable</em> to highlight its connected ports. Click a <em>Port</em> to see detailed interface info. Click again to reset.</div>
+        ${mod.subgroups ? renderSubgroupTabs(mod) : ''}
+        <button class="reset-filter-btn" id="reset-${mod.id}" onclick="resetFilter('${mod.id}')">Clear Filter</button>
+        ${renderDiagram(mod)}
+      </div>`;
+    main.appendChild(sec);
+  });
+}
+
+function renderDiagram(mod) {
+  return `<div class="swc-diagram" data-mod="${mod.id}">
+    <div class="port-col left">
+      <div class="port-section-label">REQUIRED PORTS (R-Ports)</div>
+      ${mod.rports.map(p => renderPort(p, 'rp', mod.id)).join('')}
+    </div>
+    <div class="swc-block">
+      <div class="swc-block-header">${mod.swcName}</div>
+      <div class="swc-block-body">
+        <div class="runnables-section">
+          <h4>Runnables</h4>
+          ${mod.runnables.map(r => renderRunnable(r, mod.id)).join('')}
+        </div>
+        <div class="irv-section">
+          <h4>Inter-Runnable Variables</h4>
+          ${mod.irvs.map(i => `<span class="irv-item">${i}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="port-col right">
+      <div class="port-section-label">PROVIDED PORTS (P-Ports)</div>
+      ${mod.pports.map(p => renderPort(p, 'pp', mod.id)).join('')}
+    </div>
+  </div>`;
+}
+
+function renderPort(p, dir, modId) {
+  const cls = p.ptype; // sr, cs, ms
+  const conn = dir === 'rp' ? 'rp' : 'pp';
+  const badge = `badge-${cls}`;
+  const badgeLabel = cls.toUpperCase().replace('SR','S/R').replace('CS','C/S').replace('MS','MS');
+  if (dir === 'rp') {
+    return `<div class="port-item" data-port="${p.id}" data-mod="${modId}" onclick="showPortDetail(this,'${modId}','${p.id}')">
+      <span class="port-type-badge ${badge}">${badgeLabel}</span>
+      <span class="port-label ${cls}">${p.label}</span>
+      <span class="port-connector ${conn}"></span>
+    </div>`;
+  } else {
+    return `<div class="port-item" data-port="${p.id}" data-mod="${modId}" onclick="showPortDetail(this,'${modId}','${p.id}')">
+      <span class="port-connector ${conn}"></span>
+      <span class="port-label ${cls}">${p.label}</span>
+      <span class="port-type-badge ${badge}">${badgeLabel}</span>
+    </div>`;
+  }
+}
+
+function renderRunnable(r, modId) {
+  const tclass = r.trigger === 'periodic' ? 'trigger-periodic' :
+                 r.trigger === 'init' ? 'trigger-init' :
+                 r.trigger === 'event' ? 'trigger-event' : 'trigger-cs';
+  const sgAttr = r.subgroup ? ` data-subgroup="${r.subgroup}"` : '';
+  const sgBadge = r.subgroup && r.subgroup !== 'both'
+    ? `<span class="sg-badge sg-${r.subgroup.toLowerCase()}">${r.subgroup}</span>`
+    : (r.subgroup === 'both' ? `<span class="sg-badge sg-both">SSM+ERRH</span>` : '');
+  const hasInfo = RUNNABLE_INFO[r.name] ? 'true' : 'false';
+  return `<div class="runnable-item" data-runnable="${r.id}" data-mod="${modId}" data-ports="${r.ports.join(',')}"${sgAttr} onclick="filterByRunnable(this,'${modId}','${r.id}')">
+    <span class="runnable-name">${r.name}</span>
+    ${sgBadge}
+    <span class="runnable-trigger ${tclass}">${r.triggerLabel}</span>
+    <button class="runnable-info-btn" data-rname="${r.name}" onclick="event.stopPropagation();showRunnableInfo('${r.name.replace(/'/g,"\\'")}')" title="AUTOSAR runnable details" style="${hasInfo==='false'?'opacity:0.35;pointer-events:none':''}">!</button>
+  </div>`;
+}
+
+// =========================================================================
+// INTERACTION: Click Runnable -> Highlight Ports
+// =========================================================================
+let activeRunnable = {};
+
+function filterByRunnable(el, modId, runnableId) {
+  const diagram = document.querySelector(`.swc-diagram[data-mod="${modId}"]`);
+  if (!diagram) return;
+  const allPorts = diagram.querySelectorAll('.port-item');
+  const allRunnables = diagram.querySelectorAll('.runnable-item');
+  const resetBtn = document.getElementById('reset-' + modId);
+
+  // Toggle off if same runnable clicked -> revert to subgroup filter if active
+  if (activeRunnable[modId] === runnableId) {
+    delete activeRunnable[modId];
+    resetBtn.classList.remove('show');
+    if (activeSubgroup[modId]) {
+      reapplySubgroupFilter(modId);
+    } else {
+      allPorts.forEach(p => p.classList.remove('highlighted','dimmed'));
+      allRunnables.forEach(r => r.classList.remove('active','dimmed'));
+    }
+    return;
+  }
+  activeRunnable[modId] = runnableId;
+
+  // Get port list for this runnable
+  const portList = el.dataset.ports ? el.dataset.ports.split(',') : [];
+
+  // Dim all, highlight connected
+  allPorts.forEach(p => {
+    p.classList.remove('highlighted','dimmed');
+    if (portList.includes(p.dataset.port)) {
+      p.classList.add('highlighted');
+    } else {
+      p.classList.add('dimmed');
+    }
+  });
+  allRunnables.forEach(r => {
+    r.classList.remove('active','dimmed');
+    if (r.dataset.runnable === runnableId) {
+      r.classList.add('active');
+    } else {
+      r.classList.add('dimmed');
+    }
+  });
+  resetBtn.classList.add('show');
+}
+
+function reapplySubgroupFilter(modId) {
+  const sg = activeSubgroup[modId];
+  if (!sg) return;
+  const diagram = document.querySelector(`.swc-diagram[data-mod="${modId}"]`);
+  if (!diagram) return;
+  const allRunnables = diagram.querySelectorAll('.runnable-item');
+  const allPorts = diagram.querySelectorAll('.port-item');
+  const visiblePortIds = new Set();
+  allRunnables.forEach(r => {
+    r.classList.remove('active','highlighted');
+    const rsg = r.dataset.subgroup;
+    if (rsg === sg || rsg === 'both') {
+      r.classList.remove('dimmed');
+      const ports = r.dataset.ports ? r.dataset.ports.split(',') : [];
+      ports.forEach(pid => visiblePortIds.add(pid));
+    } else {
+      r.classList.add('dimmed');
+    }
+  });
+  allPorts.forEach(p => {
+    p.classList.remove('highlighted');
+    if (visiblePortIds.has(p.dataset.port)) {
+      p.classList.remove('dimmed');
+    } else {
+      p.classList.add('dimmed');
+    }
+  });
+}
+
+function resetFilter(modId) {
+  const diagram = document.querySelector(`.swc-diagram[data-mod="${modId}"]`);
+  if (!diagram) return;
+  diagram.querySelectorAll('.port-item').forEach(p => p.classList.remove('highlighted','dimmed'));
+  diagram.querySelectorAll('.runnable-item').forEach(r => r.classList.remove('active','dimmed'));
+  document.getElementById('reset-' + modId).classList.remove('show');
+  delete activeRunnable[modId];
+}
+
+// =========================================================================
+// INTERACTION: Click Port -> Show Detail Panel
+// =========================================================================
+function showPortDetail(el, modId, portId) {
+  const mod = MODULES.find(m => m.id === modId);
+  if (!mod) return;
+  let port = mod.rports.find(p => p.id === portId);
+  let dir = 'Required (R-Port)';
+  let dirTag = 'rp-tag';
+  if (!port) {
+    port = mod.pports.find(p => p.id === portId);
+    dir = 'Provided (P-Port)';
+    dirTag = 'pp-tag';
+  }
+  if (!port) return;
+
+  const ptypeLabel = port.ptype === 'sr' ? 'Sender-Receiver' : port.ptype === 'cs' ? 'Client-Server' : 'Mode-Switch';
+  const ptypeTag = port.ptype + '-tag';
+  const headerClass = port.ptype + '-header';
+
+  // Find which runnables use this port
+  const linkedRunnables = mod.runnables.filter(r => r.ports.includes(portId));
+
+  const header = document.getElementById('detailHeader');
+  header.className = 'detail-panel-header ' + headerClass;
+  document.getElementById('detailTitle').textContent = port.label;
+
+  let html = `
+    <div class="detail-row"><div class="detail-label">Direction</div><div class="detail-value"><span class="detail-tag ${dirTag}">${dir}</span></div></div>
+    <div class="detail-row"><div class="detail-label">Interface</div><div class="detail-value"><span class="detail-tag ${ptypeTag}">${ptypeLabel}</span></div></div>
+    <div class="detail-row"><div class="detail-label">Data Type</div><div class="detail-value">${port.dataType}</div></div>
+    <div class="detail-row"><div class="detail-label">Description</div><div class="detail-value">${port.desc}</div></div>
+    <div class="detail-row"><div class="detail-label">Module</div><div class="detail-value">${mod.swcName} (${mod.tag})</div></div>`;
+
+  if (linkedRunnables.length > 0) {
+    html += `<div class="detail-row"><div class="detail-label">Used By</div><div class="detail-value"><div class="detail-runnables-list">
+      ${linkedRunnables.map(r => `<span class="mini-runnable">${r.name} [${r.triggerLabel}]</span>`).join('')}
+    </div></div></div>`;
+  }
+
+  document.getElementById('detailBody').innerHTML = html;
+  document.getElementById('detailOverlay').classList.add('show');
+}
+
+function closeDetail(e) {
+  if (e && e.target !== document.getElementById('detailOverlay')) return;
+  document.getElementById('detailOverlay').classList.remove('show');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+// =========================================================================
+// SUBGROUP TAB FILTER (SSM / ERRH)
+// =========================================================================
+let activeSubgroup = {};
+
+function renderSubgroupTabs(mod) {
+  const counts = {};
+  mod.subgroups.forEach(sg => {
+    if (sg === 'All') { counts[sg] = mod.runnables.length; }
+    else { counts[sg] = mod.runnables.filter(r => r.subgroup === sg || r.subgroup === 'both').length; }
+  });
+  return `<div class="subgroup-tabs" data-mod="${mod.id}">
+    ${mod.subgroups.map((sg, i) =>
+      `<button class="subgroup-tab${i===0?' active':''}" data-sg="${sg}" onclick="filterBySubgroup('${mod.id}','${sg}',this)">${sg}<span class="tab-badge">${counts[sg]}</span></button>`
+    ).join('')}
+  </div>`;
+}
+
+function filterBySubgroup(modId, sg, tabEl) {
+  // Update active tab
+  const tabBar = tabEl.parentElement;
+  tabBar.querySelectorAll('.subgroup-tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+
+  // Reset any runnable filter first
+  resetFilter(modId);
+
+  const diagram = document.querySelector(`.swc-diagram[data-mod="${modId}"]`);
+  if (!diagram) return;
+
+  const allRunnables = diagram.querySelectorAll('.runnable-item');
+  const allPorts = diagram.querySelectorAll('.port-item');
+
+  if (sg === 'All') {
+    // Show everything
+    allRunnables.forEach(r => r.classList.remove('dimmed','hidden-sg'));
+    allPorts.forEach(p => p.classList.remove('dimmed','hidden-sg'));
+    delete activeSubgroup[modId];
+    return;
+  }
+
+  activeSubgroup[modId] = sg;
+
+  // Find runnables matching this subgroup (or 'both')
+  const visibleRunnables = [];
+  const visiblePortIds = new Set();
+  allRunnables.forEach(r => {
+    const rsg = r.dataset.subgroup;
+    if (rsg === sg || rsg === 'both') {
+      r.classList.remove('dimmed','hidden-sg');
+      visibleRunnables.push(r);
+      // Collect ports
+      const ports = r.dataset.ports ? r.dataset.ports.split(',') : [];
+      ports.forEach(pid => visiblePortIds.add(pid));
+    } else {
+      r.classList.add('dimmed');
+    }
+  });
+
+  // Dim ports not connected to visible runnables
+  allPorts.forEach(p => {
+    if (visiblePortIds.has(p.dataset.port)) {
+      p.classList.remove('dimmed');
+    } else {
+      p.classList.add('dimmed');
+    }
+  });
+}
+
+// =========================================================================
+// MODULE TOGGLE & NAV
+// =========================================================================
+function toggleModule(bar) {
+  bar.classList.toggle('open');
+  bar.nextElementSibling.classList.toggle('open');
+}
+
+(function buildNav() {
+  const nav = document.getElementById('navBar');
+  const expandBtn = document.createElement('button');
+  expandBtn.className = 'nav-btn'; expandBtn.textContent = 'Expand All';
+  expandBtn.style.background = 'rgba(230,126,34,0.3)';
+  expandBtn.onclick = () => document.querySelectorAll('.module-title-bar').forEach(b => { b.classList.add('open'); b.nextElementSibling.classList.add('open'); });
+  nav.appendChild(expandBtn);
+  const collapseBtn = document.createElement('button');
+  collapseBtn.className = 'nav-btn'; collapseBtn.textContent = 'Collapse All';
+  collapseBtn.onclick = () => document.querySelectorAll('.module-title-bar').forEach(b => { b.classList.remove('open'); b.nextElementSibling.classList.remove('open'); });
+  nav.appendChild(collapseBtn);
+  const sep = document.createElement('div');
+  sep.style.cssText = 'width:1px;height:24px;background:rgba(255,255,255,0.15);margin:0 4px;';
+  nav.appendChild(sep);
+  MODULES.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'nav-btn'; btn.textContent = m.tag;
+    btn.onclick = function() {
+      const el = document.getElementById(m.id);
+      const bar = el.querySelector('.module-title-bar');
+      if (!bar.classList.contains('open')) { bar.classList.add('open'); bar.nextElementSibling.classList.add('open'); }
+      el.scrollIntoView({ behavior:'smooth', block:'start' });
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    nav.appendChild(btn);
+  });
+})();
+
+// =========================================================================
+// RUNNABLE INFO DATABASE (AUTOSAR ARXML metadata from SWCD templates)
+// =========================================================================
+const RUNNABLE_INFO = {
+  // ── SUSD ──
+  "RE_SUSD_Init": { symbol:"Runnable_SUSD_Init", trigger:"TIMING-EVENT", period:"Configurable (1000ms default)", reads:["SUSD_BatteryVoltage (Com)"], writes:["SUSD_PermitExecution (all SWCs)","SUSD_ECUOperatingMode","SUSD_BatteryVoltageStatus","SUSD_DisableNVMWrite","SUSD_VehiclePowerMode"], serverCalls:["NvM_ReadBlock (ActivityRecords)","WdgM_CheckpointReached"], params:["BatteryVoltage thresholds"], exclusiveAreas:[], concurrent:false, desc:"Initializes SUSD state machines, reads NvM blocks, classifies initial battery voltage, and broadcasts initial PermitExecution to all SWCs." },
+  "RE_SUSD_AppStateManager": { symbol:"Runnable_AppStateManager", trigger:"TIMING-EVENT", period:"Configurable", reads:["All ShutdownPermission votes (SSC,SPM,SrvcMgr,SSFM,SOH,TCS,DIAG,PNC,LNM)","SUSD_PermitExecution","EcuM_WakeupSource"], writes:["SUSD_PermitExecution (all SWCs)","SUSD_ECUOperatingMode"], serverCalls:["BswM_ModeRequest"], params:["Shutdown timeout","Reset delay"], exclusiveAreas:[], concurrent:false, desc:"Core SUSD state machine. Collects shutdown votes from all SUM modules, manages ECU lifecycle transitions (INIT->RUN->SHUTDOWN/RESET/SLEEP), and broadcasts execution permission." },
+  "RE_SUSD_BatteryNotifications": { symbol:"Runnable_BatteryNotifications", trigger:"TIMING-EVENT", period:"Configurable", reads:["Battery Voltage (Com)"], writes:["SUSD_BatteryVoltageStatus","SUSD_DisableNVMWrite"], serverCalls:[], params:["Voltage thresholds with hysteresis (default 9V-16V)"], exclusiveAreas:[], concurrent:false, desc:"Classifies raw battery voltage into operating ranges with hysteresis. Sets NvM write disable flag when voltage is out of range." },
+  "RE_SUSD_VehiclePowerMode": { symbol:"Runnable_VehiclePowerMode", trigger:"TIMING-EVENT", period:"Configurable", reads:["PMM Power Mode (Com)","BPMM Backup Power Mode","Run/Crank HW Input"], writes:["SUSD_VehiclePowerMode"], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Determines vehicle power mode (OFF/ACCESSORY/RUN/START/PROPULSION) from primary PMM, backup BPMM, and Run/Crank hardware fallback inputs." },
+  "RE_SUSD_RunCrankManagement": { symbol:"Runnable_RunCrankManagement", trigger:"TIMING-EVENT", period:"Configurable", reads:["Run/Crank HW Input"], writes:[], serverCalls:[], params:["Debounce timers"], exclusiveAreas:[], concurrent:false, desc:"Debounces Run/Crank hardware input with configurable timer for fail-soft power mode determination." },
+  "RE_Manage_RESETExecution_TIMER": { symbol:"Runnable_Manage_SUM_SUSD_RESETExecution_TIMER", trigger:"TIMING-EVENT", period:"Configurable", reads:["BswM Mode Request"], writes:[], serverCalls:["BswM_RequestMode"], params:["Reset execution timeout"], exclusiveAreas:[], concurrent:false, desc:"Manages reset execution timer. When timer expires, triggers BswM mode transition for ECU reset." },
+  "RE_SUSD_ActivityRecord_Handler": { symbol:"Runnable_Sum_SUSD_ActivityRecords_Handler", trigger:"TIMING-EVENT", period:"Configurable", reads:["TCS_SWC_Clock (GlobalTime)"], writes:["SUSD_ActivityRecord"], serverCalls:["NvM_WriteBlock (ActivityRecords)"], params:[], exclusiveAreas:[], concurrent:false, desc:"Manages activity records with timestamps from TCS. Persists wakeup/shutdown event history to NvM for diagnostic purposes." },
+  "RE_SUSD_DiagReprogrammingReq": { symbol:"Runnable_DiagnosticReprogrammingRequest", trigger:"SWC-MODE-SWITCH-EVENT", period:"Event-driven (BswM Programming Session)", reads:["BswM Mode"], writes:[], serverCalls:["BswM_RequestMode"], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered on BswM diagnostic programming session mode switch. Initiates reprogramming sequence." },
+  "RE_SUSD_DiagResetRequest": { symbol:"Runnable_DiagnosticResetRequest", trigger:"SWC-MODE-SWITCH-EVENT", period:"Event-driven (BswM Reset Request)", reads:[], writes:["SUSD_ResetOccurred"], serverCalls:["BswM_RequestMode"], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered on BswM diagnostic reset request mode switch. Sets reset occurred flag for SOH and initiates ECU reset." },
+
+  // ── SSC ──
+  "RE_SSC_Init": { symbol:"Runnable_SSC_Init", trigger:"TIMING-EVENT", period:"Configurable (1000ms)", reads:["SUSD_PermitExecution","Csm APIs"], writes:["SSC_ShutdownPermission"], serverCalls:["Csm_MacGenerate","NvM_ReadBlock (19+ blocks)"], params:[], exclusiveAreas:[], concurrent:false, desc:"Initializes SSC security services: loads NvM counter values, initializes SHE/HSM key slots, sets up SecOC freshness configuration." },
+  "Runnable_Ssc_Main": { symbol:"Runnable_Ssc_Main", trigger:"TIMING-EVENT", period:"5ms", reads:["SUSD_PermitExecution","DIAG_SetInitialReflashFlag","DIAG_GetMEC","Csm APIs"], writes:["SSC_ShutdownPermission","SSC_SecurityAccessError","SSC_MacAuthEnable","SSC_KeySlotVerifyStatus","SSC_SecureMsgEvents"], serverCalls:["Csm_MacGenerate/Verify","Csm_Encrypt/Decrypt","Dem_SetEventStatus"], params:[], exclusiveAreas:[], concurrent:false, desc:"Main SSC cyclic runnable. Manages SecOC freshness counter updates, MAC authentication state machine, key provisioning, SBAT validation, and security DTC reporting." },
+  "GetTxFreshness": { symbol:"SSC_GetTxFreshness", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (SecOC callback)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"SecOC callback: returns current Tx freshness value (counter) for a given SecOC FreshnessValueId during PDU authentication." },
+  "GetTxFreshnessTruncData": { symbol:"SSC_GetTxFreshnessTruncData", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (SecOC callback)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"SecOC callback: returns truncated Tx freshness data appended to the authenticated PDU for transmission." },
+  "GetRxFreshness": { symbol:"SSC_GetRxFreshness", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (SecOC callback)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"SecOC callback: reconstructs and validates Rx freshness value from received truncated data during PDU verification." },
+  "SPduTxConfirmation": { symbol:"SSC_SPduTxConfirmation", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (SecOC callback)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"SecOC callback: confirms successful transmission of a secured PDU, allowing counter increment." },
+  "VerificationStatusService": { symbol:"SSC_VerificationStatusService", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (SecOC callback)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"SecOC callback: receives MAC verification result (PASS/FAIL) per PDU, feeds into MAC failure type classification for SOH." },
+  "DID F081/F084/E0Bx": { symbol:"SSC_DID_ReadWrite", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM)", reads:[], writes:[], serverCalls:["NvM operations"], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM DID services: F081 (Active Counter), F084 (Initial Reflash Flag), E0B1-E0B4 (SecOC key slot data). ReadData/WriteData/ConditionCheckRead." },
+
+  // ── SPM ──
+  "RE_SPM_SoftMgr_MainFunction": { symbol:"Runnable_SPM_SM_MainFunction", trigger:"TIMING-EVENT", period:"1000ms (configurable)", reads:["SUSD_PermitExecution","SUSD_VehiclePowerMode","SM Frame Rx (per VLAN)","GetDeviceVariantInfo"], writes:["SPM_ShutdownPermission","SPM_StatusNotification","SM Frame Tx","Heartbeat Tx"], serverCalls:["BswM_RequestMode (ComIpduGroupSwitch)"], modeSwitch:["ComIpduGroupSwitch (Enable/Disable PDU groups)"], params:["SM period","HeartbeatBurstCount","ProfileTimeout"], exclusiveAreas:[], concurrent:false, desc:"Software Manager main function. Processes SOME/IP service profile activation/deactivation requests, monitors peer ECU SM frames, manages service lifecycle FSM, and controls Ethernet PDU groups." },
+  "RE_SPM_PowerManager_MainFunction": { symbol:"Runnable_SPM_PM_MainFunction", trigger:"TIMING-EVENT", period:"5ms", reads:["SUSD_PermitExecution","HB Heartbeat Rx (per VLAN)","ETH WakeUp Frame Rx"], writes:["ETH WakeUp Frame Tx"], modeAccess:["CommunicationReady (BswM)"], params:["HB steady-state period","WUF retransmit count","Device power state thresholds"], exclusiveAreas:[], concurrent:false, desc:"Power Manager main function. Manages Ethernet device power states, heartbeat monitoring/transmission (burst+steady-state), Wake-Up Frame handling, and node loss-of-communication detection." },
+  "SPM_ActivateProfile": { symbol:"Runnable_SPM_ActivateProfile", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (C/S call from SrvcMgr)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"C/S server operation: activates a SOME/IP service profile by AppIntfID. Sets activation request in local variables for SM MainFunction processing." },
+  "SPM_DeactivateProfile": { symbol:"Runnable_SPM_DeactivateProfile", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (C/S call from SrvcMgr)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"C/S server operation: deactivates a SOME/IP service profile by AppIntfID. Sets deactivation request for SM MainFunction processing." },
+  "SPM_GetProfileState": { symbol:"Runnable_SPM_GetProfileState", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (C/S call)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"C/S server operation: returns current state (INACTIVE/ACTIVATING/ACTIVE/DEACTIVATING) of a service profile." },
+  "DID E0DD/E0DE/E0DF": { symbol:"SPM_DID_ReadWrite", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM)", reads:["NvM/Dcm_E0DE/E0DF_Write"], writes:[], serverCalls:["NvM_WriteBlock"], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM DID services: E0DD (Device PM Status ReadData), E0DE (Activity Records WriteData), E0DF (Activity Records ReadData/ReadDataLength)." },
+  "SdLearningStatusIndication": { symbol:"Runnable_SPM_SrvcMgr_SdLearningStatusIndication", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (C/S call from SrvcMgr)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"C/S server operation: receives SD learning session result (PENDING/SUCCESSFUL/FAILED) from SrvcMgr and updates SPM learning status IRV." },
+
+  // ── SrvcMgr ──
+  "Runnable_SrvcMgr_Init": { symbol:"Runnable_SrvcMgr_Init", trigger:"TIMING-EVENT", period:"Configurable (conditional)", reads:[], writes:["SrvcMgr_ERRH_U19A6_54_Status","SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57","SrvcMgr_SSFM_LearningTableStatus"], serverCalls:["CalibrationController/surveyServiceDisableCalibrations"], params:[], exclusiveAreas:[], concurrent:false, desc:"Initializes SrvcMgr: loads calibration data, sets initial DTC status flags for U19A6_54 and U19A6_57, and sends initial learning table status." },
+  "Runnable_SrvcMgr_ExecutionManager": { symbol:"Runnable_SrvcMgr_ExecutionManager", trigger:"TIMING-EVENT", period:"Configurable", reads:["SUSD_PermitExecution","SUSD_BattVltgSnsrStsAvl"], writes:["SrvcMgr_ShutdownPermission","SrvcMgr_ERRH_U19A6_54_Status","SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57"], serverCalls:["CalibrationController/surveyServiceDisableCalibrations (if no init)"], params:[], exclusiveAreas:[], concurrent:false, desc:"Main SrvcMgr cyclic runnable. Manages 4-state execution FSM, processes service enable/disable calibrations, and reports shutdown permission to SUSD." },
+  "Runnable_SrvcMgr_ActivateServices": { symbol:"Runnable_SrvcMgr_ActivateServices", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (SPM C/S call)", reads:["SUSD_PermitExecution"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"C/S server operation invoked by SPM: activates SOME/IP services based on current calibration and execution state." },
+  "Runnable_SrvcMgr_RID_0654": { symbol:"Runnable_SrvcMgr_RID_0654", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM RID 0654 Start)", reads:["VePSAR_b_PropSysActv","YeVSPR_v_DrvnVehicle","FxFA/FsFA signals"], writes:["SrvcMgr_ERRH_U19A6_54_Status","SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57","SrvcMgr_SSFM_LearningTableStatus"], serverCalls:["SPM_SDLearningStatusIndication"], params:[], exclusiveAreas:[], concurrent:false, desc:"Handles DCM RID 0654 (Trigger Learning Session). Validates preconditions (vehicle stopped, propulsion off), triggers SD learning, reports results to SPM and SSFM." },
+  "Runnable_SrvcMgr_RID_0612": { symbol:"Runnable_SrvcMgr_RID_0612", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM RID 0612 Start)", reads:["VePSAR_b_PropSysActv","YeVSPR_v_DrvnVehicle"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Handles DCM RID 0612 (Retrieve Learning Table). Returns current SD learning table data. Conditional on RID_0612 reference configuration." },
+  "DID E0CC/E0CD/E0CE Read": { symbol:"Runnable_SrvcMgr_DID_Read", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM)", reads:[], writes:[], serverCalls:["SPM_GetDTCIdentifier (E0CE only)"], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM DID services: E0CC (Service Discovery Learning Table Status ReadData), E0CD (Client Incomplete Learning Table ReadData/ReadDataLength), E0CE (Server Incomplete Learning Table ReadData/ReadDataLength)." },
+  "DisableService/DisableServiceGroup": { symbol:"Runnable_SrvcMgr_DisableService", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (C/S call)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"C/S server operations: DisableService disables a single SOME/IP service by ID via calibration. DisableServiceGroup disables an entire service group by group ID." },
+  "SSFM_ClearDiagReq": { symbol:"Runnable_SSFM_ClearDiagReq", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (SSFM ClearDiagReq)", reads:["SSFM_ClearDiagReq (SSFMClearDiagReq)"], writes:["SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57"], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when SSFM sends ClearDiagReq (UDS Service 0x14). Resets SrvcMgr diagnostic fault flags." },
+  "SSFM_SDMissingMessage": { symbol:"Runnable_SrvcMgr_SSFM_SDMissingMessage", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (SSFM SDMissingMessage)", reads:["SSFM_SrvcMgr_SDMissingMessage (SSFM_ServiceId)"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when SSFM reports a missing SD service message. Records the missing service ID for learning table evaluation." },
+
+  // ── SSFM ──
+  "Runnable_SSFM_Init": { symbol:"Runnable_SSFM_Init", trigger:"TIMING-EVENT", period:"Configurable", reads:["SUSD_PermitExecution","NvM blocks"], writes:["SSFM_ShutdownPermission"], serverCalls:["NvM_ReadBlock"], params:[], exclusiveAreas:[], concurrent:false, desc:"Initializes SSM and ERRH subsystems: reads NvM blocks for persistent fault data, initializes signal monitoring tables and X-of-Y debouncer states." },
+  "Runnable_SSFM_ExecutionManager": { symbol:"Runnable_SSFM_ExecutionManager", trigger:"TIMING-EVENT", period:"100ms", reads:["SUSD_PermitExecution","PNC_PartialNetworkStatus","DIAG_DisableNormalComm","DIAG_GetMEC","SrvcMgr_ServiceActivation"], writes:["SSFM_ShutdownPermission","FcI/FoI/FpI/FsI/FcFA/Av signals","SSFM_BSW_Error","Dem_SetEventStatus"], serverCalls:["Dem_SetEventStatus (DTC reporting)"], params:["X-of-Y thresholds","Timeout values"], exclusiveAreas:["EA_DTC_Notification_Queue"], concurrent:false, desc:"Core SSFM cyclic runnable. Executes signal monitoring (timeout/E2E/SecOC), X-of-Y fault debouncing, DTC reporting, and updates all fault indication flags (FcI/FoI/FpI/FsI/Av) per signal." },
+  "Received_SerialData_<name>": { symbol:"Runnable_SSFM_Received_SerialData_{name}", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (Com CbkRxAck)", reads:["Com Signal Rx Data","E2E TransformerError"], writes:["FcI/FoI/FpI/FsI/FcFA/Av signals"], serverCalls:["Dem_SetEventStatus"], params:["X-of-Y filter params"], exclusiveAreas:[], concurrent:false, desc:"Triggered on COM reception callback for each monitored serial data signal. Evaluates E2E status (CRC+alive counter), SecOC MAC auth, timeout reset, and updates signal fault indications." },
+  "PNStatusChanged_<PN_ID>": { symbol:"Runnable_SSFM_PNStatusChanged_{PN_ID}", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (PNC status change)", reads:["PNC_PartialNetworkStatus"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when PNC reports partial network status change for a specific PN. Updates signal monitoring enable/disable state based on PN activation." },
+  "DIAG_DisableNormalCommChanged": { symbol:"Runnable_SSFM_DIAG_DisableNormalCommChanged", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (DIAG comm control change)", reads:["DIAG_DisableNormalComm"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when DIAG module changes normal communication control per channel. Suspends/resumes signal monitoring for affected channels." },
+  "LINInfo_StatusChanged": { symbol:"Runnable_SSFM_LINInfo_StatusChanged", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (LNM status change)", reads:["LNM_LINNodeStatus"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when LNM reports LIN responder node status change. Updates LIN signal monitoring state." },
+  "ServiceActivationStatusReceived": { symbol:"Runnable_SSFM_ServiceActivationStatusReceived", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (SrvcMgr status change)", reads:["SrvcMgr_ServiceActivation"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when SrvcMgr reports SOME/IP service activation status change. Updates Ethernet signal monitoring based on active services." },
+  "DID E0B8/E0B9/E0BA/E0BB": { symbol:"SSFM_ERRH_DID_ReadWrite", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM)", reads:["NvM blocks"], writes:[], serverCalls:["NvM_SetRamBlockStatus","NvM_WriteBlock"], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM DID services for ERRH: E0B8 (Error Handler Fault Log ReadData/WriteData), E0B9 (ERRH Freeze Frame), E0BA (ERRH Summary), E0BB (MAC Auth Per Key Slot)." },
+  "RID 02C0 Start/Stop/Results": { symbol:"Runnable_SSFM_ERRH_RID_ClearLog", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM RID 02C0)", reads:[], writes:[], serverCalls:["NvM_SetRamBlockStatus"], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM RID 02C0: Start clears ERRH fault log and SOH metrics. Stop/Results return operation status. Persists cleared state via NvM." },
+
+  // ── PNC ──
+  "RE_PNC_Init": { symbol:"RE_PNC_Init", trigger:"TIMING-EVENT", period:"Configurable (conditional)", reads:["SUSD_PermitExecution"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Initializes PNC module: sets up per-PN FSM states, initializes PDU group control, and reads initial activation criteria." },
+  "RE_PNC_MainFunction": { symbol:"SUM_PNC_Mainfunction", trigger:"TIMING-EVENT", period:"6.25ms", reads:["SUSD_PermitExecution","BswM_CurrentPNCModeUser","ComM_CurrentModeUser","DIAG_DisableNormalComm","BswM_PduGroupSwitch/DM"], writes:["PNC_ShutdownPermission","BswM_PNCModeReq","PduGroupSwitch Rx/Tx","PNC_ActivePDUEnable","PNC_DTC_Allowed","PNC_DM_Switch","PNC_UpdateRecord"], serverCalls:["BswM_PduGroupSwitch","BswM_DeadlineMonitor"], params:["PN activation timers","DTC-allowed delay","Shutdown timeout"], exclusiveAreas:[], concurrent:false, desc:"Core PNC cyclic runnable. Manages per-PN activation FSM (6 states), PDU group control (Rx/Tx enable/disable), deadline monitoring, DTC-allowed timers, and shutdown permission voting." },
+  "RE_PNC_RemoteSignals": { symbol:"Activation_Signal_In", trigger:"TIMING-EVENT", period:"10ms", reads:["Remote activation signals (per PN)"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Polls remote activation signals from peer ECUs at 10ms rate. Evaluates signal validity and feeds into per-PN activation criteria." },
+  "PNC_NM_Frame_Indication": { symbol:"PNC_NM_Frame_Indication", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (NM callback)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"CanNm/UdpNm callback: processes received NM PDU for remote PN activation extraction. Maps NM user data bits to PN activation requests." },
+
+  // ── LNM ──
+  "Runnable_LNM_Init": { symbol:"Runnable_LNM_Init", trigger:"TIMING-EVENT", period:"Configurable (conditional)", reads:["SUSD_PermitExecution","NvM (MSCL)"], writes:[], serverCalls:["NvM_ReadBlock (MSCL)"], params:[], exclusiveAreas:[], concurrent:false, desc:"Initializes LNM module: reads MSCL bitmap from NvM, initializes per-network state machines and schedule management." },
+  "Runnable_MainFunction": { symbol:"LNM_MainFunction", trigger:"TIMING-EVENT", period:"10ms", reads:["SUSD_PermitExecution","SUSD_VehiclePowerMode","WdgM_CheckpointReached"], writes:["LNM_ShutdownPermission"], serverCalls:["WdgM_CheckpointReached"], params:[], exclusiveAreas:[], concurrent:false, desc:"Main LNM cyclic runnable. Manages LIN network lifecycle, commander/responder state machines, and shutdown permission with watchdog alive indication." },
+  "Runnable_NetworkStatus": { symbol:"LNM_NetworkStatus", trigger:"TIMING-EVENT", period:"10ms", reads:["Com_Activation_LIN_Net_N","BswM_LinSM_CurrentSchedule","BswM_LinSM_CurrentState"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Monitors LIN network status per network. Reads activation signals, current schedule table, and network state from BswM/LinSM." },
+  "Runnable_ScheduleManagement": { symbol:"LNM_ScheduleManagement", trigger:"TIMING-EVENT", period:"10ms", reads:["BswM_LinSM_CurrentSchedule"], writes:[], serverCalls:[], modeSwitch:["LNM_ScheduleRequest (to LinSM)"], params:[], exclusiveAreas:[], concurrent:false, desc:"Manages LIN schedule table transitions. Requests schedule changes to LinSM based on network state and activation criteria." },
+  "Runnable_NetworkFaultManager": { symbol:"LNM_NetworkFaultManager", trigger:"TIMING-EVENT", period:"10ms", reads:["SSM_APINFO2/3/4 (per responder)"], writes:["LNM_LoC_Device","LNM_LoC_Bus","LNM_IEF","LNM_NotConfigured"], serverCalls:[], params:["Fault debounce timers"], exclusiveAreas:[], concurrent:false, desc:"Monitors LIN responder faults: Loss-of-Communication (Device/Bus), Internal Electronic Failure, Not Configured. Reports fault events to SSFM/ERRH." },
+  "Activation_LIN_Network_N": { symbol:"LNM_Activation_{Network}", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (per network)", reads:["Com_Activation_LIN_Net_N"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered on LIN network activation signal change. Updates per-network activation state for commander/responder management." },
+  "APINFO2/3 per Responder": { symbol:"LNM_APINFO2/3_{Net}_{Resp}", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (per responder)", reads:["SSM_APINFO2","SSM_APINFO3/4"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered on APINFO2/3 signal reception per LIN responder. APINFO2 = reset detection, APINFO3 = not-configured status, APINFO4 = application status." },
+  "DID_MSCL_ReadData (F1BE)": { symbol:"LNM_DID_MSCL_ReadData", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM DID F1BE)", reads:[], writes:["LNM_MSCL_Notify"], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM DID F1BE: reads Master Schedule Change Log (MSCL) bitmap showing which LIN responders are present on each network." },
+
+  // ── SOH ──
+  "Runnable_SOH_Init": { symbol:"Runnable_SOH_Init", trigger:"TIMING-EVENT", period:"Configurable (conditional, 1000ms default)", reads:["SUSD_PermitExecution","WdgM_IndividualMode","NvMService"], writes:[], serverCalls:["NvM_ReadBlock"], params:[], exclusiveAreas:[], concurrent:false, desc:"Initializes SOH module: reads NvM detector counters, initializes reliability monitor state machines, and reads WdgM supervision entity modes." },
+  "Runnable_SOH_Main": { symbol:"Runnable_SOH_Main", trigger:"TIMING-EVENT", period:"100ms (configurable)", reads:["SUSD_PermitExecution","DIAG_GetMEC","SUSD_DisableNVMWrite","PNC_ShutdownPermission"], writes:["SOH_ShutdownPermission"], serverCalls:["NvM_WriteBlock (multiple DID blocks)"], params:["All threshold/TW params (ImmeReset, DelayedReset, DiagReset, StatNVM, ActNVM, PrivNVM, ExcepOS, ServOS, StackOS, MemProtOS, TimeProtOS, ErrOS)"], exclusiveAreas:[], concurrent:false, desc:"Core SOH cyclic runnable. Evaluates all detector counters against thresholds, manages NvM persistence of DID data, checks MEC for counter clear, and reports shutdown readiness." },
+  "Runnable_SOH_Timing": { symbol:"Runnable_SOH_Timing", trigger:"TIMING-EVENT", period:"Configurable", reads:[], writes:[], serverCalls:[], params:["All TW_Thresh parameters"], exclusiveAreas:[], concurrent:false, desc:"SOH timer management runnable. Manages time window expiration for all reliability monitors. Reads/writes ShutdownTimerFlag local variable." },
+  "Runnable_SOH_MacFailType3Delay": { symbol:"Runnable_SOH_CommunicationReliabilityMonitor_MacFailType3Delay", trigger:"TIMING-EVENT", period:"Configurable", reads:["SSC_SecureMsgEvents"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Periodic check for MAC failure type 3 (delayed) events from SSC. Applies delay-based filtering before incrementing the MAC failure counter." },
+  "Runnable_SOH_ImmeDelayedReset": { symbol:"Runnable_SOHResetReliabilityMonitor_ImmeDelayedReset", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (SUSD_SOH_ResetOccurred)", reads:["SUSD_ResetOccurred"], writes:[], serverCalls:["NvM_SetRamBlockStatus"], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when SUSD reports reset occurred (immediate or delayed type). Increments appropriate reset reliability counter and persists to NvM." },
+  "Runnable_SOH_DiagReset": { symbol:"Runnable_SOHResetReliabilityMonitor_DiagReset", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (DIAG_ResetRequest)", reads:["DIAG_ResetRequest"], writes:[], serverCalls:["NvM_SetRamBlockStatus"], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when DIAG module requests diagnostic reset. Increments diagnostic reset reliability counter and persists to NvM." },
+  "Runnable_SOH_ERRH_BswEvent": { symbol:"Runnable_SOH_ERRH_BswEvent", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (ERRH BswEvent)", reads:["SSFM_BSW_Error"], writes:[], serverCalls:["NvM_SetRamBlockStatus"], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when SSFM/ERRH reports BSW error event (NvM or WdgM DEM errors). Increments appropriate NVM error counter (Stat/Act/Priv/ExcepOS/ServOS/etc)." },
+  "Runnable_SOH_SecurityAccess": { symbol:"Runnable_SOH_CommunicationReliabilityMonitor_SecurityAccess", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (SSC SecurityAccessError)", reads:["SSC_SecurityAccessError"], writes:[], serverCalls:["NvM_SetRamBlockStatus"], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when SSC reports security access failure. Increments security access counter for DID F092 reporting." },
+  "Runnable_SOH_MacFailType123": { symbol:"Runnable_SOH_CommunicationReliabilityMonitor_MacFailType123", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (SSC SecureMsgEvents)", reads:["SSC_SecureMsgEvents"], writes:[], serverCalls:["NvM_SetRamBlockStatus"], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when SSC reports MAC failure type 1, 2, or 3 event. Classifies failure type and increments MAC failure TenAct counter." },
+  "Runnable_SOH_SecP": { symbol:"Runnable_SOH_CommunicationReliabilityMonitor_SecP", trigger:"DATA-RECEIVED-EVENT", period:"Event-driven (BswM SecP ErrorStatus)", reads:["SecP ErrorStatus (BswM)"], writes:[], serverCalls:["NvM_SetRamBlockStatus"], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when BswM reports Security Processor (HSM) error status change. Increments SecP error counter for DID F092." },
+  "DID Read/Write (Dcm)": { symbol:"Runnable_SOH_DID_F08F/F090/F091/F092/F093", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM DID read services: F08F (Reset Counters), F090 (NVM Error Counters), F091 (Shutdown Delay), F092 (Communication Security Counters), F093 (Local Supervision/WdgM). Each has ReadData + ConditionCheckRead runnables." },
+  "RID 02C0 Clear Logs": { symbol:"Runnable_SOH_RIDClearLogs", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM RID 02C0 Start)", reads:[], writes:[], serverCalls:["NvM_SetRamBlockStatus (all DID blocks)"], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM RID 02C0: clears all SOH reliability counters and diagnostic logs. Resets all detector NvM blocks." },
+
+  // ── DIAG ──
+  "Runnable_DIAG_Init": { symbol:"Runnable_DIAG_Init", trigger:"TIMING-EVENT", period:"1000ms", reads:["NvM (MEC, OTA)"], writes:["DIAG_GetMEC (SSC)","DIAG_GetMEC (SOH)","DIAG_GetMEC (SSFM)"], serverCalls:["NvM_ReadBlock"], params:[], exclusiveAreas:[], concurrent:false, desc:"Initializes DIAG module: reads MEC and OTA PSF values from NvM, broadcasts initial MEC to SSC/SOH/SSFM." },
+  "Runnable_DIAG_Main": { symbol:"Runnable_DIAG_Main", trigger:"TIMING-EVENT", period:"100ms", reads:["SUSD_PermitExecution"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Main DIAG cyclic runnable. Monitors execution permission from SUSD and manages diagnostic state machine." },
+  "Runnable_Shutdown_Permission": { symbol:"Runnable_Shutdown_Permission", trigger:"TIMING-EVENT", period:"100ms", reads:[], writes:["DIAG_ShutdownPermission"], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Manages shutdown permission with active diagnostic request tracking. Delays shutdown while diagnostic requests are pending." },
+  "Runnable_BswM_ModeUser": { symbol:"Runnable_BswM_ModeUser", trigger:"TIMING-EVENT", period:"100ms", reads:["BswM_DiagSession/CommMode"], writes:["DIAG_DisableNormalComm"], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Reads BswM diagnostic session and communication mode per channel. Updates DisableNormalComm flags for CAN/LIN/ETH channels to SSFM and PNC." },
+  "Runnable_MEC_Handler": { symbol:"Runnable_MEC_Handler", trigger:"TIMING-EVENT", period:"100ms", reads:["SUSD_VehiclePowerMode","NvM (MEC)"], writes:["DIAG_GetMEC (SSC)","DIAG_GetMEC (SOH)","DIAG_GetMEC (SSFM)"], serverCalls:["NvM_ReadBlock/WriteBlock (MEC)"], params:[], exclusiveAreas:[], concurrent:false, desc:"Manages MEC (Manufacturer Enable Counter). Reads/writes MEC to NvM, decrements on power cycle if vehicle conditions met, broadcasts to SSC/SOH/SSFM." },
+  "Runnable_OTA_PSF": { symbol:"Runnable_OTA_PSF", trigger:"TIMING-EVENT", period:"100ms", reads:["NvM (OTA)","Dem EnableCondition"], writes:[], serverCalls:["NvM_ReadBlock/WriteBlock","Dem_SetEnableCondition"], params:[], exclusiveAreas:[], concurrent:false, desc:"Manages OTA PSF (Over-The-Air Programming Session Flag). Controls DTC enable condition during OTA reprogramming to suppress nuisance DTCs." },
+  "SwitchedToDefaultSession": { symbol:"Runnable_SwitchedToDefaultSession", trigger:"SWC-MODE-SWITCH-EVENT", period:"Event-driven (BswM DefaultSession)", reads:["BswM_DiagSession"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered when BswM switches to default diagnostic session. Resets diagnostic state and active request tracking." },
+  "ControlDTCSetting En/Disabled": { symbol:"Runnable_DIAG_ControlDTCSetting", trigger:"SWC-MODE-SWITCH-EVENT", period:"Event-driven (BswM DTC control)", reads:["BswM_DiagSession"], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"Triggered on BswM ControlDTCSetting mode switch (Enabled/Disabled). Notifies internal state for DTC suppression management." },
+  "RequestHandler Ind/Conf": { symbol:"Runnable_RequestHandler_Indication/Confirmation", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM callback)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM request handler callbacks: Indication receives incoming UDS request details, Confirmation receives service completion status. Tracks active diagnostic requests for shutdown delay." },
+  "DID F1A0 Read/Write/Check": { symbol:"Runnable_DIAG_DID_F1A0", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM DID F1A0)", reads:["NvM (MEC)"], writes:[], serverCalls:["NvM_WriteBlock"], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM DID F1A0 (MEC): ReadData returns current MEC value, WriteData updates MEC (only in extended session), ConditionCheckRead validates access." },
+  "DID F1B0 ReadData": { symbol:"Runnable_DID_F1B0_ReadData", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM DID F1B0)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:[], concurrent:false, desc:"DCM DID F1B0: returns ECU address (hardcoded value 16 for GM platform)." },
+
+  // ── TCS ──
+  "TCS_Init": { symbol:"Runnable_TCS_Init", trigger:"TIMING-EVENT", period:"Configurable (conditional, 1000ms)", reads:["SUSD_PermitExecution","NvMService"], writes:[], serverCalls:["NvM_ReadBlock (SumTCSInitValue)"], params:[], exclusiveAreas:["EA_Localtime_Clock"], concurrent:false, desc:"Initializes TCS module: reads persisted time value from NvM block (SumTCSInitValue[5]), restores local clock, and initializes sub-counter." },
+  "Runnable_TCS_MasterClockPolling": { symbol:"Runnable_TCS_MasterClockPolling", trigger:"TIMING-EVENT", period:"100ms", reads:["TCS_TimeSyncMessage (Com)","TCS_TimeSyncMessage_Av (SSM)","NvMService"], writes:[], serverCalls:["NvM_SetRamBlockStatus"], params:[], exclusiveAreas:["EA_Localtime_Clock"], concurrent:false, desc:"Polls master clock signal from Time Leader ECU. Validates signal availability via SSM, converts 5-byte big-endian wire format to uint64, and synchronizes local clock." },
+  "Runnable_TCS_TimeManagement": { symbol:"Runnable_TCS_TimeManagement", trigger:"TIMING-EVENT", period:"100ms", reads:[], writes:["TCS_SWC_Clock (GlobalTime)"], serverCalls:[], params:[], exclusiveAreas:["EA_Localtime_Clock"], concurrent:false, desc:"Increments local time counter and publishes current GlobalTime to all consumer SW-Cs via PP_TCS_SWC_Clock output port." },
+  "Runnable_TCS_PermitExecShutdown": { symbol:"Runnable_TCS_PermitExecutionShutdown", trigger:"TIMING-EVENT", period:"100ms", reads:["SUSD_PermitExecution","SUSD_DisableNVMWrite","NvMService"], writes:["TCS_ShutdownPermission"], serverCalls:["NvM_WriteBlock","NvM_GetErrorStatus"], params:[], exclusiveAreas:["EA_Localtime_Clock"], concurrent:false, desc:"Manages TCS shutdown readiness. Persists current time to NvM when shutdown requested (if battery OK), reports shutdown permission to SUSD." },
+  "Runnable_TCS_Dem_Clock": { symbol:"Runnable_TCS_Dem_Clock", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (Dem callback)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:["EA_Localtime_Clock"], concurrent:false, desc:"Dem timestamp callback: provides current local time as 5-byte big-endian value for DTC record timestamping in the Diagnostic Event Manager." },
+  "TCS_TotalVehicleTimeRead (F129)": { symbol:"TCS_TotalVehicleTimeRead", trigger:"OPERATION-INVOKED-EVENT", period:"On-demand (DCM DID F129)", reads:[], writes:[], serverCalls:[], params:[], exclusiveAreas:["EA_Localtime_Clock"], concurrent:false, desc:"DCM DID F129: returns Total Vehicle Time as 5-byte big-endian value for UDS ReadDataByIdentifier service." }
+};
+
+// =========================================================================
+// RUNNABLE INFO POPUP LOGIC
+// =========================================================================
+function showRunnableInfo(rName) {
+  const r = RUNNABLE_INFO[rName];
+  if (!r) return;
+  document.getElementById('riTitle').textContent = rName;
+
+  const BADGES = {
+    "TIMING-EVENT":'<span class="ri-badge ri-b-timing">TIMING-EVENT</span>',
+    "DATA-RECEIVED-EVENT":'<span class="ri-badge ri-b-datarcv">DATA-RECEIVED-EVENT</span>',
+    "OPERATION-INVOKED-EVENT":'<span class="ri-badge ri-b-opinvoke">OPERATION-INVOKED-EVENT</span>',
+    "SWC-MODE-SWITCH-EVENT":'<span class="ri-badge ri-b-mode">SWC-MODE-SWITCH-EVENT</span>',
+    "INIT-EVENT":'<span class="ri-badge ri-b-init">INIT-EVENT</span>'
+  };
+  function fmtList(arr) {
+    if (!arr || arr.length === 0) return '<em style="color:#94a3b8">None</em>';
+    return '<ul>' + arr.map(s => '<li><code>' + s + '</code></li>').join('') + '</ul>';
+  }
+  let rows = '';
+  rows += '<tr><th>C Symbol</th><td><code>' + r.symbol + '</code></td></tr>';
+  rows += '<tr><th>Trigger</th><td>' + (BADGES[r.trigger] || r.trigger) + '</td></tr>';
+  rows += '<tr><th>Period</th><td>' + r.period + '</td></tr>';
+  if (r.reads) rows += '<tr><th>Ports Read</th><td>' + fmtList(r.reads) + '</td></tr>';
+  if (r.writes) rows += '<tr><th>Ports Written</th><td>' + fmtList(r.writes) + '</td></tr>';
+  if (r.serverCalls) rows += '<tr><th>Server Calls</th><td>' + fmtList(r.serverCalls) + '</td></tr>';
+  if (r.modeAccess) rows += '<tr><th>Mode Access</th><td>' + fmtList(r.modeAccess) + '</td></tr>';
+  if (r.modeSwitch) rows += '<tr><th>Mode Switch</th><td>' + fmtList(r.modeSwitch) + '</td></tr>';
+  if (r.params) rows += '<tr><th>Parameters</th><td>' + fmtList(r.params) + '</td></tr>';
+  if (r.exclusiveAreas) rows += '<tr><th>Exclusive Areas</th><td>' + fmtList(r.exclusiveAreas) + '</td></tr>';
+  rows += '<tr><th>Concurrent</th><td>' + (r.concurrent ? 'Yes' : 'No') + '</td></tr>';
+  rows += '<tr><th>Description</th><td>' + r.desc + '</td></tr>';
+
+  document.getElementById('riBody').innerHTML = '<table>' + rows + '</table>';
+  document.getElementById('riOverlay').classList.add('show');
+}
+
+(function() {
+  const ov = document.getElementById('riOverlay');
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.classList.remove('show'); });
+  document.getElementById('riClose').addEventListener('click', function() { ov.classList.remove('show'); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') ov.classList.remove('show'); });
+})();
+
+renderAll();
+</script>
+</body>
+</html>

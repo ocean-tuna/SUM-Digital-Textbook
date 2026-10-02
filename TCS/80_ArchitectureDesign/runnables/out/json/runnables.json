@@ -1,0 +1,137 @@
+[
+   {
+      "Name": "RE_TCS_Init",
+      "Type": "Periodic",
+      "Symbol": "Runnable_TCS_Init",
+      "Config": [
+         "<tcs.tcsGeneral.tcsInitFuncPeriodicity/1000.0>"
+      ],
+      "Target": [],
+      "Exclusive-Area": [],
+      "IF_Input": [],
+      "IF_Output": [
+         "TCS_SWC_Clock"
+      ],
+      "CalibrationParam": [],
+      "Irv": [
+         "EA_Localtime_Clock"
+      ]
+   },
+   {
+      "Name": "Runnable_TCS_Dem_Clock",
+      "Type": "Operation-Invoked",
+      "Symbol": "Runnable_TCS_Dem_Clock",
+      "Config": [],
+      "Target": [
+         "ReadData"
+      ],
+      "Exclusive-Area": [
+         "EA_Clock_Update"
+      ],
+      "IF_Input": [],
+      "IF_Output": [
+         "DataServices_<tcs.tcsGeneral.tcsDemTimestampRef.de\\newline mDidDataElementClassRef.get(0).shortName->"
+      ],
+      "CalibrationParam": [],
+      "Irv": [
+         "EA_Localtime_Clock"
+      ]
+   },
+   {
+      "Name": "Runnable_TCS_MasterClockPolling",
+      "Type": "Periodic",
+      "Symbol": "Runnable_TCS_MasterClockPolling",
+      "Config": [
+         "<tcs.tcsGeneral.masterClockPollingPeriodicity/1000\\newline .0>"
+      ],
+      "Target": [],
+      "Exclusive-Area": [
+         "EA_Clock_Update"
+      ],
+      "IF_Input": [
+         "RxMonitoredSignal_Av",
+         "TimeSyncMessage"
+      ],
+      "IF_Output": [],
+      "CalibrationParam": [],
+      "Irv": [
+         "EA_Localtime_Clock",
+         "EA_SubCounter"
+      ]
+   },
+   {
+      "Name": "Runnable_TCS_TimeManagement",
+      "Type": "Periodic",
+      "Symbol": "Runnable_TCS_TimeManagement",
+      "Config": [
+         "<tcs.tcsGeneral.timeManagementPeriodicity/1000.0>"
+      ],
+      "Target": [],
+      "Exclusive-Area": [
+         "EA_Clock_Update"
+      ],
+      "IF_Input": [],
+      "IF_Output": [
+         "TCS_SWC_Clock"
+      ],
+      "CalibrationParam": [],
+      "Irv": [
+         "EA_Localtime_Clock",
+         "EA_SubCounter"
+      ]
+   },
+   {
+      "Name": "Runnable_TotalVehicleTimeRead",
+      "Type": "Operation-Invoked",
+      "Symbol": "TCS_TotalVehicleTimeRead",
+      "Config": [],
+      "Target": [
+         "ReadData"
+      ],
+      "Exclusive-Area": [],
+      "IF_Input": [],
+      "IF_Output": [
+         "DataServices_<tcs.tcsGeneral.dID_F129_TotalVehicle\\newline TimeValue_Reference.dcmDspDidSignal.get(0).dcmDspD\\newline idDataRef.shortName->"
+      ],
+      "CalibrationParam": [],
+      "Irv": []
+   },
+   {
+      "Name": "Runnable_TotalVehicleTimeCheckRead",
+      "Type": "Operation-Invoked",
+      "Symbol": "TCS_TotalVehicleTimeCheckRead",
+      "Config": [],
+      "Target": [
+         "ConditionCheckRead"
+      ],
+      "Exclusive-Area": [],
+      "IF_Input": [],
+      "IF_Output": [
+         "DataServices_<tcs.tcsGeneral.dID_F129_TotalVehicle\\newline TimeValue_Reference.dcmDspDidSignal.get(0).dcmDspD\\newline idDataRef.shortName->"
+      ],
+      "CalibrationParam": [],
+      "Irv": []
+   },
+   {
+      "Name": "Runnable_TCS_PermitExecutionShutdown",
+      "Type": "Periodic",
+      "Symbol": "Runnable_TCS_PermitExecutionShutdown",
+      "Config": [
+         "<tcs.tcsGeneral.timeManagementPeriodicity/1000.0>"
+      ],
+      "Target": [],
+      "Exclusive-Area": [],
+      "IF_Input": [
+         "SUSD_PermitExecution",
+         "BatteryVoltage_DisableNVMWrite"
+      ],
+      "IF_Output": [
+         "TCS_SUSD_ShutdownPermission"
+      ],
+      "CalibrationParam": [],
+      "Irv": [
+         "EA_Localtime_Clock",
+         "EA_SubCounter"
+      ]
+   }
+]

@@ -1,0 +1,27 @@
+@startuml Sum_Ssfm_DID_E0B8
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DID_E0B8"
+
+**Interfaces Legend**
+   //ri140 //: DCM DataServices
+   
+endlegend
+
+note top of EC
+DID E0B8 Handler is responsible to update the internal structure of information needed by DID E0B8 and provide
+them in the requested format whenever asked by DCM.
+end note
+
+component [SSFM::Sum_Ssfm_DID_E0B8] as EC{
+	portin ri140
+	[Sum_Ssfm_DID_E0B8]  as E
+}
+
+  ri140 -> E
+
+
+
+@enduml

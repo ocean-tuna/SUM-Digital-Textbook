@@ -1,0 +1,1851 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 autosar_4-0-3.xsd">
+<!--
+***************************************************************************************************
+* BEGIN:Header
+***************************************************************************************************
+*                                 ETAS GmbH
+*                      D-70469 Stuttgart, Borsigstr. 24
+***************************************************************************************************
+* COPYRIGHT RESERVED, 2019 ETAS GmbH. All rights reserved.
+* The reproduction, distribution and utilization of this document as well as the communication of
+* its contents to others without explicit authorization is prohibited. Offenders will be held
+* liable for the payment of damages. All rights reserved in the event of the grant of a patent,
+* utility model or design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SUSD
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : ECU Configuration Parameter Definition
+ ***************************************************************************************************
+* END:Header
+***************************************************************************************************
+-->
+    <AR-PACKAGES>
+        <AR-PACKAGE>
+            <SHORT-NAME>ASW_SUM_SUSD</SHORT-NAME>
+            <ELEMENTS>
+                <!-- Module Definition: SUSD -->
+                <ECUC-MODULE-DEF>
+                    <SHORT-NAME>SUSD</SHORT-NAME>
+                    <DESC>
+                        <L-2 L="EN">Configuration of the SUSD (Start Up Shut Down) module.</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <CONTAINERS>
+                        <!-- Container Definition: SUSDConfigSet -->
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <SHORT-NAME>SUSDConfigSet</SHORT-NAME>
+                            <DESC>
+                                <L-2 L="EN">This container contains the configuration parameters and sub containers of the SUSD module supporting multiple configuration sets.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <PARAMETERS>
+                                <!-- PARAMETER DEFINITION: SUSD_C_DisableNVMWrite_Voltage -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_DisableNVMWrite_Voltage</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">A calibration parameter SUSD indicates to SW-Cs to disable any NVM write processes, if the battery voltage is below this value</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>5</DEFAULT-VALUE>
+                                    <MAX>9</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_PerToVoltageConvFactor -->
+                                <ECUC-FLOAT-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_PerToVoltageConvFactor</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">A calibration parameter for Percentage to Voltage Conversion Factor</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>26.5</DEFAULT-VALUE>
+                                    <MAX>26.5</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-FLOAT-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunCrankInputStuckHi_Enable -->
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunCrankInputStuckHi_Enable</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This calibration enables the Run Crank Stuck High Diagnostic if set to true else disables</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunCrankInputStuckHi_FailCount -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunCrankInputStuckHi_FailCount</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This calibration defines the maximum value of the fault maturation’s failure counter for Run Crank Input Stuck High</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>16</DEFAULT-VALUE>
+                                    <MAX>65535</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunCrankInputStuckHi_SampleCount -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunCrankInputStuckHi_SampleCount</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This calibration defines the maximum value of the fault maturation’s sample counter for Run Crank Input Stuck High</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>20</DEFAULT-VALUE>
+                                    <MAX>65535</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunCrankInputStuckLow_Enable -->
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunCrankInputStuckLow_Enable</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This calibration enables the Run Crank Stuck Low Diagnostic if set to true else disables</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunCrankInputStuckLow_FailCount -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunCrankInputStuckLow_FailCount</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This calibration defines the maximum value of the fault maturation’s failure counter for Run Crank Input Stuck Low</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>16</DEFAULT-VALUE>
+                                    <MAX>65535</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunCrankInputStuckLow_SampleCount -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunCrankInputStuckLow_SampleCount</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This calibration defines the maximum value of the fault maturation’s sample counter for Run Crank Input Stuck Low</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>20</DEFAULT-VALUE>
+                                    <MAX>65535</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunCrankInputThresholdHigh -->
+                                <ECUC-FLOAT-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunCrankInputThresholdHigh</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This calibration parameter is used for Run Crank Input High(RunCrank Active High) determination based on this threshold voltage</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>5</DEFAULT-VALUE>
+                                    <MAX>26.5</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-FLOAT-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunCrankInputThresholdLow -->
+                                <ECUC-FLOAT-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunCrankInputThresholdLow</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This calibration parameter is used for Run Crank Input Low(RunCrank Active Low) determination based on this threshold voltage</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>2</DEFAULT-VALUE>
+                                    <MAX>26.5</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-FLOAT-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunCrankInput_DebounceTime -->
+                                <ECUC-FLOAT-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunCrankInput_DebounceTime</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Time in sec, Duration used for Analog or Digital Run Crank Input(Low/High) Determination.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>0.03</DEFAULT-VALUE>
+                                    <MAX>10.0</MAX>
+                                    <MIN>0.0</MIN>
+                                </ECUC-FLOAT-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunCrankInputType -->
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunCrankInputType</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This calibration is used to determine the Run Crank Input Type(DISCRETE/ANALOG),default DISCRETE</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                            </PARAMETERS>
+                            <SUB-CONTAINERS>
+                                <!-- Container Definition: SUSD_SWCInfo -->
+                                <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                    <SHORT-NAME>SUSD_C_SWCInfo</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This container contains the Configuration Parameters for Calibration Prameters of SUM SUSD</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                    <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                                    <PARAMETERS>
+                                        <!-- PARAMETER DEFINITION: SUSD_SWCName -->
+                                        <ECUC-STRING-PARAM-DEF>
+                                            <SHORT-NAME>SUSD_SWCName</SHORT-NAME>
+                                            <DESC>
+                                                <L-2 L="EN">String to indicate the SWC name for interface to map the ports in SWC-D</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                            <ORIGIN>GM_ECUC</ORIGIN>
+                                        </ECUC-STRING-PARAM-DEF>
+                                        <!-- PARAMETER DEFINITION: SUSD_C_ShutdownPermControl -->
+                                        <ECUC-BOOLEAN-PARAM-DEF>
+                                            <SHORT-NAME>SUSD_C_ShutdownPermControl</SHORT-NAME>
+                                            <DESC>
+                                                <L-2 L="EN">A boolean calibration parameter for each shutdown permission interface to control the processing of its permissions</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                            <IMPLEMENTATION-CONFIG-CLASSES>
+                                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                    <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                                    <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            </IMPLEMENTATION-CONFIG-CLASSES>
+                                            <ORIGIN>GM_ECUC</ORIGIN>
+                                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                            <DEFAULT-VALUE>1</DEFAULT-VALUE>
+                                        </ECUC-BOOLEAN-PARAM-DEF>
+                                    </PARAMETERS>
+									<REFERENCES>
+										<ECUC-REFERENCE-DEF>
+										<!-- [$Satisfies $SDD_SUSD 173] -->
+										 <SHORT-NAME>SUSD_BatteryVoltageRangeRef</SHORT-NAME>
+										 <DESC>
+										   <L-2 L="EN">Reference to a battery voltage range"</L-2>
+										 </DESC>
+										 <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+										 <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+										 <IMPLEMENTATION-CONFIG-CLASSES>
+										   <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+											 <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+											 <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+										   </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+										   <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+											 <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+											 <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+										   </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+										 </IMPLEMENTATION-CONFIG-CLASSES>
+										 <ORIGIN>GM_ECUC</ORIGIN>
+										 <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_SUSD/SUSD/SUSDConfigSet/SUSD_BatteryVoltageRange/SUSD_C_BatteryVoltageRange</DESTINATION-REF>
+										</ECUC-REFERENCE-DEF>
+									<ECUC-REFERENCE-DEF>
+                                    <SHORT-NAME>SUSD_SWCs_SpecificWkSrcId</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This parameter defines the identifier of this wakeup source.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_EcuM/EcucModuleDefs/EcuM/EcuMConfiguration/EcuMCommonConfiguration/EcuMWakeupSource</DESTINATION-REF>
+									</ECUC-REFERENCE-DEF>     
+									</REFERENCES>
+                                </ECUC-PARAM-CONF-CONTAINER-DEF>
+								<ECUC-PARAM-CONF-CONTAINER-DEF>
+                                    <SHORT-NAME>SUSD_C_SUMsInfo</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This container contains the Configuration Parameters for Calibration Prameters of SUM SUSD</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                    <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                                    <PARAMETERS>
+                                        <!-- PARAMETER DEFINITION: SUSD_SWCName -->
+                                        <ECUC-ENUMERATION-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_SUMsName</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This parameter defines the type of SUM component that SUSD will interface with, such as SUM_SPM, SUM_LNM, SUM_SSFM-SSM, SUM_SSFM-ERRH, SUM_SSC, SUM_PNC, SUM_DIAG, SUM_TCS, SUM_SRVMGR, or SUM_SOH.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN></ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>NOT_Applicable</SYMBOLIC-NAME-VALUE>
+									 <LITERALS>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_SPM</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">NOT_Applicable</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN></ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_LNM</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">With_OBD</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN></ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_SSFM_ERRH</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">With_Cybersecurity</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN></ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+										<ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_SSFM_SSM</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">With_Cybersecurity</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN></ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_SSC</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">Without_Cybersecurity</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN></ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+										<ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PNC</SHORT-NAME>
+                                            <LONG-NAME>                                           
+                                            </LONG-NAME>
+                                            <ORIGIN></ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+										<ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_DIAG</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">Diagnostics Manager</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN></ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+										<ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_TCS</SHORT-NAME>
+                                            <LONG-NAME>
+                                            </LONG-NAME>
+                                            <ORIGIN></ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+										<ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_SRVMGR</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">Service Manager</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN></ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+										<ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_SOH</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">State of Health Manager</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN></ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                    </LITERALS>
+                                </ECUC-ENUMERATION-PARAM-DEF>
+								<ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_PermitExecution</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Enables or disables the Permit Execution Interface to PNC SUM</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_LNMPermExec -->
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_ShutdownPermission</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Enables or disables the Permit Execution Interface to LNM SUM</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                    </PARAMETERS>
+									<REFERENCES>
+								<ECUC-REFERENCE-DEF>
+                                    <SHORT-NAME>SUSD_SUMs_SpecificWkSrcId</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This parameter defines the identifier of this wakeup source.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_EcuM/EcucModuleDefs/EcuM/EcuMConfiguration/EcuMCommonConfiguration/EcuMWakeupSource</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+									</REFERENCES>
+                                </ECUC-PARAM-CONF-CONTAINER-DEF>
+                                <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  <SHORT-NAME>SUSDDiagReferences</SHORT-NAME>
+                                  <LONG-NAME>
+                                    <L-4 L="EN">SUSDDiagReferences</L-4>
+                                  </LONG-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Diagnostic Service References.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                                  <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                                  <REFERENCES>
+                                    <ECUC-REFERENCE-DEF>
+                                     <!-- [$Satisfies $SDD_SUSD 156] -->
+                                     <SHORT-NAME>SusdEcuWakeupDetectionRecordsDidRef</SHORT-NAME>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to DID 0xF09E "ECU Wakeup Detection Records"</L-2>
+                                     </DESC>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <IMPLEMENTATION-CONFIG-CLASSES>
+                                       <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                         <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                         <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                       </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                       <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                         <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                         <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                       </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                     </IMPLEMENTATION-CONFIG-CLASSES>
+                                     <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+                                    </ECUC-REFERENCE-DEF>
+                                    <ECUC-REFERENCE-DEF>
+                                      <!-- [$Satisfies $SDD_SUSD 157] -->
+                                      <SHORT-NAME>SusdRid41ARef</SHORT-NAME>
+                                      <DESC>
+                                        <L-2 L="EN">Reference to RID 0x41A "Clear ECU Wakeup Detection Records"</L-2>
+                                      </DESC>
+                                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                      <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      </IMPLEMENTATION-CONFIG-CLASSES>
+                                      <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                      <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspRoutine</DESTINATION-REF>
+                                    </ECUC-REFERENCE-DEF>
+                                    <ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>Did_E0D7_Reference</SHORT-NAME>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to DID 0xE0D7 "Wakeup and Off Power Mode Activity Records"</L-2>
+                                     </DESC>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <IMPLEMENTATION-CONFIG-CLASSES>
+                                       <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                         <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                         <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                       </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                       <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                         <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                         <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                       </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                     </IMPLEMENTATION-CONFIG-CLASSES>
+                                     <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+                                   </ECUC-REFERENCE-DEF>
+                                   <ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>Did_F088_Reference</SHORT-NAME>
+                                     <DESC>
+                                        <L-2 L="EN">Reference to DID 0xF088 "Control Module Input Voltage"</L-2>
+                                     </DESC>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <IMPLEMENTATION-CONFIG-CLASSES>
+                                     <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                         <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                         <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                     </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                     <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                         <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                         <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                     </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                     </IMPLEMENTATION-CONFIG-CLASSES>
+                                     <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+                                    </ECUC-REFERENCE-DEF>
+                                    <ECUC-REFERENCE-DEF>
+                                         <!-- [$Satisfies $SDD_SUSD 243] -->
+                                     <SHORT-NAME>Did_F089_Reference</SHORT-NAME>
+                                     <DESC>
+                                        <L-2 L="EN">Reference to DID 0xF089 Application Shutdown Prohibit, that contains the current internal value of the permission for the ECU to shutdown. </L-2>
+                                     </DESC>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <IMPLEMENTATION-CONFIG-CLASSES>
+                                     <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                         <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                         <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                     </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                     <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                         <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                         <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                     </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                     </IMPLEMENTATION-CONFIG-CLASSES>
+                                     <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+                                    </ECUC-REFERENCE-DEF>
+                                  </REFERENCES>
+                                </ECUC-PARAM-CONF-CONTAINER-DEF>
+								<!-- Container Definition: SUSD_BatteryVoltageRange-->
+								<ECUC-PARAM-CONF-CONTAINER-DEF>
+								<SHORT-NAME>SUSD_BatteryVoltageRange</SHORT-NAME>
+								<DESC></DESC>
+								<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+								<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+								<MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+								<PARAMETERS>
+									<ECUC-FLOAT-PARAM-DEF>
+									<!-- [$Satisfies $SDD_SUSD 171] -->
+										<SHORT-NAME>SUSD_DefaultUnderVoltage_hysteresis</SHORT-NAME>
+										<DESC>
+											<L-2 L="EN">The hysteresis for under default voltage range in volts and only used with default voltage range 9V - 16V</L-2>
+										</DESC>
+										<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+										<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+										<IMPLEMENTATION-CONFIG-CLASSES>
+											<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+												<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+												<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+											</ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+										</IMPLEMENTATION-CONFIG-CLASSES>
+										<ORIGIN>GM_ECUC</ORIGIN>
+										<MAX>0.5</MAX>
+										<MIN>0</MIN>
+										<DEFAULT-VALUE>0</DEFAULT-VALUE>
+									</ECUC-FLOAT-PARAM-DEF>
+									<ECUC-FLOAT-PARAM-DEF>
+									<!-- [$Satisfies $SDD_SUSD 172] -->
+										<SHORT-NAME>SUSD_DefaultOverVoltage_hysteresis</SHORT-NAME>
+										<DESC>
+											<L-2 L="EN">The hysteresis for the over voltage range in volts and only used with default voltage range 9V - 16V</L-2>
+										</DESC>
+										<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+										<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+										<IMPLEMENTATION-CONFIG-CLASSES>
+											<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+												<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+												<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+											</ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+										</IMPLEMENTATION-CONFIG-CLASSES>
+										<ORIGIN>GM_ECUC</ORIGIN>
+										<MAX>0.5</MAX>
+										<MIN>0</MIN>
+										<DEFAULT-VALUE>0</DEFAULT-VALUE>
+									</ECUC-FLOAT-PARAM-DEF>
+								</PARAMETERS>
+								<SUB-CONTAINERS>
+									<ECUC-PARAM-CONF-CONTAINER-DEF>
+										<SHORT-NAME>SUSD_C_BatteryVoltageRange</SHORT-NAME>
+										<DESC></DESC>
+										<LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+										<UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+										<MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+										<PARAMETERS>
+											<ECUC-FLOAT-PARAM-DEF>
+												<!-- [$Satisfies $SDD_SUSD 174] -->
+												<SHORT-NAME>SUSD_C_BatteryVoltageRange_Min</SHORT-NAME>
+												<DESC>
+													<L-2 L="EN">The minimum voltage range in volts</L-2>
+												</DESC>
+												<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+												<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+												<IMPLEMENTATION-CONFIG-CLASSES>
+													<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+														<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+														<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+													</ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+												</IMPLEMENTATION-CONFIG-CLASSES>
+												<ORIGIN>GM_ECUC</ORIGIN>
+												<MAX>28.5</MAX>
+												<MIN>3</MIN>
+												<DEFAULT-VALUE>9</DEFAULT-VALUE>
+											</ECUC-FLOAT-PARAM-DEF>
+											<ECUC-FLOAT-PARAM-DEF>
+												<!-- [$Satisfies $SDD_SUSD 170] -->
+												<SHORT-NAME>SUSD_C_BatteryVoltageRange_Max</SHORT-NAME>
+												<DESC>
+													<L-2 L="EN">The maximum voltage range in volts</L-2>
+												</DESC>
+												<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+												<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+												<IMPLEMENTATION-CONFIG-CLASSES>
+													<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+														<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+														<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+													</ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+												</IMPLEMENTATION-CONFIG-CLASSES>
+												<ORIGIN>GM_ECUC</ORIGIN>
+												<MAX>28.5</MAX>
+												<MIN>3</MIN>
+												<DEFAULT-VALUE>16</DEFAULT-VALUE>
+											</ECUC-FLOAT-PARAM-DEF>
+											<!-- PARAMETER DEFINITION: SUSD_C_UnderVoltage_hysteresis -->
+											<ECUC-FLOAT-PARAM-DEF>
+												<SHORT-NAME>SUSD_C_UnderVoltage_hysteresis</SHORT-NAME>
+												<DESC>
+													<L-2 L="EN">The hysteresis for the under voltage range in volts</L-2>
+												</DESC>
+												<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+												<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+												<IMPLEMENTATION-CONFIG-CLASSES>
+													<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+														<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+														<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+													</ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+												</IMPLEMENTATION-CONFIG-CLASSES>
+												<ORIGIN>GM_ECUC</ORIGIN>
+												<MAX>0.5</MAX>
+												<MIN>0</MIN>
+												<DEFAULT-VALUE>0</DEFAULT-VALUE>
+											</ECUC-FLOAT-PARAM-DEF>
+											<!-- PARAMETER DEFINITION: SUSD_C_OverVoltage_hysteresis -->
+											<ECUC-FLOAT-PARAM-DEF>
+												<SHORT-NAME>SUSD_C_OverVoltage_hysteresis</SHORT-NAME>
+												<DESC>
+													<L-2 L="EN">The hysteresis for the over voltage range in volts</L-2>
+												</DESC>
+												<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+												<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+												<IMPLEMENTATION-CONFIG-CLASSES>
+													<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+														<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+														<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+													</ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+												</IMPLEMENTATION-CONFIG-CLASSES>
+												<ORIGIN>GM_ECUC</ORIGIN>
+												<MAX>0.5</MAX>
+												<MIN>0</MIN>
+												<DEFAULT-VALUE>0</DEFAULT-VALUE>
+											</ECUC-FLOAT-PARAM-DEF>
+										</PARAMETERS>
+									</ECUC-PARAM-CONF-CONTAINER-DEF>
+								</SUB-CONTAINERS>
+								</ECUC-PARAM-CONF-CONTAINER-DEF>
+                                <!-- Container Defintion: SUSD_ActivityRecords -->
+                                <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                    <SHORT-NAME>Sum_SUSD_ActivityRecords</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This container contains the Configuration Parameters for Activity Record feature of SUM_SUSD</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <PARAMETERS>
+                                        <ECUC-FLOAT-PARAM-DEF>
+                                            <SHORT-NAME>Sum_SUSD_AR_Periodicity</SHORT-NAME>
+                                            <DESC>
+                                              <L-2 L="EN">The periodicity of Activity Record periodic handler in ms.</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                            <IMPLEMENTATION-CONFIG-CLASSES>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>POST-COMPILE</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            </IMPLEMENTATION-CONFIG-CLASSES>
+                                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                            <DEFAULT-VALUE>1.0</DEFAULT-VALUE>
+                                        </ECUC-FLOAT-PARAM-DEF>
+                                        <ECUC-INTEGER-PARAM-DEF>
+                                            <SHORT-NAME>Sum_SUSD_k_AR_Active_Delay</SHORT-NAME>
+                                            <DESC>
+                                              <L-2 L="EN">The default value of calibration parameter k_AR_Active_Delay in seconds.</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                            <IMPLEMENTATION-CONFIG-CLASSES>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>POST-COMPILE</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            </IMPLEMENTATION-CONFIG-CLASSES>
+                                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                            <DEFAULT-VALUE>120</DEFAULT-VALUE>
+                                            <MIN>0</MIN>
+                                            <MAX>255</MAX>
+                                        </ECUC-INTEGER-PARAM-DEF>
+                                        <ECUC-INTEGER-PARAM-DEF>
+                                            <SHORT-NAME>Sum_SUSD_k_AR_Init_Delay</SHORT-NAME>
+                                            <DESC>
+                                              <L-2 L="EN">The default value of calibration parameter k_AR_Init_Delay in ms.</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                            <IMPLEMENTATION-CONFIG-CLASSES>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>POST-COMPILE</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            </IMPLEMENTATION-CONFIG-CLASSES>
+                                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                            <DEFAULT-VALUE>500</DEFAULT-VALUE>
+                                            <MIN>0</MIN>
+                                            <MAX>2550</MAX>
+                                        </ECUC-INTEGER-PARAM-DEF>
+                                        <ECUC-ENUMERATION-PARAM-DEF>
+                                            <SHORT-NAME>Sum_SUSD_Record0x01_Type</SHORT-NAME>
+                                            <DESC>
+                                              <L-2 L="EN">Indicator of record 0x01 store type.</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                            <IMPLEMENTATION-CONFIG-CLASSES>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            </IMPLEMENTATION-CONFIG-CLASSES>
+                                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                            <DEFAULT-VALUE>Enumerated</DEFAULT-VALUE>
+                                            <LITERALS>
+                                              <ECUC-ENUMERATION-LITERAL-DEF>
+                                                <SHORT-NAME>Enumerated</SHORT-NAME>
+                                              </ECUC-ENUMERATION-LITERAL-DEF>
+                                              <ECUC-ENUMERATION-LITERAL-DEF>
+                                                <SHORT-NAME>BitMapped</SHORT-NAME>
+                                              </ECUC-ENUMERATION-LITERAL-DEF>
+                                            </LITERALS>
+                                        </ECUC-ENUMERATION-PARAM-DEF>
+
+                                    </PARAMETERS>
+									<REFERENCES>
+                                        <ECUC-REFERENCE-DEF>
+                                            <SHORT-NAME>Sum_SUSD_E0D7NvMBlockRef</SHORT-NAME>
+                                            <DESC>
+                                              <L-2 L="EN">Reference to NvM Block Descriptor of DID E0D7 Data</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                            <IMPLEMENTATION-CONFIG-CLASSES>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            </IMPLEMENTATION-CONFIG-CLASSES>
+                                            <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                            <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                                        </ECUC-REFERENCE-DEF>
+                                        <ECUC-REFERENCE-DEF>
+                                            <SHORT-NAME>Sum_SUSD_FirstBootPostFlashNvMBlockRef</SHORT-NAME>
+                                            <DESC>
+                                              <L-2 L="EN">Reference to NvM Block Descriptor of First Boot Post-Flash Flag</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                            <IMPLEMENTATION-CONFIG-CLASSES>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            </IMPLEMENTATION-CONFIG-CLASSES>
+                                            <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                            <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                                        </ECUC-REFERENCE-DEF>
+                                        <ECUC-REFERENCE-DEF>
+                                            <SHORT-NAME>Sum_SUSD_E0D7_MonitorDisabled_NvMBlockRef</SHORT-NAME>
+                                            <DESC>
+                                              <L-2 L="EN">Reference to NvM Block Descriptor of DID 0xE0D7 Monitor Disabled flag</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                            <IMPLEMENTATION-CONFIG-CLASSES>
+                                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            </IMPLEMENTATION-CONFIG-CLASSES>
+                                            <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                            <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                                        </ECUC-REFERENCE-DEF>
+                                        <ECUC-REFERENCE-DEF>
+                                            <SHORT-NAME>Sum_SUSD_LIN_WakeupSource</SHORT-NAME>
+                                            <DESC>
+                                                <L-2 L="EN">List of the LIN WakeUpSources in EcuM.</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                            <IMPLEMENTATION-CONFIG-CLASSES>
+                                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                    <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                                    <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            </IMPLEMENTATION-CONFIG-CLASSES>
+                                            <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                            <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_EcuM/EcucModuleDefs/EcuM/EcuMConfiguration/EcuMCommonConfiguration/EcuMWakeupSource</DESTINATION-REF>
+                                        </ECUC-REFERENCE-DEF>
+                                        <ECUC-REFERENCE-DEF>
+                                            <SHORT-NAME>Sum_SUSD_ECU_WakeupSource</SHORT-NAME>
+                                            <DESC>
+                                                <L-2 L="EN">List of the Record 0x01 WakeUpSources in EcuM.</L-2>
+                                            </DESC>
+                                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                            <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                            <IMPLEMENTATION-CONFIG-CLASSES>
+                                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                                    <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                                    <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            </IMPLEMENTATION-CONFIG-CLASSES>
+                                            <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                            <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_EcuM/EcucModuleDefs/EcuM/EcuMConfiguration/EcuMCommonConfiguration/EcuMWakeupSource</DESTINATION-REF>
+                                        </ECUC-REFERENCE-DEF>
+									</REFERENCES>
+                                </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <!-- Container Definition: SUSDGeneral -->
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <SHORT-NAME>SUSDGeneral</SHORT-NAME>
+                            <DESC>
+                                <L-2 L="EN">General configuration parameters of the SUSD.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                            <PARAMETERS>
+                                <!-- PARAMETER DEFINITION: SUSD_t_Shutdown_Refresh -->
+                                <ECUC-FLOAT-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_t_Shutdown_Refresh</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Time in sec, for which a SW-C with a ShutdownPermission interface, shall refresh its signal for that interface</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>0.1</DEFAULT-VALUE>
+                                    <MAX>0.5</MAX>
+                                    <MIN>0.001</MIN>
+                                </ECUC-FLOAT-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_t_Force_Shutdown_Wait -->
+                                <ECUC-FLOAT-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_t_Force_Shutdown_Wait</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Time in sec(greater than zero), for which SUSD shall wait before requesting Shutdown from BswM, after indicating to all SW-Cs with PermitExecution interface to Shutdown.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                    <MAX>65.535</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-FLOAT-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_t_Battery_Periodicity -->
+								<!-- [$Satisfies $SDD_SUSD 139] -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_t_Battery_Periodicity</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Time in msec, for the periodicity of notifying SW-C of changes to the Battery Monitors. </L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>100</DEFAULT-VALUE>
+                                    <MAX>500</MAX>
+                                    <MIN>1</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_t_VehiclePowerMode_Periodicity -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_t_VehiclePowerMode_Periodicity</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Time in msec, for the periodicity of notifying SW-C of changes to the Vehicle Power Mode. </L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>100</DEFAULT-VALUE>
+                                    <MAX>500</MAX>
+                                    <MIN>1</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <ECUC-FLOAT-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_t_ResetExecution_Periodicity</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Time in msec, for the periodicity of Reset Execution and Running Reset Timer. </L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>1.0</DEFAULT-VALUE>
+                                    <MAX>65.535</MAX>
+                                    <MIN>1.0</MIN>
+                                </ECUC-FLOAT-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUM_SUSD_RESETExecution_TIMER_Thresh_Init -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUM_SUSD_RESETExecution_TIMER_Thresh_Init</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Initial value of the Calibration parameter SUM_SUSD_RESETExecution_TIMER_Thresh. </L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>10</DEFAULT-VALUE>
+                                    <MAX>10</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_t_RunCrank_Periodicity -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_t_RunCrank_Periodicity</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Time in msec, for the periodicity of notifying SW-C of changes to the Run Crank.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>100</DEFAULT-VALUE>
+                                    <MAX>500</MAX>
+                                    <MIN>1</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_t_Wakeup_Periodicity -->
+								<!-- [$Satisfies $SDD_SUSD 140] -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_t_Wakeup_Periodicity</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Time in msec, for the periodicity of Wake up polling.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>100</DEFAULT-VALUE>
+                                    <MAX>500</MAX>
+                                    <MIN>1</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_t_AppManager_Periodicity -->
+								<!-- [$Satisfies $SDD_SUSD 141] -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_t_AppManager_Periodicity</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Time in msec, for the periodicity of AppStateManager.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>100</DEFAULT-VALUE>
+                                    <MAX>500</MAX>
+                                    <MIN>1</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                              <!-- PARAMETER DEFINITION: SusdInitFuncPeriodicity -->
+                              <ECUC-FLOAT-PARAM-DEF>
+                                  <SHORT-NAME>SusdInitFuncPeriodicity</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <MIN>1.0</MIN>
+                                  <MAX>5000.0</MAX>
+                                  <DEFAULT-VALUE>1000.0</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">Period in milliseconds that configures the runnable init function periodicity. This parameter is required when SusdGenerateInitRunnable is set to TRUE.</L-2>
+                                  </DESC>
+                              </ECUC-FLOAT-PARAM-DEF>
+                              <!-- PARAMETER DEFINITION: SusdGenerateInitRunnable -->
+                              <ECUC-BOOLEAN-PARAM-DEF>
+                                <!-- [$Satisfies $SDD_SUSD 245] -->
+                                  <SHORT-NAME>SusdGenerateInitRunnable</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DEFAULT-VALUE>False</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">The parameter shall generate SUSD init runnable if it is configured as TRUE. Otherwise the SUSD_Init() function shall be called by a BswM action list during startup</L-2>
+                                  </DESC>
+                              </ECUC-BOOLEAN-PARAM-DEF>
+
+                                <!-- PARAMETER DEFINITION: SUSD_C_RunningResetWaitTime -->
+                                <ECUC-INTEGER-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_RunningResetWaitTime</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Time in msec, for the serial data wait time after running reset occurs before going Fail-Soft state.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>625</DEFAULT-VALUE>
+                                    <MAX>65535</MAX>
+                                    <MIN>0</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_Battery_State_of_Charge_Supported</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">True if the ECU has an input which monitors the vehicle battery state of charge.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_PowerMode_Slave_Available -->
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_PowerModing_Slave_Supported</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">true if the ECU is not the Power Mode Master,false if the ECU is the Power Mode Master.true: Enabled false: Disabled.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_RunCrankInput_Available -->
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_RunCrankPlausibility_Supported</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">true if the RunCrank Input is available from one of the software component,false if the RunCrank Input is not available from any of the software component.true: Enabled false: Disabled.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_C_DefaultShutdownState -->
+                                <ECUC-ENUMERATION-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_C_DefaultShutdownState</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">The default ECU operation state when shutting down: {Off or Sleep}.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <LITERALS>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>Off</SHORT-NAME>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>Sleep</SHORT-NAME>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                    </LITERALS>
+                                </ECUC-ENUMERATION-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_VPM_ASIL_A_Supported -->
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_VPM_ASIL_A_Supported</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This parameter shall control the determination of Vehicle Power Mode at ASIL A or QM level. If set to False, then VPM shall be calculated without Failed Safety signals.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_VPM_Security_Supported -->
+                                <ECUC-ENUMERATION-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_VPM_Security_Supported</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This parameter shall control the determination of Vehicle Power Mode with or without Cybersecurity. If set to False, then VPM shall be calculated without Failed Security signals.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>NOT_Applicable</SYMBOLIC-NAME-VALUE>
+									 <LITERALS>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>NOT_Applicable</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">NOT_Applicable</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>With_OBD</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">With_OBD</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>With_Cybersecurity</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">With_Cybersecurity</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>Without_Cybersecurity</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">Without_Cybersecurity</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                    </LITERALS>
+                                </ECUC-ENUMERATION-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_VPM_SPM_Initial -->
+                                <ECUC-ENUMERATION-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_VPM_SPM_Initial</SHORT-NAME>
+                                    <LONG-NAME>
+                                        <L-4 L="EN">SUSD_VPM_SPM_Initial</L-4>
+                                    </LONG-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Initial value for System Power Mode used for Vehicle Power Mode determination when a valid System Power Mode has not been received yet.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>SUM_PMS_OFF</DEFAULT-VALUE>
+                                    <LITERALS>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_OFF</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_OFF</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_ACCESSORY</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_ACCESSORY</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_RUN</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_RUN</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_STARTREQUEST</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_STARTREQUEST</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_PROPULSION</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_PROPULSION</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_TRANSPORT</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_TRANSPORT</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                    </LITERALS>
+                                </ECUC-ENUMERATION-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_VPM_SBPM_Initial -->
+                                <ECUC-ENUMERATION-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_VPM_SBPM_Initial</SHORT-NAME>
+                                    <LONG-NAME>
+                                        <L-4 L="EN">SUSD_VPM_SBPM_Initial</L-4>
+                                    </LONG-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">Initial value for System Backup Power Mode used for Vehicle Power Mode determination when a valid System Backup Power Mode has not been received yet.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>SUM_PMS_OFF</DEFAULT-VALUE>
+                                    <LITERALS>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_OFF</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_OFF</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_ACCESSORY</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_ACCESSORY</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_RUN</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_RUN</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_STARTREQUEST</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_STARTREQUEST</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_PROPULSION</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_PROPULSION</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                        <ECUC-ENUMERATION-LITERAL-DEF>
+                                            <SHORT-NAME>SUM_PMS_TRANSPORT</SHORT-NAME>
+                                            <LONG-NAME>
+                                                <L-4 L="EN">SUM_PMS_TRANSPORT</L-4>
+                                            </LONG-NAME>
+                                            <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                                        </ECUC-ENUMERATION-LITERAL-DEF>
+                                    </LITERALS>
+                                </ECUC-ENUMERATION-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_PermitExecAvailable -->
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_PermitExecAvailable</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">A parameter for Permit Execution Interface for this SWC</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_DisNvMWriteAvailable -->
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_DisNvMWriteAvailable</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">A parameter for Disable NvM Write Interface for this SWC</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <!-- PARAMETER DEFINITION: SUSD_ECUOpStateDIDSupported -->
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                    <SHORT-NAME>SUSD_ECUOpStateDIDSupported</SHORT-NAME>
+                                    <LONG-NAME>
+                                        <L-4 L="EN">SUSD_ECUOpStateDIDSupported</L-4>
+                                    </LONG-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This parameter created to provide user the option to choose ECU Operating State DID as optional</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>GM_ECUC</ORIGIN>
+                                    <SYMBOLIC-NAME-VALUE>true</SYMBOLIC-NAME-VALUE>
+                                    <DEFAULT-VALUE>1</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                            </PARAMETERS>
+                        <REFERENCES>
+							<ECUC-REFERENCE-DEF>
+								<SHORT-NAME>SUSD_BatteryVoltageDIDSigRef</SHORT-NAME>
+								<DESC>
+								  <L-2 L="EN">Reference to DID for Battery Voltage Signal</L-2>
+								</DESC>
+								<LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+								<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+								<IMPLEMENTATION-CONFIG-CLASSES>
+								<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+									<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+									<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+								</ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+								<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+									<CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+									<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+								</ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+								</IMPLEMENTATION-CONFIG-CLASSES>
+								<ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+								<DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+							</ECUC-REFERENCE-DEF>
+							<ECUC-CHOICE-REFERENCE-DEF>
+							<SHORT-NAME>SUSD_WakeupSourceReasonDIDSigRef</SHORT-NAME>
+                            <DESC>
+                            <L-2 L="EN">Reference to DID for Wakeup Source Reason Signal.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+	                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+	                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+	                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+	                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+			                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+			                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+								<ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+			                  <DESTINATION-REFS>
+			                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+			                  </DESTINATION-REFS>
+							</ECUC-CHOICE-REFERENCE-DEF>
+							<ECUC-CHOICE-REFERENCE-DEF>
+							<SHORT-NAME>SUSD_ActiveWakeupSourceDIDSigRef</SHORT-NAME>
+                            <DESC>
+                            <L-2 L="EN">Reference to DID for Active Wakeup Source(s) Signal.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+	                           	<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+	                               	<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+	                               	<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+	                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+			                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+			                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+							<ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+			                  <DESTINATION-REFS>
+			                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+			                  </DESTINATION-REFS>
+							</ECUC-CHOICE-REFERENCE-DEF>
+                            <ECUC-CHOICE-REFERENCE-DEF>
+							<SHORT-NAME>SUSD_ECUOperatingStateDIDSigRef</SHORT-NAME>
+                            <DESC>
+                            <L-2 L="EN">Reference to DID for ECU Operating State Signal.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+	                           	<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+	                               	<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+	                               	<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+	                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+			                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+			                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+							<ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+			                  <DESTINATION-REFS>
+			                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+			                  </DESTINATION-REFS>
+							</ECUC-CHOICE-REFERENCE-DEF>
+                            <ECUC-CHOICE-REFERENCE-DEF>
+							<SHORT-NAME>SUSD_PowerModingStateDIDSigRef</SHORT-NAME>
+                            <DESC>
+                            <L-2 L="EN">Reference to DID for Power Moding State Signal.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+	                           	<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+	                               	<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+	                               	<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+	                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+			                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+			                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+							<ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+			                  <DESTINATION-REFS>
+			                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+			                  </DESTINATION-REFS>
+							</ECUC-CHOICE-REFERENCE-DEF>
+                            <ECUC-CHOICE-REFERENCE-DEF>
+							<SHORT-NAME>SUSD_VehiclePowerModeInvalidityDIDSigRef</SHORT-NAME>
+                            <DESC>
+                            <L-2 L="EN">Reference to DID for Vehicle Power Mode Invalidity Signal.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+	                           	<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+	                               	<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+	                               	<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+	                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+			                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+			                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+							<ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+			                  <DESTINATION-REFS>
+			                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+			                  </DESTINATION-REFS>
+							</ECUC-CHOICE-REFERENCE-DEF>
+                            <ECUC-CHOICE-REFERENCE-DEF>
+							<SHORT-NAME>SUSD_DemDataElementClass_VPwrSetEnCondDataSigRef</SHORT-NAME>
+                            <DESC>
+                            <L-2 L="EN">Reference to Dem Data Element Class for Vehicle Power Set Enable Condition Data Signal.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+	                           	<ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+	                               	<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+	                               	<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+	                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+			                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+			                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+			                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+							<ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+			                  <DESTINATION-REFS>
+			                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemGeneral/DemDataElementClass</DESTINATION-REF>
+			                  </DESTINATION-REFS>
+							</ECUC-CHOICE-REFERENCE-DEF>
+              <ECUC-REFERENCE-DEF>
+                <!-- [$Satisfies $SDD_SUSD 158] -->
+                <SHORT-NAME>SusdEcuWakeUpDetectionRecordsNvmBlockRef</SHORT-NAME>
+                <DESC>
+                  <L-2 L="EN">Reference to NVM Block for storing ECU Wakeup Detection Records</L-2>
+                </DESC>
+                <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                <IMPLEMENTATION-CONFIG-CLASSES>
+                  <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                    <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                  </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                  <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                    <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                  </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                </IMPLEMENTATION-CONFIG-CLASSES>
+                <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+              </ECUC-REFERENCE-DEF>
+              <ECUC-REFERENCE-DEF>
+                <SHORT-NAME>SUM_SUSD_RESETExecution_TIMERNvmBlockRef</SHORT-NAME>
+                <DESC>
+                  <L-2 L="EN">Reference to NVM Block for storing SUM_SUSD_RESETExecution_TIMER</L-2>
+                </DESC>
+                <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                <IMPLEMENTATION-CONFIG-CLASSES>
+                  <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                    <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                  </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                  <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                    <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                  </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                </IMPLEMENTATION-CONFIG-CLASSES>
+                <ORIGIN>ETAS:1.1.0:2021-05-19</ORIGIN>
+                <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+              </ECUC-REFERENCE-DEF>
+              <ECUC-FOREIGN-REFERENCE-DEF>
+                <SHORT-NAME>Sum_SUSD_ServiceBased_DataTypeMappingSet</SHORT-NAME>
+                <LONG-NAME>
+                    <L-4 L="EN">Sum_SUSD_ServiceBased_DataTypeMappingSet</L-4>
+                </LONG-NAME>
+                <DESC>
+                    <L-2 L="EN">Foreign reference to the DATA-TYPE-MAPPING-SET in the system extract used for service-based operations. This parameter references the system data type mapping sets that define the structure and format for PMM and BPMM service-based functionality and data transformations.</L-2>
+                </DESC>
+                <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                <DESTINATION-TYPE>DATA-TYPE-MAPPING-SET</DESTINATION-TYPE>
+                </ECUC-FOREIGN-REFERENCE-DEF>
+                <ECUC-CHOICE-REFERENCE-DEF>
+                    <SHORT-NAME>Sum_SUSD_Sig_PrimaryPowerMode_Ref</SHORT-NAME>
+                    <DESC>
+                    <L-2 L="EN">Foreign reference to the Com Signal for Primary Power Mode. This signal can be configured as a single signal or as a signal belonging to a group of signals. </L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                    <DESTINATION-REFS>
+                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/EcucDefs/Com/ComConfig/ComSignalGroup/ComGroupSignal</DESTINATION-REF>
+                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/EcucDefs/Com/ComConfig/ComSignal</DESTINATION-REF>
+                    </DESTINATION-REFS>
+                </ECUC-CHOICE-REFERENCE-DEF>
+                <ECUC-FOREIGN-REFERENCE-DEF>
+                <SHORT-NAME>Sum_SUSD_ServiceBased_PMM_Ref</SHORT-NAME>
+                <LONG-NAME>
+                    <L-4 L="EN">Sum_SUSD_ServiceBased_PMM_Ref</L-4>
+                </LONG-NAME>
+                <DESC>
+                    <L-2 L="EN">Foreign reference to the IMPLEMENTATION-DATA-TYPE for Service-Based Primary Power Mode from System Extract from Software-AR-Packages</L-2>
+                </DESC>
+                <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                <IMPLEMENTATION-CONFIG-CLASSES>
+                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                    <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                </IMPLEMENTATION-CONFIG-CLASSES>
+                <ORIGIN>RB</ORIGIN>
+                <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE-ELEMENT</DESTINATION-TYPE>
+            </ECUC-FOREIGN-REFERENCE-DEF>
+            <ECUC-CHOICE-REFERENCE-DEF>
+                    <SHORT-NAME>Sum_SUSD_Sig_BackupPowerMode_Ref</SHORT-NAME>
+                    <DESC>
+                    <L-2 L="EN">Foreign reference to the Com Signal for Backup Power Mode. This signal can be configured as a single signal or as a signal belonging to a group of signals. </L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                    <DESTINATION-REFS>
+                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/EcucDefs/Com/ComConfig/ComSignalGroup/ComGroupSignal</DESTINATION-REF>
+                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/EcucDefs/Com/ComConfig/ComSignal</DESTINATION-REF>
+                    </DESTINATION-REFS>
+            </ECUC-CHOICE-REFERENCE-DEF>
+            <ECUC-FOREIGN-REFERENCE-DEF>
+                <SHORT-NAME>Sum_SUSD_ServiceBased_BPMM_Ref</SHORT-NAME>
+                <LONG-NAME>
+                    <L-4 L="EN">Sum_SUSD_ServiceBased_BPMM_Ref</L-4>
+                </LONG-NAME>
+                <DESC>
+                    <L-2 L="EN">Foreign reference to the IMPLEMENTATION-DATA-TYPE for Service-Based Backup Power Mode from System Extract from Software-AR-Packages</L-2>
+                </DESC>
+                <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                <IMPLEMENTATION-CONFIG-CLASSES>
+                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                    <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                </IMPLEMENTATION-CONFIG-CLASSES>
+                <ORIGIN>RB</ORIGIN>
+                <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE-ELEMENT</DESTINATION-TYPE>
+            </ECUC-FOREIGN-REFERENCE-DEF> 
+						</REFERENCES>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <!-- Container Definition: SUSDWakeUpRelation -->
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <SHORT-NAME>SUSDWakeUpRelation</SHORT-NAME>
+                            <DESC>
+                                <L-2 L="EN">This container contains a list of Wakeup Source identifiers that are needed to refer to indicate the Permit Execution to SUMs.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                            <REFERENCES>
+                                <!-- Reference Definition: SUSD_WakeupSourceId -->
+                                <ECUC-REFERENCE-DEF>
+                                    <SHORT-NAME>SUSD_WakeupSourceId</SHORT-NAME>
+                                    <DESC>
+                                        <L-2 L="EN">This parameter defines the identifier of this wakeup source.</L-2>
+                                    </DESC>
+                                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                    <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                    <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    </IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_EcuM/EcucModuleDefs/EcuM/EcuMConfiguration/EcuMCommonConfiguration/EcuMWakeupSource</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                            </REFERENCES>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        
+                    </CONTAINERS>
+                </ECUC-MODULE-DEF>
+            </ELEMENTS>
+        </AR-PACKAGE>
+    </AR-PACKAGES>
+</AUTOSAR>

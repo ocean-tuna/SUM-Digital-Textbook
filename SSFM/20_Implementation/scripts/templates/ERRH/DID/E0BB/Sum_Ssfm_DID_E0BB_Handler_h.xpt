@@ -1,0 +1,75 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DID_E0BB_Handler.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM DID E0BB Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_DID_E0BB_HANDLER_H
+#define SUM_SSFM_DID_E0BB_HANDLER_H
+
+«LET Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) AS keySlotErrorSize-»
+#define SUM_SSFM_NUMBER_KEY_SLOTS_CONFIGURED 	« keySlotErrorSize -»u
+«LET Ssfm_DID_E0BB_SupportedKeySlotSize(keySlotErrorSize) AS supportedKeySlotSize-»
+#define SUM_SSFM_NUMBER_KEY_SLOTS_SUPPORTED		« supportedKeySlotSize -»u
+«IF (supportedKeySlotSize > 0)-»
+/* Key Slot 1 (ECU Unlock Key) is excluded from reporting in the DID E0BB */
+#define SUM_SSFM_DID_E0BB_ENTRY_NUMBER		  	(SUM_SSFM_NUMBER_KEY_SLOTS_SUPPORTED - 1u)
+«ELSE-»
+#define SUM_SSFM_DID_E0BB_ENTRY_NUMBER		  	0u
+«ENDIF-»
+«ENDLET-»
+«ENDLET-»
+#define SUM_SSFM_DID_E0BB_ENTRY_SIZE		  	3u
+
+
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+«IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))-»
+FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_DID_E0BB_SaveData(void);
+FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_DID_E0BB_RestoreData(void);
+«ENDIF»
+
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

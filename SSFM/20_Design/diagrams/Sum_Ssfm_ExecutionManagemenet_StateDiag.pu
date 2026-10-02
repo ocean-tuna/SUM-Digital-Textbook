@@ -1,0 +1,17 @@
+@startuml Sum_Ssfm_ExecutionManagemenet_StateDiag
+
+state Sum_Ssfm_ErrhExecutionManager
+state Sum_Ssfm_SsmExecutionManager {
+    state SUM_SSFM_SSM_Shutdown_Mode
+    state SUM_SSFM_SSM_Run_Mode
+
+    [*] --> SUM_SSFM_SSM_Shutdown_Mode
+    SUM_SSFM_SSM_Shutdown_Mode -> SUM_SSFM_SSM_Run_Mode: Wake-up bit(s) is/are TRUE
+    SUM_SSFM_SSM_Run_Mode --> SUM_SSFM_SSM_Shutdown_Mode: (Wake-up bit(s) is/are FALSE) **OR**\n(Reset bit is TRUE)
+}
+
+[*] --> Sum_Ssfm_ErrhExecutionManager
+Sum_Ssfm_ErrhExecutionManager -> Sum_Ssfm_SsmExecutionManager: Errh is in RUNNING
+
+
+@enduml 

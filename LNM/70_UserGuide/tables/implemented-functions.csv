@@ -1,0 +1,8 @@
+3;1;6
+"\textbf{Functionality}";"\textbf{Status}";"\textbf{Description}"
+LIN initialization;Updated;Updated function to initialize correctly the new data structures
+LIN Main Function;Updated;Updated management of PermitExecution and ShutdownPermission, updated aliveness monitoring and Cyberfill support
+LNM Network Management;Updated;Updated management of LIN networks, multiple LIN networks are now correctly supported
+LNM Schedule Management;Updated;Updated: a FSM is now generated for each LIN network, upon user configuration
+LNM MSCL;Updated;Updated MSCL support. Management of DID F1BE updated
+LNM Diagnostic DTCs;Added; DTC :Loss of Comm with Device, Internal Electronic Failure, LIN Responder not Configured, Missing Calibration,Configuration List not Programmed

@@ -1,0 +1,8 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};Runnable_Shutdown_Permission
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};IR_NumberActiveDiagnosticRequest
+\cellcolor{ETASlightgray}\textbf{Periodicity};configured by user via DIAG_TE_Shutdown_Permission_Period parameter
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};DIAG_BswM_DiagSession
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};DIAG_ShutdownPermission
+\cellcolor{ETASlightgray}\textbf{Description};This runnable is responsible for: \newline Evaluation of shutdown status and outputting rolling count (no shutdown) or vote for shutdown \newline ECU Reset request (PermitExecution bit 6 cleared) takes priority and enables shutdown regardless of active session

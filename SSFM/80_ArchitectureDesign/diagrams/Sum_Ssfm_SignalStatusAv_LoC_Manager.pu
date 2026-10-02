@@ -1,0 +1,188 @@
+@startuml Sum_Ssfm_SignalStatusAv_LoC_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+"SSFM::Sum_Ssfm_SignalStatusAv_LoC_Manager"
+
+**Interfaces Legend**
+    //ri02 //: PN_ActivePDURxEnable<n>
+    //ri03 //: SecOC_ErrorCode
+    //ri05 //: DisableNormalcommunication
+    //ri06 //: Dem_GetEvent()
+    //ri07 //: ERRH_BswM_DisableDTC (DTC for the **BUS OFF**)
+    //ri08 //: LNM_ERRH_LostOfCommBus<x>
+    //ri10 //: NodeSts<ECU>_[CAN_<x>]_LcFA
+    //ri11 //: LINSCH_SIG<X>_STATUS
+    //ri12 //: MSCL_ECU_SIG<X>
+    //ri13 //: LNM_ERRH_NodeStatusIdx<xxx>
+    //pi06 //: Dem_SetEvent()
+    //pi07 //: SSM_BswM_DisablePdu
+    //II07 //: BUS_OFF_BswErrorEvent
+    //II08 //: PN_Infos
+    //II09 //: SecOc_ErrCode_Info
+    //II10 //: Com_CbkRxTOut()
+    //II11 //: Com_CbkRxAck()
+    //II12 //: Signal<n>_LcFA
+    //II14 //: Signal<n>_Av
+end legend
+
+' Components
+'---------------------------------------------------
+
+skinparam interface {
+    backgroundcolor<<getter>> DarkGreen
+}
+
+interface calibration as dis <<getter>>
+interface calibration as dis2 <<getter>>
+
+note bottom of PN
+The functional block collects all external information that are
+required to some functional components in the internal
+structure
+
+Info:
+//CII01//: PN_Info
+//CII02//: PDU_Info (About calibration)
+//CII03//: CommMode_Info
+//CII04//: SecOC_ErrCode_Info
+//CII10//: NodeStsMsg_Info
+end note
+component SSFM::Sum_Ssfm_Info_Handler as PN {
+    portin ri02
+    portin ri03
+    portin ri05
+    portin ri10
+    portout pi07
+}
+
+note bottom of A
+The functional block gets the
+signal availability value. It works for:
+1. CAN
+2. ETHERNET
+3. LIN
+end note
+component SSFM::Sum_Ssfm_SigStat_Av_Manager as A {
+    portin ri11
+    portin ri12
+
+    [Sum_Ssfm_CANETH_Av_Manager] as CA
+    [Sum_Ssfm_LIN_Av_Manager] as LA
+}
+
+note bottom of G
+The functional block gets the LossOfComm
+condition for setting the respective signal
+(_LcFA) and the event to Dem. It works for:
+1. CAN
+2. ETHERNET
+3. LIN
+
+Manage DTC:
+pi06.1: DTC Bus Off
+pi06.2: DTC LoC with Device (LIN)
+pi06.3: DTC LoC with Sub Bus(LIN)
+end note
+together {
+component SSFM::Sum_Ssfm_LoC_Manager as G {
+    portin ri07
+    portin ri06.1
+    portin ri06.2
+    portin ri06.3
+    portin ri08
+    portin ri13
+
+    portout pi06.1
+    portout pi06.3
+    portout pi06.2
+
+    [Sum_Ssfm_Loc_Lin_Manager] as L
+    [Sum_Ssfm_Loc_CANETH_Manager] as CE
+
+    control "Timer" as t0
+    control "Timer" as t1
+}
+
+' Interfaces
+'-------------------------------------------------------
+
+interface CII01
+interface CII02
+interface CII03
+}
+
+together {
+interface II11 <<cbk>>
+interface II10 <<cbk>>
+}
+interface II12
+
+
+interface CII04
+interface II07
+interface II08
+interface II09
+interface CII10
+
+interface II14
+
+skinparam interface {
+    backgroundcolor<<cbk>> DarkRed
+}
+
+' Connections
+'------------------------------------------------------
+
+dis2 --down------> PN: "SSM_C_<PDU>_ISRECEIVEDFROM_<ECU>"
+
+dis --up---> PN: "SSM_C_Disable_<PDU>"
+
+PN --l--> CII01
+PN --l--> CII02
+PN --l--> CII03
+
+CII01 --d0)-- CE
+CII01 --u0)-- CA
+CII02 --d0)-- CE
+CII02 --u0)-- CA
+CII03 --d0)-- CE
+CII03 --u0)-- CA
+
+II10 ..l.> G
+II10 ..up.> A
+
+II11 ..r.> CE
+II11 ..r.> A
+
+PN --r--> CII04
+CII04 -u0)- CA
+CII04 --u0)-- II09
+
+PN ---r-> CII10
+CII10 --u0)-- CA
+CII10 --d0)-------- CE
+
+ri07 --> CE
+ri06.1 --> CE
+ri06.2 --> L
+ri06.3 --> L
+ri08 --> L
+ri13 --> L
+L --> t1
+t1 --> pi06.2
+CE --> t0
+t0 --> pi06.1
+G --r---> II12
+L ---> pi06.3
+
+ri11 --> LA
+ri12 --> LA
+
+A ----right-----> II14
+
+CII01 -0)- II08
+II07 --r-> CE
+
+@enduml

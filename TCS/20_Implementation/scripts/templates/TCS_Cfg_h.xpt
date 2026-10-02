@@ -1,0 +1,72 @@
+«IMPORT bsw»
+«IMPORT bsw::TcsModule»
+«EXTENSION templates::mathlib»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND TCS FOR ecu»
+«ENDDEFINE»
+
+«DEFINE TCS FOR Ecu»
+
+«FILE "SUM_TCS_Cfg.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_TCS
+ * Date        : Mar 31, 2026
+ * Revision    : 8.0.1_Pr10
+ * Description : Header for TCS configuration
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+#ifndef SUM_TCS_CFG_H
+#define SUM_TCS_CFG_H
+
+#include "SUM_TCS_Prv.h"
+
+typedef struct
+{
+    /* Pointer to the RAM block */
+    P2VAR(uint8, TYPEDEF, RTE_APPL_DATA) NvmRamBlock;
+    /* Function pointer to the NvM_GetErrorStatus RTE API */
+    P2FUNC(Std_ReturnType, TYPEDEF, Tcs_RteCallNvmGetErrorStatus_fp) (CONSTP2VAR(NvM_RequestResultType, AUTOMATIC, RTE_APPL_DATA) RequestResultPtr);
+    /* Function pointer to the NvM_SetRamBlockStatus RTE API */
+    P2FUNC(Std_ReturnType, TYPEDEF, Tcs_RteCallNvmSetRamBlockStatus_fp) (VAR(boolean, AUTOMATIC) BlockChanged);
+    /* Function pointer to the NvM_WriteBlock RTE API */
+    P2FUNC(Std_ReturnType, TYPEDEF, Tcs_RteCallNvmWriteBlock_fp) (VAR(NvM_Rb_ConstVoidPtr, AUTOMATIC) SrcPtr);
+} Tcs_GenericNvmAccessType;
+
+/* Access Function Pointers for NVM Blocks. */
+extern const Tcs_GenericNvmAccessType tcs_Nvm_TcsTimeValueBlock_FP;
+
+«IF (tcs.tcsGeneral.timeManagementPeriodicity != null)-»
+extern const uint16 TCS_t_TimeManagement_Periodicity;
+«ENDIF»
+«IF (tcs.tcsGeneral.permitExecutionMask != null)-»
+extern const uint32 TCS_PermitExecution_Mask;	/* bit 0 is the WAKEUP bit */
+«ENDIF»
+/* SumTCSGlobalTimePrecision must be a non-zero multiple of TCS_t_TimeManagement_Periodicity */
+«IF (tcs.tcsGeneral.sumTCSGlobalTimePrecision != null)-»
+extern const uint16 SumTCSGlobalTimePrecision;
+«ENDIF»
+
+#endif
+«ENDFILE-»
+«ENDDEFINE»

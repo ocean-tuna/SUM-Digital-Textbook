@@ -1,0 +1,5 @@
+3;15
+\cellcolor{ETASlightgray}\textbf{Port Name};SUSD_Vehicle_Power_Mode
+\cellcolor{ETASlightgray}\textbf{Port Interface};SUSD_VehiclePowerMode
+\cellcolor{ETASlightgray}\textbf{Port Type};Sender Receiver Interface
+\cellcolor{ETASlightgray}\textbf{Description};The port is connected to the SUM_SUSD. The port will receive notification about the vehicle power mode as calculated by SUM_SUSD based on all applicable PMM and BPMM related signals and signal status.

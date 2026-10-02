@@ -1,0 +1,3 @@
+4; 3; 4
+Container Name; Multiplicity; Scope
+ComM_PNC_Channels; 1..8; This container shall capture all the ComM channel references and CAN number configured for this System

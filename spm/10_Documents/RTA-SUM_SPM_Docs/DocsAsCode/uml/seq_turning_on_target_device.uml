@@ -1,0 +1,12 @@
+@startuml
+
+actor RemoteState
+
+participant Off
+participant Initializing
+participant On
+
+Off -> Initializing : IsRequested or IsRequester \n becomes TRUE
+Initializing -> On : HeartBeat received within \n DTC timeout length with value \n not in Power Down range \n (<= 2^32 - 256)
+
+@enduml

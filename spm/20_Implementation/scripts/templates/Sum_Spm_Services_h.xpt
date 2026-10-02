@@ -1,0 +1,67 @@
+
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Services.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for SPM implemented Services
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef SUM_SPM_SERVICES_H_
+#define SUM_SPM_SERVICES_H_
+
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_Request_Queue.h"
+
+extern struct SPM_ProfileReqFIFO_Queue	Sum_Spm_RequestQueue;
+
+void Spm_prv_prfReqDispatcher(
+	/* IN  */ uint8  profileIndx,
+	/* IN  */ uint32 TrgDvcIP,
+	/* IN  */ uint8 reqCode,
+	/* OUT */ Std_ReturnType * const retVal
+);
+
+sint16 Spm_GetPowProfIndexFromSwIDProfNumber(const uint32 SoftwareID, const uint8 ProfileNumber);
+boolean Spm_GetPowProfIndexFromProfIDProfNumber(const uint16 ServiceID, const uint8 ProfileNumber, uint16* index);
+uint32 Spm_Get_SrcIpFromVLANId(const uint32 VlanID);
+void Spm_E0D7_RequestsHandler(void);
+void Spm_E0D7_LastRequesterIdHandler(uint8 lastRequesterId);
+sint16 Spm_GetPowProfIndexFromAppID(const uint16 ApplicationInterfaceID);
+
+#endif
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

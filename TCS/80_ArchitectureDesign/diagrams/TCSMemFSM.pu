@@ -1,0 +1,18 @@
+@startuml TCSMemFSM
+SUM_TCS_NvM_SERV_READY: **entry:**\ntcs_mem_serv_completed = 0x00;\ntcs_mem_serv_retry_cntr = //<Configured_Value>//\n
+SUM_TCS_NvM_SERV_SATISFIED: tcs_mem_serv_completed = 0x02;
+SUM_TCS_NvM_SERV_SAFREC: tcs_mem_serv_completed = 0x03;
+SUM_TCS_NvM_SERV_RUNNING: **entry:**\ntcs_mem_serv_completed = 0x01;
+SUM_TCS_NvM_SERV_RUNNING: \n**exit:**\ntcs_mem_serv_retry_cntr = tcs_mem_serv_retry_cntr - 1;
+
+[*] -> SUM_TCS_NvM_SERV_READY
+SUM_TCS_NvM_SERV_READY --> SUM_TCS_NvM_SERV_RUNNING: **A**
+SUM_TCS_NvM_SERV_RUNNING -> SUM_TCS_NvM_SERV_RUNNING: not(**B**) && not(**C**)
+SUM_TCS_NvM_SERV_RUNNING --> SUM_TCS_NvM_SERV_SATISFIED: **B**
+SUM_TCS_NvM_SERV_RUNNING --> SUM_TCS_NvM_SERV_SAFREC: **C**
+SUM_TCS_NvM_SERV_SAFREC --> SUM_TCS_NvM_SERV_READY
+SUM_TCS_NvM_SERV_SATISFIED -> SUM_TCS_NvM_SERV_READY
+
+note "//Alphabetic order signs transitions priorities//\n\n**A**:\n\ttcs_mem_serv_request == TRUE\n**B**:\n\ttcs_mem_status_of_serv == E_OK //&&//\n\ttcs_mem_serv_retry_cntr == 0\n**C**:\n\ttcs_mem_serv_retry_cntr == 0" as n1
+
+@enduml

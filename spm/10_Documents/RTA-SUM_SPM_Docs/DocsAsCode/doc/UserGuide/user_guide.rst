@@ -1,0 +1,1571 @@
+.. image:: ../logo.png
+   :align: right
+   :alt: Company Logo
+   :width: 200px
+
+======================
+RTA-SUM SPM User Guide
+======================
+
+*************
+Introduction
+*************
+
+This User Guide provides a guideline for the configuration and integration of the ETAS developed
+RTA-SUM SPM. RTA-SUM SPM module has been developed towards the Software Defined Vehicle
+requirements, specifically, the SDV-8217 specifications and related specifications listed in Section :ref:`references`.
+General guidelines on the common steps and workflow for RTA-SUM integration can be found in RTA-
+SUM Getting Started Guide.
+
+Definitions and Abbreviations
+=============================
+
+============================== =====================================================================================
+    Terms and Abbreviations                Definitions
+============================== =====================================================================================
+    AUTOSAR                     AUTOmotive Open System ARchitecture
+    BSW                         Basic Software
+    CAN                         Controlled Area Network
+    CDD                         Complex-Device Driver
+    CanIf                       Can Interface AUTOSAR BSW Module
+    PGTT                        Power Graph Traversal Table
+    PM                          Power Manager 
+    RTE                         Run-Time Environment AUTOSAR middleware between Application Software Layer and Basic
+                                Software
+    SE                          Software Entity (Assume it as generic software module/function or Software Service)
+    SM                          Software Manager
+    SPM                         Software/Power manager
+    SUM                         Standardized Utility Module
+    SWCD                        Software Component Description
+    SoAd                        Soacket Adaptor AUTOSAR BSW Module
+============================== =====================================================================================
+
+Module Overview
+===============
+
+The RTA-SUM SPM, Software/Power Manager, is a Complex-Device Driver of the standardized architecture of AUTOSAR. The SPM contains in this architecture two sub-modules: the SM and the PM. Both of them contribute to the global functionalities of the RTA-SUM SPM.
+So that they are just mentioned as generic "SPM" at the scope fo this document. 
+SPM acts itself as a manager for the activation and the deactivation requests of specific Software Entities (Services) and hardware resources. A SPM instance can control the status of a remote
+Software Services (i.e. hosted on a remote device) by the means of a RPC. The RPC requires the SPM instances as interfaces for the communication messages exchange and the resource management.
+A Software Services can directly request its own activation/deactivation to the SPM (local request) or SPM activates it on base of a remote request. 
+SPM instances define and maintain by configuration, a list of Software Entities and Resources to activate on the base of a received request. Each Software Entity has got its own list of dependencies that takes the name of Power Profile or Activation Profile.
+Before activating the requested Entity, the SPM shall satisfy the activation/deactivation of all the items in the *Activation Profile*. This may involves in other activation/deactivation requests
+to local Software Entities or remote host (sending message to the remote SPM instance). So that the SPM shall be able to manage a recursive communication path to satisfy the incoming request.
+
+RTA-SUM SPM knows the network topology by from the configuration and then from the calibration of a table that is called PGTT (Power Graph Traversal Table). This table contains 
+the route to reach the destination host of a SPM request. Each "harbor" in the route is a remote host. Not all the hosts in the route must contain a requested entity from the source:
+the SPM instance in the host can just works as a gateway for the request. The *PGTT* also defines the command to send to the next hop of the network in order to wake-up the remote SPM instance.
+
+RTA-SUM SPM shall also monitor the status of the remote nodes in the network. RTA-SUM SPM can monitor the status of a remote host using the heartbeat communication protocol.
+This protocol forces each host in the network to send a periodic signal that contains a rolling counter, very close to a real human heartbeat. Whenever a node in the network wants to
+communicate with another node, the source node can "listen" the heartbeat of the destination one. If the destination node heartbeat is 0, then the destination node cannot be reached by the communication.
+In this case, the source of the communication starts the diagnostic procedure for raising up a *LossOfCom* condition. Same value on the opposite side: if a destination node in communication with a source loses
+the heartbeat of the source, it starts the same diagnostic.
+
+RTA-SUM SPM is a cross-domain module, so that it can exchange information among different ECU domains, by the means of SPM instances communication on different bus system.
+
+RTA-SUM SPM communicates on:
+
+* **Ethernet** for:
+  * Send/Receive an activation/deactivation request to a remote host
+  * Send/Receive request acknowledge and request status to a remote host
+  * Perform a inner-domain selective wake-up
+* **CAN** to perform the selective wake-up of a remote host
+
+.. _spmSysArch:
+
+.. figure:: ../../pictures/spmSysArch.png
+    :scale: 60%
+    :alt: Spm Sys Architecture
+
+.. danger:: 
+
+    The Spm does not interact anymore with SoAd. Spm sends The Ethernet wake-up frame from RTE using metadata.
+
+.. danger::
+
+    The Spm modules does not interact directly with the Com Module but Spm uses the RTE with SomeIpXfrm as middleware between Spm and Com.
+
+.. _references:
+
+References
+==========
+
++-----------------------------------------------------------------------------+--------------------------------------------------+
+|  Document Version                                                           |        Version                                   |
++=============================================================================+==================================================+
+| SDV-2017 2.0 Vehicle Power Management Architecture                          |  3.4 - 27.181.2p0                                |
++-----------------------------------------------------------------------------+--------------------------------------------------+
+| SDV-8217 Mechatronic Power Manager Infrastructure Specification             |  27.181.2p1                                      |
++-----------------------------------------------------------------------------+--------------------------------------------------+
+| SDV-8201 Service Discovery Extension Specification                          |  27.27.175.2p0                                   |                                         
++-----------------------------------------------------------------------------+--------------------------------------------------+
+| SDV-6001 Diagnostic Infrastructure Specification                            |  27.27.184.1p0                                   |                                         
++-----------------------------------------------------------------------------+--------------------------------------------------+
+
+********************************
+Integration into RTA-CAR Project
+********************************
+
+This chapter aims to provide a guideline for the integration of RTA-SUM SPM module into an RTA-CAR
+project. 
+
+The RTA-SUMs plugin does not include the SPM module. So that you shall manually import the generation scripts of the RTA-SUM SPM into a RTA-CAR project. 
+Beside you shall need to import in the RTA-CAR project the SPM EcucValues arxml file (
+the sample file **spm_EcucValues.arxml** is provided in the release package folder *30_Integration/* ).
+
+Prerequisites
+=============
+
+In order to successfully follow this guide:
+
+* You shall have the RTA-CAR toolchain installed as the following list and you must be familiar with the AUTOSAR specifications, terminology and methodology,
+
++---------------------+----------------------------------+------------------------------------------------------------------+
+| Tool Name           |  Version No.                     | Description                                                      |
++=====================+==================================+==================================================================+
+| RTA-BSW             |  12.3.3pr1                       | BSW automatic configuration and code generation.                 |
++---------------------+----------------------------------+------------------------------------------------------------------+
+| RTA-RTE             |  12.4.0                          | RTE generator used for testing.                                  |
++---------------------+----------------------------------+------------------------------------------------------------------+
+| Cantata             |  9.5                             | Tool is used for unit testing.                                   |
++---------------------+----------------------------------+------------------------------------------------------------------+
+
+* You also must be familiar with the GM specification and GM-SUM modules functionalities
+
+**OLD** Create SPM module
+===========================
+
+.. warning::
+
+    Please don't consider this section. The Section will be removed in the next releases!!!
+
+In order to create the SPM module you shall follow the following steps:
+
+#. Unzip the contents of the folder RTA-SUM SPM folder in your preferred location
+#. Import in your RTA-CAR project the folder *template* from SPM-released unzipped folder:
+
+    * You can copy the folder in your RTA-CAR project location OR import it as a linked resource, as you prefer.
+  
+#. In RTA-CAR, go to the project *ECU Configuration* and expand the menu *Parameter Definition"*. You must see the SPM blue container. This container
+   includes all the module configuration containers and parameters. If you don't see it, try to refresh the project. If it still missing, delete the imported folder and import it again
+#. In RTA-CAR *ECU Configuration*, click with the right button on folder *Other Modules* below the root *Bsw Modules*, and choose `Create Spm`
+#. Configure Spm module as you prefer
+#. In order to build the Spm in your RTA-CAR project, please make sure you have the building features enable (*Build Features* in RTA-CAR). You can reach it by the following path in RTA-CAR:
+   Window **>>>** Preferences **>>>** Tool Customization **>>>** Special Features, and then *enable* the checkbox *Build Features*. After that press on *Apply and CLose*.
+#. Now you are able to build the SPM and so to generate the C code and driver SWCD. If you don't specify an output path, the SPM C code is generated in folder **_out**.
+
+RTA-CAR MemMap Tool
+====================
+
+MemMapGen generator is able to generate the memory mapping header file for the RTA-SUM SPM module. If you can use the tool, you can find the following file AFTER you launch the generator by its dedicated plug-in:
+
+    **<Project_LOCATION>/src/memmap/SPM_MemMap.h**
+
+This is an example about the generation of the MemMap file:
+
+.. code-block:: c
+
+    /*
+     **********************************************************************************************************************
+     *
+     * Copyright (c) ETAS GmbH 2023, all rights reserved.
+     * The reproduction, distribution and utilization of this document as well as the communication of its contents to
+     * others without explicit authorization is prohibited. Offenders will be held liable for the payment of damages.
+     * All rights reserved in the event of the grant of a patent, utility model or design.
+     *
+     **********************************************************************************************************************
+     
+     **********************************************************************************************************************
+     Machine Type: MCU_RB_GENERIC
+     Generated by MEMMAPGEN 12.3.0  
+     **********************************************************************************************************************
+     */
+    /* MR12 DIR 4.10 VIOLATION: Memmap file must be included multiple times */
+    /* MR12 RULE 20.5 VIOLATION: AUTOSAR MemMap concept requires #undef, AUTOSAR MemMap requirements are incompatible to MISRA */
+    #if defined SPM_START_SEC_CODE
+    /* CODE pragma configuration not available, please update the respective template file */ 
+    #undef SPM_START_SEC_CODE
+    #elif defined SPM_STOP_SEC_CODE
+    /* CODE pragma configuration not available, please update the respective template file */ 
+    #undef SPM_STOP_SEC_CODE
+    #else
+    #error "SPM_MemMap.h, wrong pragma command"
+    #endif
+
+.. warning::
+    In case you cannot use the MemMap tool from RTA-CAR, please make sure the file SPM_MemMap.h is present in your project, otherwise you CANNOT 
+    build successfully your SPM code.
+
+    SPM does not provide anymore the file Sum_Spm_MemMap.h as part of its release package.  
+
+.. _module-configuration-overview:
+
+*****************************
+Module Configuration Overview
+*****************************
+
+Configuration Containers
+========================
+
+The SPM appears as a root configuration container as any other RTA-SUM module or Bsw module. 
+The highest hierarchical level for the SPM configuration appears as follows:
+
+Configuration Hints
+===================
+
+SPM Configuration Containers
+-----------------------------
+
+.. uml:: ../../csv/container_structure.uml
+
+.. include:: ../../csv/spm_container_view.rst
+
+SPM ConfigSet Notes
+---------------------
+
+.. _SpmLowVoltagePowerInfo:
+
+SpmLowVoltagePowerInfo
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. figure:: ../../pictures/SpmLowVoltagePowerInfo.png
+    :scale: 60%
+    :alt: SpmLowVoltagePowerInfo
+
+The container contains the configuration parameters for the LowVoltageSoftwareActivationPriorityRequest information. 
+The SPM uses this information to compare the Low Voltage Priority level received by the energy optimizer 
+with the Low Voltage Priority level of each configured Power Profile in order to decide whether a local activation request
+can be accepted or not OR whether to send the deactivation request for each requester.
+Moreover, the SPM uses this container in order to understand which is the LV Energy Optimizer
+with the Application Interface ID: LVOptmzerChk. 
+
+The following lines summarise what to configure to retrieve Low Voltage Priority service information from the power optimizer:
+
+    1. ComSignal (Service-based) with UINT8_N as ComSignalType
+    2. Valid implementation data type 
+    3. Valid DataTypeMappingSet 
+
+If the Low Voltage Priority service is configured:
+
+| - configure `SpmLowVoltSwActPrioNvmRef` and set `NvMSelectBlockForReadAll` to `TRUE` in the corresponding `NvMBlockDescriptor` so data is copied from NvM to the RAM mirror block during `NvM_ReadAll`.
+| - configure `SpmLowVoltSwActPrioNvmRef` and set `NvMSelectBlockForWriteAll` to `TRUE` in the corresponding `NvMBlockDescriptor` so the most recent RAM mirror block content is copied to NvM during `NvM_WriteAll`.
+| - set `SpmLowVoltLVOptmzerChkApplicationInterfaceID` to the same value as `SpmApplIntfID` of the Power Profile that represents the LV Optimizer Check profile.
+
+In order to use this feature, the integrator SHALL connect: 
+ 
+| - RP_SSFM_SPM_LowVoltSwActPrioReqAvailability to the SSFM port that reports the availability of the Low Voltage priority service.
+| - RP_Com_Spm_LowVoltSwActPrioReq to the Com in order to receive the payload of the Low Voltage priority service.
+| - RP_SPM_NvmService_LowVoltageActivationPriority to the Nvm in order to allow the SPM to trigger the NvM_WriteAll when it receives a new Low Voltage priority level from the energy optimizer.
+
+.. _SpmConfPowPrf:
+
+SpmConfPowPrf
+^^^^^^^^^^^^^^^^^^^
+
+.. figure:: ../../pictures/SpmPowProfRef.png
+    :scale: 60%
+    :alt: Spm Sys Architecture
+
+Container stores all the SPM instance-known power profiles as configuration container. Each SPM instance shall store at least one
+power profile as configuration parameter. On the other hand, the upper multiplicity of this container is infinite. 
+
+Please pay attention: You can have as maximum number of configured power profiles
+the value 4294967296. This value of is totally theoretical because not the whole set of combination can define a valid profile identifier (Look :ref:`SpmPowPrfId` too)
+
+
+.. warning::
+
+    No check are done on the number of configured power profile. The max allowed number is 4294967296 and this is the only performed check.
+
+.. _SpmPowPrfId :
+
+SpmSrvcAndInstID
+"""""""""""""""""""
+
+This parameter contains the identifier of the specific power profile. It consists of 4 bytes: the 16 most significant bits 
+denote the software service identifier of the power profile, while the 16 least significant bits denote the instance
+identifier of the power profile.
+
+SpmProfNumber
+""""""""""""""
+
+This parameter represent the Profile Number of the Power Profile.
+
+SpmProfileIsLocal
+"""""""""""""""""""
+
+The parameter determines whether the current Power Profile is local to the ECU or a remote service.
+
+.. _SpmProfBitMapIndex :
+
+SpmProfBitMapIndex
+""""""""""""""""""""
+
+The parameter defines which bits corresponds to configured local power profiles in order to set the bit-map buffer for DID 0xE0DD.
+
+Since the DID 0xE0DD can support at maximum 512 profiles, this parameter can be configured with a unique value between 0 and 511.
+
+This parameter is mandatory for local profile, while optional for remote profiles.
+
+Please, take into account that Confgen will populate this parameter field if the profile is local. 
+So, if the profile is remote, this parameter will be NOT automatically populated. 
+
+SpmLocActivationAllowed
+""""""""""""""""""""""""
+This parameter specifies if the Power Profile can be locally activated. 
+Set to *true* if this Power Profile can be locally activated (i.e. the C/S operation SPM_ActivateProfile accept the request and trigger the activation routine).
+Set to *false* if this Power Profile can NOT be locally activated (i.e. the C/S operation SPM_ActivateProfile discard the request).
+
+SpmApplIntfID
+"""""""""""""""""""""""
+This parameter specifies the ApplicationInterfaceID (i.e. the value that SHALL be passed as input parameter to the C/S SPM_ActivateProfile/SPM_DeactivateProfile 
+in order to activate/deactivate the Power Profile locally.)
+
+SpmVehDefActPriorON
+"""""""""""""""""""""""
+The parameter defines the profile activation priority when vehicle is going to ON. If not configured, the Power Profile will be not 
+subject to any LowBatteryVoltage Priority constraints. 
+
+Moreover, the SPM will ignore the LowBatteryVoltage Priority until it receives it from the Energy Optimizer on the RP_Com_Spm_LowVoltSwActPrioReq port. 
+
+SpmVehDefActPriorOFF
+"""""""""""""""""""""""
+The parameter defines the profile activation priority when vehicle is OFF. If not configured, the Power Profile will be not 
+subject to any LowBatteryVoltage Priority constraints. 
+
+Moreover, the SPM will ignore the LowBatteryVoltage Priority until it receives it from the Energy Optimizer on the RP_Com_Spm_LowVoltSwActPrioReq port. 
+
+SpmComIPduGroupEvnt_Tx
+""""""""""""""""""""""
+
+The paramter defines the references to the ComIpduGroup that shall be enabled in transmission once that the power profile is activated (as root of the power profile) or if this 
+Power Profile appears as CONSUMED dependency in a Power Profile dependency list. The same ComIpduGroup can be referenced by different Power Profiles.
+
+SpmComIPduGroupEvnt_Rx
+""""""""""""""""""""""
+
+The paramter defines the references to the ComIpduGroup that shall be enabled in Reception once that the power profile is activated (as root of the power profile) or if this 
+Power Profile appears as CONSUMED dependency in a Power Profile dependency list. The same ComIpduGroup can be referenced by different Power Profiles.
+
+SpmProfileSwDeps
+""""""""""""""""
+
+This sub-container represent a list of the Power Profile dependencies. 
+
+Each Power Profile depedency has the following parameter: 
+
+SpmProfDepType
+""""""""""""""
+
+Type of the dependency type. It can be: 
+
+| - **SUM_PRF_DEP_ACT_AND_CONS**: the Power Profile associated needs to be activated and the PDU associated to it needs to be enabled.
+| - **SUM_PRF_ACITVATED**: the Power Profile associtated needs to be activated only. 
+| - **SUM_PRF_CONSUMED**: the Pdu associated to the Power Profile dependency needs to be enabled.
+
+SpmPrfRef
+""""""""""
+Reference to a Power Profile that is a dependency of the pather Power Profile.
+
+.. figure:: ../../pictures/SpmSwDeps.png
+    :scale: 60%
+    :alt: Power Profile dependencies list
+
+SpmPgttEntries
+^^^^^^^^^^^^^^
+
+.. _SpmPgttEntries:
+
+Container for the design of the Power-Graph Traversal Table (as specified by GM).
+
+SpmTrgDvc
+===========
+
+.. figure:: ../../pictures/TrgDvc.png
+    :scale: 60%
+    :alt: Spm Target Device
+
+The container contains the following parameters:
+
+| - **SpmTrgDvcDtcBaseID**: 2-bytes identifier for the DTC associated to the Target Device 
+| - **SpmTrgDvcTimeOut**: time window for receiving the HeartBeat of the target Device before setting the LossOfNode indication.
+| - **SpmTrgDvcPowerOnDeviceRetryPeriodicity**: 2-bytes value that define the periodicity in milliseconds for the PowerOnDevice retry. Default values 10000 ms.
+| - **SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence**: 2-bytes value that define the milliseconds that must occur between PowerOff and PowerOn sequence during the PowerOnDevice retry. Default value 1000 ms.
+| - **SpmTrgDvcID**: List of identifier (IP address) of the device to reach from the current instance of the SPM.
+
+The following constraints are present on this container:
+
+| - the **SpmTrgDvcID** configured SHALL be unique (i.e. it is not possible to set the same SpmTrgDvcID in different SpmTrgDvc); 
+| - each **SpmTrgDvcID** SHALL belongs to one VLANId configured in the **SPMVlanCom** / **SPMVlanId** list. I.e. the second MSB octet of each **SpmTrgDvcID** SHALL be equal to one item of the **SpmVLANId** list;
+| - the **SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence** value SHALL be greater than 250 ms.
+
+Moreover, the **SpmTrgDvcPowerOnDeviceRetryPeriodicity** should be greater than the total time required to: 
+
+| - perform the PowerOff sequence,
+| - wait for the **SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence** to elapse,
+| - perform the PowerOn sequence,
+| - account for the DTC Timeout (which is necessary to determine if the Target Device has recovered)
+
+If this condition is not met, and the PowerOnDevice retry does not successfully recover the Target Device, the device will be immediately restarted.
+
+The container **SpmTrgDvc** has as child-container, **SpmTrgDvcVariantHndlng**, that stores information related to the variant handling.  
+**SpmTrgDvcVariantHndlng** structure contains the following: 
+
+| - **SpmTrgAssocWkUpFrm** represents the associated WUF type (type A, B or C) to read the wake-up bit from, for the Target Device, in order to implement the 'Intermediate Node Wakeup Frame Handling Information' feature.
+| - **SpmTrgAssocWkUpBit** represents the associated bit within the WUF type to be read for the Target Device in order to implement the 'Intermediate Node Wakeup Frame Handling Information' feature.
+| - **SpmTrgDvcVariantRef** represents the reference to the variant **SpmVariantCfg** this **SpmTrgDvcVariantHndlng** belongs to.
+| - **SpmWkUpSeqRef** represents the reference to the wake-up sequence to be executed in case the Target Device is requested to be woken up.
+
+The following constraints are present on **SpmTrgDvcVariantHndlng** container:
+
+| - **SpmTrgAssocWkUpFrm** and **SpmTrgAssocWkUpBit** can be configured when and only when **SpmNodeType** is of type SPM_NODE_INTERMEDIATE;
+| - if the 'Intermediate Node Wakeup Frame Handling Information' needs to be satisfied for this Target Device, both **SpmTrgAssocWkUpFrm** and **SpmTrgAssocWkUpBit** need to be configured;
+| - **SpmTrgDvcVariantRef** is a mandatory reference;
+| - the number of **SpmTrgDvcVariantHndling** configured needs to be equal to the number of variants defined in the SPM configuration (i.e. the number of **SpmVariantCfg** configured);
+| - each **SpmTrgDvcVariantHndling** needs to reference a different **SpmVariantCfg**;
+| - each **SpmVariantCfg** shall be referenced, by **SpmTrgDvcVariantHndling**, in every **SpmTrgDvc**;
+
+SpmTrgAssocWkUpFrm and SpmTrgAssocWkUpBit usage
+------------------------------------------------
+
+SPM uses the container information to understand if a remote device asks for a wake-up or a shutdown of an edge node that the SPM intermediate node itself directly handles.
+
+The information about the wake-up or the shutdown of the edge node is part of the CAN/ETH wake-up frame that SPM intermediate node can receive.
+
+As per SDV-2017 specification, SPM can receive three different CAN wake-up frames:
+
+* wake-up frame A
+* wake-up frame B
+* wake-up frame C
+
+Both of the wake-up frame defines a bit-map buffer information and each bit represents a specific target device over the network. In case the bit is asserted, the associated-bit 
+target is requested to be up, otherwise down. When the SPM intermediate node receives the wake-up information by CAN/ETH wake-up frame, it needs to check which of its controlled nodes
+could be requested to be up. In case, one of the controlled edge node is requested to be up by respective bit assertion in the received frame, the SPM starts executing the wake-up sequence for
+that edge node, using the Power Graph.
+
+The previous mentioned configuration parameters cover the following keys of input YAML file of Power Graph that is used by confgen:
+
+.. code-block:: yaml
+
+    Intermediate Node Wakeup Frame Handling Information:
+      Directly Managed by the Waking Device: # true/false
+      Wakeup Frame: # A, B or C
+      Wakeup Bit: # which bit in the frame
+
+As mentioned before, the configuration of the current container is only required in two cases:
+
+* SPM current instance is for an Intermediate node
+* SPM directly handles the target as one of its edge node.
+
+Please be careful: the container is part of the SUM SPM configuration that is generation by ETAS confgen tool, so that **NO MANUALLY CHANGE IS RECOMMENDED FOR THE CURRENT CONTAINER VALUES**.
+The rightness of the configuration data for the following container, for all the instances, just depends from the information the User/integrator defines in the YAML file.
+
+ETAS tools just perform the following checks with respect to the current container:
+
+* Container is configured only in case the SPM node type is intermediate (Spm/SpmConfigutSet/SpmPgttEntries/SpmWkngDvc/SpmNodeType)
+* SpmTrgAssocWkUpFrm allows three values to address wake-up frame A, B or C
+* SpmTrgAssocWkupBit allows only values in the closed range 0 and 63
+
+The following picture reports an example to understand how the container information can be used:
+
+.. figure:: ../../pictures/bitwise_operation_examples/Diapositiva1.PNG
+    :scale: 85%
+    :alt: Spm SpmTrgDvcHndlngInfo
+
+In the figure use case, the SPM is an intermediate node that manages only Target A as own edge node. For this one, SPM contains the configuration of a wake-up sequence and handling information.
+
+From the handling information we can see the Target A is mapped in:
+
+* CAN wake-up frame B
+* in the 14TH bit
+
+Always considering the use case in the pictures, SPM receives wake-up frame B in which the 14TH bit is asserted. In this case, SPM starts the execution of the wake-up sequence for Target A.
+
+.. _spmWkngDvc :
+
+SpmVariantCfg
+==============
+
+This container contains the configuration information for the variant handling of the SPM. Each item of this type, define a different variant. 
+
+The container contains the following parameters:
+
+| - **WpmVariantWKupFrame**: the wake-up frame associated to the variant for keep the ECU up. It can be A, B or C.
+| - **WpmVariantWKupBit**: the wake-up frame associated to the variant for keep the ECU up. It can be A, B or C.
+| - **SpmVariantIntermediateDstAddr**: the intermediate destination address to be used in case the SPM needs to send a wake-up frame to keep up the ECU for this variant.
+
+The following constraint are present on this container:
+
+| - **WpmVariantWKupFrame** and **WpmVariantWKupBit** are mandatory parameters;
+| - each **SpmVariantIntermediateDstAddr** shall belong to one VLANId configured in the **SPMVlanCom** / **SPMVlanId** list. I.e. the second MSB octet of each **SpmVariantIntermediateDstAddr** SHALL be equal to one item of the **SpmVLANId** list;
+| - the number of **SpmVariantIntermediateDstAddr** configured in each **SpmVariantCfg** shall be the same;
+
+This container have a child container called **SpmVariantHBVLANCfg** that contains the configuration information for the VLAN: 
+
+| - **SpmVLANId**: define to which VLAN this **SpmVariantHBVLANCfg** belongs to.
+| - **SpmSrcIp**: the source IP address to be used in the HB, WUF and SM. 
+| - **SpmDstIp**: the destination IP address to be used in the HB, WUF and SM.
+
+The following constraint are present on this container:
+
+| - the **SpmVLANId** configured SHALL be unique (i.e. it is not possible to set the same **SpmVLANId** in different **SpmVariantHBVLANCfg** for the same **SpmVariantCfg**);
+| - the **SpmVLANId** configured SHALL be present within the VLANId configured in the **SPMVlanCom** / **SPMVlanId** list;
+| - if there are multiple **SpmVariantCfg** configured, the number of **SpmVariantHBVLANCfg** present in each **SpmVariantCfg** shall be the same; 
+| - if there are multiple **SpmVariantCfg** configured, each **SPMVlanCom** / **SPMVlanId** present should be present in one of the **SpmVariantHBVLANCfg** in each **SpmVariantCfg**.
+| - if there is only ONE **SpmVariantCfg** configured, the SPM is able to retrieve at generation time the Source Ip from the TcpIp configuration to be used for SM and WUF for the missing **SpmVLANId** item.
+
+Examples to make more clear the last two points above. 
+
+Only ONE **SpmVariantCfg** configured
+---------------------------------------
+
+Let's imagine there are two SpmVLANCom configured, with VLANId 10 and 20. 
+Let's imagine there is only one SpmVariantHBVLANCfg configured in the only one SpmVariantCfg, with SpmVLANId 10, SpmSrcIp and SpmDstIp.
+
+At generation time, the SPM will retrieve the Source IP from the TcpIp configuration from the TcpIpStaticIpAddress that belongs to the VLAN 20 (i.e. an IP address with the same second MSB octet as the VLANId 20) 
+and it will use it for the SM and WUF configuration of the VLAN 20.
+
+If the SpmVLANCom container is properly configured (i.e. interfaces/data-type are present for the needed type of frame): 
+
+| - the SPM will send the HB ONLY on the VLAN 10; 
+| - the SPM will send the WUF and the SM on both VLAN 10 and VLAN 20, using for the VLAN 10 the SpmSrcIp and for the VLAN 20 the retrieved IP from TcpIp configuration.
+
+If the integrator prefer to manually configure the SrcIp to be usedfor the VLAN 20, it can be done by configuring another SpmVariantHBVLANCfg with SpmVLANId 20 and the desired SpmSrcIp.
+
+Multiple **SpmVariantCfg** configured
+---------------------------------------
+
+If there are multiple SpmVariantCfg configured, each SpmVariantCfg needs to contain a SpmVariantHBVLANCfg for each VLANId configured in the SPMVlanCom. 
+
+SpmWkngDvc
+===========
+
+.. figure:: ../../pictures/WkDvc.png
+    :scale: 60%
+    :alt: Spm Waking Device
+
+| - **SpmNodeType**: describes if the SPM is on a Edge Node or Intermediate Node. 
+
+.. _SpmWkUpSeq :
+
+SpmWkUpSeq
+==============
+
+See :ref:`PoD` to have information on how this information are used by SPM.
+
+This container contains a list of **SpmWkUpSteq** necessary to be performed in order to turn On a **SpmTrgDvc**.
+
+.. _wkupStep :
+
+SpmWkUpSteq
+==============
+
+.. figure:: ../../pictures/WkStep.png
+    :scale: 60%
+    :alt: Spm Sys Architecture
+
+| - **SpmSeqStepID**: Wake-up sequence step identifier for sorting the step and define the sequence
+| - **SpmSeqStepDly**: time separation between the current step and the next
+| - **SpmCommandType**: type of action to be performed in the step
+| - **SpmCommandValue**: describe the value of the action to be performed. Its meaning is related to the **SpmCommandType**.
+
+The **SpmCommandType** can have the following values: 
+
+| - **SEND_TC10_SWTCH_1**: Send TC10 wakeup through ethernet switch 1 on the host. **SpmCommandValue** represents the Port Number.
+| - **SEND_TC10_SWTCH_2**: Send TC10 wakeup through ethernet switch 2 on the host. **SpmCommandValue** represents the Port Number.
+| - **SEND_ETH_WKUP_FRM_A**: Unicast Wakeup Frame A on Ethernet to the specific intermediate MCU used by this waking device. **SpmCommandValue** represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).
+| - **SEND_ETH_WKUP_FRM_B**: Unicast Wakeup Frame B on Ethernet to the specific intermediate MCU used by this waking device. **SpmCommandValue** represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).
+| - **SEND_ETH_WKUP_FRM_C**: Unicast Wakeup Frame C on Ethernet to the specific intermediate MCU used by this waking device. **SpmCommandValue** represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).
+| - **SEND_CAN_WKUP_FRM_A**: Broadcast CAN wakeup frame A. **SpmCommandValue** represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).
+| - **SEND_CAN_WKUP_FRM_B**: Broadcast CAN wakeup frame B. **SpmCommandValue** represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).
+| - **SEND_CAN_WKUP_FRM_C**: Broadcast CAN wakeup frame C. **SpmCommandValue** represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).
+| - **SEND_BOARD_LV_WKUP_GPIO**: Assert hardware GPIO to perform the wakeup. **SpmCommandValue** represents the GPIO number to be asserted (0x00- max GPIO number)
+
+The following constraint are present on this container:
+
+| - commands **SEND_TC10_SWTCH_1** and **SEND_TC10_SWTCH_2** can be used if EthSMNetwork associated with the Ethernet Switch is configured in the EthSM;
+| - commands **SEND_ETH_WKUP_FRM_A**, **SEND_ETH_WKUP_FRM_B** and **SEND_ETH_WKUP_FRM_C** can be used for both EDGE and INTERMEDIATE nodes that support ETH WUF transmission;
+| - commands **SEND_CAN_WKUP_FRM_A**, **SEND_CAN_WKUP_FRM_B** and **SEND_CAN_WKUP_FRM_C** can be used if the SPM is deployed as INTERMEDIATE node;
+| - command **SEND_BOARD_LV_WKUP_GPIO** can be used if the SpmGeneral/SpmWkUpHelperFunction is configured; 
+
+**NOTE**: SPM module is agnostic about the real Switch AND Switch port on which the TC10 pulse will be sent. The SPM just interfaces itself with the EthSM module. The interface between SPM and EthSM is possible thanks to API EthSM_RequestComMode that receives from SPM the EthSM Network Handle Identifier for the network that maps the EthIf virtual controller on the same VLAN of the Target Device IP address. By the usage of this API AND IF the EthSM is properly configured to support the wake-up on data-line, the SPM can request the sending of TC10.
+
+SPM General
+--------------
+
+SpmDiagnostic
+==============
+
+This container handles the diagnostic DID related to the SPM module. The container contains the following parameters:
+
+.. _DIDE0DD :
+
+Spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref
+========================================================
+
+This parameter defines the reference to the DCM DID that is used to report the activation status of the Activation Profile. The value of this parameter is a reference to a DcmDspDid.
+If NO reference is present, the SPM will not generate the related code.
+
+The SPM expects the configuration of the module as following: 
+
+| - the DcmDspDataUsePort is set to USE_DATA_SYNCH_CLIENT_SERVER or USE_DATA_ASYNCH_CLIENT_SERVER;
+| - the DcmDspDataConditionCheckReadFncUsed can be set either to TRUE or FALSE;
+
+This DID exploits the **SpmProfBitMapIndex** in order to define the bitmap of the activation status of the Activation Profile.
+So, refer to section :ref:`SpmProfBitMapIndex` for major details.
+
+Please, connect the :code:`PPort PP_SPM_DCM_DID_E0DD_ActivationProfileActivationStatus` to the DCM in order to exploit the SPM DID E0DD functionality.
+
+.. _DIDE0DE :
+
+DID 0xE0DE - Locally Activated Activation Profile Off Power Mode Activity Records
+==================================================================================
+
+SpmDID0xE0DEDcmRef
+------------------
+
+This parameter defines the reference to the DCM DID that is used to report the Locally Activated Activation Profile Off Power Mode Activity Records. The value of this parameter is a reference to a DcmDspDid.
+If NO reference is present, the SPM will not generate the related code.
+
+The SPM expects the configuration of the module as following: 
+
+| - the DcmDspDataUsePort is set to USE_DATA_SYNCH_CLIENT_SERVER or USE_DATA_ASYNCH_CLIENT_SERVER;
+| - the DcmDspDataConditionCheckReadFncUsed can be set either to TRUE or FALSE;
+
+Please, connect the :code:`PPort PP_SPM_Dcm_DataDidE0DE` to the DCM in order to exploit the SPM DID E0DE functionality.
+
+SpmDID0xE0DENvmRef
+--------------------
+
+This parameter defines the reference to the NvM block that is used to store the Locally Activated Activation Profile Off Power Mode Activity Records for DID 0xE0DE. The value of this parameter is a reference to a NvMBlockDescriptor.
+If NO reference is present, the SPM will not generate the related code.
+
+.. caution::
+
+    This parameter is **MANDATORY** if **SpmDID0xE0DEDcmRef** is configured. The NvM block is required to provide persistent storage for the DID 0xE0DE activity records data.
+
+The SPM expects the configuration of the NvM block as following:
+
+| - the NvMNvBlockLength shall be set to 35 bytes to accommodate the DID 0xE0DE activity records data structure;
+| - the NvMRamBlockDataAddress is referenced as a global variable used by SPM to store the data DID 0xE0DE.
+
+Please, ensure the NvM block is properly configured with these requirements for DID E0DE data persistence.
+
+.. _DIDE0DF :
+
+DID 0xE0DF - Remotely Activated Activation Profile Off Power Mode Activity Records
+===================================================================================
+
+SpmDID0xE0DFDcmRef
+------------------
+
+This parameter defines the reference to the DCM DID that is used to report the Remotely Activated Activation Profile Off Power Mode Activity Records. The value of this parameter is a reference to a DcmDspDid.
+If NO reference is present, the SPM will not generate the related code.
+
+The SPM expects the configuration of the module as following: 
+
+| - the DcmDspDataUsePort is set to USE_DATA_SYNCH_CLIENT_SERVER or USE_DATA_ASYNCH_CLIENT_SERVER;
+| - the DcmDspDataConditionCheckReadFncUsed can be set either to TRUE or FALSE;
+
+Please, connect the :code:`PPort PP_SPM_Dcm_DataDidE0DF` to the DCM in order to exploit the SPM DID E0DF functionality.
+
+SpmDID0xE0DFNvmRef
+--------------------
+
+This parameter defines the reference to the NvM block that is used to store the Remotely Activated Activation Profile Off Power Mode Activity Records for DID 0xE0DF. The value of this parameter is a reference to a NvMBlockDescriptor.
+If NO reference is present, the SPM will not generate the related code.
+
+.. caution::
+
+    This parameter is **MANDATORY** if **SpmDID0xE0DFDcmRef** is configured. The NvM block is required to provide persistent storage for the DID 0xE0DF activity records data.
+
+The SPM expects the configuration of the NvM block as following:
+
+| - the NvMNvBlockLength shall be set to 40 bytes to accommodate the DID 0xE0DE activity records data structure;
+| - the NvMRamBlockDataAddress is referenced as a global variable used by SPM to store the data DID 0xE0DF.
+
+Please, ensure the NvM block is properly configured with these requirements for DID E0DF data persistence.
+
+.. figure:: ../../pictures/DiagDID.png
+    :scale: 60%
+    :alt: Spm DID Diagnostic Management
+
+
+SpmMainFunctionPeriodicity
+==========================
+
+Parameter defines the timing period for scheduling the Spm main controller. The Spm main controller evaluates the status of the permit execution considering the SpmPermitExecutionMask
+value and the SPM instance activation criteria. The value of the parameter is in milliseconds as unit. The parameter datatype is float, this means that when you
+configure the parameter with a value in the open range (0,1), the the controller is scheduled in microseconds.
+
+If you want to schedule your SPM controller in seconds, you can configure your parameter with a value greater than 1000.
+
+.. warning::
+
+    Please pay attention when you configure this value. No check on the configuration has been implemented yet. According to GM specification
+    the minimum value of the parameter shall be 1000. AN heartbeat might be also transmitted at a lower rate, but we strongly suggest to keep
+    this value to 1 seconds = 1000 ms.
+
+SpmPermitExecutionMask
+=======================
+
+Parameter defines the permit execution mask. SPM uses this mask to transit the SPM controller in the appropriate state. The permit execution mask is one single byte that implements a bit map. 
+The value of the permit execution mask is computed as follows:
+
+* Each bit of the Byte value represents a specific functionality:
+
+    * If the functionality is not in scope to the SPM instance, then set a **1**
+    * Otherwise set a **0**
+
+SpmWkUpHelperFunction
+======================
+
+The parameter allows to configure the name of the wake-up helper function, in case the Project-specific requires a device Custom wake-up. The parameter is required as per
+SDV-8217 and it is not mandatory. If the function name is present, the function will take the received 64-bit buffer (a byte buffer) as input. 
+When the SPM receives the CAN wake-up frame, it scans for the asserted bits in the message. Each bit corresponds to a specific target. 
+If the target device is awaken by Board-Level wake-up (GPIO wake-up), the SPM forwards the received buffer to the helper function by invoking it using this configured name.
+
+SPM CAN Wake-up Frame references
+---------------------------------
+.. _WUF:
+.. _SpmCANWkUpFrmRef:
+
+SpmCANWkUpFrmRef
+^^^^^^^^^^^^^^^^
+
+.. figure:: ../../pictures/CanWkUpRef.png
+    :scale: 50%
+    :alt: Spm Sys Architecture
+
+**If the SPM is deployed as INTERMEDIATE node**, the user need to configure two parameters in this sub-container: SpmCANWkUpFrmRxRef to receive Can Frame(s) or SpmCANWkUpFrmTxReftransmit to transmit Can frame(s). 
+The values configured in these two parameters refers to those configured in the CanIf upper Layer. 
+
+The *SpmCANWkUpFrmRefTx* parameter represent the reference to the CanIfTxPduCfg that is used to send the CAN wake up frame. 
+(The values of the configuration parameters are references to CanIf configured ones as CanIf upper Layer).
+Three reference are expected: WUF A, WUF B and WUF C.
+As per GM specification, the SPM will be deployed on **CHM** so the three references configured here SHALL have CanIfTxCanId 339 (WUF A), CanIfTxCanId 355 (WUF B) and CanIfTxCanId 371 (WUF C).
+
+The *SpmCANWkUpFrmRefRx* parameter represent the reference to one or more CanIfRxPduCfg that are used to receive the CAN wake up frame. 
+As per GM specification, the SPM will be deployed on **CHM** so the references configured here SHALL have a CanIfRxCanId in range [336-351] (WUF A only).
+
+In addition, to receive multiple CAN Frames, careful configuration is required for proper functioning. Specifically, in the CanIf module, the user need to configure: 
+
+* the same name for the <User_RxIndication> in the CanIfRxPduUserRxIndicationName parameter, enabled by selecting CDD in the CanIfRxPduUserRxIndicationUL parameter, to allow receiving CAN Frames in the <User_RxIndication> function. 
+
+* CanIfRxPduRef and CanIfRxPduHrhIdRef to reference different Pdu (CanIfRxPduRef) and HRH (CanIfRxPduHrhIdRef).
+
+.. figure:: ../../pictures/SPM_CANWUF.png
+    :scale: 40%
+    :alt: Can wakeUp frame configuration
+
+.. figure:: ../../pictures/SPM_CANWUFTest.png
+    :scale: 40%
+    :alt: Can wakeUp frame configuration
+
+SpmGenerateInitRunnable
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. figure:: ../../pictures/spmConfiguration/SpmGenerateInitRunnable.PNG
+    :scale: 60%
+    :alt: Spm Sys Architecture
+
+You need to configure this parameter to determine whether to generate the initial runnable. The SPM_Init function will be called just once at startup. 
+
+If it is true, you shall need to configure parameter SpmInitFuncPeriodicity for the periodicity of SPM init runnable. Otherwise, the SPM_Init functions shall be configured in the BswM init action list and to be called during the startup. 
+
+.. figure:: ../../pictures/spmConfiguration/SPM_Init_BswMActionList.PNG
+    :scale: 60%
+    :alt: Spm Init initialization
+
+.. figure:: ../../pictures/spmConfiguration/SPM_Init_BswMActionListRef.PNG
+    :scale: 60%
+    :alt: Spm Init initialization
+
+Ensure that this header file Sum_Spm.h is included correctly in the BswM configuration file for declarations related to SPM_Init.
+
+.. figure:: ../../pictures/spmConfiguration/Spm_Init_BswM_Included.PNG
+    :scale: 60%
+    :alt: Spm Init initialization
+
+SpmInitFuncPeriodicity
+^^^^^^^^^^^^^^^^^^^^^^
+Parameter defines the periodic fixed runnable for scheduling the SPM initialization phase. By default, this timing period is 1000 (ms).
+
+You shall need to map this generated runnable to the highest priority order task when the parameter *SpmGenerateInitRunnable* is set to true.
+
+.. _SpmVLANCom:
+
+SpmVLANCom
+^^^^^^^^^^
+Each container of this type has the following parameter: 
+
+| - **SpmVLANId**: the VLAN identifier of the VLAN this container refers to. The value of this parameter is in the range [0-255].
+
+Each container of this type references a set of Interfaces and Data-Types used by SPM to send/receive a particular type of message for a specific VLAN. 
+The Interfaces and Data-Types are defined in the ECU-EXTRACT.
+
+The container has four child containers: 
+
+| - SpmVLANComPwrMgrHeartbeat: exploited for send/receive the HeartBeat (HB) frame;
+| - SpmVLANComPwrMgrWakeupFrames: exploited for send/receive the Unicast WakeUp (WUF) frame;
+| - SpmVLANComPwrMgrWakeupFramesMulticast: exploited for send/receive the Multicast WakeUp (WUF) frame;
+| - SpmVLANComSwrMgrInfo: exploited for send/receive the SM frame;
+
+.. warning::
+    The above containers have as parameters: SpmHbTxAbsPth, SpmHbRxAbsPth, SpmWkupTxAbsPth, SpmWkupRxAbsPth, SpmWkupRxAbsPthMulticast, 
+    SpmSmTxAbsPth (grey arrow in following image), SpmSmRxAbsPth ARE OBSOLETE and NOT considered by SPM code. Them will be removed from SPM's paramdef in future releases. 
+
+The following is an example for the SM frame, the following considerations are valid for the other type of frames as well.
+
+Following image shows an example of SpmVLANComSwrMgrInfo containers configuration for Mechatronics VLAN (the path are ECU-EXTRACT specific):
+
+.. figure:: ../../pictures/spmVLANCom/SMFrame.PNG
+    :scale: 60%
+    :alt: SM in SPMVlan
+
+If neither of Interface and Data-Type (an example, the red arrows above for sending the SM frame) for a message in tx or rx IS NOT configured, the SPM will not send/received 
+that message over that VLAN. The following image shows an example on how to receive ONLY the SM frames over a VLAN:
+
+.. figure:: ../../pictures/spmVLANCom/SMFrame_onlyTx.PNG
+    :scale: 60%
+    :alt: SM in SPMVlan only in Tx
+
+The SPM will raise a build error unless both Interfaces and Data-Type are configured/NOT configured for the same message. The following image shows a wrong configuration:
+
+.. figure:: ../../pictures/spmVLANCom/SMFrame_error.PNG
+    :scale: 60%
+    :alt: SM in SPMVlan with error
+
+
+To solve the generation failure: 
+
+| - if that message is needed, configure the NOT present reference (the reference to the Interface in the image)
+| - if that message is NOT needed, remove the configuration for the not needed reference (the reference for the Data-Type in the image)
+
+.. warning::
+
+    If the SPM does not have the couple data-type/interface for a specific type of message (HB, WUF, SM) for a specific VLAN, the SPM will not send/receive that type of message over that VLAN. 
+
+**NOTE**: It is possible to receive more than one HeartBeat (HB) frame; therefore, the parameters SpmPwrMgrHeartbeatRxSendRecvIntRef and SpmPwrMgrHeartbeatRxImpDataTypeRef shall have the same size.
+
+
+.. _calibratable :
+
+Calibratable Parameters
+==========================
+
+Heartbeat periodicity
+----------------------
+
+The HeartBeat's initial burst phase and steady state periodicity (ms) are calibratable parameters.
+They can be assigned values in the range [5 - 65535].
+The default value of the intial burst phase periodicity is of 5ms. 
+The default value of the steady state periodicity is of 1000ms. 
+
+HeartBeat Shutdown Delay
+------------------------
+
+Time delay (in ms) the PM has to wait, after the last burst HeartBeat has been sent, before allowing the shutdown.
+It can be assigned a value in the range {0, ..., 65000}.
+The default value of the time delay is 2000 (2s).
+
+PDU Tx Switch-Off Delay
+------------------------
+
+Time delay (in ms) the Power Manager shall wait before disabling the Tx PDU group (``SpmComIPduGroupEvnt_Tx``) once the conditions for switching off the PDU groups are met.
+Upon deactivation, the Rx PDU group (``SpmComIPduGroupEvnt_Rx``) is disabled immediately, while the Tx PDU group disable is deferred by this amount.
+The default value is 150 ms.
+
+Spm_SmFrame_QueueLength
+--------------------------
+
+Maximum queue length of SM Frame Rx messages. If this value is not set then the default value used is (number of target devices * number of local profiles).
+
+
+Spm_PmHeartbeat_QueueLength
+------------------------------
+
+Maximum queue length of Heartbeat Rx messages. If this value is not set then the default value is number of target devices.
+
+Spm_PmETHwakeUpUNIC_QueueLength
+-----------------------------------
+
+Maximum queue length of unicast Eth wakeup messages. If this value is not set then the default value is number of target devices.
+
+Spm_PmETHwakeUpMULTIC_QueueLength
+------------------------------------
+
+Maximum queue length of multicast Eth wakeup messages. If this value is not set then the default value is (PowerMgrMainFunctionPeriodicity / 5 + 1).
+
+Spm_LocalRequests_QueueLength
+-------------------------------
+
+Maximum queue length of local and diagnostic messages. If this value is not set then the default value is (number of power profiles * 2).
+
+
+**NOTE**: The ideal value to configure any of the queue lengths is to use the same calculation as the default values while putting in mind the RAM and busload of the system.
+eg: ideal value for Spm_SmFrame_QueueLength = (number of target devices * number of local profiles) as the default value but if the RAM is a constraint then a lower value shall be used.
+
+
+*******************************
+BSW Modules Configuration Hints
+*******************************
+
+.. warning::
+
+    This section is under development. It will be completed internally and then released once RTA-SUM SPM will be officially released
+    for production.
+
+Rte Configuration
+=================
+
+The RTA-SUM SPM contains several calibration parameter. These parameters resides in the RTE generated code. The RTE generated code uses Macros from
+*Compiler Abstraction AUTOSAR library*. The usage of these Macros requires an additional configuration of the **Rte Os/Rte** configuration container otherwise a 
+compilation error can appear for Macro *RTE_CALPR*.
+
+If you use the **SDK** you have to just check that the following configuration is present in your RTA-CAR project. In case it is not, please add it manually as follows:
+
+.. figure:: ../../pictures/Rte_Spm_Conf.png
+    :scale: 65
+    :alt: RTE configuration for SPM
+
+As picture shows, the steps are:
+
+#. Open your Project
+#. In ECU Configurator, expand "Bsw Modules" and go in *Rte Os/Rte*
+#. Configure the *RteSwComponentType* like in the previous picture.
+
+Calibratable Parameters
+======================= 
+
+Cdd for communication
+=====================
+
+In an integration environment, the RTA-SUM SPM needs a Complex-Device Driver configuration in order to redirect the Pdu to/from the CanIf.
+
+This is called **Cdd_SPM** in SDK release.
+
+The configuration of the **Cdd_SPM** allows the proper **CanIf** code generation for RTA-BSW. 
+On the other side, the **Cdd_SPM** makes possible the proper RTA-SUM SPM code generation when you configure the Pdu references in the container 
+*SpmGeneral/SpmCANWkUpFrmRef*.
+
+.. caution::
+
+    Don't change the name of Cdd_SPM. If you want to change the Tx/Rx Pdus between RTA-SUM SPM and CanIf, please just edit the Pdu Reference.
+
+.. warning::
+
+    The Complex Device Driver is statically provided at the moment in the SDK releases. If you don't need CAN, please:
+
+    #. Remove the Cdd configuration
+    #. Make sure that No container *CanIfTxPduCfg* and *CanIfRxPduCfg* have respectively parameters *CanIfTxPduUserRxIndicationUL* and *CanIfRxPduUserRxIndicationUL* different from CDD,
+       otherwise you must remove or you have to change to an AUTOSAR standard module.
+    #. Remove the configuration of the container *SpmGeneral/SpmCANWkUpFrmRef* in RTA-SUM SPM configuration
+
+Metadata Handling by RTE Configuration Steps
+=============================================
+
+.. caution::
+
+    **PLEASE**: you must consider this section *IF AND ONLY IF* you have the possibility to embed RTA-RTE version 12.3.1pr3 or above.
+
+    RTA-RTE directly supports the metadata handling at RTE API level and, then RTA-RTE replaces the Com call-outs of the older SPM versions.
+
+**PRE-CONDITION** : If you integrate the new SUM plugin in a RTA-CAR project with a previous version, please remove the configuration of the Com Callout. You can refer
+to the previous User guide description to avoid the configuration of the Com. Otherwise let's start to follow the next steps.
+
+1. Open the configuration of the Com in your RTA-CAR Project AND go to path */ComConfig/ComSignals*
+2. For all SPM related signals ( they should start with S_Sig_sftpwrmgr prefix) and change the value of the parameter *ComSignalType* to **UINT8_DYN** (look image `ComMetaD`_)
+3. Reach the SENDER-RECEIVER interfaces *sftpwrmgr_Gen*, *sftpwrmgr_heartbeat_Gen* and *SR_SPM_ETHWakeUpFrame*. For both of them right click with the mouse on the names and add *New Child/MetaDataItemSet* (If this is not provided).
+4. In the just created *MetaDataItemSet*, map in parameters *DataElements* the data-element **SPM_dt** for interface *sftpwrmgr_Gen* and **SPM_HB_dt** for interface *sftpwrmgr_heartbeat_Gen*, the data-element **PwrMgrWakeupTxEventImpType** for interface *SR_SPM_ETHWakeUpFrame*.
+5. Add a *MetaDataItem* to the *MetaDataItemSets* and configure **10** as *Length* (refer to image `SrMetaD`_ for the final scenario)
+6. Now you can generate the RTE code
+
+.. _ComMetaD:
+
+.. figure:: ../../pictures/com_sign_metadata.png
+    :scale: 65
+    :alt: Configuration of Com signal Type
+
+.. _SrMetaD:
+
+.. figure:: ../../pictures/metadata_sr.png
+    :scale: 65
+    :alt: Configuration of metadata in sender receiver interface
+
+
+.. _BswM_Configuration:
+
+BswM Configuration
+==================
+
+SPM can interface itself with the BswM as Upper Layer for the following features
+
+Enable/disable PDU groups 
+---------------------------
+
+BswM defines the BswMPduGroupSwitch action. This action allows the handling of PDU communication status. SPM acts as a Mode requester for this specific handler to the BswM.
+
+The following are the needed steps to configure properly the BswM:
+
+.. warning::
+
+    The following is just a guidelines. Refer to the BswM specification on how to properly configure the BswM module.
+
+.. _BswMPduAction:
+
+BswMPduGroupSwitch action
+---------------------------
+
+In the container *Bswm/BswMConfig/BswMModeControl/BswMAction*:
+#. create a new action
+#. select the type *BswM_PduGroup_Action* under the *BswMAvailableActions* and 
+#. set reference of the PDUGroup 
+in *BswMEnabledPduGroup*.
+
+.. _BswM_PduGroup_Action:
+
+.. figure:: ../../pictures/BswM_PduGroup/BswM_PduGroup_Action.png
+    :scale: 65
+    :alt: Configuration of the BswMPduGroupSwitch action
+    
+Re-do the same operation as above but set the reference of the PDUGroup in *BswMDisabledPduGroup*.
+
+Action List
+^^^^^^^^^^^^^^^^^^^^
+In the container *Bswm/BswMConfig/BswMModeControl/BswMActionList*, create a new action list with *BswMActionListExecution* set to **BSWM_CONDITION** 
+add a *BswmActionListItem* and then for *BswMActionListItemRef* you need to set the reference to the action created in :ref:`BswMPduAction` (previous step).
+
+.. _BswM_PduGroup_ActionList:
+
+.. figure:: ../../pictures/BswM_PduGroup/BswM_PduGroup_ActionList.png
+    :scale: 65
+    :alt: Configuration of the Action List
+    
+Re-do the same operation as above but set the reference to *BswMActionListItemRef* with the other previous action item.
+
+Mode Request Port
+-----------------
+In the container *Bswm/BswMConfig/BswMArbitration/BswMModeRequestPort* create a new Mode Request Port selecting the *BSWM_IMMEDIATE* value for *BswMRequestProcessing*. 
+Then, go down from previous container to */BswNModeRequestSource/BswMSwcdModeNotification* and configure *BswMSwcdModeNotificationModeDeclarationGroupPrototyeRe* with the reference to Mode-declaration group **SPM_SWCD_PDUGRP**. 
+
+.. _BswM_PduGroup_ModeRequestPort:
+
+.. figure:: ../../pictures/BswM_PduGroup/BswM_PduGroup_ModeRequestPort.png
+    :scale: 65
+    :alt: Configuration of the MRP
+
+Mode Condition
+----------------
+In the container *BswM/BswMConfig/BswMModeArbitration/BswMModeCondition* create the mode condition to enable the Pdu Group.
+Set the *bswMConditionType* to *BSWM_EQUALS* and the *BswMConditionMode* to the Mode request Port previously created. 
+
+.. _BswM_PduGroup_ModeConditionPre:
+
+.. figure:: ../../pictures/BswM_PduGroup/BswM_PduGroup_ModeCondition_Pre.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+Set the *BswMModeValueRef* of the other *BswMModeDeclaration* to *SPM_PDU_GROUP_ENABLE*.
+
+.. _BswM_PduGroup_ModeCondition:
+
+.. figure:: ../../pictures/BswM_PduGroup/BswM_PduGroup_ModeCondition.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+Logical Expressions
+--------------------
+In the container *Bswm/BswMConfig/BswMModeArbitration/BswMLogicalExpression* create one logical expression.
+
+.. _BswM_PduGroup_LogicalExpression:
+
+.. figure:: ../../pictures/BswM_PduGroup/BswM_PduGroup_LogicalExpression.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+In one *BswMLogicalExpression* set the *BswMArgumentRef* to the Mode condition previously created for enable the PDU group. 
+
+Action Rules
+------------------
+In the container *Bswm/BswMConfig/BswMModeArbitration/BswMActionRule* create one action rule. Set the *BswMRuleExpressionRef* to the logical expression for enable the PDU group.
+Set the *BswMRuleFalseActionList* to the action list for disable the PDU group. Set the *BswMRuleTrueActionList* to the action list for enable the PDU group.
+
+.. _BswM_PduGroup_ActionRules:
+
+.. figure:: ../../pictures/BswM_PduGroup/BswM_PduGroup_Rule.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+Data Type Settings
+------------------
+In the container *BswM/BswMConfig/BswMDataTypeSettings* add the ref to *DTMS_SPM_SrvcPduGroup*.
+
+.. _BswM_PduGroup_DTMS:
+
+.. figure:: ../../pictures/BswM_PduGroup/BswM_PduGroup_DTMS.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+Port Connection
+^^^^^^^^^^^^^^^^^^^^^^
+Connect the :code:`PP_SPM_BswM_ComIpduGroup_<<ShortNameOfThePDUGroup>>` to the Mode Request Port created previously. 
+
+.. _BswM_PduGroup_Connection:
+
+.. figure:: ../../pictures/BswM_PduGroup/BswM_PduGroup_Connection.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+
+Notification from BswM
+-------------------------
+
+WHEN the communication stack for Ethernet is ready, BswM notifies the SPM. SPM needs the notification from BswM to start the counting of the Heartbeat counter to embed in the PM frames.
+
+
+
+BswMCommunicationState switch port
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the container *Bswm/BswMConfig/BswMModeControl/BswMSwitchPorts*:
+#. create a new BswMSwitchPort
+#. set reference of the BswMRbModeGroupRef to SPM_MDG_CR as shown:
+
+.. _BswM_CommunicationState_Switch_Port:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_CommunicationState_SwitchPort.png
+    :scale: 65
+    :alt: Configuration of the MSP_CommunicationState switch port
+
+
+.. _BswMCommunicationReadyAction:
+
+BswMCommunicationState ready action
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the container *Bswm/BswMConfig/BswMModeControl/BswMAction*:
+#. create a new action
+#. select the type *BswM_Rte_Switch_Action* under the *BswMAvailableActions* and 
+#. set reference of the MSP created above and ready mode 
+in *BswMRteSwitchPortRef* and *BswMSwitchedMode*.
+
+.. _BswM_CommunicationState_Ready_Action:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_CommunicationState_ReadyAction.png
+    :scale: 65
+    :alt: Configuration of the BswMPduGroupSwitch action
+    
+Re-do the same operation as above for NOT ready action but set the reference of the SPM_COM_NOT_READY in *BswMSwitchedMode*.
+
+Action List
+^^^^^^^^^^^^^^^
+In the container *Bswm/BswMConfig/BswMModeControl/BswMActionList*, create a new action list with *BswMActionListExecution* set to **BSWM_CONDITION** 
+add a *BswmActionListItem* and then for *BswMActionListItemRef* you need to set the reference to the action created in :ref:`BswMCommunicationReadyAction` (previous step).
+
+.. _BswM_CommunicationState_Ready_ActionList:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_CommunicationState_ReadyActionList.png
+    :scale: 65
+    :alt: Configuration of the Action List
+    
+Re-do the same operation as above but set the reference to *BswMActionListItemRef* with the other previous action item.
+
+Mode Request Port
+^^^^^^^^^^^^^^^^^^
+1. In the container *Bswm/BswMConfig/BswMArbitration/BswMModeRequestPort* create a new Mode Request Port selecting the *BSWM_IMMEDIATE* value for *BswMRequestProcessing*. 
+Then, go down from previous container to */BswNModeRequestSource/BswMSoAdSoConModeChg* and configure *BswMSoAdSocketIdRef* with the reference to HB message socket. 
+
+
+.. _BswM_CommunicationState_ModeRequestPort:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_CommunicationState_MRP.png
+    :scale: 65
+    :alt: Configuration of the MRP
+
+2. In the container *Bswm/BswMConfig/BswMArbitration/BswMModeRequestPort* create a new Mode Request Port selecting the *BSWM_IMMEDIATE* value for *BswMRequestProcessing*. 
+Then, go down from previous container to */BswNModeRequestSource/BswMComMIndication* and configure *BswMComMChannelRef* with the reference to ComMChannel. 
+
+.. _BswM_HBComMChannelState_ModeRequestPort:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_ComMChannelState_MRP.png
+    :scale: 65
+    :alt: Configuration of the MRP
+
+
+Note_1 : Integrator can check the SoAdPduRoutes container in the SoAd module to obtain the socket that reference HeartBeat_Tx_PDU
+
+Note_2 : Integrator can check the EthSMComMNetworkHandleRef in the EthSM module to obtain the ComMChannel linked to HeartBeat_Tx_PDU
+
+Note_3 : It's up to the integrator to choose what is the kind of the mode request and logical expression that can notify the SPM once Ethernet stack and HB socket are ready for communication. 
+
+Mode Condition
+^^^^^^^^^^^^^^^^^
+1. In the container *BswM/BswMConfig/BswMModeArbitration/BswMModeCondition* create the mode condition to switch the socket MRP to socket online.
+Set the *bswMConditionType* to *BSWM_EQUALS* and the *BswMConditionMode* to the Mode request Port previously created for the SocketState. 
+
+.. _BswM_CommunicationState_ModeConditionPre:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_CommunicationState_MC_Pre.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+Set the *BswMBswRequestMode* of the other *BswMBswMode* to *SOAD_SOCON_ONLINE*.
+
+.. _BswM_CommunicationState_ModeCondition:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_CommunicationState_MC.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+2. In the container *BswM/BswMConfig/BswMModeArbitration/BswMModeCondition* create the mode condition to switch the ComMChannel MRP to full communication.
+Set the *bswMConditionType* to *BSWM_EQUALS* and the *BswMConditionMode* to the Mode request Port previously created for the ComMChannel. 
+
+.. _BswM_HBComMChannelState_ModeConditionPre:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_HBComMChannelState_MC_Pre.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+Set the *BswMBswRequestMode* of the other *BswMBswMode* to *COMM_FULL_COMMUNICATION*.
+
+.. _BswM_HBComMChannelState_ModeCondition:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_HBComMChannelState_MC.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+Logical Expressions
+^^^^^^^^^^^^^^^^^^^^^
+In the container *Bswm/BswMConfig/BswMModeArbitration/BswMLogicalExpression* create one logical expression, set the BswMLogicalOperator to AND.
+
+.. _BswM_CommunicationState_LogicalExpression:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_CommunicationState_LE.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+In one *BswMLogicalExpression* set the *BswMArgumentRef* to both of the Mode conditions previously created for switching port to communication ready. 
+
+Action Rules
+^^^^^^^^^^^^^^^^^^
+In the container *Bswm/BswMConfig/BswMModeArbitration/BswMActionRule* create one action rule. Set the *BswMRuleExpressionRef* to the logical expression for swtiching communication.
+Set the *BswMRuleFalseActionList* to the action list for switching communication to not ready. Set the *BswMRuleTrueActionList* to the action list for switching communication to ready.
+
+.. _BswM_CommunicationState_ActionRules:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_CommunicationState_Rule.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+Data Type Settings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In the container *BswM/BswMConfig/BswMDataTypeSettings* add the ref to *DTMS_SPM_CommunicationReady*.
+
+.. _BswM_CommunicationState_DTMS:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_CommunicationState_DTMS.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+Port Connection
+^^^^^^^^^^^^^^^^^^^
+Connect the :code:`PP_SPM_BswM_CommunicationState` to the Mode Request Port created previously. 
+
+.. _BswM_CommunicationState_Connection:
+
+.. figure:: ../../pictures/BswM_CommunicationState/BswM_CommunicationState_Connection.png
+    :scale: 65
+    :alt: Configuration of the MC
+
+
+Local Activation/Deactivation
+=============================
+
+.. _LocalActivationDeactivation:
+
+SPM receives local request to activate/deactivate a Power Profile through the C/S interface *CS_SPM_ProfileRequest*, C/S operation *SPM_ActivateProfile()/SPM_Deactivate()* profile.
+
+It is necessary to connect the :code:`PP_SPM_RequestProfile` and :code:`PP_SPM_RequestProfile_Deact` ports in order to exploit the operation.
+
+Please, take into account that the method expect as input parameter an uint16 value that shall match with the SpmApplIntID related to the desired Power Profile. 
+
+Service discovery learning indication management logic
+======================================================
+
+.. _LearningStatusIndication:
+
+SPM is notified about current Learning Session status through the C/S interface *SPM_SDLearningStatusIndication*, C/S operation *Runnable_SPM_SdLearningStatusIndication()*.
+
+It is necessary to connect the :code:`PP_SPM_SrvcMgr_SdLearningStatusIndication` in order to exploit the operation.
+
+Profile Activation Permission
+=============================
+
+.. _GetProfileActivationPermission:
+
+SPM receives queries for activation permission of a Power Profile through the C/S interface *CS_SPM_ProfileActivationPermission*, C/S operation *SPM_GetProfileActivationPermission*.
+
+It is necessary to connect the :code:`PP_SPM_ProfileActivationPermission` port in order to exploit the operation.
+
+Please, take into account that the method expect as input parameter an uint16 value that shall match with the SpmApplIntID related to the desired Power Profile. 
+
+Power Profile State 
+===================
+
+.. _GetPowerProfileState:
+
+SPM receives queries for current state of a Power Profile through the C/S interface *CS_SPM_RequestStatusProfileState*, C/S operation *SPM_GetProfileState*.
+
+It is necessary to connect the :code:`PP_SPM_RequestStatusProfileState` port in order to exploit the operation.
+
+Please, take into account that the method expect as input parameter an uint16 value that shall match with the SpmApplIntID related to the desired Power Profile. 
+
+SM Frame integration
+=========================
+The data structure SM frame is defined inside the ECU-EXTRACT. Since the size of the item contained by it can change, the integrator shall set correctly the macro SPM_NUMBER_ITEM_IN_SM_FRAME
+defined in the static file Sum_Spm_Integration.h.
+
+
+.. _did-e0d7_ug :
+
+DID 0xE0D7 Support
+=========================
+
+DID 0xE0D7 is handled by SUSD. SPM communicates with SUSD through the C/S interfaces:
+
+1. *SUSD_SPM_UpdateRecord*: to update the DID 0xE0D7 record;
+2. *SPM_SUSD_ActivityRecordCmd*: to obtain information about the state of DID 0xE0D7 record and perform additional actions on its behalf.
+
+So, if needed, please connect the :code:`RP_SUSD_SPM_UpdateRecord` and :code:`PP_SPM_SUSD_ActivityRecordCmd` ports to the SUSD module.
+
+DID 0xE0DE Support
+=========================
+1. Configure the DCM DID reference in the SPM diagnostic container (see :ref:`DIDE0DE` for details)
+2. Connect the :code:`RP_SPM_Dcm_E0DE_Write` port to the NvM module to enable persistent storage of the activity records
+3. Ensure proper NvM block configuration for storing the DID data
+
+DID 0xE0DF Support
+=========================
+1. Configure the DCM DID reference in the SPM diagnostic container (see :ref:`DIDE0DF` for details)
+2. Connect the :code:`RP_SPM_Dcm_E0DF_Write` port to the NvM module to enable persistent storage of the activity records
+3. Ensure proper NvM block configuration for storing the DID data
+
+.. _generic_component_interface:
+
+***************************************
+Appendix A: Generic Component Interface
+***************************************
+
+====================================================== =================== ================== ==================== ===================================================================================================
+   Port Interface                                           Type                Source              Destination              Description
+====================================================== =================== ================== ==================== ===================================================================================================
+   sftpwrmgr_Gen                                          S/R               | Spm               | LdCom/Com           Interface contains datatype that represents SM-to-SM message
+                                                                            | LdCom / Com       | Spm
+   sftpwrmgr_heartbeat_Gen                                S/R               | Spm               | LdCom/Com         Interface contains datatype that represents PM-to-PM heartbeat 
+                                                                            | LdCom / Com       | Spm
+   SUSD_PermitExecution                                   S/R                 SUSD                Spm                 Interface contains the permit execution value from SUSD
+   SPM_ShutdownPermission                                 S/R                 Spm                 SUSD                 Interface contains the shutdown permission to provide to SUSD                                                                                            
+   CS_SPM_ProfileRequest                                  C/S                 SWC                 Spm                 Interface contains API for (de)activating request of power profile
+   CS_SPM_RequestStatusProfileState                       C/S                 SWC                 Spm                 Interface contains API for getting state of power profile
+   CS_SPM_ProfileActivationPermission                     C/S                 SWC                 Spm                 Interface contains API for getting activation permission for power profile
+   SPM_GetDTCIdentifier                                   C/S                 SWC                 Spm                 Interface contains API for getting DTC for Target Device from SPM.
+   SPM_ServiceActivationStatusNotification                S/R                 Spm                 SWC                 Interface contains API for informing with the list of all the 
+   SPM_ComIpduGroup                                       M/S                 Spm                 BswM                Interfaces for switching the ComIpduGroup modes as requested.
+   SPM_CommunicationReady                                 M/S                 BswM                Spm                 Interfaces for switching the communication state for the SPM to start sending HB frames.
+   SrvcMgr_SPM_ActivateService                            C/S                 Spm                 SrvcMgr             Interface for asking to Service Manager the activation of a service.     
+   SR_SPM_ETHWakeUpFrame                                  S/R                 | Spm               | LdCom/Com         Interface for sending/receiving the Ethernet Wake-up Frame
+                                                                              | LdCom/Com         | Spm                
+   SUSD_SPM_UpdateRecord                                  C/S                 SPM                  SUSD               Interface for updating the DID 0xE0D7 record in SUSD.
+   SPM_SUSD_ActivityRecordCmd                             C/S                 SUSD                 SPM                Interface for getting the state of DID 0xE0D7 in SUSD and additional commands on its behalf
+   DataServices_<DID>                                     C/S                 Dcm                  SPM                Interfaces to provide data from SPM to Dcm for the following DIDs:
+                                                                                                                      
+                                                                                                                      * DID 0xE0DD
+                                                                                                                      * DID 0xE0DE
+                                                                                                                      * DID 0xE0DF
+                                                                                                        
+                                                                                                                      Each DID has its own DataServices_Interface  
+    <VLAN>_PwrMgrHeartbeatTx_Evt                         S/R                 Spm                 LdCom/Com            Interface for sending the Power Manager Heartbeat frame to the specific VLAN
+    <VLAN>_PwrMgrHeartbeatRx_Evt                         S/R                 Spm                 LdCom/Com            Interface for receiving the Power Manager Heartbeat frame to the specific VLAN
+    <VLAN>_PwrMgrWakeupTx_Evt                            S/R                 Spm                 LdCom/Com            Interface for sending the Power Manager Wakeup frame to the specific VLAN
+    <VLAN>_PwrMgrWakeupRx_Evt                            S/R                 Spm                 LdCom/Com            Interface for receiving the Power Manager Wakeup frame to the specific VLAN
+    <VLAN>_SwMgrInfoTx_Evt                               S/R                 Spm                 LdCom/Com            Interface for sending the Switch Manager Info frame to the specific VLAN
+    <VLAN>_SwMgrInfoRx_Evt                               S/R                 Spm                 LdCom/Com            Interface for receiving the Switch Manager Info frame to the specific VLAN
+    RxMonitoredSignal_Av                                 S/R                 SSFM                SPM                  Interface for receiving the availability of the Low Voltage priority service
+    SPM_LowVoltSwActPrioReq                              S/R                 COM                 SPM                  Interface for receiving the payload of the Low Voltage priority service
+    NvMService                                           C/S                 SPM                 NvM                  Interface for triggering NvM_WriteAll when a new Low Voltage priority level is received
+    SPM_SDLearningStatusIndication                       C/S                 SrvcMgr             SPM                  Interface for requesting SPM to react on Learning Session Status
+====================================================== =================== ================== ==================== ===================================================================================================
+
+**************************
+Appendix B: History Review
+**************************
+
+==================== =================================================== =======================================
+       Version             Description of Change                                 Author
+==================== =================================================== =======================================
+        0.0.1         * Initial version for RTA-SUM SPM.                        RTA-SUM Development Team
+        0.0.2         * Added wake-up on can support.                           RTA-SUM Development Team
+                      * Incremental version of RTA-SUM SPM.             
+        0.0.3         * Added explanation about BSW                             RTA-SUM Development Team
+                        configuration.              
+                      * Created APPENDIX C.             
+                      * Incremental version of RTA-SUM SPM.             
+        0.4.4         * Aligned description of parameters                       RTA-SUM Development Team
+                        and added description of Ethernet               
+                        Wake-up frame.              
+                      * Incremental version of RTA-SUM SPM.             
+        0.0.5         * Added Support for PDU handling                          RTA-SUM Development Team
+                        with the BswM.              
+                      * Incremental version of RTA-SUM SPM.             
+        0.0.5_1       * Replaced section about Com                              RTA-SUM Development Team
+                        Configuration for the workaround                
+                        with the RTE support.               
+                      * Incremental version of RTA-SUM SPM.                                    
+        0.0.6         * Added Support for TC10 pulse                            RTA-SUM Development Team
+                        (refere to SpmETHWkUpFrmRef).                
+                      * Incremental version of RTA-SUM SPM.                 
+        0.0.7         * Incremental version of RTA-SUM SPM.                     RTA-SUM Development Team
+        0.0.8         * Incremental version of RTA-SUM SPM.                     RTA-SUM Development Team
+        8.1.0_Pr1     * First prototype release of 
+                        RTA-SUM SPM 8.1.0 (RTA-SUM 3.1.0) 
+                        for SDV 2.0.
+                      * Updated Permit Execution and Shutdown
+                        Permission of port interface of SPM 
+                        to consistent with SUSD.
+                      * Checked compatibility with 
+                        RTA-BSW 12.3.3pr1.   
+                      * The tools version have been Updated.                    RTA-SUM Development Team
+
+        8.1.0_Pr2     * Update section `SpmConfPowPrf`_
+                      * Added section `LocalActivationDeactivation`_           
+                      * Added section `SpmPgttEntries`_                       
+                      * Added section `WUF`_                                    RTA-SUM Development Team 
+
+        8.1.0_Pr3     * Added section `SpmGenerateInitRunnable`_     
+                      * Added section `SpmInitFuncPeriodicity`_                 RTA-SUM Development Team      
+
+        8.1.0_Pr4     * Added section SpmTrgDvcHndlngInfo                                   
+                      * Updated configuration for TC10 pulse                    RTA-SUM Development Team 
+        8.1.0_Pr5     * Added section `SpmProfBitMapIndex`_                     RTA-SUM Development Team   
+                      * Modified section SpmETHWkUpFrmRef                
+        8.1.0_Pr6     * Added section `RTA-CAR MemMap Tool`_                    RTA-SUM Development Team
+        8.1.0_Pr11    * Added section ``SpmActDeactRetryPeriodicity``            RTA-SUM Development Team
+        8.1.0_Pr12    * Update section `SpmPgttEntries`_                        RTA-SUM Development Team
+        8.1.0_Pr13    * Added section :ref:`did-e0d7_ug`                        RTA-SUM Development Team
+        8.1.0_Pr15    * Added section :ref:`DIDE0DD`
+                      * Update section :ref:`SpmProfBitMapIndex`                
+                      * Added section to explain SPM VALCom and 
+                        description/Diagram of configuration 
+                        containers
+                      * Updated section :ref:`did-e0d7_ug`                      
+                      * Modified description of Appendix C                      
+                      * Modified :ref:`generic_component_interface`            
+                      * Added section :ref:`DIDE0DE` and                    
+                        :ref:`DIDE0DF`                                         RTA-SUM Development Team
+        8.1.0_Pr16    * Updated section :ref:`spmWkngDvc`                      RTA-SUM Development Team
+        8.1.0_Pr17    * Updated section :ref:`calibratable`                    
+                      * Updated section :ref:`spmWkngDvc`   
+                      * Updated section SpmETHWkUpFrmRef                       RTA-SUM Development Team
+        8.1.0_Pr20    * Updated section :ref:`SpmWkUpSeq`:
+
+                      * Removed an old parameter description
+                      * Removed the picture since no parameter
+                          belongs to the container anymore.                    RTA-SUM Development Team    
+        8.1.0_Pr21    * Updated Appendix A                                     
+                      * Added sections `GetPowerProfileState`_       
+                        and `GetProfileActivationPermission`_                  RTA-SUM Development Team
+
+        8.1.0_Pr22    * Updated section :ref:`BswM_Configuration`
+                      * Modified :ref:`generic_component_interface`            RTA-SUM Development Team
+		              * Updated section :ref:`SpmCANWkUpFrmRef`            
+
+        8.1.0_Pr23    * Updated section :ref:`SpmLowVoltagePowerInfo`          RTA-SUM Development Team
+
+        8.1.0_Pr27    * Added section `LearningStatusIndication`_              RTA-SUM Development Team 
+	    
+        8.1.0_Pr28    * Updated section :ref:`SpmCANWkUpFrmRef`                RTA-SUM Development Team
+
+        8.1.0_Pr29    * Added section :ref:`SpmVLANCom`                        RTA-SUM Development Team
+
+        8.1.0_Pr30    * Updated section :ref:`calibratable`:
+                        added PDU Tx Switch-Off Delay parameter 			   RTA-SUM Development Team
+                      * Removed section SpmActDeactRetryPeriodicity   
+
+        8.1.0_Pr33    * Updated section :ref:`SpmVLANCom`                      RTA-SUM Development Team
+==================== =================================================== =======================================
+
+***********************************************************************
+Appendix C: Customer information in scope to current software version
+***********************************************************************
+
+The current RTA-SUM SPM version, contains the module ports to/from RTE for sending and receiving "SPM Traffic frames". these frames are someIP Pdu,
+that SPM generates to send/provide information/requests from/to remote(s) SPM. The SPM traffic includes:
+
+* SM frame
+* PM frame (Heartbeat)
+
+.. caution::
+
+    The current version of the SPM can be integrated in the SDK 0.2.0 but the support of the metadata, in scope to RTA-SUM SPM, is not currently enabled. SO that, the metadata
+    handling for these frames are in scope to the integrator.
+
+while SDK 0.2.0 si based on ECU extract *IO_Aggregator2_27_27_171.3p0*, the current implementation of the RTA-SUM SPM allows also to build the payload of
+SM and PM frames as per *IO_Aggregator2_27_27_174.2p0*. 
+
+.. | This multi-version support requires a manual change in the generated code of the RTA-SUM SPM:
+.. 
+.. 1. Go in the generated file Sum_Spm_Cfg.h
+.. 2. Search for Macro :code:`IO_Aggregator2_27_27_171__3p0`. The macro can be edited as explained in the code comment. If you leave the Macro as is, then ECU extract *IO_Aggregator2_27_27_171.3p0*
+..    is automatically selected by default.
+.. 3. You can see in the code the fields of payload that are used, directly searching for each occurrence of the previous cited Macro.
+.. 
+.. The current version of the RTA-SUM SPM implements the API SPM_PowerOnDevice and SPM_PowerOffDevice only on CAN. The CAN bus support is necessary for having SPM traffic
+.. in/out the wished build.
+.. 
+.. | **In case you use the SDK 0.2.0 OR you don't have CAN support** the current SPM implementation allows to by-pass the PowerOn device, assuming that ECUs are always Up,
+.. so that they don't need to be awaken by selective wake-up. In case you are in this scenario, goes again on SPM generated code (Sum_Spm_SoftwMgr.c).
+.. If you search for function :code:`Spm_ActivatingStateHandler`, there's a commented out *#define* (:code:`# define SPM_TEST_NO_SUPP_METADATA`); please uncomment that line. this allows the previous described work-around.
+
+
+The current version of RTA-SUM SPM requires the Queued communication for the SPM ports that contains the payloads SPM traffic. The queueing specification
+are directly generated by RTA-SUM SPM code generation. The only thing that is out-of-scope from RTA-SUM SPM code generation is the definition of the port-interfaces for 
+the SPM traffic; in fact they are directly referenced from System description of the integrator.
+
+this means you shall verify that your port definitions are aligned with the following picture:
+
+.. figure:: ../../pictures/qeue_sr.png
+    :scale: 40
+    :alt: port definition
+
+***************
+Contacting ETAS
+***************
+
+Technical Support
+=================
+
+General Enquiries
+=================
+
+ETAS Global Headquarters
+------------------------
+
+| ETAS Gmbh
+| Borsigstrasse 24
+| 70469 Stuttgart
+| Germany
+
+| Phone: +49 711 3423-0
+| Fax: +49 711 3423-2106
+| `Official Website <www.etas.com>`_
+
+ETAS Local Sales and Support Offices
+------------------------------------
+
+Contact details for your local sales office and local technical support team (where available) 
+can be found on the ETAS web site:
+
+* ETAS subsidiaries: https://www.etas.com/en/contact.php
+* ETAS technical support: https://www.etas.com/en/hotlines.php

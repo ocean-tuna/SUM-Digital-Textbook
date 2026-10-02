@@ -1,0 +1,45 @@
+@startuml Sum_Ssfm_SecOC_ErrorsManager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_SecOC_ErrorsManager"
+
+**Interfaces Legend**
+   //ri101  //: SecOC Verification Status
+   //II152 //: ERRH_ExecutionStatus
+   //II182 //: Debounced Error
+   //II150 //: BatteryVoltage 
+   //II157 //: DisableDTCs
+   //II183 //: Undebounced Error
+   //pi144 //: ERRH_SecurityErrorEvent_SetEventStatus
+   
+endlegend
+
+note top of EC
+It is responsible for reading notifications about errors related to the MAC verification and asking the DEM to set/clear the corresponding DTC accordingly.
+end note
+
+component [SSFM::Sum_Ssfm_SecOC_ErrorsManager] as EC{
+	portin ri101
+	portout pi144
+
+	[Sum_Ssfm_SecOC_ErrorsManager]  as E
+}
+   interface II150
+   interface II152
+   interface II157
+   interface II182
+   interface II183
+
+
+  ri101 -> E
+  II152 -> E
+  II182 -> E
+  II150 -> E
+  II157 -> E
+  E -> II183 
+  E -> pi144  
+
+
+@enduml

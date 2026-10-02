@@ -1,0 +1,9 @@
+3;3;2;2;5;2
+\textbf{System Power Mode};\textbf{System Backup Power Mode};\textbf{Run / Crank Active};\textbf{Run / Crank Active Invalid};\textbf{Vehicle Power Mode (Local ECU Determination)};\textbf{Vehicle Power Mode Invalid}
+AVAILABLE;;;;System Power Mode;Valid
+UNAVAILABLE;AVAILABLE;;;System Backup Power Mode;Valid
+UNAVAILABLE;UNAVAILABLE;TRUE;VALID;PROPULSION;Valid
+UNAVAILABLE;UNAVAILABLE;FALSE;VALID;OFF;Valid
+UNAVAILABLE;UNAVAILABLE;TRUE;INVALID;Last Known Power Mode;Invalid
+UNAVAILABLE;UNAVAILABLE;FALSE;INVALID;Last Known Power Mode;Invalid
+UNAVAILABLE;UNAVAILABLE;N/A;N/A;Last Known Power Mode;Invalid

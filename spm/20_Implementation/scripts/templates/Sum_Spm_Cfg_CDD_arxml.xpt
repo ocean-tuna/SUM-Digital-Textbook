@@ -1,0 +1,2693 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Cfg_CDD.arxml"-»
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00051.xsd">
+<!--
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Spm - Complex Device Driver Component Description
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+-->
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>SumSpm</SHORT-NAME>
+      <AR-PACKAGES>
+        <AR-PACKAGE>
+          <SHORT-NAME>SwComponent</SHORT-NAME>
+          <ELEMENTS>
+            <COMPLEX-DEVICE-DRIVER-SW-COMPONENT-TYPE>
+              <SHORT-NAME>SPM</SHORT-NAME>
+              <ADMIN-DATA>
+                <SDGS>
+                  <SDG GID="Master">
+                    <SD>true</SD>
+                  </SDG>
+                </SDGS>
+              </ADMIN-DATA>
+              <PORTS>
+
+                <R-PORT-PROTOTYPE UUID="b63f7ce4-eb20-4959-94d8-40fa7a68b256">
+                  <SHORT-NAME>RP_SUSD_SPM_PerExec</SHORT-NAME>
+                   <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SUSD_PermitExecution</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+
+                <R-PORT-PROTOTYPE UUID="b63f7ce4-eb20-4959-94d8-40fa7a68b257">
+                  <SHORT-NAME>RP_SUSD_SPM_VehiclePowerMode</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SUSD_VehiclePowerMode</REQUIRED-INTERFACE-TREF>
+                  <REQUIRED-COM-SPECS>
+                    <NONQUEUED-RECEIVER-COM-SPEC>
+                    <DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_VehiclePowerMode/VehiclePowerMode</DATA-ELEMENT-REF>
+                    <HANDLE-NEVER-RECEIVED>true</HANDLE-NEVER-RECEIVED>
+                    </NONQUEUED-RECEIVER-COM-SPEC>
+                  </REQUIRED-COM-SPECS>
+                </R-PORT-PROTOTYPE>
+
+              «IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SSFM_SPM_LowVoltSwActPrioReqAvailability</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/RxMonitoredSignal_Av</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_Com_Spm_LowVoltSwActPrioReq</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/PortInterfaces/SPM_LowVoltSwActPrioReq</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SPM_NvmService_LowVoltageActivationPriority</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_NvM/PortInterfaces/NvMService</REQUIRED-INTERFACE-TREF>
+				        </R-PORT-PROTOTYPE>
+				       «ENDIF-»
+
+                <P-PORT-PROTOTYPE UUID="5a9bd8cf-580f-43b9-8815-827b9e8a67b3">
+                  <SHORT-NAME>PP_SPM_SUSD_ShutDown</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SPM_ShutdownPermission</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+
+                <P-PORT-PROTOTYPE UUID="17a5586b-c733-4d03-b34b-4456d7c96c75">
+                  <SHORT-NAME>PP_SPM_RequestProfile</SHORT-NAME>
+                  <PROVIDED-COM-SPECS>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/PortInterfaces/CS_SPM_ProfileRequest/SPM_ActivateProfile</OPERATION-REF>
+                      <QUEUE-LENGTH>«Spm_GetLocalRequestsQueueLength(spm)»</QUEUE-LENGTH>
+                    </SERVER-COM-SPEC>
+                  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/PortInterfaces/CS_SPM_ProfileRequest</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_RequestProfile_Deact</SHORT-NAME>
+                  <!-- [$Satisfies $DDS_SPM 0031] -->
+                  <PROVIDED-COM-SPECS>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/PortInterfaces/CS_SPM_ProfileRequest/SPM_DeactivateProfile</OPERATION-REF>
+                      <QUEUE-LENGTH>«Spm_GetLocalRequestsQueueLength(spm)»</QUEUE-LENGTH>
+                    </SERVER-COM-SPEC>
+                  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/PortInterfaces/CS_SPM_ProfileRequest</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan -»
+<!-- BEGIN: Modified at scope of GMSUM-9873 / GMSUM-10878 -->
+				<!-- Port for PwrMgr heartbeat communication -->
+					<!-- Transmission -->
+				«IF vlan.spmVLANComPwrMgrHeartbeat != null && vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatTxSendRecvIntRef_Foreign != null -»
+				<P-PORT-PROTOTYPE UUID="da437e5d-e485-401e-bb66-154a62def443">
+                  <SHORT-NAME>PP_SPM_«vlan.shortName»_PwrMgrHeartbeatTx</SHORT-NAME>
+
+                  <PROVIDED-COM-SPECS>
+                	<NONQUEUED-SENDER-COM-SPEC>
+                  		<SENDER-INTENT>WILL-SEND</SENDER-INTENT>
+                	</NONQUEUED-SENDER-COM-SPEC>
+              	  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">«vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatTxSendRecvIntRef_Foreign.toString()»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+				«ENDIF -»
+				<!-- Reception -->
+        «IF Spm_PwrMgrHeartbeatRxIsConfigured(vlan) -»
+          «FOREACH  vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatRxSendRecvIntRef AS hbRx ITERATOR i-»
+				      <R-PORT-PROTOTYPE UUID="691dbeee-36f5-4839-9d15-31f24409d671"> 
+                <SHORT-NAME>RP_SPM_«vlan.shortName»_PwrMgrHeartbeatRx«i.counter0»</SHORT-NAME>
+                <REQUIRED-COM-SPECS>
+                  <QUEUED-RECEIVER-COM-SPEC>
+                    <DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">«hbRx.toString()»/«Spm_GetNameVarDataProtoTypeFromNamingConv(hbRx.toString())»</DATA-ELEMENT-REF>
+                    «REM»<DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">«vlan.spmVLANComPwrMgrHeartbeat.spmHbRxAbsPth»/«vlan.shortName»_PwrMgrHeartbeatRx_Evt/«vlan.shortName»_PwrMgrHeartbeatRx_Evt</DATA-ELEMENT-REF>«ENDREM»   
+                    <QUEUE-LENGTH>«Spm_GetPmHeartbeatFrameQueueLength(spm)»</QUEUE-LENGTH>
+                  </QUEUED-RECEIVER-COM-SPEC>
+                </REQUIRED-COM-SPECS>
+                «REM»<REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">«vlan.spmVLANComPwrMgrHeartbeat.spmHbRxAbsPth»/«vlan.shortName»_PwrMgrHeartbeatRx_Evt</REQUIRED-INTERFACE-TREF>«ENDREM»
+                <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">«hbRx.toString()»</REQUIRED-INTERFACE-TREF>
+              </R-PORT-PROTOTYPE>
+				  «ENDFOREACH -»
+        «ENDIF -»
+				<!-- Port for SwrMgr Info communication -->
+        <!-- Transmission -->
+				«IF vlan.spmVLANComSwrMgrInfo != null && vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoTxSendRecvIntRef_Foreign != null -»
+				<P-PORT-PROTOTYPE UUID="da437e5d-e485-401e-bb66-154a62def443">
+                  <SHORT-NAME>PP_SPM_«vlan.shortName»_SwMgrInfoTx</SHORT-NAME>
+                  <PROVIDED-COM-SPECS>
+                	<NONQUEUED-SENDER-COM-SPEC>
+                  		<SENDER-INTENT>WILL-SEND</SENDER-INTENT>
+                	</NONQUEUED-SENDER-COM-SPEC>
+              	  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">«vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoTxSendRecvIntRef_Foreign.toString()»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+				«ENDIF -»
+					<!-- Reception -->
+				«IF vlan.spmVLANComSwrMgrInfo != null && vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoRxSendRecvIntRef_Foreign != null -»
+				<R-PORT-PROTOTYPE UUID="691dbeee-36f5-4839-9d15-31f24409d671">
+                  <SHORT-NAME>RP_SPM_«vlan.shortName»_SwMgrInfoRx</SHORT-NAME>
+                  <REQUIRED-COM-SPECS>
+                  	<QUEUED-RECEIVER-COM-SPEC>
+                  		<DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">«vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoRxSendRecvIntRef_Foreign.toString()»</DATA-ELEMENT-REF>
+                  		<QUEUE-LENGTH>«Spm_GetSmFrameQueueLength(spm)»</QUEUE-LENGTH>
+                  	</QUEUED-RECEIVER-COM-SPEC>
+                  </REQUIRED-COM-SPECS>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">«vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoRxSendRecvIntRef_Foreign.toString()»</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+				«ENDIF -»
+				<!-- Port for PwrMgr wakeup (ETH) Info communication -->
+					<!-- Transmission -->
+				«IF vlan.spmVLANComPwrMgrWakeupFrames != null && vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupTxSendRecvIntRef_Foreign != null -»
+				<P-PORT-PROTOTYPE UUID="da437e5d-e485-401e-bb66-154a62def443">
+                  <SHORT-NAME>PP_SPM_«vlan.shortName»_PwrMgrWakeupTx</SHORT-NAME>
+                  <PROVIDED-COM-SPECS>
+                	<NONQUEUED-SENDER-COM-SPEC>
+                  		<SENDER-INTENT>WILL-SEND</SENDER-INTENT>
+                	</NONQUEUED-SENDER-COM-SPEC>
+              	  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">«vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupTxSendRecvIntRef_Foreign.toString()»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+				«ENDIF -»
+					<!-- Reception -->
+				«IF vlan.spmVLANComPwrMgrWakeupFrames != null && vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupRxSendRecvIntRef_Foreign != null -»
+				<R-PORT-PROTOTYPE UUID="691dbeee-36f5-4839-9d15-31f24409d671">
+                  <SHORT-NAME>RP_SPM_«vlan.shortName»_PwrMgrWakeupRx</SHORT-NAME>
+                  <REQUIRED-COM-SPECS>
+                  	<QUEUED-RECEIVER-COM-SPEC>
+                  		<DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">«vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupRxSendRecvIntRef_Foreign.toString()»/«Spm_GetNameVarDataProtoTypeFromNamingConv(vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupRxSendRecvIntRef_Foreign.toString())»</DATA-ELEMENT-REF>
+                  		<QUEUE-LENGTH>«Spm_GetEthWakeupUniFrameQueueLength(spm)»</QUEUE-LENGTH>
+                  	</QUEUED-RECEIVER-COM-SPEC>
+                  </REQUIRED-COM-SPECS>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">«vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupRxSendRecvIntRef_Foreign.toString()»</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+				«ENDIF -»
+<!-- END: Modified at scope of GMSUM-9873 / GMSUM-10878 -->
+        <!-- Port for PwrMgr wakeup Mutlticast(ETH) Info communication -->
+					<!-- Reception -->
+				«IF vlan.spmVLANComPwrMgrWakeupFramesMulticast != null && vlan.spmVLANComPwrMgrWakeupFramesMulticast.spmPwrMgrWakeupRxSendRecvIntMulticastRef_Foreign != null -»
+				<R-PORT-PROTOTYPE UUID="691dbeee-36f5-4839-9d15-31f24409d671">
+          <SHORT-NAME>RP_SPM_«vlan.shortName»_PwrMgrWakeupRx_Multicast</SHORT-NAME>
+          <REQUIRED-COM-SPECS>
+          	<QUEUED-RECEIVER-COM-SPEC>
+          		<DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">«vlan.spmVLANComPwrMgrWakeupFramesMulticast.spmPwrMgrWakeupRxSendRecvIntMulticastRef_Foreign.toString()»/«Spm_GetNameVarDataProtoTypeFromNamingConv(vlan.spmVLANComPwrMgrWakeupFramesMulticast.spmPwrMgrWakeupRxSendRecvIntMulticastRef_Foreign.toString())»</DATA-ELEMENT-REF>
+          		<QUEUE-LENGTH>«Spm_GetEthWakeupMultiFrameQueueLength(spm)»</QUEUE-LENGTH>
+          	</QUEUED-RECEIVER-COM-SPEC>
+          </REQUIRED-COM-SPECS>
+          <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">«vlan.spmVLANComPwrMgrWakeupFramesMulticast.spmPwrMgrWakeupRxSendRecvIntMulticastRef_Foreign.toString()»</REQUIRED-INTERFACE-TREF>
+        </R-PORT-PROTOTYPE>
+				«ENDIF -»
+«ENDFOREACH -»
+
+                <!-- [$Satisfies $DDS_SPM 0625] -->
+«IF GetDIDE0DDIsConfigured(spm.spmGeneral)-»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_DCM_DID_E0DD_ActivationProfileActivationStatus</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetDidE0DDData(spm.spmGeneral)»</PROVIDED-INTERFACE-TREF>
+			          </P-PORT-PROTOTYPE>
+«ENDIF-»
+                <P-PORT-PROTOTYPE UUID="b5a26a65-bedc-4828-b421-3b00b6d3b7d7">
+                  <SHORT-NAME>PP_SPM_SSFM_GetDTCId</SHORT-NAME>
+                  <PROVIDED-COM-SPECS>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SPM_GetDTCIdentifier/GetDTCIdentifier</OPERATION-REF>
+                      <QUEUE-LENGTH>«Spm_GetLocalRequestsQueueLength(spm)»</QUEUE-LENGTH>
+                    </SERVER-COM-SPEC>
+                  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SPM_GetDTCIdentifier</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+
+                <P-PORT-PROTOTYPE UUID="f3651c72-b27b-4c39-a171-9e7de1a9e65e">
+                  <SHORT-NAME>PP_SPM_SrvcMgr_Notif</SHORT-NAME>
+                  <!-- [$Satisfies $DDS_SPM 0417] -->
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SPM_ServiceActivationStatusNotification</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+				<!-- BswM interfaces -->
+«FOREACH spm.spmConfigSet.spmPowPrf.spmComIPduGroupEvnt_Tx.toSet() AS pduGr -»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_BswM_ComIpduGroup_«pduGr.shortName»</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/PortInterfaces/SPM_ComIpduGroup</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«ENDFOREACH -»
+«FOREACH spm.spmConfigSet.spmPowPrf.spmComIPduGroupEvnt_Rx.toSet() AS pduGr -»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_BswM_ComIpduGroup_«pduGr.shortName»</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/PortInterfaces/SPM_ComIpduGroup</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«ENDFOREACH»
+				<P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_SerDatMon_LoNInd</SHORT-NAME>
+                  <!-- Aligned at specification SDV-8217 v27.27.174.0p1
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/PortInterfaces/SR_SPM_LossOfNodeIndic</PROVIDED-INTERFACE-TREF>
+                  -->
+                  <!-- Aligned at specification SDV-8217 older version -->
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SPM_LossOfNodeIndication</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                 <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SPM_SrvcMgr_ActivateSrvc</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SrvcMgr_SPM_ActivateServices</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SUSD_SPM_UpdateRecord</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SUSD_SPM_UpdateRecord</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+
+«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SPM_GetDeviceVariantInfo</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SWC_GetDeviceVariantInfo</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«ENDIF-»
+
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_RequestStatusProfileState</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/PortInterfaces/CS_SPM_RequestStatusProfileState</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_ProfileActivationPermission</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/PortInterfaces/CS_SPM_ProfileActivationPermission</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_SUSD_ActivityRecordCmd</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SPM_SUSD_ActivityRecordCmd</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+
+           		<!-- [$DDS_SPM 0629: Definition of Port that handles interface for DID 0xE0DE with Dcm][$Satisfies $SRS_SPM 0227] -->
+«IF spm.spmGeneral.spmDiagnostic != null -»
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+				<R-PORT-PROTOTYPE>
+				  <SHORT-NAME>RP_SPM_Dcm_E0DE_Write</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_NvM/PortInterfaces/NvMService</REQUIRED-INTERFACE-TREF>
+				</R-PORT-PROTOTYPE>
+«ENDIF -»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+				<R-PORT-PROTOTYPE>
+				  <SHORT-NAME>RP_SPM_Dcm_E0DF_Write</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_NvM/PortInterfaces/NvMService</REQUIRED-INTERFACE-TREF>
+				</R-PORT-PROTOTYPE>
+«ENDIF -»
+«IF spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef != null -»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_Dcm_DataDidE0DE</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef.dcmDspDidSignal.first().dcmDspDidDataRef.shortName»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«ENDIF -»
+«IF spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef != null -»
+                <!-- [$DDS_SPM 0630: Definition of Port that handles interface for DID 0xE0DF with Dcm][$Satisfies $SRS_SPM 0228] -->
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_Dcm_DataDidE0DF</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef.dcmDspDidSignal.first().dcmDspDidDataRef.shortName»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«ENDIF -»
+«ENDIF -»
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SPM_BswM_CommunicationReady</SHORT-NAME>
+                  <REQUIRED-COM-SPECS>
+                    <MODE-SWITCH-RECEIVER-COM-SPEC>
+                      <SUPPORTS-ASYNCHRONOUS-MODE-SWITCH>true</SUPPORTS-ASYNCHRONOUS-MODE-SWITCH>
+                    </MODE-SWITCH-RECEIVER-COM-SPEC>
+                  </REQUIRED-COM-SPECS>
+                  <REQUIRED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/PortInterfaces/SPM_PI_CommuincationReady</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SPM_SrvcMgr_SdLearningStatusIndication</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SPM_SDLearningStatusIndication</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+              </PORTS>
+              <INTERNAL-BEHAVIORS>
+                <SWC-INTERNAL-BEHAVIOR UUID="2d9a01a2-640e-40e3-8cf7-e9667df7abc3">
+                  <SHORT-NAME>SumSpm_IB</SHORT-NAME>
+		  		  <!-- DataType mapping set -->
+                  <DATA-TYPE-MAPPING-REFS>
+                    <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/Infrastructure/DTMS_SPM_SrvcPduGroup</DATA-TYPE-MAPPING-REF>
+                    <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/PortInterfaces/SystemDataTypeMappingSets</DATA-TYPE-MAPPING-REF>
+                    <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/Infrastructure/DTMS_SPM_CommunicationReady</DATA-TYPE-MAPPING-REF>     
+                  «IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»  
+                    <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">«spm.spmConfigSet.spmLowVoltagePowerInfo.spmLowVoltSwActPrioReqDataTypeMappingSet»</DATA-TYPE-MAPPING-REF>
+                  «ENDIF -»
+                  </DATA-TYPE-MAPPING-REFS>
+                  <EVENTS>
+                    <TIMING-EVENT UUID="5c29807f-d559-4e2f-ba31-5a01577789d7">
+                      <SHORT-NAME>TE_SPM_SoftMgr_Main</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_SoftMgr_MainFunction</START-ON-EVENT-REF>
+                      <PERIOD>«spm.spmGeneral.spmSMMainFuncPeriodicity / 1000.0»</PERIOD>
+                    </TIMING-EVENT>
+«IF spm.spmGeneral.spmGenerateInitRunnable == true -»
+                    <TIMING-EVENT UUID="5c29807f-d559-4e2f-ba31-5a01577789d7">
+                      <SHORT-NAME>TE_SPM_SoftMgr_Init</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/Runnable_SPM_Init</START-ON-EVENT-REF>
+                      <PERIOD>«spm.spmGeneral.spmInitFuncPeriodicity / 1000.0-» </PERIOD>
+                    </TIMING-EVENT>
+«ENDIF-»
+                    <TIMING-EVENT UUID="5c29807f-d559-4e2f-ba31-5a01577789d8">
+                      <SHORT-NAME>TE_SPM_PowerManager_Main</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_PowerManager_MainFunction</START-ON-EVENT-REF>
+                      <PERIOD>0.005</PERIOD>
+                    </TIMING-EVENT>
+                    <OPERATION-INVOKED-EVENT UUID="134cf37c-a1fd-47f6-9650-4cf61be0fe90">
+                      <SHORT-NAME>OIE_SPM_ActivateProfile</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_ActivateProfile</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_RequestProfile</CONTEXT-P-PORT-REF>
+                        <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/PortInterfaces/CS_SPM_ProfileRequest/SPM_ActivateProfile</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+                    <OPERATION-INVOKED-EVENT UUID="c7e8f561-d804-4cb9-82dc-7e37a68ff2bd">
+                      <SHORT-NAME>OIE_SPM_DeactivateProfile</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_DeactivateProfile</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_RequestProfile_Deact</CONTEXT-P-PORT-REF>
+                        <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/PortInterfaces/CS_SPM_ProfileRequest/SPM_DeactivateProfile</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_SPM_SUSD_ActivityRecordCmd</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_SUSD_ActivityRecordCmd</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SUSD_ActivityRecordCmd</CONTEXT-P-PORT-REF>
+                        <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SPM_SUSD_ActivityRecordCmd/ActivityRecordCmd</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_SPM_RequestStatusProfileState</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_GetProfileState</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_RequestStatusProfileState</CONTEXT-P-PORT-REF>
+                        <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/PortInterfaces/CS_SPM_RequestStatusProfileState/SPM_GetProfileState</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_SPM_GetProfileActivationPermission</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_GetProfileActivationPermission</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_ProfileActivationPermission</CONTEXT-P-PORT-REF>
+                        <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/PortInterfaces/CS_SPM_ProfileActivationPermission/SPM_GetProfileActivationPermission</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+                    <OPERATION-INVOKED-EVENT UUID="ced519e6-331d-4e29-accc-b986dacf701a">
+                      <SHORT-NAME>OIE_SPM_GetDTCIdentifier</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_GetDTCIdentifier</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SSFM_GetDTCId</CONTEXT-P-PORT-REF>
+                        <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SPM_GetDTCIdentifier/GetDTCIdentifier</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+«IF spm.spmGeneral.spmDiagnostic != null -»
+	«IF spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref != null -»
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_DID_E0DD_ActivationProfileActivationStatus</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_DID_E0DD_ActivationProfileActivationStatus</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                      <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_DCM_DID_E0DD_ActivationProfileActivationStatus</CONTEXT-P-PORT-REF>
+                      <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetDidE0DDData(spm.spmGeneral)»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+		«IF Get_DID_HasCheckRead(spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref)-»
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_DID_E0DD_ActivationProfileActivationStatus_CheckRead</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_DID_E0DD_ActivationProfileActivationStatus_CheckRead</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                      <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_DCM_DID_E0DD_ActivationProfileActivationStatus</CONTEXT-P-PORT-REF>
+                      <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetDidE0DDData(spm.spmGeneral)»/ConditionCheckRead</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+		«ENDIF-»
+	«ENDIF-»
+	«IF spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef != null-»
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_DID_E0DE</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_DID_0xE0DE</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                      <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_Dcm_DataDidE0DE</CONTEXT-P-PORT-REF>
+                      <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef.dcmDspDidSignal.first().dcmDspDidDataRef.shortName»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+		«IF Get_DID_HasCheckRead(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef) -»
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_DID_E0DE_CheckRead</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_DID_0xE0DE_CheckRead</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                      <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_Dcm_DataDidE0DE</CONTEXT-P-PORT-REF>
+                      <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef.dcmDspDidSignal.first().dcmDspDidDataRef.shortName»/ConditionCheckRead</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+		«ENDIF-»
+	«ENDIF-»
+	«IF spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef != null -»
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_DID_E0DF</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_DID_0xE0DF</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                      <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_Dcm_DataDidE0DF</CONTEXT-P-PORT-REF>
+                      <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef.dcmDspDidSignal.first().dcmDspDidDataRef.shortName»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+		«IF Get_DID_HasCheckRead(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef) -»
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_DID_E0DF_CheckRead</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_DID_0xE0DF_CheckRead</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                      <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_Dcm_DataDidE0DF</CONTEXT-P-PORT-REF>
+                      <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef.dcmDspDidSignal.first().dcmDspDidDataRef.shortName»/ConditionCheckRead</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+		«ENDIF-»
+	«ENDIF-»
+«ENDIF -»
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_SPM_SrvcMgr_SdLearningStatusIndication</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SumSpm/SwComponent/SPM/SumSpm_IB/RE_SPM_SrvcMgr_SdLearningStatusIndication</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SrvcMgr_SdLearningStatusIndication</CONTEXT-P-PORT-REF>
+                        <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SPM_SDLearningStatusIndication/SPM_SDLearningStatusIndication</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+                  </EVENTS>
+                  <EXPLICIT-INTER-RUNNABLE-VARIABLES>
+                    <VARIABLE-DATA-PROTOTYPE UUID="02a3636a-c7ad-4559-ab8d-0252a4471df1">
+                      <SHORT-NAME>Spm_DevicePowerState</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/Spm_DevicePowerStateInfo</TYPE-TREF>
+                    </VARIABLE-DATA-PROTOTYPE>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_LastDeactReqID</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                    </VARIABLE-DATA-PROTOTYPE>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_LastActReqID</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                    </VARIABLE-DATA-PROTOTYPE>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_LastDeactReqFlag</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                    </VARIABLE-DATA-PROTOTYPE>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_LastActReqFlag</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                    </VARIABLE-DATA-PROTOTYPE>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_E0D7ActiveStatus</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/Spm_E0D7ActiveStatusType</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                          <VALUE>0</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </VARIABLE-DATA-PROTOTYPE>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_Learning_Status</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/GM_SUM/ImplementationDataTypes/SPM_SDLearningStatus</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                          <VALUE>0</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </VARIABLE-DATA-PROTOTYPE>  
+                  </EXPLICIT-INTER-RUNNABLE-VARIABLES>
+                  <PER-INSTANCE-PARAMETERS>
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc AS trgDvc -»
+  «FOREACH trgDvc.spmTrgDvcVariantHndlng AS variantAppended -»
+    «IF variantAppended.spmTrgAssocWkUpFrm != null && variantAppended.spmTrgAssocWkupBit != null -»
+					<PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>SPM_TrgHndlInfo_«trgDvc.shortName»_«variantAppended.shortName»</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/SpmTrgDvcHndlngInfo</TYPE-TREF>
+                      <INIT-VALUE>
+                        <RECORD-VALUE-SPECIFICATION>
+                          <SHORT-LABEL>SPM_TrgHndlInfo_«trgDvc.shortName»_info</SHORT-LABEL>
+                          <FIELDS>
+                            <NUMERICAL-VALUE-SPECIFICATION>
+                              <SHORT-LABEL>SPM_TrgHndlInfo_«trgDvc.shortName»_info_wkupFrm</SHORT-LABEL>
+                              <VALUE>«Spm_GetWkUpFrmVal(variantAppended.spmTrgAssocWkUpFrm)»</VALUE>
+                            </NUMERICAL-VALUE-SPECIFICATION>
+                            <NUMERICAL-VALUE-SPECIFICATION>
+                              <SHORT-LABEL>SPM_TrgHndlInfo_«trgDvc.shortName»__«variantAppended.shortName»_info_wkupBit</SHORT-LABEL>
+                              <VALUE>«variantAppended.spmTrgAssocWkupBit»</VALUE>
+                            </NUMERICAL-VALUE-SPECIFICATION>
+                          </FIELDS>
+                        </RECORD-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                   </PARAMETER-DATA-PROTOTYPE>
+	  «ENDIF -»
+  «ENDFOREACH -»
+«ENDFOREACH -»
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmVariantCfg AS variant ITERATOR v-»
+«FOREACH variant.spmVariantHBVLANCfg AS HBVlanNet ITERATOR i-»
+                    <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>SPM_NetworkInfo_«variant.shortName»_«HBVlanNet.shortName»</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/SPM_NetworkInfo</TYPE-TREF>
+                      <INIT-VALUE>
+                        <RECORD-VALUE-SPECIFICATION>
+                          <SHORT-LABEL>HB_Info_«v.counter0»_«i.counter0»</SHORT-LABEL>
+                          <FIELDS>
+                            <NUMERICAL-VALUE-SPECIFICATION>
+                              <SHORT-LABEL>SPM_NetworkInfo_«v.counter0»_«i.counter0»_srcip</SHORT-LABEL>
+                              <VALUE>«Spm_ComputeIpAddr(HBVlanNet.spmSrcIp)»</VALUE>
+                            </NUMERICAL-VALUE-SPECIFICATION>
+                            <NUMERICAL-VALUE-SPECIFICATION>
+                              <SHORT-LABEL>SPM_NetworkInfo_«v.counter0»_«i.counter0»_multicast</SHORT-LABEL>
+                              <VALUE>«Spm_ComputeIpAddr(HBVlanNet.spmDstIp)»</VALUE>
+                            </NUMERICAL-VALUE-SPECIFICATION>
+                            <NUMERICAL-VALUE-SPECIFICATION>
+                              <SHORT-LABEL>SPM_NetworkInfo_«v.counter0»_«i.counter0»_VlanID</SHORT-LABEL>
+                              <VALUE>«HBVlanNet.spmVLANId»</VALUE>
+                            </NUMERICAL-VALUE-SPECIFICATION>
+                          </FIELDS>
+                        </RECORD-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+«ENDFOREACH-»
+«ENDFOREACH-»
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmVariantCfg AS variant ITERATOR v-»
+                  <PARAMETER-DATA-PROTOTYPE>
+                    <SHORT-NAME>Spm_Wakeup_Frame_Info_«variant.shortName»</SHORT-NAME>
+                    <SW-DATA-DEF-PROPS>
+                      <SW-DATA-DEF-PROPS-VARIANTS>
+                        <SW-DATA-DEF-PROPS-CONDITIONAL>
+                          <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                        </SW-DATA-DEF-PROPS-CONDITIONAL>
+                      </SW-DATA-DEF-PROPS-VARIANTS>
+                    </SW-DATA-DEF-PROPS>
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/SpmTrgDvcHndlngInfo</TYPE-TREF>
+                    <INIT-VALUE>
+                      <RECORD-VALUE-SPECIFICATION>
+                        <SHORT-LABEL>Frame_Info_«v.counter0»</SHORT-LABEL>
+                        <FIELDS>
+                          <NUMERICAL-VALUE-SPECIFICATION>
+                            <SHORT-LABEL>SPM_Wakeup_Frame_«v.counter0»</SHORT-LABEL>
+                            <VALUE>«Spm_GetWkUpFrmVal(variant.spmVariantWkupFrame)»</VALUE>
+                          </NUMERICAL-VALUE-SPECIFICATION>
+                          <NUMERICAL-VALUE-SPECIFICATION>
+                            <SHORT-LABEL>SPM_Wakeup_Bit_«v.counter0»</SHORT-LABEL>
+                            <VALUE>«variant.spmVariantWkupBit»</VALUE>
+                          </NUMERICAL-VALUE-SPECIFICATION>
+                        </FIELDS>
+                      </RECORD-VALUE-SPECIFICATION>
+                    </INIT-VALUE>
+                  </PARAMETER-DATA-PROTOTYPE>
+«ENDFOREACH-»
+                  <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_HB_Periodicity_BurstPhase_ms</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/Spm_Impl_Data_type_DC</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+					                <VALUE>«spm.spmGeneral.spmBurstPhsPeriodicity»</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                    </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+                  <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_Ethernet_Periodicity_BurstPhase_ms</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/Spm_Impl_Data_type_DC</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+					                <VALUE>10</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                    </INIT-VALUE>
+                  </PARAMETER-DATA-PROTOTYPE>
+                  <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_Can_Periodicity_BurstPhase_ms</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/Spm_Impl_Data_type_DC</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+					                <VALUE>10</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                    </INIT-VALUE>
+                  </PARAMETER-DATA-PROTOTYPE>
+                  <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_Ethernet_BurstPhase_Interval</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/Spm_Impl_Data_type_DC</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+					                <VALUE>35</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                    </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+                  <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_Can_BurstPhase_Interval</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/Spm_Impl_Data_type_DC</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+					                <VALUE>35</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                    </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+                    <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_HB_Periodicity_ms</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/Spm_Impl_Data_type_DC</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+					                <VALUE>1000</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                    </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+                  <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_WkUp_Periodicity_ms</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/Spm_Impl_Data_type_DC</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+					                <VALUE>250</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                    </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+«LET spm.spmConfigSet.spmPgttEntries.spmWkngDvc AS WkngDvc-»
+                    <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>TrgDvcs_«WkngDvc.shortName»</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/SpmPgttRowEntry</TYPE-TREF>
+                      <INIT-VALUE>
+                        <RECORD-VALUE-SPECIFICATION>
+                          <SHORT-LABEL>wdvc_«WkngDvc.shortName»</SHORT-LABEL>
+                          <FIELDS>
+«IF Spm_ReturnSizeIntermediateList(spm) > 0-»
+                            <NUMERICAL-VALUE-SPECIFICATION>
+                              <SHORT-LABEL>wdvc_«WkngDvc.shortName»_IntermediateNodeIPSize</SHORT-LABEL>
+                              <VALUE>«Spm_ReturnSizeIntermediateList(spm)»</VALUE>
+                            </NUMERICAL-VALUE-SPECIFICATION>
+                            <ARRAY-VALUE-SPECIFICATION>
+                              <ELEMENTS>
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmVariantCfg AS variant ITERATOR v-»
+                                <ARRAY-VALUE-SPECIFICATION>
+                                  <SHORT-LABEL>variant_«v.counter0»</SHORT-LABEL>
+                                  <ELEMENTS>
+«FOREACH variant.spmVariantIntermediateDstAddr AS itm-»
+                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                      <SHORT-LABEL>intermediateNode_«Spm_ComputeIpAddr(itm)»</SHORT-LABEL>
+                                      <VALUE>«Spm_ComputeIpAddr(itm)»</VALUE>
+                                    </NUMERICAL-VALUE-SPECIFICATION>
+«ENDFOREACH-»
+                                  </ELEMENTS>
+                                </ARRAY-VALUE-SPECIFICATION>
+«ENDFOREACH-»
+                              </ELEMENTS>
+                            </ARRAY-VALUE-SPECIFICATION>
+«ENDIF-»
+                            <NUMERICAL-VALUE-SPECIFICATION>
+                              <SHORT-LABEL>wdvc_«WkngDvc.shortName»_trgSize</SHORT-LABEL>
+                              <VALUE>«spm.spmConfigSet.spmPgttEntries.spmTrgDvc.size»</VALUE>
+                            </NUMERICAL-VALUE-SPECIFICATION>
+                            <ARRAY-VALUE-SPECIFICATION>
+                              <SHORT-LABEL>Trgt_trgDvc</SHORT-LABEL>
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc.sortBy(e|Spm_ComputeIpAddr( e.spmTrgDvcID.first() ) ) AS TargetRef ITERATOR target-»
+                              <ELEMENTS>
+                                <RECORD-VALUE-SPECIFICATION>
+                                  <SHORT-LABEL>«TargetRef.shortName»_listIPsize</SHORT-LABEL>
+                                  <FIELDS>
+                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                      <SHORT-LABEL>«WkngDvc.shortName»_trgSize</SHORT-LABEL>
+                                      <VALUE>«TargetRef.spmTrgDvcID.size»</VALUE>
+                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                    <ARRAY-VALUE-SPECIFICATION>
+                                      <ELEMENTS>
+«FOREACH TargetRef.spmTrgDvcID AS itm-»
+                                        <NUMERICAL-VALUE-SPECIFICATION>
+                                          <SHORT-LABEL>«TargetRef.shortName»_trgdvcitem_«Spm_ComputeIpAddr(itm)»</SHORT-LABEL>
+                                          <VALUE>«Spm_ComputeIpAddr(itm)»</VALUE>
+                                        </NUMERICAL-VALUE-SPECIFICATION>
+«ENDFOREACH-»
+                                      </ELEMENTS>
+                                    </ARRAY-VALUE-SPECIFICATION>
+                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                      <SHORT-LABEL>«TargetRef.shortName»_trgdvc_dtc</SHORT-LABEL>
+                                      <VALUE>«TargetRef.spmTrgDvcDtcBaseID»</VALUE>
+                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                      <SHORT-LABEL>«TargetRef.shortName»_timeout</SHORT-LABEL>
+                                      <VALUE>«TargetRef.spmTrgDvcDtcTimeOut»</VALUE>
+                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                      <SHORT-LABEL>«TargetRef.shortName»_PowerOnDeviceRetryPeriodicity</SHORT-LABEL>
+                                      <VALUE>«TargetRef.spmTrgDvcPowerOnDeviceRetryPeriodicity»</VALUE>
+                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                      <SHORT-LABEL>«TargetRef.shortName»_PowerOnDeviceRetryWaitTime</SHORT-LABEL>
+                                      <VALUE>«TargetRef.spmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence»</VALUE>
+                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                    <ARRAY-VALUE-SPECIFICATION>
+                                      <SHORT-LABEL>«TargetRef.shortName»_WkUpVariantSeq</SHORT-LABEL>
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmVariantCfg AS variant ITERATOR v-»
+«LET TargetRef.spmTrgDvcVariantHndlng.select(h | h.spmTrgDvcVariantRef == variant) AS varHndlng-»
+                                      <ELEMENTS>
+                                        <RECORD-VALUE-SPECIFICATION>
+                                          <SHORT-LABEL>«TargetRef.shortName»_wkUpVariantSeq_«v.counter0»</SHORT-LABEL>
+                                          <FIELDS>
+                                            <NUMERICAL-VALUE-SPECIFICATION>
+                                              <SHORT-LABEL>«TargetRef.shortName»_wkUpVariantSeq_«v.counter0»_Len</SHORT-LABEL>
+«IF varHndlng.size > 0 && varHndlng.first().spmWkUpSeqRef != null -»
+                                              <VALUE>«varHndlng.first().spmWkUpSeqRef.spmWkUpStep.size»</VALUE>
+«ELSE -»
+«IF TargetRef.spmTrgDvcVariantHndlng.size == 1 && TargetRef.spmTrgDvcVariantHndlng.first().spmWkUpSeqRef != null -»
+                                              <VALUE>«TargetRef.spmTrgDvcVariantHndlng.first().spmWkUpSeqRef.spmWkUpStep.size»</VALUE>
+«ELSE -»
+                                              <VALUE>0</VALUE>
+«ENDIF-»
+«ENDIF-»
+                                            </NUMERICAL-VALUE-SPECIFICATION>
+                                            <ARRAY-VALUE-SPECIFICATION>
+                                              <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»</SHORT-LABEL>
+«IF varHndlng.size > 0 && varHndlng.first().spmWkUpSeqRef != null -»
+«FOREACH varHndlng.first().spmWkUpSeqRef.spmWkUpStep.sortBy(e|e.spmStepID) AS Step ITERATOR i-»
+                                              <ELEMENTS>
+                                                <RECORD-VALUE-SPECIFICATION>
+                                                  <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_«i.counter0»_itms</SHORT-LABEL>
+                                                  <FIELDS>
+                                                  <NUMERICAL-VALUE-SPECIFICATION>
+                                                      <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_«i.counter0»_type</SHORT-LABEL>
+                                                      <VALUE>«Spm_GetIntFromCmdType(Step.spmCommandType)»</VALUE>
+                                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                                      <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_«i.counter0»_com</SHORT-LABEL>
+                                                      <VALUE>«Step.spmCommandValue»</VALUE>
+                                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                                      <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_«i.counter0»_dly</SHORT-LABEL>
+                                                      <VALUE>«Step.spmSeqStepDly»</VALUE>
+                                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                                  </FIELDS>
+                                                </RECORD-VALUE-SPECIFICATION>
+                                              </ELEMENTS>
+«ENDFOREACH-»
+«ELSE -»
+«IF TargetRef.spmTrgDvcVariantHndlng.size == 1 && TargetRef.spmTrgDvcVariantHndlng.first().spmWkUpSeqRef != null -»
+«FOREACH TargetRef.spmTrgDvcVariantHndlng.first().spmWkUpSeqRef.spmWkUpStep.sortBy(e|e.spmStepID) AS Step ITERATOR i-»
+                                              <ELEMENTS>
+                                                <RECORD-VALUE-SPECIFICATION>
+                                                  <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_«i.counter0»_itms</SHORT-LABEL>
+                                                  <FIELDS>
+                                                  <NUMERICAL-VALUE-SPECIFICATION>
+                                                      <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_«i.counter0»_type</SHORT-LABEL>
+                                                      <VALUE>«Spm_GetIntFromCmdType(Step.spmCommandType)»</VALUE>
+                                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                                      <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_«i.counter0»_com</SHORT-LABEL>
+                                                      <VALUE>«Step.spmCommandValue»</VALUE>
+                                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                                      <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_«i.counter0»_dly</SHORT-LABEL>
+                                                      <VALUE>«Step.spmSeqStepDly»</VALUE>
+                                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                                  </FIELDS>
+                                                </RECORD-VALUE-SPECIFICATION>
+                                              </ELEMENTS>
+«ENDFOREACH-»
+«ELSE -»
+                                              <ELEMENTS>
+                                                <RECORD-VALUE-SPECIFICATION>
+                                                  <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_0_itms</SHORT-LABEL>
+                                                  <FIELDS>
+                                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                                      <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_0_type</SHORT-LABEL>
+                                                      <VALUE>0</VALUE>
+                                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                                      <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_0_com</SHORT-LABEL>
+                                                      <VALUE>0</VALUE>
+                                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                                    <NUMERICAL-VALUE-SPECIFICATION>
+                                                      <SHORT-LABEL>from_«WkngDvc.shortName»_to_«TargetRef.shortName»_wkUpPath_v«v.counter0»_0_dly</SHORT-LABEL>
+                                                      <VALUE>0</VALUE>
+                                                    </NUMERICAL-VALUE-SPECIFICATION>
+                                                  </FIELDS>
+                                                </RECORD-VALUE-SPECIFICATION>
+                                              </ELEMENTS>
+«ENDIF-»
+«ENDIF -»
+                                            </ARRAY-VALUE-SPECIFICATION>
+                                          </FIELDS>
+                                        </RECORD-VALUE-SPECIFICATION>
+                                      </ELEMENTS>
+«ENDLET-»
+«ENDFOREACH-»
+                                    </ARRAY-VALUE-SPECIFICATION>
+                                  </FIELDS>
+                                </RECORD-VALUE-SPECIFICATION>
+                              </ELEMENTS>
+«ENDFOREACH-»
+                            </ARRAY-VALUE-SPECIFICATION>
+                          </FIELDS>
+                        </RECORD-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+«ENDLET-»
+                    <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_HB_Shutdown_Delay_ms</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                          <VALUE>«spm.spmGeneral.spmHBShutdownDelayMs»</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+                    <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_SM_Stay_Awake_Time_ms</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                          <VALUE>«spm.spmGeneral.spmSMStayAwakeTimeMs»</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+«IF spm.spmConfigSet.spmPowPrf.spmComIPduGroupEvnt_Tx.size > 0 -»
+                    <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_PduTx_SwitchOff_Delay_ms</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                          <VALUE>150</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+«ENDIF -»
+
+                   <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_ActDeactRetry_Periodicity_Fast_ms</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                          <VALUE>10</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+                    <PARAMETER-DATA-PROTOTYPE>
+                      <SHORT-NAME>Spm_ActDeactRetry_Periodicity_Slow_ms</SHORT-NAME>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                          <VALUE>100</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </PARAMETER-DATA-PROTOTYPE>
+		    
+                  </PER-INSTANCE-PARAMETERS>
+                  <PORT-API-OPTIONS>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SUSD_SPM_PerExec</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SUSD_SPM_VehiclePowerMode</PORT-REF>
+                    </PORT-API-OPTION>
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan -»
+<!-- BEGIN: added at scope of ticket GMSUM-9873 / GMSUM-10878 -->
+                 «IF Spm_PwrMgrHeartbeatRxIsConfigured(vlan) -»
+                  «FOREACH  vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatRxSendRecvIntRef AS hbRx ITERATOR i-»
+					          <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_«vlan.shortName»_PwrMgrHeartbeatRx«i.counter0»</PORT-REF>
+                    </PORT-API-OPTION>                                          
+                   «ENDFOREACH -»
+                 «ENDIF -»
+                    «IF vlan.spmVLANComPwrMgrHeartbeat != null && vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatTxSendRecvIntRef_Foreign != null -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_«vlan.shortName»_PwrMgrHeartbeatTx</PORT-REF>
+                    </PORT-API-OPTION>
+                    «ENDIF -»
+                    «IF vlan.spmVLANComPwrMgrWakeupFrames != null && vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupRxSendRecvIntRef_Foreign != null -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_«vlan.shortName»_PwrMgrWakeupRx</PORT-REF>
+                    </PORT-API-OPTION>
+                    «ENDIF -»
+                    «IF vlan.spmVLANComPwrMgrWakeupFramesMulticast != null && vlan.spmVLANComPwrMgrWakeupFramesMulticast.spmPwrMgrWakeupRxSendRecvIntMulticastRef_Foreign != null -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_«vlan.shortName»_PwrMgrWakeupRx_Multicast</PORT-REF>
+                    </PORT-API-OPTION>
+                    «ENDIF -»
+                    «IF vlan.spmVLANComPwrMgrWakeupFrames != null && vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupTxSendRecvIntRef_Foreign != null -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_«vlan.shortName»_PwrMgrWakeupTx</PORT-REF>
+                    </PORT-API-OPTION>
+                    «ENDIF -»
+                    «IF vlan.spmVLANComSwrMgrInfo != null && vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoRxSendRecvIntRef_Foreign != null -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_«vlan.shortName»_SwMgrInfoRx</PORT-REF>
+                    </PORT-API-OPTION>
+                    «ENDIF -»
+                    «IF vlan.spmVLANComSwrMgrInfo != null && vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoTxSendRecvIntRef_Foreign != null -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_«vlan.shortName»_SwMgrInfoTx</PORT-REF>
+                    </PORT-API-OPTION>
+                    «ENDIF -»
+<!-- END: added at scope of ticket GMSUM-9873 / GMSUM-10878 -->
+«ENDFOREACH -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SUSD_ShutDown</PORT-REF>
+                    </PORT-API-OPTION>
+«IF spm.spmGeneral.spmDiagnostic != null -»
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+					<PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_Dcm_E0DE_Write</PORT-REF>
+                    </PORT-API-OPTION>
+«ENDIF -»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+					<PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_Dcm_E0DF_Write</PORT-REF>
+                    </PORT-API-OPTION>
+«ENDIF -»
+	«IF spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref != null -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_DCM_DID_E0DD_ActivationProfileActivationStatus</PORT-REF>
+                    </PORT-API-OPTION>
+	«ENDIF -»
+	«IF spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef != null -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_Dcm_DataDidE0DE</PORT-REF>
+                    </PORT-API-OPTION>
+	«ENDIF -»
+	«IF spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef != null -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_Dcm_DataDidE0DF</PORT-REF>
+                    </PORT-API-OPTION>
+	«ENDIF -»
+«ENDIF -»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_RequestProfile</PORT-REF>
+                    </PORT-API-OPTION>
+
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_RequestProfile_Deact</PORT-REF>
+                    </PORT-API-OPTION>
+
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SSFM_GetDTCId</PORT-REF>
+                    </PORT-API-OPTION>
+
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SrvcMgr_Notif</PORT-REF>
+                    </PORT-API-OPTION>
+
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_BswM_CommunicationReady</PORT-REF>
+                    </PORT-API-OPTION>
+
+		    		<!-- Port-Api options to BswM -->
+«FOREACH spm.spmConfigSet.spmPowPrf.spmComIPduGroupEvnt_Tx.toSet() AS pduGr-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_BswM_ComIpduGroup_«pduGr.shortName»</PORT-REF>
+                    </PORT-API-OPTION>
+«ENDFOREACH»
+«FOREACH spm.spmConfigSet.spmPowPrf.spmComIPduGroupEvnt_Rx.toSet() AS pduGr-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_BswM_ComIpduGroup_«pduGr.shortName»</PORT-REF>
+                    </PORT-API-OPTION>
+«ENDFOREACH»
+					<PORT-API-OPTION>
+					  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+					  <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SerDatMon_LoNInd</PORT-REF>
+					</PORT-API-OPTION>
+          			<PORT-API-OPTION>
+					  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+					  <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_SrvcMgr_ActivateSrvc</PORT-REF>
+					</PORT-API-OPTION>
+      				<PORT-API-OPTION>
+					  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+					  <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SUSD_SPM_UpdateRecord</PORT-REF>
+					</PORT-API-OPTION>
+«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+      				<PORT-API-OPTION>
+					  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+					  <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_GetDeviceVariantInfo</PORT-REF>
+					</PORT-API-OPTION>
+«ENDIF-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_RequestStatusProfileState</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_ProfileActivationPermission</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SUSD_ActivityRecordCmd</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SrvcMgr_SdLearningStatusIndication</PORT-REF>
+                    </PORT-API-OPTION>
+                  «IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SSFM_SPM_LowVoltSwActPrioReqAvailability</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <ERROR-HANDLING>TRANSFORMER-ERROR-HANDLING</ERROR-HANDLING>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_Com_Spm_LowVoltSwActPrioReq</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_NvmService_LowVoltageActivationPriority</PORT-REF>
+                    </PORT-API-OPTION>
+                  «ENDIF-»
+                  </PORT-API-OPTIONS>
+                  <RUNNABLES>
+«IF spm.spmGeneral.spmGenerateInitRunnable == true -»
+                    <RUNNABLE-ENTITY UUID="0d853b90-bc71-4e4a-8944-5c12b7446303">
+                      <SHORT-NAME>Runnable_SPM_Init</SHORT-NAME>
+                      <SYMBOL>RE_SPM_Init</SYMBOL>
+                    </RUNNABLE-ENTITY>
+«ENDIF-»
+                    <RUNNABLE-ENTITY UUID="a3b220fe-f0a6-4857-aca2-bd01d6a0e412">
+                      <SHORT-NAME>RE_SPM_SoftMgr_MainFunction</SHORT-NAME>
+	                  <PARAMETER-ACCESSS>
+						<PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_Ethernet_Periodicity_BP_ms</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_Ethernet_Periodicity_BurstPhase_ms</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+            </PARAMETER-ACCESS>
+						<PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_Can_Periodicity_BP_ms</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_Can_Periodicity_BurstPhase_ms</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+            </PARAMETER-ACCESS>
+						<PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_HB_Periodicity_BP_ms</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_HB_Periodicity_BurstPhase_ms</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+ 						<PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_HB_Periodicity_ms</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_HB_Periodicity_ms</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_SM_Stay_Awake_Time_ms</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_SM_Stay_Awake_Time_ms</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+«IF spm.spmConfigSet.spmPowPrf.spmComIPduGroupEvnt_Tx.size > 0 -»
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_PduTx_SwitchOff_Delay_ms</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_PduTx_SwitchOff_Delay_ms</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+«ENDIF -»
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_ActDeactRetry_Periodicity_Fast_ms</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_ActDeactRetry_Periodicity_Fast_ms</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_ActDeactRetry_Periodicity_Slow_ms</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_ActDeactRetry_Periodicity_Slow_ms</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmVariantCfg AS variant ITERATOR v-»
+«FOREACH variant.spmVariantHBVLANCfg AS HBVlanNet ITERATOR i-»
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_SPM_NetworkInfo_«variant.shortName»_«HBVlanNet.shortName»</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/SPM_NetworkInfo_«variant.shortName»_«HBVlanNet.shortName»</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+«ENDFOREACH-»
+«ENDFOREACH-»
+«LET spm.spmConfigSet.spmPgttEntries.spmWkngDvc AS WkngDvc-»
+                        <PARAMETER-ACCESS UUID="6d85b5b7-5fd3-4a8c-afef-e284e6a76d50">
+                          <SHORT-NAME>PAP_«WkngDvc.shortName»</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/TrgDvcs_«WkngDvc.shortName»</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmVariantCfg AS variant ITERATOR v-»
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_Wakeup_Frame_Info_«variant.shortName»</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_Wakeup_Frame_Info_«variant.shortName»</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+«ENDFOREACH-»
+«ENDLET-»
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_Ethernet_BP_Interval</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_Ethernet_BurstPhase_Interval</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_Can_BP_Interval</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_Can_BurstPhase_Interval</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PAP_Spm_WkUp_Periodicity_ms</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_WkUp_Periodicity_ms</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+                      </PARAMETER-ACCESSS>
+                      <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                        <VARIABLE-ACCESS UUID="de943dda-c669-4527-8260-aad72cd7bf6f">
+                          <SHORT-NAME>DRPA_SPM_PermitExecution_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SUSD_SPM_PerExec</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_PermitExecution/SUSD_SWC_ExecutionStatus</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS UUID="de943dda-c669-4527-8260-aad72cd7bf6k">
+                          <SHORT-NAME>DRPA_SPM_VehiclePowerMode_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SUSD_SPM_VehiclePowerMode</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_VehiclePowerMode/VehiclePowerMode</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan -»
+<!-- BEGIN: added at scope of ticket GMSUM-9873 / GMSUM-10878 -->
+						<!-- PwrMgrHeartbeat -->
+          «IF Spm_PwrMgrHeartbeatRxIsConfigured(vlan) -»
+            «FOREACH  vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatRxSendRecvIntRef AS hbRx ITERATOR i-»
+						            <VARIABLE-ACCESS UUID="de943dda-c669-4527-8260-aad72cd7bf6k">
+                          <SHORT-NAME>DRPA_SPM_«vlan.shortName»_PwrMgrHeartbeatRx«i.counter0»</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_«vlan.shortName»_PwrMgrHeartbeatRx«i.counter0»</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">«hbRx.toString()»/«Spm_GetNameVarDataProtoTypeFromNamingConv(hbRx.toString())»</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+            «ENDFOREACH -»
+          «ENDIF -»
+						<!-- SwMgrInfo -->
+						«IF vlan.spmVLANComSwrMgrInfo != null && vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoRxSendRecvIntRef_Foreign != null -»
+						<VARIABLE-ACCESS UUID="de943dda-c669-4527-8260-aad72cd7bf6k">
+                          <SHORT-NAME>DRPA_SPM_«vlan.shortName»_SwMgrInfoRx</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_«vlan.shortName»_SwMgrInfoRx</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">«vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoRxSendRecvIntRef_Foreign.toString()»/«Spm_GetNameVarDataProtoTypeFromNamingConv(vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoRxSendRecvIntRef_Foreign.toString())»</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+						«ENDIF -»
+						<!-- PwrMgrWakeup -->
+						«IF vlan.spmVLANComPwrMgrWakeupFrames != null && vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupRxSendRecvIntRef_Foreign != null -»
+						<VARIABLE-ACCESS UUID="de943dda-c669-4527-8260-aad72cd7bf6k">
+                          <SHORT-NAME>DRPA_SPM_«vlan.shortName»_PwrMgrWakeupRx</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_«vlan.shortName»_PwrMgrWakeupRx</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">«vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupRxSendRecvIntRef_Foreign.toString()»/«Spm_GetNameVarDataProtoTypeFromNamingConv(vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupRxSendRecvIntRef_Foreign.toString())»</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+						«ENDIF -»
+<!-- END: added at scope of ticket GMSUM-9873 / GMSUM-10878 -->
+           	<!-- Multicast PwrMgrWakeup -->
+						«IF vlan.spmVLANComPwrMgrWakeupFramesMulticast != null && vlan.spmVLANComPwrMgrWakeupFramesMulticast.spmPwrMgrWakeupRxSendRecvIntMulticastRef_Foreign != null -»
+						<VARIABLE-ACCESS UUID="de943dda-c669-4527-8260-aad72cd7bf6k">
+                          <SHORT-NAME>DRPA_SPM_«vlan.shortName»_PwrMgrWakeupRx_Multicast</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_«vlan.shortName»_PwrMgrWakeupRx_Multicast</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">«vlan.spmVLANComPwrMgrWakeupFramesMulticast.spmPwrMgrWakeupRxSendRecvIntMulticastRef_Foreign.toString()»/«Spm_GetNameVarDataProtoTypeFromNamingConv(vlan.spmVLANComPwrMgrWakeupFramesMulticast.spmPwrMgrWakeupRxSendRecvIntMulticastRef_Foreign.toString())»</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+						«ENDIF -»
+«ENDFOREACH -»
+                      «IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>SignalAvailability</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SSFM_SPM_LowVoltSwActPrioReqAvailability</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/RxMonitoredSignal_Av/SignalAvailability</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_VeActvProp_YeDrvnVeh</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_Com_Spm_LowVoltSwActPrioReq</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/PortInterfaces/SPM_LowVoltSwActPrioReq/SPM_LowVoltSwActPrioReqSignal</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      «ENDIF-»
+
+                      </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                      <DATA-SEND-POINTS>
+                        <VARIABLE-ACCESS UUID="bcac3811-56f3-44a9-a9a7-0c3f6a2f1d1f">
+                          <SHORT-NAME>DSP_SPM_ShutdownPermission_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SUSD_ShutDown</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SPM_ShutdownPermission/SUSD_UserRequest</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS UUID="7bab8203-1598-499d-8beb-df81a1634df4">
+                          <SHORT-NAME>DSP_LossOfNodeIndication_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SerDatMon_LoNInd</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SPM_LossOfNodeIndication/LossOfNodeIndication</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan -»
+<!-- BEGIN: added at scope of ticket GMSUM-9873 / GMSUM-10878 -->
+						<!-- PwrMgrHeartbeat -->
+						«IF vlan.spmVLANComPwrMgrHeartbeat != null && vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatTxSendRecvIntRef_Foreign != null -»
+						<VARIABLE-ACCESS UUID="de943dda-c669-4527-8260-aad72cd7bf6k">
+                          <SHORT-NAME>DSP_SPM_«vlan.shortName»_PwrMgrHeartbeatTx</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_«vlan.shortName»_PwrMgrHeartbeatTx</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">«vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatTxSendRecvIntRef_Foreign.toString()»/«Spm_GetNameVarDataProtoTypeFromNamingConv(vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatTxSendRecvIntRef_Foreign.toString())»</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+						«ENDIF -»
+						<!-- SwMgrInfo -->
+						«IF vlan.spmVLANComSwrMgrInfo != null && vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoTxSendRecvIntRef_Foreign != null -»
+						<VARIABLE-ACCESS UUID="de943dda-c669-4527-8260-aad72cd7bf6k">
+                          <SHORT-NAME>DSP_SPM_«vlan.shortName»_SwMgrInfoTx</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_«vlan.shortName»_SwMgrInfoTx</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">«vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoTxSendRecvIntRef_Foreign.toString()»/«Spm_GetNameVarDataProtoTypeFromNamingConv(vlan.spmVLANComSwrMgrInfo.spmSwMgrInfoTxSendRecvIntRef_Foreign.toString())»</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+						«ENDIF -»
+						<!-- PwrMgrWakeup -->
+						«IF vlan.spmVLANComPwrMgrWakeupFrames != null && vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupTxSendRecvIntRef_Foreign != null -»
+						<VARIABLE-ACCESS UUID="de943dda-c669-4527-8260-aad72cd7bf6k">
+                          <SHORT-NAME>DSP_SPM_«vlan.shortName»_PwrMgrWakeupTx</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_«vlan.shortName»_PwrMgrWakeupTx</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">«vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupTxSendRecvIntRef_Foreign.toString()»/«Spm_GetNameVarDataProtoTypeFromNamingConv(vlan.spmVLANComPwrMgrWakeupFrames.spmPwrMgrWakeupTxSendRecvIntRef_Foreign.toString())»</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+						«ENDIF -»
+<!-- END: added at scope of ticket GMSUM-9873 / GMSUM-10878 -->
+«ENDFOREACH -»
+                        <VARIABLE-ACCESS UUID="3ea7c700-b96a-4588-b5e7-fe1493794df3">
+                          <SHORT-NAME>DSP_StatusNotification_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_SrvcMgr_Notif</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SPM_ServiceActivationStatusNotification/StatusNotification</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-SEND-POINTS>
+
+		      		  <!-- BswM port - Mode switch -->
+					  <MODE-SWITCH-POINTS>
+«FOREACH spm.spmConfigSet.spmPowPrf.spmComIPduGroupEvnt_Tx.toSet() AS pduGr -»
+                        <MODE-SWITCH-POINT>
+                          <SHORT-NAME>MSP_«pduGr.shortName»</SHORT-NAME>
+                          <MODE-GROUP-IREF>
+                            <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_BswM_ComIpduGroup_«pduGr.shortName»</CONTEXT-P-PORT-REF>
+                            <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/PortInterfaces/SPM_ComIpduGroup/SPM_SWCH_PDUGR</TARGET-MODE-GROUP-REF>
+                          </MODE-GROUP-IREF>
+                        </MODE-SWITCH-POINT>
+«ENDFOREACH -»
+«FOREACH spm.spmConfigSet.spmPowPrf.spmComIPduGroupEvnt_Rx.toSet() AS pduGr -»
+                        <MODE-SWITCH-POINT>
+                          <SHORT-NAME>MSP_«pduGr.shortName»</SHORT-NAME>
+                          <MODE-GROUP-IREF>
+                            <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/PP_SPM_BswM_ComIpduGroup_«pduGr.shortName»</CONTEXT-P-PORT-REF>
+                            <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/PortInterfaces/SPM_ComIpduGroup/SPM_SWCH_PDUGR</TARGET-MODE-GROUP-REF>
+                          </MODE-GROUP-IREF>
+                        </MODE-SWITCH-POINT>
+«ENDFOREACH -»
+                      </MODE-SWITCH-POINTS>
+                      <READ-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WrittenLocalVariables_VariableAccess_1</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_E0D7ActiveStatus</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>ReadLocalVariables_VariableAccess_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_DevicePowerState</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>ReadLocalVariables_VariableAccess_1</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_Learning_Status</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </READ-LOCAL-VARIABLES>
+                      <SERVER-CALL-POINTS>
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>ActivateService</SHORT-NAME>
+                            <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_SrvcMgr_ActivateSrvc</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SrvcMgr_SPM_ActivateServices/ActivateServices</TARGET-REQUIRED-OPERATION-REF>
+                            </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>UpdateRecords</SHORT-NAME>
+                            <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SUSD_SPM_UpdateRecord</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SUSD_SPM_UpdateRecord/UpdateRecord</TARGET-REQUIRED-OPERATION-REF>
+                            </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>GetDeviceVariantInfo</SHORT-NAME>
+                            <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_GetDeviceVariantInfo</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SWC_GetDeviceVariantInfo/setVariant</TARGET-REQUIRED-OPERATION-REF>
+                            </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+«ENDIF-»
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+                        <SYNCHRONOUS-SERVER-CALL-POINT UUID="6a1d0df0-e3cf-4feb-bdb6-980c684725a4">
+                          <SHORT-NAME>SSCP_E0DE_WriteBlock</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_Dcm_E0DE_Write</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/WriteBlock</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SSCP_E0DF_WriteBlock</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_Dcm_E0DF_Write</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/WriteBlock</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+«ENDIF-»  
+                  «IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                            <SHORT-NAME>LowVoltageActivationPriority_SetRamBlockStatus</SHORT-NAME>
+                            <OPERATION-IREF>
+                              <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_NvmService_LowVoltageActivationPriority</CONTEXT-R-PORT-REF>
+                              <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/SetRamBlockStatus</TARGET-REQUIRED-OPERATION-REF>
+                            </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+                  «ENDIF-»
+                      </SERVER-CALL-POINTS>
+                      <SYMBOL>SPM_SoftMgr_MainFunction</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY UUID="ccb9961e-a507-4152-affd-0d7c20a02122">
+                      <SHORT-NAME>RE_SPM_ActivateProfile</SHORT-NAME>
+                      <SYMBOL>SPM_ActivateProfile</SYMBOL>
+                      <WRITTEN-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WrittenLocalVariables_VariableAccess_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_LastActReqID</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WrittenLocalVariables_VariableAccess_1</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_LastActReqFlag</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </WRITTEN-LOCAL-VARIABLES>
+                      <READ-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>ReadLocalVariables_VariableAccess_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_LastDeactReqID</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>ReadLocalVariables_VariableAccess_1</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_LastDeactReqFlag</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>ReadLocalVariables_VariableAccess_2</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_Learning_Status</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>  
+                      </READ-LOCAL-VARIABLES>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY UUID="af9125a4-b16a-4e11-bd2b-8f8654cad6aa">
+                      <SHORT-NAME>RE_SPM_DeactivateProfile</SHORT-NAME>
+                      <SYMBOL>SPM_DeactivateProfile</SYMBOL>
+                      <WRITTEN-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WrittenLocalVariables_VariableAccess_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_LastDeactReqID</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WrittenLocalVariables_VariableAccess_1</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_LastDeactReqFlag</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </WRITTEN-LOCAL-VARIABLES>
+                      <READ-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>ReadLocalVariables_VariableAccess_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_LastActReqID</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>ReadLocalVariables_VariableAccess_1</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_LastActReqFlag</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </READ-LOCAL-VARIABLES>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SPM_GetProfileState</SHORT-NAME>
+                      <SYMBOL>SPM_GetProfileState</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SPM_GetProfileActivationPermission</SHORT-NAME>
+                      <SYMBOL>SPM_GetProfileActivationPermission</SYMBOL>
+                    </RUNNABLE-ENTITY>
+«IF spm.spmGeneral.spmDiagnostic != null -»
+	«IF spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref != null -»
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SPM_DID_E0DD_ActivationProfileActivationStatus</SHORT-NAME>
+                      <SYMBOL>Runnable_SPM_DID_E0DD_ActivationProfileActivationStatus</SYMBOL>
+                    </RUNNABLE-ENTITY>
+		«IF Get_DID_HasCheckRead(spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref)-»
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SPM_DID_E0DD_ActivationProfileActivationStatus_CheckRead</SHORT-NAME>
+                      <SYMBOL>Runnable_SPM_DID_E0DD_ActivationProfileActivationStatus_CheckRead</SYMBOL>
+                    </RUNNABLE-ENTITY>
+		«ENDIF -»
+	«ENDIF -»
+	«IF spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef != null -»
+                    <RUNNABLE-ENTITY>
+                    	<SHORT-NAME>RE_SPM_DID_0xE0DE</SHORT-NAME>
+                    	<SYMBOL>Runnable_Spm_DID0xE0DE</SYMBOL>
+                    </RUNNABLE-ENTITY>
+    	«IF Get_DID_HasCheckRead(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef) -»
+                    <RUNNABLE-ENTITY>
+                    	<SHORT-NAME>RE_SPM_DID_0xE0DE_CheckRead</SHORT-NAME>
+                    	<SYMBOL>Runnable_Spm_DID0xE0DE_CheckRead</SYMBOL>
+                    </RUNNABLE-ENTITY>
+    	«ENDIF -»
+    «ENDIF -»
+	«IF spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef != null -»
+                    <RUNNABLE-ENTITY>
+                    	<SHORT-NAME>RE_SPM_DID_0xE0DF</SHORT-NAME>
+                    	<SYMBOL>Runnable_Spm_DID0xE0DF</SYMBOL>
+                    </RUNNABLE-ENTITY>
+    	«IF Get_DID_HasCheckRead(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef) -»
+                    <RUNNABLE-ENTITY>
+                    	<SHORT-NAME>RE_SPM_DID_0xE0DF_CheckRead</SHORT-NAME>
+                    	<SYMBOL>Runnable_Spm_DID0xE0DF_CheckRead</SYMBOL>
+                    </RUNNABLE-ENTITY>
+        «ENDIF -»
+	«ENDIF -»
+«ENDIF -»
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SPM_SUSD_ActivityRecordCmd</SHORT-NAME>
+                      <SYMBOL>SPM_ActivityRecordCmd</SYMBOL>
+                      <WRITTEN-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WrittenLocalVariables_VariableAccess_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_E0D7ActiveStatus</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </WRITTEN-LOCAL-VARIABLES>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY UUID="96238af8-8f8e-4659-8982-eb439464851b">
+                      <SHORT-NAME>RE_SPM_GetDTCIdentifier</SHORT-NAME>
+                      <SYMBOL>SPM_GetDTCIdentifier</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                   <RUNNABLE-ENTITY UUID="ccb9961e-a507-4152-affd-0d7c20a02122">
+
+					<SHORT-NAME>RE_SPM_PowerManager_MainFunction</SHORT-NAME>
+            <MODE-ACCESS-POINTS>
+              <MODE-ACCESS-POINT>
+                <MODE-GROUP-IREF>
+                  <R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                        <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SumSpm/SwComponent/SPM/RP_SPM_BswM_CommunicationReady</CONTEXT-R-PORT-REF>
+                        <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/PortInterfaces/SPM_PI_CommuincationReady/SPM_MDG_CR</TARGET-MODE-GROUP-REF>
+                  </R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                </MODE-GROUP-IREF>
+              </MODE-ACCESS-POINT>
+            </MODE-ACCESS-POINTS>
+	    <PARAMETER-ACCESSS>
+	«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc AS trg -»
+  		«FOREACH trg.spmTrgDvcVariantHndlng AS variantAppended -»
+    			«IF variantAppended.spmTrgAssocWkUpFrm != null && variantAppended.spmTrgAssocWkupBit != null -»
+			<PARAMETER-ACCESS>
+                          <SHORT-NAME>PA_«trg.shortName»_«variantAppended.shortName»_HndlInfo</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/SPM_TrgHndlInfo_«trg.shortName»_«variantAppended.shortName»</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+			«ENDIF-»
+		«ENDFOREACH -»
+	«ENDFOREACH -»
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PA_Spm_HB_Shutdown_Delay_ms</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_HB_Shutdown_Delay_ms</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+    				</PARAMETER-ACCESSS>
+                      <SYMBOL>Runnable_SPM_PowerManager_MainFunction</SYMBOL>
+                      <WRITTEN-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WrittenLocalVariables_VariableAccess_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_DevicePowerState</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </WRITTEN-LOCAL-VARIABLES>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SPM_SrvcMgr_SdLearningStatusIndication</SHORT-NAME>
+                      <SYMBOL>Runnable_SPM_SdLearningStatusIndication</SYMBOL>
+                      <WRITTEN-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WrittenLocalVariables_VariableAccess_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_Learning_Status</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </WRITTEN-LOCAL-VARIABLES>
+                      <READ-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>ReadLocalVariables_VariableAccess_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SumSpm/SwComponent/SPM/SumSpm_IB/Spm_Learning_Status</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </READ-LOCAL-VARIABLES>    
+                    </RUNNABLE-ENTITY>
+                  </RUNNABLES>
+                  <SUPPORTS-MULTIPLE-INSTANTIATION>false</SUPPORTS-MULTIPLE-INSTANTIATION>
+                </SWC-INTERNAL-BEHAVIOR>
+              </INTERNAL-BEHAVIORS>
+            </COMPLEX-DEVICE-DRIVER-SW-COMPONENT-TYPE>
+          </ELEMENTS>
+        </AR-PACKAGE>
+      </AR-PACKAGES>
+    </AR-PACKAGE>
+    <AR-PACKAGE>
+      <SHORT-NAME>ImplementationDataTypes</SHORT-NAME>
+      <ELEMENTS>
+      <SW-BASE-TYPE>
+        <SHORT-NAME>uint16_spm</SHORT-NAME>
+        <LONG-NAME>
+          <L-4 L="EN">unsigned integer 16bit</L-4>
+        </LONG-NAME>
+        <CATEGORY>FIXED_LENGTH</CATEGORY>
+        <BASE-TYPE-SIZE>16</BASE-TYPE-SIZE>
+        <BASE-TYPE-ENCODING>NONE</BASE-TYPE-ENCODING>
+        <MEM-ALIGNMENT>16</MEM-ALIGNMENT>
+        <NATIVE-DECLARATION>uint16</NATIVE-DECLARATION>
+      </SW-BASE-TYPE>
+
+      <DATA-CONSTR>
+      <SHORT-NAME>Spm_Period_ms_Constr</SHORT-NAME>
+      <DATA-CONSTR-RULES>
+        <DATA-CONSTR-RULE>
+          <INTERNAL-CONSTRS>
+          <LOWER-LIMIT>5</LOWER-LIMIT>
+          <UPPER-LIMIT>65535</UPPER-LIMIT>
+          </INTERNAL-CONSTRS>
+        </DATA-CONSTR-RULE>
+        </DATA-CONSTR-RULES>
+      </DATA-CONSTR>
+
+      <IMPLEMENTATION-DATA-TYPE>
+      <SHORT-NAME>Spm_Impl_Data_type_DC</SHORT-NAME>
+      <CATEGORY>VALUE</CATEGORY>
+        <SW-DATA-DEF-PROPS>
+          <SW-DATA-DEF-PROPS-VARIANTS>
+            <SW-DATA-DEF-PROPS-CONDITIONAL>
+              <BASE-TYPE-REF>/ImplementationDataTypes/uint16_spm</BASE-TYPE-REF>
+              <DATA-CONSTR-REF>/ImplementationDataTypes/Spm_Period_ms_Constr</DATA-CONSTR-REF>
+            </SW-DATA-DEF-PROPS-CONDITIONAL>
+          </SW-DATA-DEF-PROPS-VARIANTS>
+        </SW-DATA-DEF-PROPS>
+      </IMPLEMENTATION-DATA-TYPE>
+        <IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>SPM_PermitExecution</SHORT-NAME>
+          <CATEGORY>TYPE_REFERENCE</CATEGORY>
+          <SW-DATA-DEF-PROPS>
+            <SW-DATA-DEF-PROPS-VARIANTS>
+              <SW-DATA-DEF-PROPS-CONDITIONAL>
+                <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+              </SW-DATA-DEF-PROPS-CONDITIONAL>
+            </SW-DATA-DEF-PROPS-VARIANTS>
+          </SW-DATA-DEF-PROPS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>SPM_ShutdownPermission</SHORT-NAME>
+          <CATEGORY>TYPE_REFERENCE</CATEGORY>
+          <SW-DATA-DEF-PROPS>
+            <SW-DATA-DEF-PROPS-VARIANTS>
+              <SW-DATA-DEF-PROPS-CONDITIONAL>
+                <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+              </SW-DATA-DEF-PROPS-CONDITIONAL>
+            </SW-DATA-DEF-PROPS-VARIANTS>
+          </SW-DATA-DEF-PROPS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>SPM_SoftMgrInfo</SHORT-NAME>
+          <CATEGORY>STRUCTURE</CATEGORY>
+          <SUB-ELEMENTS>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>SrcID</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>DstID</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>ProfileRequest_MsgType</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>ProfileRequest_EntryLength</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>ProfileRequest_Payload</SHORT-NAME>
+              <CATEGORY>ARRAY</CATEGORY>
+              <ARRAY-SIZE-SEMANTICS>VARIABLE-SIZE</ARRAY-SIZE-SEMANTICS>
+              <SUB-ELEMENTS>
+                <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  <SHORT-NAME>profileReqData</SHORT-NAME>
+                  <CATEGORY>STRUCTURE</CATEGORY>
+                  <ARRAY-SIZE>12</ARRAY-SIZE>
+                  <SUB-ELEMENTS>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>profileID</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>requestCode</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  </SUB-ELEMENTS>
+                </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              </SUB-ELEMENTS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>RequestStatusProfState_MsgType</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>RequestStatusProfState_EntryLength</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>RequestStatusProfState_Payload</SHORT-NAME>
+              <CATEGORY>ARRAY</CATEGORY>
+              <ARRAY-SIZE-SEMANTICS>VARIABLE-SIZE</ARRAY-SIZE-SEMANTICS>
+              <SUB-ELEMENTS>
+                <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  <SHORT-NAME>profInfoData</SHORT-NAME>
+                  <CATEGORY>STRUCTURE</CATEGORY>
+                  <ARRAY-SIZE>12</ARRAY-SIZE>
+                  <SUB-ELEMENTS>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>profileID</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>requestStatus</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>profileState</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  </SUB-ELEMENTS>
+                </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              </SUB-ELEMENTS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+          </SUB-ELEMENTS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>SpmTrgDvcHndlngInfo</SHORT-NAME>
+          <CATEGORY>STRUCTURE</CATEGORY>
+          <SUB-ELEMENTS>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>SpmTrgWkupFrm</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                    <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>SpmTrgWkupBit</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                    <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+          </SUB-ELEMENTS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>SPM_NetworkInfo</SHORT-NAME>
+          <CATEGORY>STRUCTURE</CATEGORY>
+          <SUB-ELEMENTS>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>SrcIP</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>MulticastAddress</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>VlanID</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+          </SUB-ELEMENTS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>SPM_SrvcPduGrState</SHORT-NAME>
+          <CATEGORY>TYPE_REFERENCE</CATEGORY>
+          <SW-DATA-DEF-PROPS>
+            <SW-DATA-DEF-PROPS-VARIANTS>
+              <SW-DATA-DEF-PROPS-CONDITIONAL>
+                <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+              </SW-DATA-DEF-PROPS-CONDITIONAL>
+            </SW-DATA-DEF-PROPS-VARIANTS>
+          </SW-DATA-DEF-PROPS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>SpmPgttRowEntry</SHORT-NAME>
+          <CATEGORY>STRUCTURE</CATEGORY>
+          <SUB-ELEMENTS>
+«IF Spm_ReturnSizeIntermediateList(spm) > 0-»
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>IntermediateNodeIPListSize</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>IntermediateNodeIPList</SHORT-NAME>
+              <CATEGORY>ARRAY</CATEGORY>
+              <ARRAY-SIZE-SEMANTICS>FIXED-SIZE</ARRAY-SIZE-SEMANTICS>
+              <SUB-ELEMENTS>
+                <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  <SHORT-NAME>IntermediateNodeIPVariant</SHORT-NAME>
+                  <CATEGORY>ARRAY</CATEGORY>
+                  <ARRAY-SIZE>«spm.spmConfigSet.spmPgttEntries.spmVariantCfg.size-»</ARRAY-SIZE>
+                  <ARRAY-SIZE-SEMANTICS>FIXED-SIZE</ARRAY-SIZE-SEMANTICS>
+                  <SUB-ELEMENTS>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>IntermediateNodeIP</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <ARRAY-SIZE>«Spm_ReturnSizeIntermediateList(spm)-»</ARRAY-SIZE>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  </SUB-ELEMENTS>
+                </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              </SUB-ELEMENTS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+«ENDIF-»
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>TrgDvcLstSize</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>TrgDvcLst</SHORT-NAME>
+              <CATEGORY>ARRAY</CATEGORY>
+              <ARRAY-IMPL-POLICY>PAYLOAD-AS-ARRAY</ARRAY-IMPL-POLICY>
+              <ARRAY-SIZE-HANDLING>ALL-INDICES-SAME-ARRAY-SIZE</ARRAY-SIZE-HANDLING>
+              <ARRAY-SIZE-SEMANTICS>VARIABLE-SIZE</ARRAY-SIZE-SEMANTICS>
+              <SUB-ELEMENTS>
+                <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  <SHORT-NAME>TrgDvcItm</SHORT-NAME>
+                  <CATEGORY>STRUCTURE</CATEGORY>
+                  <ARRAY-SIZE>«spm.spmConfigSet.spmPgttEntries.spmTrgDvc.size»</ARRAY-SIZE>
+                  <SUB-ELEMENTS>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>Spm_NumberIPAssociated</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>Spm_TrgDvc_ListIP</SHORT-NAME>
+                      <CATEGORY>ARRAY</CATEGORY>
+                      <ARRAY-SIZE-SEMANTICS>FIXED-SIZE</ARRAY-SIZE-SEMANTICS>
+                      <SUB-ELEMENTS>
+                        <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                          <SHORT-NAME>Spm_TrgDvc_ListIP_itm</SHORT-NAME>
+                          <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                          <ARRAY-SIZE>«(Spm_GetMaxNumberOfIPAssociatedToEachTrgDvc(spm.spmConfigSet.spmPgttEntries))-»</ARRAY-SIZE>
+                          <SW-DATA-DEF-PROPS>
+                            <SW-DATA-DEF-PROPS-VARIANTS>
+                              <SW-DATA-DEF-PROPS-CONDITIONAL>
+                                <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                              </SW-DATA-DEF-PROPS-CONDITIONAL>
+                            </SW-DATA-DEF-PROPS-VARIANTS>
+                          </SW-DATA-DEF-PROPS>
+                        </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      </SUB-ELEMENTS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>TrgDvcDtcBaseID</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>TrgDvcDtcMaturaTimeOut</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint32</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>SpmTrgDvcPowerOnDeviceRetryPeriodicity</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence</SHORT-NAME>
+                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      <SHORT-NAME>WkUpVariantSeq</SHORT-NAME>
+                      <CATEGORY>ARRAY</CATEGORY>
+                      <SUB-ELEMENTS>
+                        <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                          <SHORT-NAME>WkUpVariantSeq_Itm</SHORT-NAME>
+                          <CATEGORY>STRUCTURE</CATEGORY>
+                          <ARRAY-SIZE>«spm.spmConfigSet.spmPgttEntries.spmVariantCfg.size-»</ARRAY-SIZE>
+                          <SUB-ELEMENTS>
+                            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                              <SHORT-NAME>WkUpSeqLen</SHORT-NAME>
+                              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                              <SW-DATA-DEF-PROPS>
+                                <SW-DATA-DEF-PROPS-VARIANTS>
+                                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                                </SW-DATA-DEF-PROPS-VARIANTS>
+                              </SW-DATA-DEF-PROPS>
+                            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                              <SHORT-NAME>WkUpSeq</SHORT-NAME>
+                              <CATEGORY>ARRAY</CATEGORY>
+                              <SUB-ELEMENTS>
+                                <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                                  <SHORT-NAME>WkUpStep</SHORT-NAME>
+                                  <CATEGORY>STRUCTURE</CATEGORY>
+                                  <ARRAY-SIZE>«(Spm_GetMaxNumberOfSpmWkUpStep(spm.spmConfigSet.spmPgttEntries))-»</ARRAY-SIZE>
+                                  <SUB-ELEMENTS>
+                                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                                      <SHORT-NAME>WkUpCommType</SHORT-NAME>
+                                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                                      <SW-DATA-DEF-PROPS>
+                                        <SW-DATA-DEF-PROPS-VARIANTS>
+                                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                                        </SW-DATA-DEF-PROPS-VARIANTS>
+                                      </SW-DATA-DEF-PROPS>
+                                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                                      <SHORT-NAME>WkUpCommValue</SHORT-NAME>
+                                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                                      <SW-DATA-DEF-PROPS>
+                                        <SW-DATA-DEF-PROPS-VARIANTS>
+                                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                                        </SW-DATA-DEF-PROPS-VARIANTS>
+                                      </SW-DATA-DEF-PROPS>
+                                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                                    <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                                      <SHORT-NAME>WkUpStepDly</SHORT-NAME>
+                                      <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                                      <SW-DATA-DEF-PROPS>
+                                        <SW-DATA-DEF-PROPS-VARIANTS>
+                                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</IMPLEMENTATION-DATA-TYPE-REF>
+                                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                                        </SW-DATA-DEF-PROPS-VARIANTS>
+                                      </SW-DATA-DEF-PROPS>
+                                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                                  </SUB-ELEMENTS>
+                                </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                              </SUB-ELEMENTS>
+                            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                          </SUB-ELEMENTS>
+                        </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                      </SUB-ELEMENTS>
+                    </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  </SUB-ELEMENTS>
+                </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              </SUB-ELEMENTS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+          </SUB-ELEMENTS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>Spm_DevicePowerStateInfo</SHORT-NAME>
+          <CATEGORY>STRUCTURE</CATEGORY>
+          <SUB-ELEMENTS>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>Spm_TrgDvcState</SHORT-NAME>
+              <CATEGORY>ARRAY</CATEGORY>
+              <ARRAY-SIZE-SEMANTICS>FIXED-SIZE</ARRAY-SIZE-SEMANTICS>
+              <SUB-ELEMENTS>
+                <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  <SHORT-NAME>Spm_TrgDvcState_Itm</SHORT-NAME>
+                  <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                  <ARRAY-SIZE>«spm.spmConfigSet.spmPgttEntries.spmTrgDvc.size-»</ARRAY-SIZE>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              </SUB-ELEMENTS>
+              <SW-DATA-DEF-PROPS/>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>Spm_LocalState</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+          </SUB-ELEMENTS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <!-- Aligned to specification SDV-8217 version 27.27.174.0p1 -->
+		<IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>SPM_LossOfNodeIndication_lfc</SHORT-NAME>
+          <CATEGORY>STRUCTURE</CATEGORY>
+          <SUB-ELEMENTS>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>nodeDtcCodeValue</SHORT-NAME>
+              <CATEGORY>DATA_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <SW-POINTER-TARGET-PROPS>
+                      <TARGET-CATEGORY>TYPE_REFERENCE</TARGET-CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </SW-POINTER-TARGET-PROPS>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>nodeStatus</SHORT-NAME>
+              <CATEGORY>DATA_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <SW-POINTER-TARGET-PROPS>
+                      <TARGET-CATEGORY>TYPE_REFERENCE</TARGET-CATEGORY>
+                      <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                          <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                          </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                      </SW-DATA-DEF-PROPS>
+                    </SW-POINTER-TARGET-PROPS>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+              <SHORT-NAME>nodeListLength</SHORT-NAME>
+              <CATEGORY>TYPE_REFERENCE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</IMPLEMENTATION-DATA-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+            </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+          </SUB-ELEMENTS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>Spm_E0D7ActiveStatusType</SHORT-NAME>
+          <CATEGORY>TYPE_REFERENCE</CATEGORY>
+          <SW-DATA-DEF-PROPS>
+            <SW-DATA-DEF-PROPS-VARIANTS>
+              <SW-DATA-DEF-PROPS-CONDITIONAL>
+                <COMPU-METHOD-REF DEST="COMPU-METHOD">/ImplementationDataTypes/CM_Spm_E0D7ActiveStatus</COMPU-METHOD-REF>
+                <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+              </SW-DATA-DEF-PROPS-CONDITIONAL>
+            </SW-DATA-DEF-PROPS-VARIANTS>
+          </SW-DATA-DEF-PROPS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <IMPLEMENTATION-DATA-TYPE>
+          <SHORT-NAME>SPM_CommunicationReadyType</SHORT-NAME>
+          <CATEGORY>TYPE_REFERENCE</CATEGORY>
+          <SW-DATA-DEF-PROPS>
+            <SW-DATA-DEF-PROPS-VARIANTS>
+              <SW-DATA-DEF-PROPS-CONDITIONAL>
+                <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+              </SW-DATA-DEF-PROPS-CONDITIONAL>
+            </SW-DATA-DEF-PROPS-VARIANTS>
+          </SW-DATA-DEF-PROPS>
+        </IMPLEMENTATION-DATA-TYPE>
+        <COMPU-METHOD>
+          <SHORT-NAME>CM_Spm_E0D7ActiveStatus</SHORT-NAME>
+          <CATEGORY>TEXTTABLE</CATEGORY>
+          <COMPU-INTERNAL-TO-PHYS>
+            <COMPU-SCALES>
+              <COMPU-SCALE>
+                <LOWER-LIMIT>0</LOWER-LIMIT>
+                <UPPER-LIMIT>0</UPPER-LIMIT>
+                <COMPU-CONST>
+                  <VT>E0D7_NOT_ACTIVE</VT>
+                </COMPU-CONST>
+              </COMPU-SCALE>
+              <COMPU-SCALE>
+                <LOWER-LIMIT>1</LOWER-LIMIT>
+                <UPPER-LIMIT>1</UPPER-LIMIT>
+                <COMPU-CONST>
+                  <VT>E0D7_ACTIVE</VT>
+                </COMPU-CONST>
+              </COMPU-SCALE>
+            </COMPU-SCALES>
+          </COMPU-INTERNAL-TO-PHYS>
+        </COMPU-METHOD>
+        -->
+      </ELEMENTS>
+    </AR-PACKAGE>
+    <AR-PACKAGE>
+      <SHORT-NAME>PortInterfaces</SHORT-NAME>
+      <ELEMENTS>
+        <SENDER-RECEIVER-INTERFACE>
+          <SHORT-NAME>SR_SPM_PermitExecution</SHORT-NAME>
+          <DATA-ELEMENTS>
+            <VARIABLE-DATA-PROTOTYPE>
+              <SHORT-NAME>SPM_PermitExecution</SHORT-NAME>
+              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/SPM_PermitExecution</TYPE-TREF>
+            </VARIABLE-DATA-PROTOTYPE>
+          </DATA-ELEMENTS>
+        </SENDER-RECEIVER-INTERFACE>
+        <SENDER-RECEIVER-INTERFACE>
+          <SHORT-NAME>SR_SPM_ShutdownPermission</SHORT-NAME>
+          <DATA-ELEMENTS>
+            <VARIABLE-DATA-PROTOTYPE>
+              <SHORT-NAME>SPM_ShutdownPermission</SHORT-NAME>
+              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/SPM_ShutdownPermission</TYPE-TREF>
+            </VARIABLE-DATA-PROTOTYPE>
+          </DATA-ELEMENTS>
+        </SENDER-RECEIVER-INTERFACE>
+        <CLIENT-SERVER-INTERFACE>
+          <SHORT-NAME>CS_SPM_ProfileRequest</SHORT-NAME>
+          <IS-SERVICE>false</IS-SERVICE>
+          <OPERATIONS>
+            <CLIENT-SERVER-OPERATION>
+              <SHORT-NAME>SPM_ActivateProfile</SHORT-NAME>
+              <ARGUMENTS>
+                <ARGUMENT-DATA-PROTOTYPE>
+                  <SHORT-NAME>ApplicationInterfaceID</SHORT-NAME>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                  <DIRECTION>IN</DIRECTION>
+                </ARGUMENT-DATA-PROTOTYPE>
+              </ARGUMENTS>
+              <POSSIBLE-ERROR-REFS>
+                <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/PortInterfaces/CS_SPM_ProfileRequest/E_NOT_OK</POSSIBLE-ERROR-REF>
+                <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/PortInterfaces/CS_SPM_ProfileRequest/E_OK</POSSIBLE-ERROR-REF>
+              </POSSIBLE-ERROR-REFS>
+            </CLIENT-SERVER-OPERATION>
+            <CLIENT-SERVER-OPERATION>
+              <SHORT-NAME>SPM_DeactivateProfile</SHORT-NAME>
+              <ARGUMENTS>
+                <ARGUMENT-DATA-PROTOTYPE>
+                  <SHORT-NAME>ApplicationInterfaceID</SHORT-NAME>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                  <DIRECTION>IN</DIRECTION>
+                </ARGUMENT-DATA-PROTOTYPE>
+              </ARGUMENTS>
+              <POSSIBLE-ERROR-REFS>
+                <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/PortInterfaces/CS_SPM_ProfileRequest/E_NOT_OK</POSSIBLE-ERROR-REF>
+                <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/PortInterfaces/CS_SPM_ProfileRequest/E_OK</POSSIBLE-ERROR-REF>
+              </POSSIBLE-ERROR-REFS>
+            </CLIENT-SERVER-OPERATION>
+          </OPERATIONS>
+          <POSSIBLE-ERRORS>
+            <APPLICATION-ERROR>
+              <SHORT-NAME>E_OK</SHORT-NAME>
+              <ERROR-CODE>0</ERROR-CODE>
+            </APPLICATION-ERROR>
+            <APPLICATION-ERROR>
+              <SHORT-NAME>E_NOT_OK</SHORT-NAME>
+              <ERROR-CODE>1</ERROR-CODE>
+            </APPLICATION-ERROR>
+          </POSSIBLE-ERRORS>
+        </CLIENT-SERVER-INTERFACE>
+        <CLIENT-SERVER-INTERFACE>
+          <SHORT-NAME>CS_SPM_RequestStatusProfileState</SHORT-NAME>
+          <IS-SERVICE>false</IS-SERVICE>
+          <OPERATIONS>
+            <CLIENT-SERVER-OPERATION>
+              <SHORT-NAME>SPM_GetProfileState</SHORT-NAME>
+              <ARGUMENTS>
+                <ARGUMENT-DATA-PROTOTYPE>
+                  <SHORT-NAME>ApplicationInterfaceID</SHORT-NAME>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                  <DIRECTION>IN</DIRECTION>
+                </ARGUMENT-DATA-PROTOTYPE>
+                <ARGUMENT-DATA-PROTOTYPE>
+                  <SHORT-NAME>ProfileState</SHORT-NAME>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                  <DIRECTION>OUT</DIRECTION>
+                </ARGUMENT-DATA-PROTOTYPE>
+              </ARGUMENTS>
+              <POSSIBLE-ERROR-REFS>
+                <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/PortInterfaces/CS_SPM_RequestStatusProfileState/E_NOT_OK</POSSIBLE-ERROR-REF>
+                <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/PortInterfaces/CS_SPM_RequestStatusProfileState/E_OK</POSSIBLE-ERROR-REF>
+              </POSSIBLE-ERROR-REFS>
+            </CLIENT-SERVER-OPERATION>
+          </OPERATIONS>
+          <POSSIBLE-ERRORS>
+            <APPLICATION-ERROR>
+              <SHORT-NAME>E_OK</SHORT-NAME>
+              <ERROR-CODE>0</ERROR-CODE>
+            </APPLICATION-ERROR>
+            <APPLICATION-ERROR>
+              <SHORT-NAME>E_NOT_OK</SHORT-NAME>
+              <ERROR-CODE>1</ERROR-CODE>
+            </APPLICATION-ERROR>
+          </POSSIBLE-ERRORS>
+        </CLIENT-SERVER-INTERFACE>
+        <CLIENT-SERVER-INTERFACE>
+          <SHORT-NAME>CS_SPM_ProfileActivationPermission</SHORT-NAME>
+          <IS-SERVICE>false</IS-SERVICE>
+          <OPERATIONS>
+            <CLIENT-SERVER-OPERATION>
+              <SHORT-NAME>SPM_GetProfileActivationPermission</SHORT-NAME>
+              <ARGUMENTS>
+                <ARGUMENT-DATA-PROTOTYPE>
+                  <SHORT-NAME>ApplicationInterfaceID</SHORT-NAME>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                  <DIRECTION>IN</DIRECTION>
+                </ARGUMENT-DATA-PROTOTYPE>
+                <ARGUMENT-DATA-PROTOTYPE>
+                  <SHORT-NAME>PermissionStatus</SHORT-NAME>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                  <DIRECTION>OUT</DIRECTION>
+                </ARGUMENT-DATA-PROTOTYPE>
+              </ARGUMENTS>
+              <POSSIBLE-ERROR-REFS>
+                <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/PortInterfaces/CS_SPM_ProfileActivationPermission/E_NOT_OK</POSSIBLE-ERROR-REF>
+                <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/PortInterfaces/CS_SPM_ProfileActivationPermission/E_OK</POSSIBLE-ERROR-REF>
+              </POSSIBLE-ERROR-REFS>
+            </CLIENT-SERVER-OPERATION>
+          </OPERATIONS>
+          <POSSIBLE-ERRORS>
+            <APPLICATION-ERROR>
+              <SHORT-NAME>E_OK</SHORT-NAME>
+              <ERROR-CODE>0</ERROR-CODE>
+            </APPLICATION-ERROR>
+            <APPLICATION-ERROR>
+              <SHORT-NAME>E_NOT_OK</SHORT-NAME>
+              <ERROR-CODE>1</ERROR-CODE>
+            </APPLICATION-ERROR>
+          </POSSIBLE-ERRORS>
+        </CLIENT-SERVER-INTERFACE>
+        <SENDER-RECEIVER-INTERFACE>
+          <SHORT-NAME>SR_SPM_SoftMgr</SHORT-NAME>
+          <DATA-ELEMENTS>
+            <VARIABLE-DATA-PROTOTYPE>
+              <SHORT-NAME>SPM_SoftMgr</SHORT-NAME>
+              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/SPM_SoftMgrInfo</TYPE-TREF>
+            </VARIABLE-DATA-PROTOTYPE>
+          </DATA-ELEMENTS>
+        </SENDER-RECEIVER-INTERFACE>
+        <!-- Definition of the mode declaration group -->
+        <MODE-DECLARATION-GROUP>
+          <SHORT-NAME>MDG_SPM_PduGroupState</SHORT-NAME>
+          <CATEGORY>EXPLICIT_ORDER</CATEGORY>
+          <INITIAL-MODE-REF DEST="MODE-DECLARATION">/PortInterfaces/MDG_SPM_PduGroupState/SPM_PDU_GROUP_DISABLE</INITIAL-MODE-REF>
+          <MODE-DECLARATIONS>
+            <MODE-DECLARATION>
+              <SHORT-NAME>SPM_PDU_GROUP_ENABLE</SHORT-NAME>
+              <VALUE>1</VALUE>
+            </MODE-DECLARATION>
+            <MODE-DECLARATION>
+              <SHORT-NAME>SPM_PDU_GROUP_DISABLE</SHORT-NAME>
+              <VALUE>0</VALUE>
+            </MODE-DECLARATION>
+          </MODE-DECLARATIONS>
+        </MODE-DECLARATION-GROUP>
+        <MODE-DECLARATION-GROUP>
+          <SHORT-NAME>MDG_SPM_CommunicationReady</SHORT-NAME>
+          <CATEGORY>EXPLICIT_ORDER</CATEGORY>
+          <INITIAL-MODE-REF DEST="MODE-DECLARATION">/PortInterfaces/MDG_SPM_CommunicationReady/SPM_COM_NOT_READY</INITIAL-MODE-REF>
+          <MODE-DECLARATIONS>
+            <MODE-DECLARATION>
+              <SHORT-NAME>SPM_COM_NOT_READY</SHORT-NAME>
+              <VALUE>0</VALUE>
+            </MODE-DECLARATION>
+            <MODE-DECLARATION>
+              <SHORT-NAME>SPM_COM_READY</SHORT-NAME>
+              <VALUE>1</VALUE>
+            </MODE-DECLARATION>
+          </MODE-DECLARATIONS>
+        </MODE-DECLARATION-GROUP>
+
+        <MODE-SWITCH-INTERFACE>
+          <SHORT-NAME>SPM_ComIpduGroup</SHORT-NAME>
+          <IS-SERVICE>false</IS-SERVICE>
+          <MODE-GROUP>
+            <SHORT-NAME>SPM_SWCH_PDUGR</SHORT-NAME>
+            <TYPE-TREF DEST="MODE-DECLARATION-GROUP">/PortInterfaces/MDG_SPM_PduGroupState</TYPE-TREF>
+          </MODE-GROUP>
+        </MODE-SWITCH-INTERFACE>
+        <MODE-SWITCH-INTERFACE>
+          <SHORT-NAME>SPM_PI_CommuincationReady</SHORT-NAME>
+          <IS-SERVICE>false</IS-SERVICE>
+          <MODE-GROUP>
+            <SHORT-NAME>SPM_MDG_CR</SHORT-NAME>
+            <TYPE-TREF DEST="MODE-DECLARATION-GROUP">/PortInterfaces/MDG_SPM_CommunicationReady</TYPE-TREF>
+          </MODE-GROUP>
+        </MODE-SWITCH-INTERFACE>
+        <!-- Aligned to specification SDV-8217 27.27.174.0p1
+        <SENDER-RECEIVER-INTERFACE>
+          <SHORT-NAME>SR_SPM_LossOfNodeIndic</SHORT-NAME>
+          <DATA-ELEMENTS>
+            <VARIABLE-DATA-PROTOTYPE>
+              <SHORT-NAME>Data</SHORT-NAME>
+              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/SPM_LossOfNodeIndication_lfc</TYPE-TREF>
+            </VARIABLE-DATA-PROTOTYPE>
+          </DATA-ELEMENTS>
+        </SENDER-RECEIVER-INTERFACE> 
+        -->
+      «IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+        <SENDER-RECEIVER-INTERFACE>
+          <SHORT-NAME>SPM_LowVoltSwActPrioReq</SHORT-NAME>
+          <IS-SERVICE>false</IS-SERVICE>
+          <DATA-ELEMENTS>
+            <VARIABLE-DATA-PROTOTYPE>
+              <SHORT-NAME>SPM_LowVoltSwActPrioReqSignal</SHORT-NAME>
+              <CATEGORY>VALUE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <SW-CALIBRATION-ACCESS>READ-ONLY</SW-CALIBRATION-ACCESS>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+                <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">«Spm_GetImplementationDatatypePath(spm.spmConfigSet.spmLowVoltagePowerInfo.spmLowVoltSwActPrioReqDataServiceBased)»</TYPE-TREF>                                    
+            </VARIABLE-DATA-PROTOTYPE>
+          </DATA-ELEMENTS>
+        </SENDER-RECEIVER-INTERFACE>
+      «ENDIF-»
+      </ELEMENTS>
+    </AR-PACKAGE>
+    <AR-PACKAGE>
+      <SHORT-NAME>Infrastructure</SHORT-NAME>
+      <ELEMENTS>
+        <DATA-TYPE-MAPPING-SET>
+          <SHORT-NAME>DTMS_SPM_SrvcPduGroup</SHORT-NAME>
+          <MODE-REQUEST-TYPE-MAPS>
+            <MODE-REQUEST-TYPE-MAP>
+              <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/SPM_SrvcPduGrState</IMPLEMENTATION-DATA-TYPE-REF>
+              <MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP">/PortInterfaces/MDG_SPM_PduGroupState</MODE-GROUP-REF>
+            </MODE-REQUEST-TYPE-MAP>
+          </MODE-REQUEST-TYPE-MAPS>
+        </DATA-TYPE-MAPPING-SET>
+        <DATA-TYPE-MAPPING-SET>
+          <SHORT-NAME>DTMS_SPM_CommunicationReady</SHORT-NAME>
+          <MODE-REQUEST-TYPE-MAPS>
+            <MODE-REQUEST-TYPE-MAP>
+              <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/ImplementationDataTypes/SPM_CommunicationReadyType</IMPLEMENTATION-DATA-TYPE-REF>
+              <MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP">/PortInterfaces/MDG_SPM_CommunicationReady</MODE-GROUP-REF>
+            </MODE-REQUEST-TYPE-MAP>
+          </MODE-REQUEST-TYPE-MAPS>
+        </DATA-TYPE-MAPPING-SET>
+      </ELEMENTS>
+    </AR-PACKAGE>
+    <AR-PACKAGE>
+      <SHORT-NAME>SwcImplementations</SHORT-NAME>
+      <ELEMENTS>
+        <SWC-IMPLEMENTATION>
+          <SHORT-NAME>SwcImplementation_IB_SumSpm</SHORT-NAME>
+          <CODE-DESCRIPTORS>
+            <CODE>
+              <SHORT-NAME>Code_SPM</SHORT-NAME>
+              <ARTIFACT-DESCRIPTORS>
+                <AUTOSAR-ENGINEERING-OBJECT>
+                  <SHORT-LABEL>AE0O1</SHORT-LABEL>
+                  <CATEGORY>SWSRC</CATEGORY>
+                </AUTOSAR-ENGINEERING-OBJECT>
+              </ARTIFACT-DESCRIPTORS>
+            </CODE>
+          </CODE-DESCRIPTORS>
+          <PROGRAMMING-LANGUAGE>C</PROGRAMMING-LANGUAGE>
+          <RESOURCE-CONSUMPTION>
+            <SHORT-NAME>Spm_ResourceConsumption</SHORT-NAME>
+            <MEMORY-SECTIONS>
+              <MEMORY-SECTION>
+                <SHORT-NAME>CODE</SHORT-NAME>
+              </MEMORY-SECTION>
+            </MEMORY-SECTIONS>
+          </RESOURCE-CONSUMPTION>
+          <BEHAVIOR-REF DEST="SWC-INTERNAL-BEHAVIOR">/SumSpm/SwComponent/SPM/SumSpm_IB</BEHAVIOR-REF>
+        </SWC-IMPLEMENTATION>
+      </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>
+«ENDFILE-»
+«ENDDEFINE»

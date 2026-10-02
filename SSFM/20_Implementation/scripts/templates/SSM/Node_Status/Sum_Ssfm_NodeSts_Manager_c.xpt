@@ -1,0 +1,788 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_NodeSts_Manager.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM Node Status Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/* PRQA S 1503 EOF # Functions are public and can be used in other TU and by OS */
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3673 EOF # The functions are invoked by external function that already have a defined parameter type */
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+static void Sum_Ssfm_prv_UpdateECULostComm(Sum_Ssfm_ECUInfo* ECUInfo);
+static void Sum_Ssfm_prv_UpdateTrgDvcLostComm(Sum_Ssfm_ECUInfo* ECUInfo);
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_Process_SSM_NodeLossErrors_Handler(Sum_Ssfm_Debouncer* const deb_event);
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_Process_SSM_NodeLossErrors_Normal(Sum_Ssfm_Debouncer* const deb_event);
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_Process_SSM_NodeLossErrors_LossComm(Sum_Ssfm_Debouncer* const deb_event);
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+«IF Ssfm_AnyTrgDvc(sSFM.sum_Ssfm_ConfigSet) == true-»
+/**
+ * @brief           Configuration structure for managing communication events from SPM devices
+ */
+/* PRQA S 3218 6 # This structure will contain other callbacks that will be used by other runnables, so we shouldn't embed it into the Runnable_SSFM_LossCommWithNode function */
+static const Sum_Ssfm_DemEvent Sum_Ssfm_Spm_DtcConfig[SSFM_NUM_OF_SERVICEBASED_TARGETDEVICES] =
+{
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_TrgDvcInfo.sum_Ssfm_SpmTargetDevice_Ref AS SPM_targetDevice-»
+	{ /* «SPM_targetDevice.shortName» */
+		&Rte_Call_RP_SSFM_DTC_«SPM_targetDevice.spmTrgDvcDtcBaseID»_LossOfCommunication_SetEventStatus,
+		«SPM_targetDevice.spmTrgDvcDtcBaseID»u,
+	},
+«ENDFOREACH-»
+};
+«ENDIF-»
+
+«LET sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo AS ECUs-»
+«LET Ssfm_GetControllerECUInfos(ECUs, false).select(controller|!controller.Ssfm_IsControllerServiceBased()) AS ComControllers-»
+/**
+ * @brief           Configuration structure for managing LcFA events
+ */
+/* PRQA S 1531 6 # This structure will contain other callbacks that will be used by other runnables */
+static const Sum_Ssfm_DemEvent Sum_Ssfm_LcFA_DemEvents[«ComControllers.size»] =
+{
+«FOREACH ComControllers AS ComController-»
+	{
+		/* RTE Dem Server Call Function Pointer */
+		&Rte_Call_RP_Dem_SSFM_DiagnosticMonitor_«ComController.getProperty("name")»_LossOfCommunication_SetEventStatus,
+		/* DTC Value */
+		«ComController.getProperty("LcFA_DTC_id")»u,
+	},
+«ENDFOREACH-»
+};
+«ENDLET-»
+«ENDLET-»
+
+«IF Ssfm_AnyServiceBased(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+«IF Ssfm_AnyTrgDvc(sSFM.sum_Ssfm_ConfigSet) == true-»
+/**
+ * @brief           Configuration structure for managing LoF events
+ */
+/* PRQA S 1533 6 # This structure will contain other callbacks that will be used by other runnables */
+const Sum_Ssfm_DemEvent Sum_Ssfm_LoF_DemEvents[SSFM_NUM_OF_SERVICEBASED_TARGETDEVICES] =
+{
+«FOREACH Ssfm_GetLoFDemEvents(sSFM) AS DEM_EVENT-»
+	{
+		/* RTE Dem Server Call Function Pointer */
+		&Rte_Call_RP_Dem_SSFM_LostComm_Dem_Event_LoF_«DEM_EVENT.getProperty("name")»_SetEventStatus,
+		/* DTC Value */
+		«DEM_EVENT.getProperty("dtc_value")»u,
+	},
+«ENDFOREACH-»
+};
+«ENDIF-»
+«ENDIF-»
+
+Sum_Ssfm_Debouncer Sum_Ssfm_NodeLoss_Debouncers[SSFM_NUM_OF_SIGNALBASED_CONTROLLERS + SSFM_NUM_OF_SERVICEBASED_TARGETDEVICES] = {
+«LET sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo AS ECUs-»
+«LET Ssfm_GetControllerECUInfos(ECUs, false) AS controllers-»
+«FOREACH controllers AS controller-»
+	{
+		/* Error filter type */
+		SUM_SSFM_ErrorFilter_NodeLoss_Timeout,
+		/* Number of configured X threshold */
+		NULL_PTR,
+		/* Number of configured Y threshold */
+		NULL_PTR,
+		/* Callback function */
+		NULL_PTR,
+		/* Counter failed event */
+		0u,
+		/* Number of sample or ms*/
+		0u,
+		/* First failed flag */
+		FALSE,
+		/* Last Evaluation Status */
+		SUM_SSFM_EvaluationSts_Unknown,
+		/* Reference to ECU Info */
+		{.ECUInfo = &Sum_Ssfm_Controller_«controller.getProperty("name")»}, /* PRQA S 1053 # To use the union type. */
+		/* Owner Type*/
+		SUM_SSFM_DebouncerRefType_ECUInfo,
+		/* Reference to DemEvent */
+		&(Sum_Ssfm_LcFA_DemEvents[«counterInc("Debouncers_LcFADemEvent") - 1»]),
+	},
+«ENDFOREACH-»
+«ENDLET-»
+«ENDLET-»
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_TrgDvcInfo AS TrgDvcInfo ITERATOR i-»
+	{
+		/* Error filter type */
+		SUM_SSFM_ErrorFilter_NodeLoss_Timeout,
+		/* Number of configured X threshold */
+		NULL_PTR,
+		/* Number of configured Y threshold */
+		NULL_PTR,
+		/* Callback function */
+		NULL_PTR,
+		/* Counter failed event */
+		0u,
+		/* Number of sample or ms*/
+		0u,
+		/* First failed flag */
+		FALSE,
+		/* Last Evaluation Status */
+		SUM_SSFM_EvaluationSts_Unknown,
+		/* Reference to ECU Info */
+		{.ECUInfo = &Sum_Ssfm_TrgDvc_«TrgDvcInfo.shortName»}, /* PRQA S 1053 # To use the union type. */
+		/* Owner Type*/
+		SUM_SSFM_DebouncerRefType_ECUInfo_ServiceBased,
+		/* Reference to DemEvent */
+		NULL_PTR, // For this service based controller the dem will be resolved at run-time
+	},
+«ENDFOREACH-»
+};
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+«IF Ssfm_AnyTrgDvc(sSFM.sum_Ssfm_ConfigSet)-»
+
+/**
+ * @brief           SSFM/SMM runnable to assess the lost comm status for a single signal group
+ * @details         To be called upon any change in the status of LossOfNodeIndication as reported by the SPM
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE */
+FUNC (void, SUM_SSFM_CODE) Runnable_SSFM_LossCommWithNode(void){
+	/*[$Satisfies $DDS_SSFM 100]*/
+	SPM_LossOfNodeIndicationType nodesEventList;
+    boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+    if(dtcs_are_disabled == FALSE)
+	{
+		if (Rte_Read_RP_SPM_SSFM_LossOfNodeIndication_LossOfNodeIndication(&nodesEventList) == E_OK)
+		{
+			/* Cycle on all nodes for which the SPM reported an event and forward any
+			* relevant event to the Dem module for setting/clearing DTCs.
+			*/
+			uint16 eventNode;
+
+			for (eventNode = 0u; eventNode < nodesEventList.nodeListLength; eventNode++)
+			{
+				uint16 configNode;
+
+				for (configNode = 0u; configNode < SSFM_NUM_OF_SERVICEBASED_TARGETDEVICES; configNode++)
+				{
+					if (  nodesEventList.nodeDtcCodeValue[eventNode]
+					== Sum_Ssfm_Spm_DtcConfig[configNode].DTCValue
+					)
+					{
+						/* Forward the node's LossOfCommunication event to the DEM */
+						(void)Sum_Ssfm_Spm_DtcConfig[configNode].Rte_Call_Dem_SSFM_SetEventStatus(
+								(nodesEventList.nodeStatus[eventNode] == 0x01u) //TODO RECOVERED symbol
+								? DEM_EVENT_STATUS_PASSED
+								: DEM_EVENT_STATUS_FAILED);
+
+						/* Skip to the next event, as the current one has been processed */
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+«ENDIF-»
+
+/**
+ * @brief           SSFM/SSM function to check Test Enable Conditions for Missing Message detection per SDV-6001
+ * @details         Implements IDOC-961 Test Enable Criteria:
+ *                  - Vehicle Supply voltage is within calibratable range
+ *                  - Monitored PDU/Signal is part of active PN or AP
+ *                  - PN/AP has been active for 5 seconds or longer
+ *                  - U0XXX87_ENABLE is not disabled
+ *                  - Not within 5 seconds of reset/recovery
+ *                  - Bus-off condition is not current
+ *
+ * @param[in]       const Sum_Ssfm_SerialData *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          boolean: TRUE if test should be performed, FALSE otherwise
+ */
+boolean Sum_Ssfm_Node_MissingMsg_TestEnableConditions(const Sum_Ssfm_SerialData* serialData){
+	/*[$Satisfies $DDS_SSFM 368]*/ /*[$Satisfies $ADS_SSFM 211]*/
+	«IF Sum_Ssfm_Errh_UXXXX_87_IsValid(sSFM.sum_Ssfm_ConfigSet) -»
+	boolean enableTests = FALSE;
+	boolean isBatteryVoltageInRange;
+	boolean isResetRecoveryComplete;
+	boolean isDTCEnabled;
+	boolean isServiceOrAtLeastOnePNActive;
+	boolean isBusoffFailed = FALSE;
+	boolean isPNStability;
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+	«IF dem.demGeneral.demOBDSupport != "DEM_OBD_NO_OBD_SUPPORT"-»
+	OperatingRangeType operatingRange;
+	«ENDIF-»
+
+	if(serialData->LostCommInfo != NULL_PTR){
+		/* Check Test Enable Conditions */
+
+		/* 1. U0XXX87_ENABLE is not disabled (checked first to avoid unnecessary RTE calls) */
+		isDTCEnabled = Sum_Ssfm_Errh_Get_C_DTC_UXXXX_87_MissingMessage() && (dtcs_are_disabled == FALSE);
+
+		if(isDTCEnabled == TRUE){
+			/* 2. Vehicle Supply voltage is within calibratable range */
+			isBatteryVoltageInRange = Sum_Ssfm_Errh_GetBatteryVoltageRecoveryTimerFlag();
+			«IF dem.demGeneral.demOBDSupport != "DEM_OBD_NO_OBD_SUPPORT"-»
+			/* Note: OBD ECUs shall not inhibit the setting of OBD relevant lost communication DTCs during an overvoltage condition */
+			/* If the battery voltage is out of range high, the test should still be enabled */
+			if (isBatteryVoltageInRange == FALSE){
+				if (Rte_Read_RP_SUSD_SSFM_Errh_BatteryVoltage_BatteryVoltageRangeMinToMax_OperatingRange(&operatingRange) == E_OK) {
+					isBatteryVoltageInRange = (operatingRange == OUT_OF_RANGE_HIGH) ? TRUE : FALSE;
+				}
+			}
+			«ENDIF-»
+
+			/* 3. Not within first 5 seconds of reset/recovery */
+			isResetRecoveryComplete = Sum_Ssfm_Errh_GetResetPowerUpRecoveryTimerFlag();
+
+			/* 4. Monitored PDU/Signal is part of active PN or AP AND has been active >= 5 seconds */
+			if (serialData->IsNonDiscoverable != TRUE)
+			{
+			    isPNStability = Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive_StabilityCheck(serialData);
+			    isServiceOrAtLeastOnePNActive = Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive(serialData);
+			    isServiceOrAtLeastOnePNActive = isServiceOrAtLeastOnePNActive && isPNStability;
+			}
+			else
+			{
+			    isServiceOrAtLeastOnePNActive = TRUE;
+			}
+
+			/* 5. Bus-off condition is not current (only for signal-based) */
+			if(serialData->ServiceInfo == NULL_PTR){
+				/* Signal-based: check bus-off status */
+				if(serialData->LostCommInfo->FP_SSFM_pCdata_UsageCANBusOffDTC != NULL_PTR){
+					if(serialData->LostCommInfo->FP_SSFM_pCdata_UsageCANBusOffDTC()){
+						/* Bus-off is current if status is Failed */
+						isBusoffFailed = (serialData->LostCommInfo->FP_PublBusOffErr() == (uint8)SUM_SSFM_EvaluationSts_Failed);
+					}
+				}
+			}
+
+			/* All conditions must be satisfied for test to be enabled */
+			enableTests = (isBatteryVoltageInRange == TRUE) &&
+			              (isResetRecoveryComplete == TRUE) &&
+			              (isServiceOrAtLeastOnePNActive == TRUE) &&
+			              (isBusoffFailed == FALSE);
+		}
+	}
+
+	return enableTests;
+	«ELSE-»
+	return FALSE;
+	«ENDIF-»
+}
+
+/**
+ * @brief           SSFM/SSM function to assess the lost comm status for a single SerialData
+ *
+ * @param[in]       const Sum_Ssfm_SerialData *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+void Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm(const Sum_Ssfm_SerialData* serialData){
+	/*[$Satisfies $DDS_SSFM 045]*/ /*[$Satisfies $DDS_SSFM 109]*/ /*[$Satisfies $DDS_SSFM 366]*/ /*[$Satisfies $ADS_SSFM 210]*/
+	if(serialData->LostCommInfo != NULL_PTR){
+		boolean status_changed = FALSE;
+		boolean isDisableNormalComm;
+		boolean isDisablePDURx;
+
+        /* Default value: indicates that CAN_BUS_OFF_DTC is not used */
+        boolean busoff_to_LOST = TRUE;
+		/*[$Satisfies $DDS_SSFM 159]*/
+        /* PN_DTC_Enabled_Flag gate: block loss-of-comm DTC until at lease one PN is in the confirmed stable state (DTC_Allowed); in the keep-alive state (DTC_Might_Be_Allowed), block DTCs until after the first confirmation.
+		* Only applies to OCM-based signals with at least one PN mapping (No_Of_PNs > 0).
+		* Signals with no PN mappings are always allowed. */
+        boolean pn_dtc_enabled = (serialData->MsgInfoGrp->No_Of_PNs == 0u) ||
+                                (serialData->MsgInfoGrp->PN_DTC_Enabled_Flag == SUM_SSFM_Pn_Dtc_Enabled);
+
+        /* Evaluate CAN-specific loss of comm conditions for signal-based paths only.
+        * Service-based providers do not support DisableNormalComm, DisablePDU_Rx, or CAN_BUS_OFF_DTC.
+        * These conditions are kept at safe defaults (FALSE/TRUE) for service-based SerialData. */
+        if(serialData->ServiceInfo == NULL_PTR)
+        {
+            /* Signal-based path: evaluate all CAN-specific conditions */
+            isDisableNormalComm = Sum_Ssfm_Is_DisableNormalComm(serialData);
+            isDisablePDURx = Sum_Ssfm_Is_DisablePdu_Rx(serialData);
+
+            if(serialData->LostCommInfo->FP_SSFM_pCdata_UsageCANBusOffDTC != NULL_PTR) {
+			   if(serialData->LostCommInfo->FP_SSFM_pCdata_UsageCANBusOffDTC()){
+					/* Values in case CAN_BUS_OFF_DTC is in used */
+					busoff_to_LOST = (serialData->LostCommInfo->FP_PublBusOffErr() == (uint8)SUM_SSFM_EvaluationSts_Passed) ? TRUE : FALSE;
+				}
+            }
+        }
+        else
+        {
+            /* Service-based path: CAN-specific conditions do not apply, use safe defaults */
+            isDisableNormalComm = FALSE;
+            isDisablePDURx = FALSE;
+            busoff_to_LOST = TRUE;
+        }
+
+		/* FSM transitions per SDV-8002: PN_SIG<x>_STATUS check removed as it's now in Test Enable Conditions */
+		if(serialData->LostCommInfo->LostCommSts == ECU_NODE_STATUS_NO_MISSINGMSG){
+			if(
+				(serialData->MsgInfoGrp->SigSts_Supervision == SUM_SSFM_SigSts_Supervision_Timeout) &&
+				(isDisableNormalComm == FALSE) &&
+				(isDisablePDURx == FALSE) &&
+				(busoff_to_LOST) &&
+				(pn_dtc_enabled == TRUE)
+			){
+				serialData->LostCommInfo->LostCommSts = ECU_NODE_STATUS_MISSINGMSG;
+				status_changed = TRUE;
+			}
+		} else {
+			if(
+				(serialData->MsgInfoGrp->SigSts_Supervision == SUM_SSFM_SigSts_Supervision_Received) &&
+				((serialData->ServiceInfo != NULL_PTR) ||
+				 (isDisablePDURx == TRUE))
+			){
+				serialData->LostCommInfo->LostCommSts = ECU_NODE_STATUS_NO_MISSINGMSG;
+				status_changed = TRUE;
+			 }
+		}
+
+		if((status_changed) && (serialData->LostCommInfo->CurrentProvider != NULL_PTR)){
+			if(serialData->ServiceInfo == NULL_PTR){
+				Sum_Ssfm_prv_UpdateECULostComm(serialData->LostCommInfo->CurrentProvider);
+			} else {
+				Sum_Ssfm_prv_UpdateTrgDvcLostComm(serialData->LostCommInfo->CurrentProvider);
+			}
+		}
+	}
+}
+
+static void Sum_Ssfm_prv_UpdateTrgDvcLostComm(Sum_Ssfm_ECUInfo* ECUInfo){
+	/*[$Satisfies $DDS_SSFM 183]*/
+	boolean node_status = ECU_NODE_STATUS_NO_MISSINGMSG;
+	Sum_Ssfm_SerialData* serial_data;
+	uint16 i;
+	// Iterate over Fault and Recovery List (For service based target devices,
+	// all services (Given that they are provided by the TrgDvc under test) are used for fault and recovery)
+	for(i = 0; i < ECUInfo->SizeOfAllLists[SUM_SSFM_LIST_FAULT_AND_RECOVERY]; i++){
+		serial_data = ECUInfo->PointerToAllLists[SUM_SSFM_LIST_FAULT_AND_RECOVERY][i];
+		if ((serial_data->LostCommInfo->CurrentProvider == ECUInfo) &&
+			(serial_data->LostCommInfo->LostCommSts == ECU_NODE_STATUS_MISSINGMSG)
+		){
+			node_status = ECU_NODE_STATUS_MISSINGMSG;
+			break;
+		}
+	}
+	ECUInfo->TempLossOfComm = node_status;
+
+	// The SUM_SSFM_EventSts_Passed is just a place holder for ECUInfo debouncer. The actual state will be realized internally.
+	(void)Sum_Ssfm_ErrhDebouncerExecution(ECUInfo->ECUFilter, SUM_SSFM_EventSts_Passed);
+}
+
+/**
+ * @brief           SSFM/SSM function to assess the lost comm status at ECU level
+ *
+ * @param[in]       Sum_Ssfm_ECUInfo *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_prv_UpdateECULostComm(Sum_Ssfm_ECUInfo* ECUInfo){
+	/*[$Satisfies $DDS_SSFM 046]*/
+	boolean node_status = ECU_NODE_STATUS_NO_MISSINGMSG;
+	uint16 i;
+
+	// When ecu is in "no lost comm", only the fault and recovery list should be checked.
+	// Instead when ecu is in "lost comm", the recovery only list should be checked too.
+	sint8 fault_list = (ECU_NODE_STATUS_NO_MISSINGMSG == ECUInfo->TempLossOfComm) ? SUM_SSFM_LIST_FAULT_AND_RECOVERY : SUM_SSFM_LIST_RECOVERY_ONLY;
+	for(; fault_list >= SUM_SSFM_LIST_FAULT_AND_RECOVERY; fault_list--){
+		for(i = 0; i < ECUInfo->SizeOfAllLists[fault_list]; i++){
+			if (ECUInfo->PointerToAllLists[fault_list][i]->LostCommInfo->LostCommSts == ECU_NODE_STATUS_MISSINGMSG){
+				node_status = ECU_NODE_STATUS_MISSINGMSG;
+				break;
+			}
+		}
+		if(node_status == ECU_NODE_STATUS_MISSINGMSG){
+			break;
+		}
+	}
+	ECUInfo->TempLossOfComm = node_status;
+
+	// The SUM_SSFM_EventSts_Passed is just a place holder for ECUInfo debouncer. The actual state will be realized internally.
+	(void)Sum_Ssfm_ErrhDebouncerExecution(ECUInfo->ECUFilter, SUM_SSFM_EventSts_Passed);
+}
+
+
+«IF !sSFM.sum_Ssfm_General.sum_Ssfm_IsThisECUGateway-»
+«LET sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo AS ECUs-»
+«FOREACH Ssfm_GetControllerECUInfos(ECUs, true) AS controller-»
+«IF !controller.getProperty("is_CGM")-»
+«IF !controller.getProperty("is_all_direct")-»
+/* PRQA S 1503 9 */ //This function will be called by RTE
+/**
+ * @brief           SSFM/SSM function to be called by RTE upon a change in NodeStatusECU_«controller.getProperty("name")»
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+void Runnable_SSFM_NodeStsECU_«controller.getProperty("name")»_StatusChanged(void){
+	/*[$Satisfies $DDS_SSFM 064]*/
+	boolean status;
+    Std_ReturnType retValue;
+	sint8 fault_list;
+	uint16 i;
+	Sum_Ssfm_SerialData *serial_data;
+	boolean serial_data_loss_of_comm;
+	retValue = Rte_Read_SUM_SSFM_RP_SSFM_NodeStsECU_«controller.getProperty("name")»_LcFA_SSFM_NodeStsECU_LcFA(&status);
+	if ((retValue == RTE_E_OK) && (Sum_Ssfm_Controller_«controller.getProperty("name")».NodeStsECU != status)){
+		Sum_Ssfm_Controller_«controller.getProperty("name")».NodeStsECU = status;
+		for( fault_list = SUM_SSFM_LIST_FAULT_AND_RECOVERY; fault_list <= SUM_SSFM_LIST_NON_FAULT_AND_RECOVERY; fault_list++){
+			for( i = 0u; i < Sum_Ssfm_Controller_«controller.getProperty("name")».SizeOfAllLists[fault_list]; i++){
+				serial_data = Sum_Ssfm_Controller_«controller.getProperty("name")».PointerToAllLists[fault_list][i];
+				if((serial_data->LostCommInfo != NULL_PTR) && (serial_data->LostCommInfo->CurrentProvider == &Sum_Ssfm_Controller_«controller.getProperty("name")»)){
+					/* Get serial data loss of comm status */
+					serial_data_loss_of_comm = Sum_Ssfm_IsSerialDataInLossOfComm(serial_data);
+					/* Set LcFA and check for availability */
+					serial_data->LostCommInfo->Rte_Write_LcFA(serial_data_loss_of_comm);
+					Sum_Ssfm_SigStsAvailability_Manager_CANETH(serial_data);
+				}
+			}
+		}
+	}
+}
+«ENDIF-»
+«ENDIF-»
+«ENDFOREACH-»
+«ENDLET-»
+«ENDIF-»
+
+/**
+ * @brief           SSFM/SSM function to manage the node loss error
+ *
+ * @param[in]       Sum_Ssfm_Debouncer *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          Sum_Ssfm_EvaluationStatus
+ */
+Sum_Ssfm_EvaluationStatus Sum_Ssfm_NodeLossError_Manager(Sum_Ssfm_Debouncer* const deb_event)
+{
+	/*[$Satisfies $DDS_SSFM 077]*/
+	Sum_Ssfm_EvaluationStatus ret_val = SUM_SSFM_EvaluationSts_Unknown;
+	boolean battery_voltage_flag;
+	boolean reset_recovery_flag;
+	if(deb_event->DebouncerOwnerType == SUM_SSFM_DebouncerRefType_ECUInfo)
+	{
+		battery_voltage_flag = Sum_Ssfm_Errh_GetBatteryVoltageRecoveryTimerFlag();
+		reset_recovery_flag = Sum_Ssfm_Errh_GetResetPowerUpRecoveryTimerFlag();
+		if (deb_event->DebouncerOwner.ECUInfo->FP_SSFM_pCdata_DTCProcess() == TRUE)
+		{
+			/* Checks for battery voltage status and recovery timer for overvoltage/undervoltage */
+			if((battery_voltage_flag == TRUE) && (reset_recovery_flag == TRUE))
+			{
+				/* Process Node loss error handler */
+				ret_val = Sum_Ssfm_Process_SSM_NodeLossErrors_Handler(deb_event);
+			}
+			else
+			{
+				/* Reset the timer upon disable DTC conditions */
+				deb_event->DebouncerOwner.ECUInfo->FaultTimerElapsed = 0u;
+				deb_event->LastEvalStatus = SUM_SSFM_EvaluationSts_Unknown;
+			}
+		}
+		else
+		{
+			/* do nothing */
+		}
+	}
+	else { // The Debouncer Type is SUM_SSFM_DebouncerRefType_ECUInfo_ServiceBased
+		// The DTC activation conditions has been checked prior to calling this function
+		ret_val = Sum_Ssfm_Process_SSM_NodeLossErrors_Handler(deb_event);
+	}
+	return ret_val;
+}
+
+/**
+ * @brief           SSFM/SSM function to handle state machine of the node loss error
+ *
+ * @param[in]       Sum_Ssfm_Debouncer *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          Sum_Ssfm_EvaluationStatus
+ */
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_Process_SSM_NodeLossErrors_Handler(Sum_Ssfm_Debouncer* const deb_event)
+{
+	/*[$Satisfies $DDS_SSFM 077]*/
+	Sum_Ssfm_EvaluationStatus ret_val = SUM_SSFM_EvaluationSts_InDebouncing;
+    boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	if(dtcs_are_disabled == FALSE)
+	{
+		/* Check the current internal state for the specific node */
+		switch (deb_event->DebouncerOwner.ECUInfo->NodeLossState)
+		{
+			case SUM_SSFM_EcuNodeState_Normal:
+				ret_val = Sum_Ssfm_Process_SSM_NodeLossErrors_Normal(deb_event);
+				break;
+			/* Check if timer has expired and node loss has occurred */
+			case SUM_SSFM_EcuNodeState_LostComm:
+				ret_val = Sum_Ssfm_Process_SSM_NodeLossErrors_LossComm(deb_event);
+				break;
+			default:
+				/* Do nothing */
+				break;
+		}
+	}
+
+	return ret_val;
+}
+
+/**
+ * @brief           SSFM/SSM function to process normal state of the node loss error
+ *
+ * @param[in]       Sum_Ssfm_Debouncer *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          Sum_Ssfm_EvaluationStatus
+ */
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_Process_SSM_NodeLossErrors_Normal(Sum_Ssfm_Debouncer* const deb_event)
+{
+	/*[$Satisfies $DDS_SSFM 077]*/
+	Sum_Ssfm_EvaluationStatus ret_val;
+	if (deb_event->DebouncerOwner.ECUInfo->TempLossOfComm == ECU_NODE_STATUS_MISSINGMSG)
+	{
+		/* Start timer Losscom*/
+		deb_event->DebouncerOwner.ECUInfo->FaultTimerElapsed = 0u;
+		deb_event->DebouncerOwner.ECUInfo->NodeLossState = SUM_SSFM_EcuNodeState_LostComm;
+		ret_val = SUM_SSFM_EvaluationSts_InDebouncing;
+	}
+	else
+	{
+		ret_val = SUM_SSFM_EvaluationSts_Passed;
+		/* Notify the Dem that no LossOfCommunication has been observed */
+		deb_event->DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_PASSED);
+	}
+	return ret_val;
+}
+
+/**
+ * @brief           SSFM/SSM function to process lostcom state of the node loss error
+ *
+ * @param[in]       Sum_Ssfm_Debouncer *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          Sum_Ssfm_EvaluationStatus
+ */
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_Process_SSM_NodeLossErrors_LossComm(Sum_Ssfm_Debouncer* const deb_event)
+{
+	/*[$Satisfies $DDS_SSFM 077]*/
+	Sum_Ssfm_EvaluationStatus ret_val;
+	if (deb_event->DebouncerOwner.ECUInfo->TempLossOfComm == ECU_NODE_STATUS_MISSINGMSG)
+	{
+		/* Get evaluation status periodic checked by runnable*/
+		ret_val = deb_event->LastEvalStatus;
+	}
+	else
+	{
+		/* Reset timer when not ECU_NODE_STATUS_MISSINGMSG */
+		deb_event->DebouncerOwner.ECUInfo->FaultTimerElapsed = 0u;
+		deb_event->DebouncerOwner.ECUInfo->NodeLossState = SUM_SSFM_EcuNodeState_Normal;
+		ret_val = SUM_SSFM_EvaluationSts_Passed;
+		/* Notify the Dem that no LossOfCommunication has been observed */
+		deb_event->DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_PASSED);
+	}
+	return ret_val;
+}
+
+/**
+ * @brief			Runnable function for SUM SSFM Node loss timeout management
+ *
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+FUNC(void, SUM_SSFM_CODE) Runnable_SSFM_NodeLossError_Time_Management(void)
+{
+	/*[$Satisfies $DDS_SSFM 077]*/
+	uint16 i;
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	for (i = 0u; i < (SSFM_NUM_OF_SIGNALBASED_CONTROLLERS + SSFM_NUM_OF_SERVICEBASED_TARGETDEVICES); i++)
+	{
+		if (Sum_Ssfm_NodeLoss_Debouncers[i].LastEvalStatus == SUM_SSFM_EvaluationSts_InDebouncing)
+		{
+			/* Check if DTCs are ENABLED */
+			if (dtcs_are_disabled == FALSE)
+			{
+				/* Check if timer has expired */
+				if(Sum_Ssfm_NodeLoss_Debouncers[i].DebouncerOwner.ECUInfo->FaultTimerElapsed >= (1000u * (uint32)(Sum_Ssfm_NodeLoss_Debouncers[i].DebouncerOwner.ECUInfo->FP_SSFM_pCdata_LC_ECU_Timer_Ref())))
+				{
+					Sum_Ssfm_NodeLoss_Debouncers[i].DebouncerOwner.ECUInfo->FaultTimerElapsed = 0u;
+					Sum_Ssfm_NodeLoss_Debouncers[i].LastEvalStatus = SUM_SSFM_EvaluationSts_Failed;
+					/* Notify the Dem that a LossOfCommunication event has been observed */
+					Sum_Ssfm_NodeLoss_Debouncers[i].DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_FAILED);
+				}
+				else
+				{
+					Sum_Ssfm_NodeLoss_Debouncers[i].DebouncerOwner.ECUInfo->FaultTimerElapsed+=«(1000 * sSFM.sum_Ssfm_General.sum_Ssfm_NodeLossError_RunnablePeriodicity).extractMantissaFrmFloatValue()»u;
+					Sum_Ssfm_NodeLoss_Debouncers[i].LastEvalStatus = SUM_SSFM_EvaluationSts_InDebouncing;
+				}
+			}
+			else
+			{
+				/*Control DTCs status is NOT ENABLED */
+				Sum_Ssfm_NodeLoss_Debouncers[i].DebouncerOwner.ECUInfo->FaultTimerElapsed = 0u;
+				Sum_Ssfm_NodeLoss_Debouncers[i].LastEvalStatus = SUM_SSFM_EvaluationSts_Unknown;
+			}
+		}
+	}
+}
+
+
+
+/**
+ * @brief           Callback function for updating LcFA interfaces on DTC status update
+ * @details         Executed when the DEM notifies a status change on a DTC through the Ssfm_Dem_CB_DTCStatusChanged callback.
+ *                  It forwards eventual Loss of Communication fault events to SWCs through the LcFA interfaces.
+ *
+ * @param[in]       DTC           ID of the DTC whose status has been updated
+ * @param[in]       DTCStatusOld  Old status of the updated DTC
+ * @param[in]       DTCStatusNew  New status of the updated DTC
+ * @return          void
+ */
+void Sum_Ssfm_LoC_Dem_CB_DTCStatusChanged(uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew){
+
+	const boolean new_status = (SSFM_DEM_DTC_TEST_FAILED_MASK & DTCStatusNew) == SSFM_DEM_DTC_TEST_FAILED_MASK;
+	uint16 controller_index;
+	sint8 fault_list;
+	uint16 i;
+	Sum_Ssfm_SerialData const*serial_data;
+	boolean serial_data_loss_of_comm;
+	/* Unused parameter */
+	(void)DTCStatusOld;
+
+	/* Search the DTC through the DTCs linked to the configured ECUs */
+	for (controller_index = 0u; controller_index < (SSFM_NUM_OF_SIGNALBASED_CONTROLLERS + SSFM_NUM_OF_SERVICEBASED_TARGETDEVICES); controller_index++)
+	{
+		if ((Sum_Ssfm_NodeLoss_Debouncers[controller_index].DemEvent != NULL_PTR) && (Sum_Ssfm_NodeLoss_Debouncers[controller_index].DemEvent->DTCValue == DTC))
+		{
+			/*[$Satisfies $DDS_SSFM 063]*/
+«IF sSFM.sum_Ssfm_General.sum_Ssfm_IsThisECUGateway-»
+			/* Update the NodeSts_LcFA indication to SWCs */
+			Sum_Ssfm_NodeLoss_Debouncers[controller_index].DebouncerOwner.ECUInfo->FP_Rte_Write_PP_NodeStsECU_LcFA(new_status);
+
+«ENDIF-»
+			Sum_Ssfm_NodeLoss_Debouncers[controller_index].DebouncerOwner.ECUInfo->LossOfComm = new_status;
+			/*[$Satisfies $DDS_SSFM 157]*/
+			/* Update the Signal_LcFA indication to SWCs for all SerialDatas */
+			for(fault_list = SUM_SSFM_LIST_FAULT_AND_RECOVERY; fault_list <= SUM_SSFM_LIST_NON_FAULT_AND_RECOVERY; fault_list++){
+				for(i = 0u; i < Sum_Ssfm_NodeLoss_Debouncers[controller_index].DebouncerOwner.ECUInfo->SizeOfAllLists[fault_list]; i++){
+					serial_data = Sum_Ssfm_NodeLoss_Debouncers[controller_index].DebouncerOwner.ECUInfo->PointerToAllLists[fault_list][i];
+					/* Get serial data loss of comm status */
+					serial_data_loss_of_comm = Sum_Ssfm_IsSerialDataInLossOfComm(serial_data);
+					/* Write SerialData_LcFA */
+					if(serial_data->LostCommInfo != NULL_PTR){
+						serial_data->LostCommInfo->Rte_Write_LcFA(serial_data_loss_of_comm);
+					}
+				}
+			}
+
+			/* ECU for the target DTC found, stop searching */
+			break;
+		}
+	}
+}
+
+/**
+ * @brief           Utility function to return the loss of comm status of a given serial data
+ * @details         For signal-based services: returns true if LossOfComm OR NodeStsECU indicates loss.
+ *                  For service-based providers: returns true if LossOfComm AND local LostCommSts indicates loss.
+ *
+ * @param[in]       const Sum_Ssfm_SerialData *
+ * @return          boolean
+ */
+boolean Sum_Ssfm_IsSerialDataInLossOfComm(const Sum_Ssfm_SerialData * serial_data){
+	boolean ret_val = FALSE;
+	if((serial_data->LostCommInfo != NULL_PTR) && (serial_data->LostCommInfo->CurrentProvider != NULL_PTR))
+	{
+
+		if(serial_data->ServiceInfo != NULL_PTR)
+		{
+			ret_val = ((serial_data->LostCommInfo->CurrentProvider->LossOfComm) &&
+						(serial_data->LostCommInfo->LostCommSts == ECU_NODE_STATUS_MISSINGMSG));
+		}
+		else
+		{
+			ret_val = ((serial_data->LostCommInfo->CurrentProvider->LossOfComm) ||
+						(serial_data->LostCommInfo->CurrentProvider->NodeStsECU));
+		}
+	}
+	return ret_val;
+}
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

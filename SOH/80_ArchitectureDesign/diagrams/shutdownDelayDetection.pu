@@ -1,0 +1,43 @@
+@startuml
+'autonumber
+hide footbox
+skinparam ParticipantPadding 20
+
+title Shutdown Delay detection sequence diagram
+
+box "SOH"
+ participant "Time Manager Runnable" as TimeRunnable
+ participant "Shutdown Delay Detector" as ShutdownDetector
+ participant "Threshold Filter" as ThresholdFilter
+ participant "NvM Manager" as NvM
+end box
+
+
+TimeRunnable-> ShutdownDetector : Counter value
+alt SUM_SOH_ShutDown_Timer's flag is set
+ alt PreviousCounterValue!=0
+  loop (CounterValue-PreviousCounterValue)>=1s
+   hnote over ShutdownDetector
+    Increments Previous Counter by 1s
+    Increments SUM_SOH_ShutDown_Timer by 1s
+   endhnote
+   alt SUM_SOH_ShutDown_Timer>=SUM_SOH_ShutDown_Timer_Thresh
+    hnote over ShutdownDetector : SUM_SOH_ShutDown_Cntr += 1
+    ShutdownDetector -> ThresholdFilter : Updated SUM_SOH_ShutDown_Cntr
+    return Filtered count
+    ShutdownDetector -> NvM : Filtered count
+    hnote over ShutdownDetector
+     Reset SUM_SOH_ShutDown_Timer's flag
+     SUM_SOH_ShutDown_Timer = 0
+     Previous Counter = 0
+     break
+    endhnote
+   end
+  end
+ else
+  hnote over ShutdownDetector
+   Previous Counter = CounterValue
+  endhnote
+ end
+end
+@enduml

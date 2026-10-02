@@ -1,0 +1,290 @@
+\chapter{Runtime View (Dynamic View)}
+
+\section{Module Initialization}
+\label{sec:init}
+
+\Requirement{001}
+{
+The SOH implements an init function, \code{SOH_Init()}, which can be called either from a BswM action list during
+startup or from a runnable Runnable_SOH_Init.
+}{
+\Satisfies{SRS_SOH 001} 
+\Satisfies{SRS_SOH 007} 
+}
+
+\Requirement{037}
+{
+If the configuration parameter \textit{SohGenerateInitRunnable} is TRUE, the \textbf{Runnable_SOH_Init} executes \code{SOH_Init()} function only once, otherwise the user shall call \code{SOH_Init()} in the BswM initialization action list.
+}
+{
+\Satisfies{SRS_SOH 259}
+}
+
+
+\UMLDiagram{generated/diagrams/Soh_Initialization}{Sequence diagram illustrating the two possible paths of initialization for the SUM\_SOH module.}
+
+
+\Requirement{002}
+{
+The \code{SOH_Init} recovers all stored values from the NVM.
+}{
+\Satisfies{SRS_SOH 067} \Satisfies{SRS_SOH 068}
+}
+
+
+\Requirement{003}
+{
+It also initializes the following groups of variables to their respective initialization values:
+\begin{itemize}
+\item \nameref{subsec:mainfsm} init mode
+\item Detection counters of threshold filtering
+\item Detection counters of time window filtering
+\item Time windows of time window filtering
+\item DID counters of threshold filtering
+\item DID counters of time window  filtering
+\end{itemize}
+}
+{
+\Satisfies{SRS_SOH 023} 
+\Satisfies{SRS_SOH 030} 
+\Satisfies{SRS_SOH 042} 
+\Satisfies{SRS_SOH 048}  
+\Satisfies{SRS_SOH 055} 
+}
+
+\section{SOH Main}\label{sec:sohmain}
+
+\Requirement{004}
+{SUM_SOH has a runnable called \code{Runnable_SOH_Main} that implements its \nameref{subsec:mainfsm} (Finite State Machine) with an Init, Normal and Shutdown modes that will be used to control
+the functional execution of SUM behaviors relative to the appropriate state.
+
+\code{Runnable_SOH_Main} is scheduled periodicly accordingly with the frequency set in the calibration parameter \code{SOH_RunnableSOHMainPeriod}.
+
+}{
+\Satisfies{SRS_SOH 005} \Satisfies{SRS_SOH 010}
+}
+
+\Requirement{093}{
+	\begin{itemize}
+		\item It starts the other runnables
+		\item It sets the needed variables to their default value checking the MEC (it also asks the ERRH to start the cleaning of the NvM locations related to DID F094)
+		\item It checks if any NvM writes are ongoing before the shutdown (including those due to clearing the DID F094 metrics, started when RID 0x02C0 is invoked and performed by the ERRH).
+		\item Notifies the checkpoint reaching to WdgM
+	\end{itemize}
+}{
+	\Satisfies{SRS_SOH 263}	\Satisfies{SRS_SOH 024} \Satisfies{SRS_SOH 025}
+}
+
+\subsection{SOH Main FSM}
+\label{subsec:mainfsm}
+
+\UMLDiagram{generated/diagrams/main}{SOH Main FSM}
+
+\subsubsection{Init Mode}
+
+\Requirement{006}
+{SUM_SOH shall remains in the Init state until EcuM has reached ECUM_STATE_RUN State and
+all necessary AUTOSAR BSW are initialized, HW peripherals are available.  The \code{SUSD_SOH_PermitExecution} interface is evaluated for transitionins from Init mode to other modes.
+}{
+\Satisfies{SRS_SOH 006}
+\Satisfies{SRS_SOH 017}
+}
+
+\Requirement{007}
+{SUM_SOH uses the configuration SOH_PermitExection_Mask in its logic to allow configuration of which PermitExectution bits are considered to trigger a start of its functions.
+ SUM_SOH starts the execution of its functions and moves to the Normal Mode when the Wakeup(s) Active bit in the SUSD_SOH_PermitExecution interface is set to TRUE. 
+}
+{
+\Satisfies{SRS_SOH 018}
+\Satisfies{SRS_SOH 019}
+\Satisfies{SRS_SOH 257}
+}
+
+\subsubsection{Normal Mode}
+
+\Requirement{008}
+{In Normal Mode execution of SUM_SOH should use polling for any transition criteria applicable for shutdown
+process to be initiated (Shutdown/Reset request in SUSD_SOH_PermitExecution. 
+
+Also ShutdownPermission interface is used to allow SUM_SUSD for continued execution to complete pending activities.
+}
+{
+\Satisfies{SRS_SOH 009}
+\Satisfies{SRS_SOH 258}
+}
+
+\Requirement{009}
+{SUM_SOH sets its metrics and DIDs counters to their default values when the value of the (Manufacturing Enable Counter) MEC is set to 0x00 }
+{
+\Satisfies{SRS_SOH 021} \Satisfies{SRS_SOH 248} 
+}
+
+\subsubsection{Shutdown Mode}
+
+\Requirement{010}
+{SUM_SOH reads SUSD_SOH_PermitExecution and calls the monitor related to Shutdown/reset logging }
+{
+\Satisfies{SRS_SOH 020}
+}
+
+
+\Requirement{012}
+{SUM_SOH  uses the ShutdownPermission interface to SUM_SUSD to allow for continued execution to complete pending activities (e.g.: NvM write). }
+{
+\Satisfies{SRS_SOH 008}
+\Satisfies{SRS_SOH 258}
+}
+
+\section{SOH Time management}
+This feature is described in the Architecture Design document.
+
+\section{Tasks management}
+
+\subsection{Periodic Runnables}
+For all the Periodic Runnables definitions please refer to the \href{doxygen/html/group___time_periodic.html}{documentation}.
+
+\subsection{Event-Triggered Runnables}
+\subsubsection{Operation-Invoked Event Runnables}
+For all the Operation-Invoked Event Runnables definitions please refer to the \href{doxygen/html/group___operation_invoked_event.html}{documentation}.
+
+\subsubsection{Data-Receive Event Runnables}
+For all the Data-Receive Event Runnables definitions please refer to the \href{doxygen/html/group___data_receive_event.html}{documentation}.
+
+% \subsubsection{\textit{Runnable_SOH_DID_F090_Data_ExcepOS_Cntr}}
+% \RequirementTag{SDD_SOH}{052}
+% \\
+% \RunnableTriggered{Runnable_SOH_DID_F090_Data_ExcepOS_Cntr}
+% {OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline ExcepOS_Cntr}
+% {NA}
+% {NA}
+% {NA}
+% {NA}
+% {Std_ReturnType}
+% {This Function called to update the value of the detector F090_ExcepOS. It returns E_OK}
+% \\
+% \Satisfies{SRS_SOH 035}
+
+% \subsubsection{\textit{Runnable_SOH_DID_F090_Data_ServOS_Cntr}}
+% \RequirementTag{SDD_SOH}{053}
+% \\
+% \RunnableTriggered{Runnable_SOH_DID_F090_Data_ServOS_Cntr}
+% {OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline ServOS_Cntr}
+% {NA}
+% {NA}
+% {NA}
+% {NA}
+% {Std_ReturnType}
+% {This Function called to update the value of the detector F090_ServOS. It returns E_OK}
+% \\
+% \Satisfies{SRS_SOH 035}
+
+% \subsubsection{\textit{Runnable_SOH_DID_F090_Data_StackOS_Cntr}}
+% \RequirementTag{SDD_SOH}{054}
+% \\
+% \RunnableTriggered{Runnable_SOH_DID_F090_Data_StackOS_Cntr}
+% {OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline StackOS_Cntr}
+% {NA}
+% {NA}
+% {NA}
+% {NA}
+% {Std_ReturnType}
+% {This Function called to update the value of the detector F090_ServOS. It returns E_OK}
+% \\
+% \Satisfies{SRS_SOH 035}
+
+% \subsubsection{\textit{Runnable_SOH_DID_F090_Data_MemProtOS_Cntr}}
+% \RequirementTag{SDD_SOH}{055}
+% \\
+% \RunnableTriggered{Runnable_SOH_DID_F090_Data_MemProtOS_Cntr}
+% {OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline MemProtOS_Cntr}
+% {NA}
+% {NA}
+% {NA}
+% {NA}
+% {Std_ReturnType}
+% {This Function called to update the value of the detector F090_MemProtOS. It returns E_OK}
+% \\
+% \Satisfies{SRS_SOH 035}
+
+% \subsubsection{\textit{Runnable_SOH_DID_F090_Data_TimeProtOS_Cntr}}
+% \RequirementTag{SDD_SOH}{056}
+% \\
+% \RunnableTriggered{Runnable_SOH_DID_F090_Data_TimeProtOS_Cntr}
+% {OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline TimeProtOS_Cntr}
+% {NA}
+% {NA}
+% {NA}
+% {NA}
+% {Std_ReturnType}
+% {This Function called to update the value of the detector F090_TimeProtOS. It returns E_OK}
+% \\
+% \Satisfies{SRS_SOH 035}
+
+% \subsubsection{\textit{Runnable_SOH_DID_F090_Data_ErrOS_Cntr}}
+% \RequirementTag{SDD_SOH}{057}
+% \\
+% \RunnableTriggered{Runnable_SOH_DID_F090_Data_ErrOS_Cntr}
+% {OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline ErrOS_Cntr}
+% {NA}
+% {NA}
+% {NA}
+% {NA}
+% {Std_ReturnType}
+% {This Function called to update the value of the detector F090_ErrOS. It returns E_OK}
+% \\
+% \Satisfies{SRS_SOH 035}
+
+% \subsubsection{\textit{Runnable_SOH_DID_F090_CheckRead}}
+% \RequirementTag{SDD_SOH}{058}
+% \\
+% \RunnableTriggered{Runnable_SOH_DID_F090_CheckRead}
+% {
+%     OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline ExcepOS_Cntr,\newline
+%     OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline ServOS_Cntr,\newline
+%     OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline StackOS_Cntr,\newline
+%     OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline MemProtOS_Cntr,\newline
+%     OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline TimeProtOS_Cntr,\newline
+%     OperationInvokedEvent_Runnable_SOH_DID_F090_Data_\newline ErrOS_Cntr
+% }
+% {NA}
+% {NA}
+% {NA}
+% {NA}
+% {Std_ReturnType}
+% {This function checks if the conditions to read the DID 0xF090 are correct. It returns E_OK if the read was succes and returns Zero in case of failure.}
+% \\
+% \Satisfies{SRS_SOH 035}
+
+\section{Failure handling strategy}
+\section{Critical timing constraints}
+\section{Runtime Scenario}
+\subsection{Definitions}
+For all the module definitions please refer to the \href{doxygen/html/globals_defs.html}{Doxygen documentation}.
+\subsection{Variables}
+For all the module variables please refer to the \href{doxygen/html/globals_vars.html}{Doxygen documentation}.
+\subsection{Functions}
+For all the module functions please refer to the \href{doxygen/html/globals_func.html}{Doxygen documentation}.
+
+\section{FFI Port Interface Compliance}
+\label{sec:ffiportcompliance}
+
+\RequirementTag{SDD_SOH}{113}
+
+For (FFI) compliance, all Sender-Receiver port interfaces connecting SUM\_SOH to other RTA-SUM modules shall be described in the Software Component Description (SWCD).
+SUM\_SOH SHALL be the \textit{only} owner of the writing operation for the specific interfaces in the SWCD.
+
+{\Satisfies{SRS_SOH 267} \Satisfies{rta_sum_ffi 001}}
+
+\RequirementTag{SDD_SOH}{114}
+
+For (FFI) compliance, all Client-Server port interfaces connecting SUM\_SOH to other RTA-SUM modules shall be described in the Software Component Description (SWCD).
+SUM\_SOH SHALL be the \textit{final} implementer of the C/S operation WHEN SUM\_SOH is the client. SUM\_SOH SHALL verify the input values to the C/S operation WHEN SUM\_SOH is the client.
+
+{\Satisfies{SRS_SOH 267} \Satisfies{rta_sum_ffi 001} \Satisfies{rta_sum_ffi 002}}
+
+\RequirementTag{SDD_SOH}{115}
+
+SUM\_SOH is who instances the NvM RAM block pointers for DID counters and detection counters. Each detector's \texttt{SOH\_GenericNvmAccessType} struct stores a \texttt{P2VAR(uint16)} pointer (\code{NvmRamBlock}) initialized to the address of the NvM RAM block data in a static initializer. SUM\_SOH shall ensure that the pointer passed to any RTE NvM API call (WriteBlock, SetRamBlockStatus, GetErrorStatus) is never a null pointer, so that no null pointer exception is caused for this scenario.
+SUM\_SOH satisfies this by guarding all \code{NvmRamBlock} pointer accesses with a null pointer check before use (e.g. \texttt{if(item->NvMDID.NvmRamBlock != NULL\_PTR)}) in \texttt{SUM\_SOH\_Utilities.c}.
+
+{\Satisfies{SRS_SOH 267} \Satisfies{rta_sum_ffi 001}}

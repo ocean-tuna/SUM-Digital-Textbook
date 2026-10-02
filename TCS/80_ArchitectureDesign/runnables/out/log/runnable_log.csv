@@ -1,0 +1,8 @@
+Runnable;Symbol;Event Type;Period, Trigger or Target
+RE_TCS_Init;SUCCESS;SUCCESS;SUCCESS
+Runnable_TCS_Dem_Clock;SUCCESS;SUCCESS;SUCCESS
+Runnable_TCS_MasterClockPolling;SUCCESS;SUCCESS;SUCCESS
+Runnable_TCS_TimeManagement;SUCCESS;SUCCESS;SUCCESS
+Runnable_TotalVehicleTimeRead;SUCCESS;SUCCESS;SUCCESS
+Runnable_TotalVehicleTimeCheckRead;SUCCESS;SUCCESS;SUCCESS
+Runnable_TCS_PermitExecutionShutdown;SUCCESS;SUCCESS;SUCCESS

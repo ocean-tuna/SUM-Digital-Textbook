@@ -1,0 +1,57 @@
+@startuml Sum_Ssfm_Protection_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_ProtectionStatus_Manager"
+
+**Interfaces Legend**
+	//ri103 //: E2E Error Code
+	//ri105 //: Dem_CallbackDTCStatusChangedIndication (Failed Protection)
+	//II152 //: ERRH_ExecutionStatus / SSM_ExecutionStatus
+	//SerialData_n_FcI //: SerialData<n>_FcI
+	//II172 //: Sum_Ssfm_ErrhDebouncerExecution (Error Debouncer)
+	//pi107 //: DiagnosticMonitor (Dem_SetEventStatus)
+	//SerialData_n_FpI //: SerialData<n>_FpI
+	//pi109 //: SerialData<n>_FpFA
+	//II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)   
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+
+	interface ri103
+	interface ri105
+	interface pi107
+	interface pi109
+	interface II152
+	interface II172
+	interface SerialData_n_FcI
+	interface SerialData_n_FpI
+    interface II184
+
+component [Sum_Ssfm_ProtStatus_Manager] as E{
+	portin pri203
+    portin pri105
+	portout ppi107
+	portout ppi109
+}
+
+
+
+	II184 )--- E
+	II152 )--- E
+	ri103 )-- pri203
+	ri105 )-down- pri105 
+	II172 )-- E
+    SerialData_n_FcI )---  E
+    ppi107 --0 pi107
+    E --0 SerialData_n_FpI
+    ppi109 --0 pi109
+
+
+@enduml

@@ -1,0 +1,43 @@
+@startuml SUM_SrvcMgr_SSFM_ClearDiagReq_U19A6_57
+' Diagram: handling of U19A6_57 DTC after Code Clear (Service 14 - Clear Diagnostic Information)
+'
+participant SSFM
+participant SrvcMgr
+participant Sd
+participant SSFM_DTC as SSFM_DTC
+
+' SSFM confirms that DTC clear request is completed (Data Receive event)
+SSFM -> SrvcMgr : SSFM_ClearDiagReq (DataReceive)
+Activate SrvcMgr
+SrvcMgr -> SrvcMgr : Runnable_SSFM_ClearDiagReq()
+
+' Retrieve current learning table state and incomplete reasons
+SrvcMgr -> Sd: Sd_GetLearningTableState()
+SrvcMgr -> Sd: Sd_RetrieveIncompleteLearningReasons()
+alt retrieveRet == E_OK
+    alt LearningTableState == LEARNING_INCOMPLETE and num_Of_Missing_EventGroups > 0
+        SrvcMgr -> SSFM_DTC: Rte_Write_U19A6_57_Status_invalid(TRUE)
+        note right of SSFM_DTC
+            Set U19A6_57: service acknowledgement
+            not received (missing event groups)
+        end note
+    else LearningTableState == LEARNING_COMPLETED or num_Of_Missing_EventGroups == 0
+        SrvcMgr -> SSFM_DTC: Rte_Write_U19A6_57_Status_invalid(FALSE)
+        note right of SSFM_DTC
+            Reset U19A6_57: service acknowledgement
+            received or learning complete
+        end note
+    else
+        note right
+            No action: leave U19A6_57 unchanged
+        end note
+    end
+else
+    note right
+        Sd_RetrieveIncompleteLearningReasons failed
+        (no change to U19A6_57)
+    end note
+end
+
+Deactivate SrvcMgr
+@enduml

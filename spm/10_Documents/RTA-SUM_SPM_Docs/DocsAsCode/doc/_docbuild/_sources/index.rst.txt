@@ -1,0 +1,31 @@
+#####################################
+RTA-SUM_SPM (Software/Power Manager)
+#####################################
+
+Repository for the pilot of the Bootloader component of RTA-SUM_SPM
+
+
+.. toctree::
+   :maxdepth: 5
+   :caption: Requirements:
+
+   doc/Requirements/10_Requirements.rst
+
+.. toctree::
+   :maxdepth: 6
+   :caption: RTA-SUM SPM Design:
+
+   doc/DesignNotes/design_notes.rst
+
+
+.. toctree::
+   :maxdepth: 5
+   :caption: RTA-SUM SPM Release Notes:
+
+   doc/ReleaseNotes/release_notes.rst
+
+.. toctree::
+   :maxdepth: 5
+   :caption: RTA-SUM SPM User Guide:
+
+   doc/UserGuide/user_guide.rst

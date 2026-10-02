@@ -1,0 +1,13 @@
+@startuml Sum_Ssfm_Errh_SecPError_Handler_SeqDiag
+
+
+participant BswM as BswM
+box SUM_SSFM
+    participant Sum_Ssfm_Errh_SecPError_Handler as SecPHandler
+    participant TBD as TBD
+end box
+
+BswM -> SecPHandler: Notification on a change in SecP error status
+SecPHandler -> TBD: Aggregating the notification
+
+@enduml 

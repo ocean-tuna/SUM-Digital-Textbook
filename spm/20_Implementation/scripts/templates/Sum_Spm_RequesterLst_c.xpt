@@ -1,0 +1,288 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_RequesterLst.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for SPM Requester List for each Power Profile
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+/*-----------------------------------------------------------------------------
+ *    Include files
+ *----------------------------------------------------------------------------*/
+
+#include "Sum_Spm_RequesterLst.h"
+
+/******************************************************************************
+ * BEGIN: source code of a multiple instance class
+ ******************************************************************************/
+
+/* PRQA S 1532 EOF # Functions are declared here for modularity reason.  */
+
+#define size_requesterList (self->size)
+#define spmReqLst_VAL (self->spmReqLst)
+
+
+/******************************************************************************
+ * BEGIN: FUNCTIONS OF COMPONENT
+ ******************************************************************************/
+static SpmRequesterPresenceInReqList Sum_Spm_GetPresenceOfRequesterInReqList(const struct SpmRequesterList_RAM_SubStruct * self,
+                                                                             const uint32 RequesterIP,
+                                                                             uint8* idxRequester);
+static void Spm_AppendRequesterInReqList(struct SpmRequesterList_RAM_SubStruct * self,
+                                         struct SPM_ProfileReqItm itm,
+                                         const uint8 idx);
+static boolean Spm_GetPowerProfileIsRootForActDeactReq(const uint8 reqcode); 
+
+/**
+ * @brief Checks if the MSB of the reqcode is set to 1.
+ *
+ *This function check if the Power Profile requested is acting as a root request.
+ *
+ * @param[in] reqcode: request item to be parsed
+ *             
+ * @return TRUE: if the MSB is set to 1, i.e. the reqcode refer to a root request
+ *         FALSE: if the MSB is set to 0, i.e. the reqcode refer to a dependency of the root request
+ */                                  
+static boolean Spm_GetPowerProfileIsRootForActDeactReq(const uint8 reqcode){
+   return ((reqcode >> 7u) == 1u) ? TRUE : FALSE; 
+}
+
+
+/**
+ * @brief Checks if the requester is already present in the requester list.
+ *
+ * This function check if the requester is already present in the requester list.
+ *
+ * @param[in] self            Pointer to the SpmRequesterList_RAM_SubStruct instance that contains the
+ *                            requester list where the address will be added.
+ * @param[in] RequesterIP     Requester's IP.
+ * @param[inout] idxRequester This ptr is populated if the requester is already present with DEACTIVATION request.
+ *
+ *@return SPM_REQUESTER_NOT_PRESENT: if the requester is NOT present in the requester list.
+ *        SPM_REQUESTER_PRESENT_AS_DEACT: if the requester is present in the requester list with DEACTIVATION request.
+ *        SPM_REQUESTER_PRESENT_AS_ACT: if the requester is present in the requester list with ACTIVATION request.
+ */
+static SpmRequesterPresenceInReqList Sum_Spm_GetPresenceOfRequesterInReqList(const struct SpmRequesterList_RAM_SubStruct * self,
+                                                                             const uint32 RequesterIP,
+                                                                             uint8* idxRequester){
+
+   SpmRequesterPresenceInReqList ret = SPM_REQUESTER_NOT_PRESENT;
+   uint8 idx;
+
+   for(idx = 0u; idx < size_requesterList; idx++){
+      if ( spmReqLst_VAL[idx].requesterIP == RequesterIP ){
+         *idxRequester = idx;
+         if( spmReqLst_VAL[idx].ReqType == SPM_REQ_DEACTIVATION ){
+            ret = SPM_REQUESTER_PRESENT_AS_DEACT;
+         }else{
+            ret = SPM_REQUESTER_PRESENT_AS_ACT;
+         }
+         break;
+      }
+   }
+
+   return ret;
+}
+
+/**
+ * @brief Adds a requester address to the requester list, avoiding duplicates.
+ *
+ * This function set in the idx slot of the requester list the new request received.
+ * If the reqDependencyType is ACTIVATED/ACTIVATED&&CONSUMED, that requester needs a feedback.
+ * So, the initFeedbackProvided is set to SPM_INIT_FEEDBACK_NOT_SENT_TO_ACT_REQ.
+ *
+ * @param self Pointer to the SpmRequesterList_RAM_SubStruct instance that contains the
+ *             requester list where the address will be added.
+ * @param itm  Provide TrgDvc IP and Dependency type of the req.
+ * @param idx  Index where the requester is stored.
+ */
+/* [$Satisfies $DDS_SPM 0647] */
+static void Spm_AppendRequesterInReqList(struct SpmRequesterList_RAM_SubStruct * self,
+                                         struct SPM_ProfileReqItm itm,
+                                         const uint8 idx){
+
+   spmReqLst_VAL[idx].requesterIP = itm.TrgDvcIpRequester;
+   spmReqLst_VAL[idx].ReqType = itm.reqDependencyType;
+
+  if(((spmReqLst_VAL[idx].ReqType == SPM_PRF_ACTIVATED) ||
+   (spmReqLst_VAL[idx].ReqType == SPM_PRF_DEP_ACT_AND_CONS))
+   && (Spm_GetPowerProfileIsRootForActDeactReq(itm.reqCode) == TRUE) /* PRQA S 2992 *//* The value of reqCode depends from the request. */
+  	)
+   {
+
+      spmReqLst_VAL[idx].initFeedbackProvided = SPM_INIT_FEEDBACK_NOT_SENT_TO_ACT_REQ;
+
+   }else{
+
+      spmReqLst_VAL[idx].initFeedbackProvided = SPM_NO_FEEDBACK_NEEDED;
+   }
+
+
+}
+
+/**
+ * @brief Adds a requester address to the requester list, avoiding duplicates.
+ *
+ * This function append a new remote requester (new means that this profile has NEVER received an activation request from that requester)
+ * setting the proper ReqType received and the initFeedbackProvided to SPM_INIT_FEEDBACK_NOT_SENT_TO_ACT_REQ if the requester needs
+ * a feeback (i.e. if the request is received labeled as ACTIVATED/ACTIVATED&&CONSUMED) in order to let the Spm_SoftwMgr_PopulateSMFrame() that a
+ * feedback shall be sent to the requester.
+ *
+ * @param self Pointer to the SpmRequesterList_RAM_SubStruct instance that contains the
+ *             requester list where the address will be added.
+ * @param itm  Itm dequeued. Provice TrgDvc IP and Dependency type.
+ */
+/* [$Satisfies $DDS_SPM 0016] *//* [$Satisfies $DDS_SPM 0014] */
+void Spm_RequesterList_ActivationRequestHandler (
+    struct SpmRequesterList_RAM_SubStruct * self,
+    struct SPM_ProfileReqItm itm)
+{
+
+   uint8 idxRequester;
+   /* PRQA S 2981 1 # Variable is initiliazed since it is not always populater later.  */
+   sint16 IndexInTheConf = SPM_INVALID;
+   SpmRequesterPresenceInReqList RequesterPresence;
+
+   /* If the requester is a local swc there is no need to search its ip. */
+   if(itm.TrgDvcIpRequester != 0u){
+      /** Retrieve the index of the TrgDvc in the ConfArray. */
+      IndexInTheConf = Spm_GetIndexTrgDvcFromIP(itm.TrgDvcIpRequester);
+   }
+
+   /* Check if the TrgDvc is configured or if it is a local request. */
+   if( (itm.TrgDvcIpRequester == 0u)|| (IndexInTheConf != SPM_INVALID)){
+
+      RequesterPresence = Sum_Spm_GetPresenceOfRequesterInReqList(self, itm.TrgDvcIpRequester, &idxRequester);
+
+      switch (RequesterPresence) {
+         case SPM_REQUESTER_NOT_PRESENT:
+            if (size_requesterList != SPM_REQER_LST_SIZE){
+               Spm_AppendRequesterInReqList(self, itm, size_requesterList);
+               size_requesterList++;
+            }
+            break;
+
+         case SPM_REQUESTER_PRESENT_AS_DEACT:
+            Spm_AppendRequesterInReqList(self, itm, idxRequester);
+            break;
+
+         default:
+            /* Here if SPM_REQUESTER_PRESENT_AS_ACT. 
+               So, the following function call will update the flag to let the requester receive again the feedback if needed. */
+            Spm_AppendRequesterInReqList(self, itm, idxRequester);
+            break;
+
+      }
+   }
+}
+
+/**
+ * @brief This function performs the deactivation request handling.
+ *  In particular, there are two main case:
+ *    - the requester is already present in the requester list with an ACTIVATION or DEACTIVATION request. 
+ *      (A deactivation request is taken into account because the requester can make a deactivation request regardless of whether 
+ *      it has previously done an activation request).
+ *    - the requester is not present in the requester list, so it is added in the requester list.
+ * For both cases, the ReqType is set to SPM_REQ_DEACTIVATION, while  the initFeedbackProvided can be set to one of the 
+ * following values:
+ *       - SPM_INIT_FEEDBACK_NOT_SENT_TO_DEACT_REQ in order to let know the Spm_SoftwMgr_PopulateSMFrame() that a feedback 
+ *         shall be sent.
+ *       - SPM_NO_FEEDBACK_NEEDED if the requester does not need any feedback (i.e. the deactivation request is for a 
+ *         dependency of the root Power Profile, not the root itself).
+ *    
+ * NOTE: The feedback, related to the root Power Profile, shall be provided to:
+ *         - a requester who has previously made an activation request, but now is making a deactivation request
+ *         - a requester who has NOT previously made an activation request or who is not on the list of requesters,
+ *           but who is now  making a deactivation request.
+ * @param[in,out] self    Pointer to the instance of the SpmRequesterList_RAM_SubStruct structure.
+ * @param[in]     Itm dequeued. Provide TrgDvc IP and Dependency type.
+ *
+ */
+/* [$Satisfies $DDS_SPM 0033] *//* [$Satisfies $DDS_SPM 0032] *//* [$Satisfies $DDS_SPM 0014] *//* [$Satisfies $DDS_SPM 0043] */
+void Spm_RequesterList_DeactivationRequestHandler (struct SpmRequesterList_RAM_SubStruct * self, 
+                                                   struct SPM_ProfileReqItm itm)
+{  
+   uint8 reqIndex;
+   SpmRequesterPresenceInReqList reqPresence;
+
+   /* Retrieve the presence of the requester in the requester list */
+   reqPresence = Sum_Spm_GetPresenceOfRequesterInReqList(self, itm.TrgDvcIpRequester, &reqIndex);
+
+   /* Requester is already in the Requester List */
+   if (reqPresence != SPM_REQUESTER_NOT_PRESENT){
+
+      /* The requester is already present in the list (ReqType activated or deactivated ) so, set the flag for feedback 
+      ONLY for the root Power Profile requested and update the ReqType to DEACTIVATION */
+      if((Spm_GetPowerProfileIsRootForActDeactReq(itm.reqCode) == TRUE)  &&
+         ((spmReqLst_VAL[reqIndex].ReqType == SPM_PRF_ACTIVATED) ||
+         (spmReqLst_VAL[reqIndex].ReqType	== SPM_PRF_DEP_ACT_AND_CONS) ||
+         (spmReqLst_VAL[reqIndex].ReqType == SPM_REQ_DEACTIVATION)))
+      {   
+         spmReqLst_VAL[reqIndex].initFeedbackProvided = SPM_INIT_FEEDBACK_NOT_SENT_TO_DEACT_REQ;
+      }
+      else
+      {
+         spmReqLst_VAL[reqIndex].initFeedbackProvided = SPM_NO_FEEDBACK_NEEDED;
+      }
+
+      spmReqLst_VAL[reqIndex].ReqType = SPM_REQ_DEACTIVATION; 
+   }
+   else
+   {
+      /* The requester is not present in the Requester List so add it */
+      if (size_requesterList != SPM_REQER_LST_SIZE){
+         /* Update the requester list with the new requester information */
+         spmReqLst_VAL[size_requesterList].requesterIP = itm.TrgDvcIpRequester;
+         spmReqLst_VAL[size_requesterList].ReqType = SPM_REQ_DEACTIVATION;   
+         /* Feedback to send only for the root Power Profile for which deactivation is requested */
+         if(Spm_GetPowerProfileIsRootForActDeactReq(itm.reqCode) == TRUE)
+         {
+            spmReqLst_VAL[size_requesterList].initFeedbackProvided = SPM_INIT_FEEDBACK_NOT_SENT_TO_DEACT_REQ;
+         }
+         else
+         {
+            spmReqLst_VAL[size_requesterList].initFeedbackProvided = SPM_NO_FEEDBACK_NEEDED;
+         }
+        
+         size_requesterList++;
+      }
+   }
+}
+
+/* ****************************************************************************
+ * END: FUNCTIONS OF COMPONENT
+ ******************************************************************************/
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

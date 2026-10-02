@@ -1,0 +1,240 @@
+@startwbs
+
+skinparam linetype polyline
+skinparam linetype ortho
+
+<style>
+    wbsDiagram {
+        .c {
+            BackgroundColor skyblue
+            FontStyle bold
+        }
+
+        .pm {
+            BackgroundColor violet
+            FontStyle italic
+        }
+
+        .p {
+            BackgroundColor lightpink
+            FontStyle italic
+        }
+
+        .r {
+            BackgroundColor aquamarine
+        }
+
+        .er {
+            BackgroundColor lightgreen
+        }
+    }
+</style>
+
+* Spm <<c>>
+
+** SpmConfig <<c>>
+***: CONTAINER-DEF
+*LowerMul = 1
+* UpperMul = N;
+
+***(pp) SpmConfPowPrf <<c>>
+
+****(dep) SpmPowPrfDepLst <<r>>
+*****: REFERENCE-DEF
+* LowerMul = 0
+* UpperMul = N;
+
+****> SpmPowPrfId <<pm>>
+*****: INTEGER
+* LowerMul = 1
+* UpperMul = 1
+* Min = 1
+* Max = 2^32-1;
+
+****> SpmPowPrfIsRepresentative <<pm>>
+*****: BOOLEAN
+* LowerMul = 1
+* UpperMul = 1
+* Default = false;
+
+****> SpmPowPrfAssSrvcPdu <<er>>
+*****: REFERENCE-DEF
+* LowerMul = 0
+* UpperMul = N;
+
+
+
+*** SpmWkingDvc <<c>>
+****: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+
+****< SpmLocIpAddrRef <<r>>
+*****: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+***** Dst **TcpIpConfig/TcpIpLocalAddr** <<er>>
+
+
+****> SpmTrgDvc <<c>>
+*****: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+
+
+*****> SpmTrgDvcAddr <<pm>>
+******: INTEGER / STRING
+* LowerMul = 1
+* UpperMul = 1;
+
+*****> SpmTrgDvcDTCBaseId <<pm>>
+******: INTEGER
+* LowerMul = 1
+* UpperMul = 1
+* Min = 0
+* Max = 2^16 - 1;
+
+*****> SpmTrgDvcTimeOutInitVal <<pm>>
+******: FLOAT
+* LowerMul = 1
+* UpperMul = 1
+* Min = 1.0
+* Max = 2^32 - 1
+* NOTE: unit in milliseconds;
+
+*****< SpmWKngPth <<c>>
+******: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+
+****** SpmWkngStp <<c>>
+*******: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+
+*******< SpmWkngStpSeqId <<pm>>
+********: INTEGER
+* LowerMul = 1
+* UpperMul = 1
+* Min = 1
+* Max = 255;
+
+******* SpmWkngStpWaitTim <<pm>>
+********: FLOAT
+* LowerMul = 1
+* UpperMul = 1
+* Min = 1.0
+* Max = ?
+* NOTE: unit is milliseconds;
+
+*******(ref) SpmWkngStpSeqComRef <<r>>
+********: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+
+
+****(def) SpmWkUpCom <<c>>
+*****: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+
+***** SpmWkUpComVal <<pm>>
+******: INTEGER
+* LowerMul = 1
+* UpperMul = 1
+* Min = 1
+* Max = 69;
+
+
+** SpmGeneral <<c>>
+***: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+
+***< SpmMainFunctionPeriodicity <<pm>>
+****: FLOAT
+* LowerMul = 1
+* UpperMul = 1
+* Min = 1.0
+* Max = 2^32-1
+* NOTE: unit is milliseconds;
+
+***> SpmPermitExecMsk <<pm>>
+****: INTEGER
+* LowerMul = 1
+* UpperMul = 1
+* Min = 1
+* Max = 255;
+
+***< SpmHeartBeatBurstTimeInit <<pm>>
+****: INTEGER
+* LowerMul = 1
+* UpperMul = 1
+* Min = 1.0
+* Max = 255
+* Default = 5
+* NOTE: Time to wair before starting Heartbeat once SM has started;
+
+***> SpmPermitExecMsk <<pm>>
+****: INTEGER
+* LowerMul = 1
+* UpperMul = 1
+* Min = 1
+* Max = 255;
+
+***< SpmCurrNodeWkUpBitEnum <<p>>
+****: INTEGER
+* LowerMul = 1
+* UpperMul = 1
+* Min = 1
+* Max = 69;
+
+***> SpmMulCastIpAddrRef <<r>>
+****: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+**** Dst **TcpIpConfig/TcpIpLocalAddr** <<er>>
+
+***> SpmHelperFunctionInIfCallout <<p>>
+****: STRING
+* LowerMul = 1
+* UpperMul = N;
+
+***< SpmCANWuFRef <<c>>
+****: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+
+****> SpmCANWufTx <<r>>
+*****: REFERENCE-DEF
+* LowerMul = 1
+* UpperMul = N;
+***** Dst **/CanIfInitCfg/CanIfTxPduCfg** <<er>>
+
+****< SpmCANWufRx <<r>>
+*****: REFERENCE-DEF
+* LowerMul = 1
+* UpperMul = N;
+***** Dst **/CanIfInitCfg/CanIfRxPduCfg** <<er>>
+
+***> SpmETHWuFRef <<c>>
+****: CONTAINER-DEF
+* LowerMul = 1
+* UpperMul = N;
+
+****> SpmETHWufTx <<r>>
+*****: REFERENCE-DEF
+* LowerMul = 1
+* UpperMul = N;
+***** Dst <<er>>
+
+****< SpmETHWufRx <<r>>
+*****: REFERENCE-DEF
+* LowerMul = 1
+* UpperMul = N;
+***** Dst <<er>>
+
+dep -> pp
+ref -> def
+
+@endwbs

@@ -1,0 +1,71 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_SoftwMgr.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for SPM Software Manager
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+#ifndef _SUM_SPM_SOFTWMGR_H_
+#define _SUM_SPM_SOFTWMGR_H_
+
+#include "Rte_SPM.h"
+#include "Sum_Spm_SrvcMgrIf.h"
+#include "Sum_SpmTypes.h"
+#include "Sum_Spm_DevicePowerState.h"
+#include "Sum_Spm_SM_Req_EthIf.h"
+#include "Sum_Spm_PBCfg.h"
+#include "Sum_Spm_Request_Queue.h"
+/* Include Service Discovery extension */
+#include "rba_SdLrng.h"
+#include "Sum_Spm_Services.h"
+#include "Sum_Spm_PowerProfileStateMachine.h"
+#include "Sum_Spm.h"
+
+#include "Sum_Common_Utils.h"
+
+SpmDevicePowerStateCode Spm_DevicePowerStateParser(const uint32 TrgDvcIp, Spm_DevicePowerStateInfo const * Spm_DvcPwrSt);
+boolean Sum_Spm_GetHBCounterShallBeSentFullScale(void);
+void Sum_Spm_SetHBCounterShallBeSentFullScale(boolean value);
+uint16 Spm_GetNotInactiveLocalProfNumberForHB(void);
+boolean Sum_Spm_Get_SpmCtrl_Initilization_Status(void);
+void Spm_DequeueReqActionHandler(void);
+void Spm_FSMManger(void);
+void SPM_PM_Init_ProfilesStructs(void);
+extern boolean Sum_Spm_IsFinalHeartbeatSent(void);
+extern void Sum_Spm_Set_FinalHeartbeatSent(boolean sent);
+/* EOF */
+#endif
+
+«ENDFILE-»
+«ENDDEFINE -»

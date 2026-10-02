@@ -1,0 +1,53 @@
+import bsw;
+import bsw::ComModule;
+import bsw::SdModule;
+import bsw::DemModule;
+import bsw::DiagModule;
+
+extension templates::mathlib;
+extension org::eclipse::xtend::util::stdlib::elementprops;
+extension org::eclipse::xtend::util::stdlib::io;
+extension org::eclipse::xtend::util::stdlib::counter;
+extension org::eclipse::xtend::util::stdlib::cloning;
+
+/* Obtain the Signal length for types that are not present as Base Type */
+List[Integer] Diag_SignalLenghtList(List[ComGroupSignal] signals):
+	let SigLenList= signals.select(e|e.comSignalType == "UINT8_N").comSignalLength :
+	SigLenList.toSet()
+;
+
+/* Check if the FxFA single port is supported in the SSFM module */
+Boolean Diag_SsfmIsSinglePortSupported(SSFM cfg):
+	if (cfg != null && cfg.sum_Ssfm_General != null && cfg.sum_Ssfm_General.sum_Ssfm_FxI_FxFA_SinglePortsSupport == true) then
+	  true
+	else
+	  false
+;
+
+/* Check if the DIAG_BSPMP_RmtProgmActvAuth is contained in a Group Signal */
+Boolean Diag_IsRmtProgActvAuthGroupSignal(DiagGeneral gen):
+	gen.dIAG_BSPMP_RmtProgmActvAuthRef.metaType.toString().contains("ComGroupSignal")
+;
+
+Boolean Diag_IsOTAServiceBased(DiagGeneral gen):
+	gen.dIAG_ServiceBased_OTA_Ref != null
+;
+
+
+String Diag_GetImplementationDataTypeElementName(String path):
+	path.toString().split("/").last()
+;
+
+String Diag_GetImplementationDataTypePath(String path):
+	path.toString().replaceAll("/"+Diag_GetImplementationDataTypeElementName(path),"")
+;
+
+String Diag_GetImplementationDataTypeName(String path):
+	Diag_GetImplementationDataTypePath(path).split("/").last()
+;
+
+/* Check if MEC storage is configured for HSM */
+Boolean Diag_IsMecStorageInHsm(DiagGeneral gen):
+	gen.mecStorageInHsm != null && gen.mecStorageInHsm == true
+;
+

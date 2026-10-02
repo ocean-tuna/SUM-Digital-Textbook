@@ -1,0 +1,8 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};Runnable_DIAG_Init
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};N\/A
+\cellcolor{ETASlightgray}\textbf{Periodicity};configured by user via DIAG_TE_Runnable_DIAG_Init_Period parameter
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};EnableCondition
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Description};This runnable is a periodic runnable responsible for the initialization of all variables and state machines. \newline The runnable retrieves the last known MEC value from NvM and makes it available on the MEC output port.

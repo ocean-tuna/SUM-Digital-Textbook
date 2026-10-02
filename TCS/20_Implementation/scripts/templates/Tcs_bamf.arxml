@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00049.xsd">
+  <AR-PACKAGES>
+    <AR-PACKAGE UUID="c5d50e28-5522-4b0d-9bcb-b1586533202e">
+      <SHORT-NAME>RB_Manifest</SHORT-NAME>
+      <ELEMENTS>
+        <BUILD-ACTION-MANIFEST UUID="7fa82725-0367-4a22-b32f-22a357ba1ba0">
+          <SHORT-NAME>Tcs_Manifest</SHORT-NAME>
+          <BUILD-ACTIONS>
+            <BUILD-ACTION UUID="6dc7b59b-610f-4ed0-9568-08954d57cd83">
+              <SHORT-NAME>Tcs_Generator</SHORT-NAME>
+              <CATEGORY>GENERATOR</CATEGORY>
+              <INVOCATION>
+                <SDGS>
+                  <SDG>
+                    <SD GID="ACTION_ATTRIBUTE_singleExecutable">true</SD>
+                    <SD GID="VARIANT">1</SD>
+                    <SD GID="STOP_ON_ERROR">false</SD>
+                  </SDG>
+                </SDGS>
+              </INVOCATION>
+              <PREDECESSOR-ACTION-REFS>
+                <PREDECESSOR-ACTION-REF DEST="BUILD-ACTION">/RB_Manifest/Tcs_Manifest/Tcs_Validate</PREDECESSOR-ACTION-REF>
+              </PREDECESSOR-ACTION-REFS>
+              <CREATED-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>SUM_TCS_*</SHORT-LABEL>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>SUM_TCS_*</SHORT-LABEL>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>arxml</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>SUM_TCS_*</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>c</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+              </CREATED-DATAS>
+              <INPUT-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">PROCESSOR</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Tcs_Generate</SHORT-LABEL>
+                    <CATEGORY>CONFWF</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>oaw</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-MODULE-DEF">/AUTOSAR_Tcs_Tcs/EcucModuleDefs/Tcs</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+              </INPUT-DATAS>
+              <REQUIRED-ENVIRONMENT-REF DEST="BUILD-ACTION-ENVIRONMENT">/RB_Manifest/com_bosch_configfw_bfwaction_oaw</REQUIRED-ENVIRONMENT-REF>
+            </BUILD-ACTION>
+            <BUILD-ACTION UUID="f5a67663-071a-44fa-9f71-2479933b617a">
+              <SHORT-NAME>Tcs_Validate</SHORT-NAME>
+              <CATEGORY>VALIDATOR</CATEGORY>
+              <INVOCATION>
+                <SDGS>
+                  <SDG>
+                    <SD GID="VARIANT">1</SD>
+                    <SD GID="ACTION_ATTRIBUTE_singleExecutable">true</SD>
+                    <SD GID="STOP_ON_ERROR">true</SD>
+                  </SDG>
+                </SDGS>
+              </INVOCATION>
+              <PREDECESSOR-ACTION-REFS>
+                <PREDECESSOR-ACTION-REF DEST="BUILD-ACTION">/RB_Manifest/Dem_IdGenerator</PREDECESSOR-ACTION-REF>
+              </PREDECESSOR-ACTION-REFS>
+              <INPUT-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">PROCESSOR</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Tcs_Validate</SHORT-LABEL>
+                    <CATEGORY>CONFWF</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>oaw</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-MODULE-DEF">/AUTOSAR_Tcs_Tcs/EcucModuleDefs/Tcs</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+              </INPUT-DATAS>
+              <REQUIRED-ENVIRONMENT-REF DEST="BUILD-ACTION-ENVIRONMENT">/RB_Manifest/com_bosch_configfw_bfwaction_oaw</REQUIRED-ENVIRONMENT-REF>
+            </BUILD-ACTION>
+          </BUILD-ACTIONS>
+        </BUILD-ACTION-MANIFEST>
+      </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>

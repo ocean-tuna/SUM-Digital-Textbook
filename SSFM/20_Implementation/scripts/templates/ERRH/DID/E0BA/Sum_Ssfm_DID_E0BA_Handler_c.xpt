@@ -1,0 +1,454 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DID_E0BA_Handler.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM DID E0BA Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#include "Sum_Ssfm.h"
+#include "Sum_Common_Algo_Deque.h"
+#include "Sum_Common_Utils.h"
+
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+*/
+/* PRQA S 1532 EOF # Here for modularity */
+/* PRQA S 1505 EOF # Call by RTE.  */
+/* PRQA S 1503 EOF # When the SSFM is integrated, runnables will be called by the RTE */
+/* PRQA S 3469 EOF # The function like macros is used. for cleaner code */
+static FUNC(uint8,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_CompareEntries(const void* firstEntry, const void* secondEntry);
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_Init(void);
+static FUNC(boolean,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_FindEntryIndexByMessageId(uint32 messageId, uint8* index);
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_SynchronizeRamBlock(void);
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+
+ *********************************************************************************************************************************************************
+*/
+static Sum_Algo_Deque Sum_Ssfm_DID_E0BA_Deque;
+static boolean Sum_Ssfm_DID_E0BA_Initialized = FALSE; /* Track initialization state */
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+*/
+
+/**
+ * @brief           Comparison function for auto-sorting DID E0BA entries by total count.
+ *                  Returns 0 if firstEntry < secondEntry, 1 if equal, 2 if firstEntry > secondEntry.
+ *                  Sorts in ascending order (lowest count first).
+ *
+ * @param[in]       firstEntry - First entry to compare
+ * @param[in]       secondEntry - Second entry to compare
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          uint8: 0 if firstEntry<secondEntry, 1 if equal, 2 if firstEntry>secondEntry
+ */
+static FUNC(uint8,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_CompareEntries(const void* firstEntry, const void* secondEntry)
+{
+    /*[$Satisfies $DDS_SSFM 203]*/
+    Sum_Ssfm_DID_E0BA_Entry firstDIDEntry;
+    Sum_Ssfm_DID_E0BA_Entry secondDIDEntry;
+    
+    uint8 comparisonResult = ENTRIES_ARE_EQUAL;
+    
+    if ((firstEntry != NULL_PTR) && (secondEntry != NULL_PTR))
+    {
+        /* Copy data to avoid MISRA 11.5 pointer casting violation */
+        (void)Sum_Common_MemCopy(&firstDIDEntry, firstEntry, sizeof(Sum_Ssfm_DID_E0BA_Entry));
+        (void)Sum_Common_MemCopy(&secondDIDEntry, secondEntry, sizeof(Sum_Ssfm_DID_E0BA_Entry));
+        
+        /* Compare total counts - ascending order (lowest first) */
+        if (firstDIDEntry.totalCount < secondDIDEntry.totalCount)
+        {
+            comparisonResult = FIRST_ENTRY_IS_SMALLER; /* first entry has lower priority */
+        }
+        else if (firstDIDEntry.totalCount > secondDIDEntry.totalCount)
+        {
+            comparisonResult = FIRST_ENTRY_IS_LARGER; /* first entry has higher priority */
+        }
+        else
+        {
+            /* Equal total counts - maintain FIFO order by comparing message IDs */
+            /* For equal counts, prefer existing entries (smaller message ID) */
+            if (firstDIDEntry.messageId < secondDIDEntry.messageId)
+            {
+                comparisonResult = FIRST_ENTRY_IS_SMALLER; /* first entry came earlier */
+            }
+            else if (firstDIDEntry.messageId > secondDIDEntry.messageId)
+            {
+                comparisonResult = FIRST_ENTRY_IS_LARGER; /* first entry came later */
+            }
+            /* else comparisonResult remains ENTRIES_ARE_EQUAL for identical entries */
+            else
+            {
+                /*do nothing*/
+            }
+        }
+    }
+    
+    return comparisonResult;
+}
+
+/**
+ * @brief           Initialize E0BA deque with automatic sorting capability.
+ *                  Initializes deque and enables automatic sorting via wrapper functions.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_Init(void)
+{
+    static Sum_Ssfm_DID_E0BA_Entry Sum_Ssfm_DID_E0BA_DequeBuffer[SSFM_DID_E0BA_MAX_ENTRIES];
+    
+    /* Prevent multiple initializations */
+    if (!Sum_Ssfm_DID_E0BA_Initialized)
+    {
+        /* Initialize deque with auto-sorting enabled */
+        (void)Sum_Algo_Deque_Init(&Sum_Ssfm_DID_E0BA_Deque,
+                                   sizeof(Sum_Ssfm_DID_E0BA_Entry),
+                                   SSFM_DID_E0BA_MAX_ENTRIES,
+                                   Sum_Ssfm_DID_E0BA_DequeBuffer,
+                                   TRUE, /* Enable auto-sorting */
+                                   &Sum_Ssfm_DID_E0BA_CompareEntries);
+       
+        Sum_Ssfm_DID_E0BA_Initialized = TRUE;
+        
+    }
+}
+
+/**
+ * @brief           Find entry index in deque by message ID using linear search.
+ *                  
+ *
+ * @param[in]       messageId - Message ID to search for
+ * @param[inout]    index - Pointer to store found index
+ * @param[out]      index - Index where entry was found
+ * @return          boolean: TRUE if found, FALSE otherwise
+ */
+static FUNC(boolean,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_FindEntryIndexByMessageId(uint32 messageId, uint8* index)
+{
+    uint32 size;
+    Sum_Ssfm_DID_E0BA_Entry entry;
+    uint8 messageIdx;
+    boolean found = FALSE;
+    
+  
+	size = Sum_Algo_Deque_Size(&Sum_Ssfm_DID_E0BA_Deque);        
+	for (messageIdx = 0u; ((messageIdx < size) && (!found)); messageIdx++)
+	{
+		(void)Sum_Algo_Deque_GetAt(&Sum_Ssfm_DID_E0BA_Deque, messageIdx, &entry);         
+		if (entry.messageId == messageId)
+		{
+			*index = messageIdx;
+			found = TRUE;
+		}
+		
+	}
+    
+    return found;
+}
+
+/**
+ * @brief           Synchronize RAM block with current deque contents.
+ *                 
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_SynchronizeRamBlock(void)
+{
+    /*[$Satisfies $DDS_SSFM 204]*/
+    uint32 dequeSize;
+    uint32 index;
+    uint8 dataIndex;
+    Sum_Ssfm_DID_E0BA_Entry entry;
+    
+    /* Clear entire RAM block */
+    (void)Sum_Common_MemSet(Sum_Ssfm_SigProtectionCalcIncorrect_BLOCK, 0u, SSFM_DID_E0BA_FIXED_LENGTH);
+    
+    /* Copy sorted deque entries to RAM block */
+    dequeSize = Sum_Algo_Deque_Size(&Sum_Ssfm_DID_E0BA_Deque);
+    
+    for (index = 0u; (index < dequeSize); index++)
+    {
+        (void)Sum_Algo_Deque_GetAt(&Sum_Ssfm_DID_E0BA_Deque, index, &entry);
+        
+		dataIndex = (uint8)(index * SSFM_DID_E0BA_MSG_ENTRY_SIZE);
+			
+		/* Store message ID using portable endianness macro */
+		Sum_Ssfm_DID_FillBuffer_u32(Sum_Ssfm_SigProtectionCalcIncorrect_BLOCK, entry.messageId, dataIndex);
+			
+		/* Store counters */
+		Sum_Ssfm_SigProtectionCalcIncorrect_BLOCK[dataIndex + SSFM_DID_E0BA_FOI_COUNT_OFFSET] = entry.foiCount;
+		Sum_Ssfm_SigProtectionCalcIncorrect_BLOCK[dataIndex + SSFM_DID_E0BA_FPI_COUNT_OFFSET] = entry.fpiCount;
+        
+    }
+}
+
+/**
+ * @brief           Update signal protection calculation failure counters with automatic sorting.
+ *
+ * @param[in]       serial_data - Pointer to SerialData structure
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_Update_Message_Protection(const Sum_Ssfm_SerialData *serial_data)
+{
+    /*[$Satisfies $DDS_SSFM 202]*/
+    uint32 messageId;
+    uint8 fpiCount = 0u;
+    uint8 foiCount = 0u;
+    uint16 totalCount;
+    uint8 foundIndex;
+    Sum_Ssfm_DID_E0BA_Entry newEntry;
+    Sum_Ssfm_DID_E0BA_Entry existingEntry;
+    
+    /* Initialize deque if first call */
+    if (!Sum_Ssfm_DID_E0BA_Initialized)
+    {
+        (void)Sum_Ssfm_DID_E0BA_Init();
+    }
+    
+    /* Validate input parameter */
+    if (serial_data != NULL_PTR)
+    {
+        /* Extract message ID from SerialData */
+        messageId = serial_data->MessageID;
+        
+        /* Get protection failure counts from FxI framework */
+        if (serial_data->Protected != NULL_PTR)
+        {
+            /*[$Satisfies $DDS_SSFM 209]*/
+            fpiCount = (uint8)((serial_data->Protected->OccurrenceCount > SSFM_DID_E0BA_MAX_COUNT_VALUE) ? SSFM_DID_E0BA_MAX_COUNT_VALUE : serial_data->Protected->OccurrenceCount);
+        }
+        
+        /* Get continuous operation failure counts from FxI framework */
+        if (serial_data->ContOp != NULL_PTR)
+        {
+            /*[$Satisfies $DDS_SSFM 209]*/
+            foiCount = (uint8)((serial_data->ContOp->OccurrenceCount > SSFM_DID_E0BA_MAX_COUNT_VALUE) ? SSFM_DID_E0BA_MAX_COUNT_VALUE : serial_data->ContOp->OccurrenceCount);
+        }
+        
+        /* Calculate total failure count for priority comparison */
+        totalCount = (uint16)fpiCount + (uint16)foiCount;
+        
+        /* Only update if we have actual failure counts */
+        if (totalCount > 0u)
+        {
+            /* Prepare new entry */
+            /* PRQA S 2983 EOF # Here for Update existing entry */
+            newEntry.messageId = messageId;
+            newEntry.foiCount = foiCount;
+            newEntry.fpiCount = fpiCount;
+            newEntry.totalCount = totalCount;
+            
+            /* Check if message already exists */
+            if (Sum_Ssfm_DID_E0BA_FindEntryIndexByMessageId(messageId, &foundIndex))
+            {
+                /* Update existing entry - auto-sorting will handle repositioning */
+                (void)Sum_Algo_Deque_SetAt(&Sum_Ssfm_DID_E0BA_Deque, foundIndex, &newEntry);
+            }
+            else
+            {
+                /* Add new entry */
+                if (Sum_Algo_Deque_IsFull(&Sum_Ssfm_DID_E0BA_Deque))
+                {
+                    /* Deque is full  */
+                    (void)Sum_Algo_Deque_Front(&Sum_Ssfm_DID_E0BA_Deque, &existingEntry);                    
+					/* Since deque is sorted (lowest first), front has lowest priority */
+					if (newEntry.totalCount > existingEntry.totalCount)
+					{
+						/* Remove lowest priority entry (front) */
+						(void)Sum_Algo_Deque_PopFront(&Sum_Ssfm_DID_E0BA_Deque, &existingEntry);
+						/* Add new entry - auto-sorting will place it correctly */
+						(void)Sum_Algo_Deque_PushBack(&Sum_Ssfm_DID_E0BA_Deque, &newEntry);
+					}
+					/* If newEntry.totalCount <= existingEntry.totalCount, reject new entry */                   
+                }
+                else
+                {
+                    /* Deque has space - add new entry, auto-sorting will place it correctly */
+                    (void)Sum_Algo_Deque_PushBack(&Sum_Ssfm_DID_E0BA_Deque, &newEntry);
+                }
+            }
+            
+            /* Synchronize RAM block with updated deque */
+            Sum_Ssfm_DID_E0BA_SynchronizeRamBlock();
+        }
+    }
+}
+
+/**
+ * @brief           Restore DID E0BA data from RAM block to deque and SerialData framework.
+ *                  Called during initialization after NvM restores the RAM block.
+ *                  Restores failure counters to SerialData framework and builds deque.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_RestoreData(void)
+{
+    /*[$Satisfies $DDS_SSFM 208]*/
+    uint8 entryIndex;
+    uint8 dataIndex;
+    Sum_Ssfm_DID_E0BA_Entry entry;
+    uint32 messageId;
+    
+    /* Initialize deque */
+    (void)Sum_Ssfm_DID_E0BA_Init();
+    
+    /* Restore entries from RAM block to deque */
+    for (entryIndex = 0u; entryIndex < SSFM_DID_E0BA_MAX_ENTRIES; entryIndex++)
+    {
+        dataIndex = entryIndex * SSFM_DID_E0BA_MSG_ENTRY_SIZE;
+        
+        /* Extract message ID using portable endianness macro */
+        Sum_Ssfm_DID_ReadBuffer_u32(Sum_Ssfm_SigProtectionCalcIncorrect_BLOCK, &messageId, dataIndex);
+        
+        /* Check if this is a valid entry (non-zero message ID) */
+        if (messageId != 0u)
+        {
+            /* Extract counters */
+            entry.messageId = (uint32)messageId;
+            entry.foiCount = (uint8)Sum_Ssfm_SigProtectionCalcIncorrect_BLOCK[dataIndex + SSFM_DID_E0BA_FOI_COUNT_OFFSET];
+            entry.fpiCount = (uint8)Sum_Ssfm_SigProtectionCalcIncorrect_BLOCK[dataIndex + SSFM_DID_E0BA_FPI_COUNT_OFFSET];
+            entry.totalCount = (uint16)entry.foiCount + (uint16)entry.fpiCount;
+          
+            /* Add entry to deque - auto-sorting will place it correctly */
+            (void)Sum_Algo_Deque_PushBack(&Sum_Ssfm_DID_E0BA_Deque, &entry);
+        }
+    }
+    
+    /* Synchronize RAM block with restored deque */
+    Sum_Ssfm_DID_E0BA_SynchronizeRamBlock();
+}
+
+/**
+ * @brief           Save DID E0BA data to NvM using RTE pattern.
+ *                  Called during shutdown or when data needs to be saved.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_SaveData(void)
+{
+    /*[$Satisfies $DDS_SSFM 207]*/
+    /* Fill RAM buffer with current data by calling the runnable */
+    (void)Runnable_SSFM_DID_E0BA_ReadData(DCM_INITIAL, Sum_Ssfm_SigProtectionCalcIncorrect_BLOCK);
+
+    /* Inform NvM that the RAM buffer has updated value -> it shall be saved in non-volatile memory */
+    (void)Rte_Call_RP_NvM_SSFM_NvMService_DID_E0BA_Data_SetRamBlockStatus(TRUE);
+}
+
+/**
+ * @brief           Reset all DID E0BA data to zero (Service 0x14 clear DTC).
+ *                  Called when diagnostic reset is requested.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_ResetData(void)
+{
+    /*[$Satisfies $DDS_SSFM 206]*/
+    /* Clear deque */
+    (void)Sum_Algo_Deque_Clear(&Sum_Ssfm_DID_E0BA_Deque);
+    
+    /* Clear RAM buffer */
+    (void)Sum_Common_MemSet(Sum_Ssfm_SigProtectionCalcIncorrect_BLOCK, 0u, SSFM_DID_E0BA_FIXED_LENGTH);
+}
+
+/**
+ * @brief           DCM service runnable for DID E0BA ReadData.
+ *                  Called by DCM when DID E0BA is requested 
+ *
+ «IF Get_DID_UsePortAsync(ecu.sSFM, 57530)-»
+ * @param[in]  		OpStatus: Status
+ «ENDIF-»
+ * @param[inout]    Data - uint8 *: The 96 byte buffer to fill in the signal protection data
+ * @param[out]      -
+ * @return          Std_ReturnType: E_OK if successful, E_NOT_OK otherwise
+ */
+FUNC(Std_ReturnType, SUM_SSFM_CODE) Runnable_SSFM_DID_E0BA_ReadData(
+«IF Get_DID_UsePortAsync(ecu.sSFM, 57530)-»																		
+										Dcm_OpStatusType OpStatus,
+«ENDIF-»
+										uint8 * Data)
+{
+    /*[$Satisfies $DDS_SSFM 201]*//*[$Satisfies $DDS_SSFM 205]*/
+    Std_ReturnType ret = E_NOT_OK;
+«IF Get_DID_UsePortAsync(ecu.sSFM, 57530)-»    
+    if ((OpStatus == DCM_INITIAL) || (OpStatus == DCM_PENDING))
+ «ENDIF-»   
+    {
+        if (Data != NULL_PTR)
+        {
+            /* Copy the fixed 96-byte response from RAM block */
+            (void)Sum_Common_MemCopy(Data, Sum_Ssfm_SigProtectionCalcIncorrect_BLOCK, SSFM_DID_E0BA_FIXED_LENGTH);
+            ret = E_OK;
+        }
+    }
+    
+    return ret;
+}
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+«ENDFILE»
+«ENDDEFINE»

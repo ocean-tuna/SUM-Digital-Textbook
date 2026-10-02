@@ -1,0 +1,52 @@
+@startuml Sum_Ssfm_LinResponder_Error_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+"Sum_Ssfm_LinResponder_Error_Manager"
+
+**Interfaces Legend**
+    //ri66 //: Dem_CallbackDTCStatusChangedIndication
+    //ri09 //: LNM_ERRH_IntElectFault<n>
+    //pi06 //: DiagnosticMonitor (Dem_SetEventStatus)
+    //II13 //: SIgnal<n>_Inv
+    //II179 //: Sum_Ssfm_ErrhDebouncerExecution (Error Debouncer)
+    //ri09 //: LNM_ERRH_IntElectFault<n>
+    //ri18 //: LNM_ERRH_NodeStatusId<n>
+    //pi19 //: SSM_LNM_NodeTimeout<n>
+    //II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)   
+end legend
+
+component Sum_Ssfm_LinResponder_Error_Manager as I {
+    portin pri66
+    portin pri09
+    portin pri18
+    portout ppi06
+    portout ppi19
+}
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+
+interface II13
+interface II184
+interface ri09
+interface ri66<<Callback>>
+interface pi06
+	
+
+	pri66 --up-( ri66
+	pri09 --up-( ri09
+    pri18 --up-( ri18
+	ppi06 --down0 pi06
+    ppi19 --down0 pi19
+    I --0 II13
+    I --( II179
+    I --( II184
+
+    
+@enduml

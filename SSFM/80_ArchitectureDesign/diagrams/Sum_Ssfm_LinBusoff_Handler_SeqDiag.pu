@@ -1,0 +1,29 @@
+@startuml Sum_Ssfm_LinBusOff_Handler_SeqDiag
+
+participant Dem as Dem
+participant LNM as LNM
+participant SUSD as SUSD
+participant SWC as SWC
+participant RTE as RTE
+box SUM_SSFM
+    participant Sum_Ssfm_ExecutionManager as ExecutionManager
+    participant Sum_Ssfm_LinBusOff_Handler as LinBusoff
+end box
+
+activate LinBusoff
+group LIN Bus off Sequence of each configured <Lin_network>
+LNM -> LinBusoff: Data event Lin Bus off changed
+LinBusoff->LinBusoff: Trigger Runnable_SSFM_LNM_LIN_Busoff_<n>
+alt (No OBD Support and voltage in range) or (OBD Support and not under voltage)
+    LinBusoff -> SUSD: Ask for battery voltage range
+    SUSD --> LinBusoff
+    LinBusoff ->ExecutionManager: Ask for battery voltage Recovery Timer flag
+    ExecutionManager --> LinBusoff
+    LinBusoff ->ExecutionManager: Ask for Reset Power Up Recovery Timer flag
+    ExecutionManager --> LinBusoff    
+    LinBusoff -> Dem: Set/Reset related Dem events based on reception of notification from LNM
+end
+end
+deactivate LinBusoff
+
+@enduml 

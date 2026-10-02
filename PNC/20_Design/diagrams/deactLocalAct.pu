@@ -1,0 +1,55 @@
+@startuml deactLocalAct
+
+skinparam ParticipanrPadding 20
+skinparam BoxPadding 20
+
+participant BswM
+
+participant "Sensor SWC"
+participant SUM_PNC
+
+autonumber
+"Sensor SWC" -> SUM_PNC: LOCAL ACTIVATION
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_PNC: PNC MainFunction
+note left: Local Activation Criteria == FALSE &&\nRepeat_message_timer EXPIRED
+activate SUM_PNC
+
+SUM_PNC -> BswM: PNC_BswM_CurrentPNCModeReq
+note left: SUM_PNC_NO_COMMUNICATION request
+activate BswM
+deactivate BswM
+
+BswM -> SUM_PNC: PNC_BswM_CurrentPNCModeUser
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_PNC: PNC_REMOTELY_ACTIVE check\n(NM Remote Criterion still active?)
+activate SUM_PNC
+
+SUM_PNC -> SUM_PNC: PduGroupRx_State = SUM_PDUGRP_STOP
+activate SUM_PNC
+
+SUM_PNC -> BswM: PNC_BswM_ComM_Pdugroupswitch_RxReq
+activate BswM
+deactivate BswM
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_PNC: PduGroupTx_State = SUM_PDUGRP_STOP
+activate SUM_PNC
+
+SUM_PNC -> BswM: PNC_BswM_ComM_Pdugroupswitch_TxReq
+activate BswM
+deactivate BswM
+deactivate SUM_PNC
+
+
+SUM_PNC -> SUM_PNC: PNC_ENABLE_CHECK
+activate SUM_PNC
+deactivate SUM_PNC
+
+deactivate SUM_PNC
+deactivate SUM_PNC
+@enduml

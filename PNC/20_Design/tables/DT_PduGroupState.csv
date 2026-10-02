@@ -1,0 +1,5 @@
+4; 8; @@V
+Name; \textbf{PduGroup_state}
+Type; Definition
+Range; SUM_PDUGRP_STOP  0x00\\SUM_PDUGRP_START 0x01
+Description; Used for Mode Request Interface PNC_BswMPduGroupSwitchTxReq<n> and PNC_BswMPduGroupSwitchRxReq<n> (to Com) to request for Tx or Rx PDU Group enabling associated with specific Partial networks. The initial value is set as SUM_PDUGRP_STOP.

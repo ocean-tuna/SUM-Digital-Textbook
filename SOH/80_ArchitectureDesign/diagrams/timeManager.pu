@@ -1,0 +1,21 @@
+@startuml
+'autonumber
+hide footbox
+skinparam ParticipantPadding 20
+
+title Time Manager Runnable sequence diagram
+
+participant OS #lightblue
+box "SOH"
+ participant "Time Manager Runnable" as TimeManager
+ participant "Time Window Filter" as TimeFilter
+ participant "Shutdown Delay Detector" as ShutdownDetector
+end box
+
+
+== Periodic ==
+OS <- TimeManager: GetCounterValue()
+return Counter value
+TimeManager -> TimeFilter : Counter value
+TimeManager -> ShutdownDetector : Counter value
+@enduml

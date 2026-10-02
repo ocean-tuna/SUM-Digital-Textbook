@@ -1,0 +1,57 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_FIM_SingleFxI_Manager.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM Fault Indications Manager - Single FxI Port
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == true-»
+
+#include "Sum_Ssfm.h"
+
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+
+extern FUNC(void, SUM_SSFM_SSM_CODE) Sum_Ssfm_SingleFxI_Manager_Set_FxI(const Sum_Ssfm_SerialData* serialData);
+
+«ENDIF-»
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

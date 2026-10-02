@@ -1,0 +1,16 @@
+16;40;44
+\textbf{Version};\textbf{Description of Changes};\textbf{Author}
+8.0.0_Proto1;First prototype release of RTA-SUM TCS for SDV 2.0 \newline \\ Migration to AUTOSAR 20.11 (RTA-CAR 12.0).;SUM Development Team
+8.0.0_Proto2;Second prototype release of RTA-SUM TCS for SDV 2.0.;SUM Development Team (ETAS/ERS-Tn)
+8.0.0_Proto3;Third prototype release of RTA-SUM TCS for SDV 2.0.;SUM Development Team (ETAS/ERS-Tn)
+8.0.1_Pr1;First prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0 . \\ Checked compatibility with RTA-BSW 12.3.3pr1.; SUM Development Team (ETAS/ERS-Tn) 
+8.0.1_Pr2;Second prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0. ; SUM Development Team (ETAS/ERS-Tn) 
+8.0.1_Pr3;Third prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0. \\Updated the reference name for DID 0xF129.; SUM Development Team (ETAS/ERS-Tn) 
+8.0.1_Pr4;Fourth prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0. \\Added configurable initialization runnable.; SUM Development Team (ETAS/ERS-Tn) 
+8.0.1_Pr5;Fifth prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0. \\Aligned version number.; SUM Development Team (ETAS/ERS-Tn) 
+8.0.1_Pr6;Sixth prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0. \\Aligned version number.; SUM Development Team (ETAS/ERS-Tn) 
+8.0.1_Pr7;Seventh prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0. \\Aligned version number.; SUM Development Team (ETAS/ERS-Tn) 
+8.0.1_Pr8;Eighth prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0. \\Aligned version number.; SUM Development Team (ETAS/ERS-Tn)
+8.0.1_Pr9;Ninth prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0. \\Aligned version number.; SUM Development Team (ETAS/ERS-Tn)
+8.0.1_Pr10;Tenth prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0. \\Aligned version number.; SUM Development Team (ETAS/ERS-Tn)
+8.0.1_Pr11;Eleventh prototype release of RTA-SUM TCS 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0. \\Added TimeSyncMessage service-based communication support.; SUM Development Team (ETAS/ERS-Tn)

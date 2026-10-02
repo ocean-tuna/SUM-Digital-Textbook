@@ -1,0 +1,55 @@
+@startuml Sum_Ssfm_ReceivedSerialDataHandler_SeqDiag
+
+participant RTE as R
+participant Com as C
+box SUM_SSFM
+    participant Sum_Ssfm_ReceivedSerialDataHandler as RecSigHdlr
+	participant Sum_Ssfm_SecurityStatusManager as SecStatMgr
+	participant Sum_Ssfm_ContinuousOperationStatusManager as ContOpStatMgr
+	participant Sum_Ssfm_ProtStatusManager as ProtStatMgr
+	participant Sum_Ssfm_SafetyStatusManager as SafStatMgr
+	participant Sum_Ssfm_SingleFxI_Manager as FxIMgr
+	participant Sum_Ssfm_Ssm_ExecutionManager as EMgr
+	participant Sum_Ssfm_NodeStatus_Manager as NM
+    participant Sum_Ssfm_Service_Manager as SM
+end box
+
+activate RecSigHdlr
+
+activate EMgr
+EMgr -> RecSigHdlr: Sum_Ssfm_SsmFuncPermitExecution
+deactivate EMgr
+
+activate R
+activate C
+C -> R: Rte_ComCbk
+deactivate C
+R -> RecSigHdlr: SSFM Runnable
+alt Sum_Ssfm_SsmFuncPermitExecution true
+	RecSigHdlr -> R: Read the SerialData data from the RTE
+	deactivate R
+
+	RecSigHdlr -> SecStatMgr: Ask to reset the SerialData FcI interface
+	RecSigHdlr -> ContOpStatMgr: Ask to set the SerialData FoI interface based on transformer error
+
+	alt Safety Protected SerialData
+		RecSigHdlr -> ProtStatMgr: Ask to set the SerialData FpI interface based on transformer error
+    else Non-Safety-Protected SerialData
+		RecSigHdlr -> ProtStatMgr: Ask to reset the FpI interface 
+    end
+
+	RecSigHdlr -> SafStatMgr: Ask to update the SerialData FsI interface
+	opt single port FxI enabled
+		RecSigHdlr -> FxIMgr: Ask to update the SerialData FxI interface
+	end
+
+	alt LcFA enabled
+		alt Service-Based traffic
+			RecSigHdlr -> SM: Resolve serial data provider and loss of function DTC
+		end
+		RecSigHdlr -> NM: Update node status at serial data level
+	end
+end
+deactivate RecSigHdlr
+
+@enduml 

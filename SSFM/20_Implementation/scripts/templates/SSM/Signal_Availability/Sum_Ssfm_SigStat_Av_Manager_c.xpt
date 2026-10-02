@@ -1,0 +1,200 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_SigStat_Av_Manager.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM Signal Status Availability Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+«FOREACH Ssfm_ListOfAllAssociatedPNsIdsToSerialDatas(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.toList()) AS PNId-»
+  /**
+ * @brief           SSFM/SSM runnable function to be called upon any change in the status of PN «PNId»
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE*/
+FUNC (void, SUM_SSM_CODE) Runnable_SSFM_PNStatusChanged_«PNId»(void)
+{
+	/*[$Satisfies $DDS_SSFM 043]*/
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA ITERATOR i-»
+	«IF Ssfm_IsSerialDataAssociatedWithPN(SSFM_SERIAL_DATA, PNId)-»
+	Sum_Ssfm_SigStsAvailability_Manager_CANETH(&Sum_Ssfm_SerialDatas[«i.counter0»]);
+	«ENDIF-»
+«ENDFOREACH-»
+
+	/*[$Satisfies $DDS_SSFM 044]*/
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA ITERATOR i-»
+	«IF Ssfm_IsSerialDataAssociatedWithPN(SSFM_SERIAL_DATA, PNId)-»
+	«IF Ssfm_IsSerialDataLcFA(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo, SSFM_SERIAL_DATA)-»
+	if(Sum_Ssfm_Node_MissingMsg_TestEnableConditions(&Sum_Ssfm_SerialDatas[«i.counter0»])){
+		Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm(&Sum_Ssfm_SerialDatas[«i.counter0»]);
+	}
+	«ENDIF-»
+	«ENDIF-»
+«ENDFOREACH-»
+}
+
+«ENDFOREACH-»
+
+«FOREACH Ssfm_GetAllCANETHChannelIDs(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.toList()) AS ChId-»
+  /**
+ * @brief           SSFM/SSM runnable function to be called upon any change in the status of
+ *					DIAG Disable Normal Communication for channel «ChId»
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE*/
+FUNC (void, SUM_SSM_CODE) Runnable_SSFM_DIAG_DisableNormalCommChanged_Ch«ChId»(void)
+{
+	/*[$Satisfies $DDS_SSFM 043]*/
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA ITERATOR i-»
+	«IF Ssfm_IsSerialDataAssociatedWithChannel(SSFM_SERIAL_DATA, ChId)-»
+	Sum_Ssfm_SigStsAvailability_Manager_CANETH(&Sum_Ssfm_SerialDatas[«i.counter0»]);
+	«ENDIF-»
+«ENDFOREACH-»
+	/*[$Satisfies $DDS_SSFM 044]*/
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA ITERATOR i-»
+	«IF Ssfm_IsSerialDataAssociatedWithChannel(SSFM_SERIAL_DATA, ChId)-»
+	«IF Ssfm_IsSerialDataLcFA(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo, SSFM_SERIAL_DATA)-»
+	if(Sum_Ssfm_Node_MissingMsg_TestEnableConditions(&Sum_Ssfm_SerialDatas[«i.counter0»])){
+		Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm(&Sum_Ssfm_SerialDatas[«i.counter0»]);
+	}
+	«ENDIF-»
+	«ENDIF-»
+«ENDFOREACH-»
+}
+«ENDFOREACH-»
+
+«IF Ssfm_AnyServiceBased(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+/**
+ * @brief           SSFM/SSM runnable function to be called upon any change in the status of
+ *					Service Activation
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE*/
+FUNC (void, SUM_SSM_CODE) Runnable_SSFM_ServiceActivationStatusReceived(void)
+{
+	/*[$Satisfies $DDS_SSFM 076]*/
+	SPM_ServiceActivationStatusNotifType status;
+	boolean is_activated;
+	boolean is_dtc_allowed;
+	boolean is_changed;
+	uint16 i, j;
+
+	(void)Rte_Read_RP_SPM_SSFM_ServiceActivationStatusNotification_StatusNotification(&status);
+
+	for(i = 0; i < SSFM_SSM_NUM_OF_SERIALDATAS; i++){
+		if(Sum_Ssfm_SerialDatas[i].ServiceInfo != NULL_PTR){
+			is_activated = FALSE;
+			is_dtc_allowed = FALSE;
+			for(j = 0; j < status.ListLength; j++){
+				if(Sum_Ssfm_SerialDatas[i].ServiceInfo->ServiceID == status.ServiceIDList[j]){
+					is_dtc_allowed = status.DTCAllowedList[j];
+					is_activated = TRUE;
+					break;
+				}
+			}
+			is_changed = (is_activated != Sum_Ssfm_SerialDatas[i].ServiceInfo->IsActive);
+			Sum_Ssfm_SerialDatas[i].ServiceInfo->IsActive = is_activated;
+			Sum_Ssfm_SerialDatas[i].ServiceInfo->DTCAllowed = is_dtc_allowed;
+			if(is_changed){
+				/* Manage service activation timer */
+				if(is_activated)
+				{
+					/* Service just became active - set timestamp */
+					(void)GetCounterValue(SSFM_1ms_Counter, &Sum_Ssfm_SerialDatas[i].ServiceInfo->AvailableSince);
+				}
+				else
+				{
+					/* Service just became inactive - reset timestamp */
+					Sum_Ssfm_SerialDatas[i].ServiceInfo->AvailableSince = 0u;
+				}
+				Sum_Ssfm_SigStsAvailability_Manager_CANETH(&Sum_Ssfm_SerialDatas[i]);
+				if(Sum_Ssfm_Node_MissingMsg_TestEnableConditions(&Sum_Ssfm_SerialDatas[i])){
+					Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm(&Sum_Ssfm_SerialDatas[i]);
+				}
+			}
+		}
+	}
+}
+«ENDIF-»
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

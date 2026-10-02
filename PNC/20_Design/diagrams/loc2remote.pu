@@ -1,0 +1,12 @@
+@startuml loc2remote
+
+state PN_ACTIVE {
+    state PNC_LOCALLY_ACTIVE: * Request the activation of PN via BswM mode request
+    state PNC_LOCALLY_ACTIVE: * PNC_Activation_Req_Timer == ON
+    state PNC_REMOTELY_ACTIVE: * NM Deadline Monitoring active
+    state PNC_REMOTELY_ACTIVE: * Transitions to PNC_ENABLE_CHECK on DM timer expiry
+}
+
+PNC_LOCALLY_ACTIVE --> PNC_REMOTELY_ACTIVE: (Local Activation Criteria == FALSE) &&\n Repeat_message_timer == EXPIRED
+
+@enduml

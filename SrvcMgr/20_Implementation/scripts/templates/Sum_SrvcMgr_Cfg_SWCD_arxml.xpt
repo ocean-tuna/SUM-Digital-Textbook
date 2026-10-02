@@ -1,0 +1,1253 @@
+«IMPORT bsw»
+«IMPORT bsw::SrvcMgrModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::Sum_SrvcMgr_Utils»
+
+«DEFINE Generate FOR Autosar»
+  «EXPAND CreateSrvcMgrCfg FOR this.ecu.srvcMgr»
+«ENDDEFINE»
+«DEFINE CreateSrvcMgrCfg FOR SrvcMgr-»
+«FILE "Sum_SrvcMgr_Cfg_SWCD.arxml"»<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00049.xsd">
+ <!--
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SrvcMgr
+ * Date        : Apr 20, 2026
+ * Revision    : 8.0.1_Pr16
+ * Description : Software Component Description
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+-->
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>SUM_SrvcMgr</SHORT-NAME>
+      <AR-PACKAGES>
+        <AR-PACKAGE>
+          <SHORT-NAME>Component</SHORT-NAME>
+          <ELEMENTS>
+            <APPLICATION-SW-COMPONENT-TYPE>
+              <SHORT-NAME>SUM_SrvcMgr</SHORT-NAME>
+              <ADMIN-DATA>
+                <SDGS>
+                  <SDG GID="Master">
+                    <SD>true</SD>
+                  </SDG>
+                </SDGS>
+              </ADMIN-DATA>
+              <PORTS>
+              <!-- REQUIRED PORTS -->
+				<R-PORT-PROTOTYPE>
+					<SHORT-NAME>RP_SrvcMgr_CalibrationController</SHORT-NAME>
+					<REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_CalibrationController</REQUIRED-INTERFACE-TREF>
+				</R-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SUSD_SrvcMgr_SUSD_PermitExecution</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SUSD_PermitExecution</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SUSD_SrvcMgr_BattVltgSnsrStsAvl</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SUSD_BattVltgSnsrStsAvl</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+
+				<P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_SUSD_ShutdownPermission</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SrvcMgr_ShutdownPermission</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_DCM_DID_E0CC_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                  <PROVIDED-COM-SPECS>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CCDataRef(sum_SrvcMgr_ConfigSet)»/ReadData</OPERATION-REF>
+                    </SERVER-COM-SPEC>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CCDataRef(sum_SrvcMgr_ConfigSet)»/ConditionCheckRead</OPERATION-REF>
+                    </SERVER-COM-SPEC>
+                  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CCDataRef(sum_SrvcMgr_ConfigSet)»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«IF sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref != null -»
+                «REM»[$Satisfies $DDS_SrvcMgr 008]«ENDREM-»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_Dcm_RID_0612</SHORT-NAME>
+                  <PROVIDED-COM-SPECS>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/RoutineServices_«sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»/Start</OPERATION-REF>
+                      <QUEUE-LENGTH>1</QUEUE-LENGTH>
+                    </SERVER-COM-SPEC>
+                  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/RoutineServices_«sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«ENDIF-»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_DCM_DID_E0CD_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                  <PROVIDED-COM-SPECS>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CDDataRef(sum_SrvcMgr_ConfigSet)»/ReadData</OPERATION-REF>
+                    </SERVER-COM-SPEC>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CDDataRef(sum_SrvcMgr_ConfigSet)»/ConditionCheckRead</OPERATION-REF>
+                    </SERVER-COM-SPEC>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CDDataRef(sum_SrvcMgr_ConfigSet)»/ReadDataLength</OPERATION-REF>
+                    </SERVER-COM-SPEC>
+                  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CDDataRef(sum_SrvcMgr_ConfigSet)»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_DCM_DID_E0CE_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                  <PROVIDED-COM-SPECS>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CEDataRef(sum_SrvcMgr_ConfigSet)»/ReadData</OPERATION-REF>
+                    </SERVER-COM-SPEC>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CEDataRef(sum_SrvcMgr_ConfigSet)»/ConditionCheckRead</OPERATION-REF>
+                    </SERVER-COM-SPEC>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CEDataRef(sum_SrvcMgr_ConfigSet)»/ReadDataLength</OPERATION-REF>
+                    </SERVER-COM-SPEC>
+                  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CEDataRef(sum_SrvcMgr_ConfigSet)»</PROVIDED-INTERFACE-TREF>
+				</P-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_ServiceCalibrationOff</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_ServiceCalibrationOff</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+				«REM»[$Satisfies $DDS_SrvcMgr 009]«ENDREM-»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_Dcm_RID_0654_TriggerLearningSession</SHORT-NAME>
+                  <PROVIDED-COM-SPECS>
+                    <SERVER-COM-SPEC>
+                      <OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/RoutineServices_«sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.shortName»/Start</OPERATION-REF>
+                      <QUEUE-LENGTH>1</QUEUE-LENGTH>
+                    </SERVER-COM-SPEC>
+                  </PROVIDED-COM-SPECS>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/RoutineServices_«sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.shortName»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_SPM_ActivateServices</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SrvcMgr_SPM_ActivateServices</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+				<P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_Errh_U19A6_54_Status</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SrvcMgr_ERRH_U19A6_54_Status</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_SSFM_U19A6_57_Status</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SSFM_ClearDiagReq</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SSFM_ClearDiagReq</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«IF !SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»                            
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_Com_SrvcMgr_VePSAR_b_PropSysActv</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/SUM_SrvcMgr/PortInterfaces/VePSAR_b_PropSysActv</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_Com_SrvcMgr_YeVSPR_v_DrvnVehicle</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/SUM_SrvcMgr/PortInterfaces/YeVSPR_v_DrvnVehicle</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>  
+«ELSE-»       
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_Com_SrvcMgr_VeActvProp_YeDrvnVeh</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/SUM_SrvcMgr/PortInterfaces/VeActvProp_YeDrvnVeh</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE> 
+«ENDIF-»                                
+                <R-PORT-PROTOTYPE> 
+                  <SHORT-NAME>RP_SPM_SrvcMgr_GetDTCIdentifier</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SPM_GetDTCIdentifier</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SSFM_SrvcMgr_SDMissingMessage</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SSFM_SrvcMgr_SDMissingMessage</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_SrvcMgr_SSFM_LearningTableStatus</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SrvcMgr_SSFM_LearningTableStatus</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«IF Susd_Ssfm_IsSinglePortSupported(sum_SrvcMgr_ConfigSet.eRootContainer.sSFM)-»
+«IF SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»
+                <!-- FxFA (single-port mode, same signal/service): one port for VSAD+PSA (IDOC-1092) -->
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SSFM_SrvcMgr_FxFA_VSAD_PSA</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SignalGroup_FxFA</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«ELSE-»
+                <!-- FxFA (single-port mode, different signals): separate ports for VSAD and PSA (IDOC-1092) -->
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SSFM_SrvcMgr_FxFA_VSAD</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SignalGroup_FxFA</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SSFM_SrvcMgr_FxFA_PSA</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SignalGroup_FxFA</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«ENDIF-»
+«ELSE-»
+«IF SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»
+                <!-- FsFA (two-port mode, same signal/service): one port for VSAD+PSA (IDOC-1092) -->
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SSFM_SrvcMgr_FsFA_VSAD_PSA</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SignalGroup_FsFA</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«ELSE-»
+                <!-- FsFA (two-port mode, different signals): separate ports for VSAD and PSA (IDOC-1092) -->
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SSFM_SrvcMgr_FsFA_VSAD</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SignalGroup_FsFA</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SSFM_SrvcMgr_FsFA_PSA</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SignalGroup_FsFA</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«ENDIF-»
+«ENDIF-»
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SrvcMgr_SPM_SdLearningStatusIndication</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SPM_SDLearningStatusIndication</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+              </PORTS>
+              <INTERNAL-BEHAVIORS>
+                <SWC-INTERNAL-BEHAVIOR>
+                  <SHORT-NAME>SUM_SrvcMgr_IB</SHORT-NAME>
+                  <DATA-TYPE-MAPPING-REFS>
+                    «IF sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_DataTypeMappingSet.toSet().size > 0-»
+                    «FOREACH sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_DataTypeMappingSet.toSet() AS dataTypeMapping-»
+                    <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">«dataTypeMapping»</DATA-TYPE-MAPPING-REF>
+                    «ENDFOREACH-»
+                    «ENDIF-»
+                  </DATA-TYPE-MAPPING-REFS>
+                    <EVENTS>
+                      <OPERATION-INVOKED-EVENT>
+                        <SHORT-NAME>OIE_SrvcMgr_ActivateServices</SHORT-NAME>
+                        <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_ActivateServices</START-ON-EVENT-REF>
+                        <OPERATION-IREF>
+                          <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SPM_ActivateServices</CONTEXT-P-PORT-REF>
+                          <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SrvcMgr_SPM_ActivateServices/ActivateServices</TARGET-PROVIDED-OPERATION-REF>
+                        </OPERATION-IREF>
+                      </OPERATION-INVOKED-EVENT>
+                      <OPERATION-INVOKED-EVENT>
+                        <SHORT-NAME>OIE_SrvcMgr_DisableService</SHORT-NAME>
+                        <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_DisableService</START-ON-EVENT-REF>
+                        <OPERATION-IREF>
+                          <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_ServiceCalibrationOff</CONTEXT-P-PORT-REF>
+                          <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_ServiceCalibrationOff/SrvcMgr_DisableService</TARGET-PROVIDED-OPERATION-REF>
+                        </OPERATION-IREF>
+                      </OPERATION-INVOKED-EVENT>
+                      <OPERATION-INVOKED-EVENT>
+                        <SHORT-NAME>OIE_SrvcMgr_DisableServiceGroup</SHORT-NAME>
+                        <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_DisableServiceGroup</START-ON-EVENT-REF>
+                        <OPERATION-IREF>
+                          <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_ServiceCalibrationOff</CONTEXT-P-PORT-REF>
+                          <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_ServiceCalibrationOff/SrvcMgr_DisableServiceGroup</TARGET-PROVIDED-OPERATION-REF>
+                        </OPERATION-IREF>
+                      </OPERATION-INVOKED-EVENT>
+					<OPERATION-INVOKED-EVENT>
+						<SHORT-NAME>OIE_DID_Service_Discovery_Learning_Table_Status_Data_ReadData_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+						<START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_DID_E0CC_ReadData_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</START-ON-EVENT-REF>
+						<OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CC_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CCDataRef(sum_SrvcMgr_ConfigSet)»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+						</OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+					<OPERATION-INVOKED-EVENT>
+						<SHORT-NAME>OIE_DID_Service_Discovery_Learning_Table_Status_Data_CheckRead_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+						<START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_DID_E0CC_CheckRead_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</START-ON-EVENT-REF>
+						<OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CC_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CCDataRef(sum_SrvcMgr_ConfigSet)»/ConditionCheckRead</TARGET-PROVIDED-OPERATION-REF>
+						</OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+
+          <OPERATION-INVOKED-EVENT>
+						<SHORT-NAME>OIE_DID_Client_Incomplete_Learning_Table_ReadData_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+						<START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_DID_E0CD_ReadData_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</START-ON-EVENT-REF>
+						<OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CD_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CDDataRef(sum_SrvcMgr_ConfigSet)»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+						</OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+					<OPERATION-INVOKED-EVENT>
+						<SHORT-NAME>OIE_DID_Client_Incomplete_Learning_Table_CheckRead_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+						<START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_DID_E0CD_CheckRead_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</START-ON-EVENT-REF>
+						<OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CD_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CDDataRef(sum_SrvcMgr_ConfigSet)»/ConditionCheckRead</TARGET-PROVIDED-OPERATION-REF>
+						</OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+
+					<OPERATION-INVOKED-EVENT>
+						<SHORT-NAME>OIE_DID_Client_Incomplete_Learning_Table_ReadDataLength_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+						<START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_DID_E0CD_ReadDataLength_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</START-ON-EVENT-REF>
+						<OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CD_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CDDataRef(sum_SrvcMgr_ConfigSet)»/ReadDataLength</TARGET-PROVIDED-OPERATION-REF>
+						</OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+          <OPERATION-INVOKED-EVENT>
+						<SHORT-NAME>OIE_DID_Server_Incomplete_Learning_Table_ReadData_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+						<START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_DID_E0CE_ReadData_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</START-ON-EVENT-REF>
+						<OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CE_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CEDataRef(sum_SrvcMgr_ConfigSet)»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+						</OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+					<OPERATION-INVOKED-EVENT>
+						<SHORT-NAME>OIE_DID_Server_Incomplete_Learning_Table_CheckRead_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+						<START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_DID_E0CE_CheckRead_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</START-ON-EVENT-REF>
+						<OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CE_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CEDataRef(sum_SrvcMgr_ConfigSet)»/ConditionCheckRead</TARGET-PROVIDED-OPERATION-REF>
+						</OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+					<OPERATION-INVOKED-EVENT>
+						<SHORT-NAME>OIE_DID_Server_Incomplete_Learning_Table_ReadDataLength_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+						<START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_DID_E0CE_ReadDataLength_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</START-ON-EVENT-REF>
+						<OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CE_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«GetFirstDidE0CEDataRef(sum_SrvcMgr_ConfigSet)»/ReadDataLength</TARGET-PROVIDED-OPERATION-REF>
+						</OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+«IF sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref != null -»
+          «REM»[$Satisfies $DDS_SrvcMgr 008]«ENDREM-»
+
+          <OPERATION-INVOKED-EVENT>
+            <SHORT-NAME>OIE_RoutineService_612_Start</SHORT-NAME>
+              <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_Retrieve_Learning_Table_612</START-ON-EVENT-REF>
+                <OPERATION-IREF>
+                    <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_Dcm_RID_0612</CONTEXT-P-PORT-REF>
+                    <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/RoutineServices_«sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»/Start</TARGET-PROVIDED-OPERATION-REF>
+                </OPERATION-IREF>
+          </OPERATION-INVOKED-EVENT>
+«ENDIF-»
+                    <TIMING-EVENT>
+                      <SHORT-NAME>TE_SrvcMgr_ExecutionManager</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_ExecutionManager</START-ON-EVENT-REF>
+                      <PERIOD>«sum_SrvcMgr_General.sum_SrvcMgr_ExecutionManagerPeriodicity / 1000»</PERIOD>
+                    </TIMING-EVENT>
+«IF sum_SrvcMgr_General.sum_SrvcMgr_GenerateInitRunnable == true-»
+					 <TIMING-EVENT>
+                      <SHORT-NAME>TE_SrvcMgr_Init</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_Init</START-ON-EVENT-REF>
+                      <PERIOD>«sum_SrvcMgr_General.sum_SrvcMgr_InitFuncPeriodicity/1000-»</PERIOD>
+                    </TIMING-EVENT>
+«ENDIF-»
+					«REM»[$Satisfies $DDS_SrvcMgr 009]«ENDREM-»
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_SrvcMgr_RID_0654</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_RID_0654</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_Dcm_RID_0654_TriggerLearningSession</CONTEXT-P-PORT-REF>
+                        <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/RoutineServices_«sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.shortName»/Start</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+
+                    <DATA-RECEIVED-EVENT>
+                      <SHORT-NAME>DRE_SrvcMgr_ClearDiagReq</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_ClearDiagReq_Event</START-ON-EVENT-REF>
+                      <DATA-IREF>
+                        <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_ClearDiagReq</CONTEXT-R-PORT-REF>
+                        <TARGET-DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SSFM_ClearDiagReq/SSFMClearDiagReq</TARGET-DATA-ELEMENT-REF>
+                      </DATA-IREF>
+                    </DATA-RECEIVED-EVENT>
+
+                    <DATA-RECEIVED-EVENT>
+                      <SHORT-NAME>DRE_SrvcMgr_SSFM_SDMissingMessage</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB/RE_SrvcMgr_SSFM_SDMissingMessage</START-ON-EVENT-REF>
+                      <DATA-IREF>
+                        <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_SDMissingMessage</CONTEXT-R-PORT-REF>
+                        <TARGET-DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SSFM_SrvcMgr_SDMissingMessage/SSFM_ServiceId</TARGET-DATA-ELEMENT-REF>
+                      </DATA-IREF>
+                    </DATA-RECEIVED-EVENT>
+
+                   </EVENTS>
+                   <PORT-API-OPTIONS>
+					<PORT-API-OPTION>
+						<ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+						<INDIRECT-API>false</INDIRECT-API>
+						<PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SrvcMgr_CalibrationController</PORT-REF>
+					</PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SUSD_SrvcMgr_SUSD_PermitExecution</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SUSD_SrvcMgr_BattVltgSnsrStsAvl</PORT-REF>
+                    </PORT-API-OPTION>
+
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SUSD_ShutdownPermission</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_ServiceCalibrationOff</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+					            <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+					            <INDIRECT-API>false</INDIRECT-API>
+					            <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CD_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</PORT-REF>
+					          </PORT-API-OPTION>
+					          <PORT-API-OPTION>
+					           <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+					           <INDIRECT-API>false</INDIRECT-API>
+					           <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CC_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</PORT-REF>
+					          </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+					            <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+	                    <INDIRECT-API>false</INDIRECT-API>
+					            <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CE_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</PORT-REF>
+					          </PORT-API-OPTION>
+«IF sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref != null -»
+
+					<PORT-API-OPTION>
+					 <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+					 <INDIRECT-API>false</INDIRECT-API>
+					 <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_DCM_DID_E0CC_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</PORT-REF>
+					</PORT-API-OPTION>
+«ENDIF-»
+«IF sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref != null -»
+          «REM»[$Satisfies $DDS_SrvcMgr 008]«ENDREM-»
+
+					<PORT-API-OPTION>
+					 <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+					 <INDIRECT-API>false</INDIRECT-API>
+					 <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_Dcm_RID_0612</PORT-REF>
+					</PORT-API-OPTION>
+«ENDIF-»
+					«REM»[$Satisfies $DDS_SrvcMgr 009]«ENDREM-»
+                    <PORT-API-OPTION>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_Dcm_RID_0654_TriggerLearningSession</PORT-REF>
+                    </PORT-API-OPTION>
+	              <PORT-API-OPTION>
+	                <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+	                <INDIRECT-API>false</INDIRECT-API>
+	                <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_Errh_U19A6_54_Status</PORT-REF>
+	              </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SSFM_U19A6_57_Status</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_ClearDiagReq</PORT-REF>
+                    </PORT-API-OPTION>
+«IF !SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»                      
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                    «IF SrvcMgr_IsE2EConfigured(sum_SrvcMgr_ConfigSet, "PropSysActv") || SrvcMgr_IsPSAServiceBased(sum_SrvcMgr_ConfigSet)-»
+                      <ERROR-HANDLING>TRANSFORMER-ERROR-HANDLING</ERROR-HANDLING>
+                    «ENDIF-»
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_Com_SrvcMgr_VePSAR_b_PropSysActv</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                     «IF SrvcMgr_IsE2EConfigured(sum_SrvcMgr_ConfigSet, "VehSpdAvgDrvn") || SrvcMgr_IsVehSpdAvgDrvnServiceBased(sum_SrvcMgr_ConfigSet)-»
+                      <ERROR-HANDLING>TRANSFORMER-ERROR-HANDLING</ERROR-HANDLING>
+                    «ENDIF-»
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_Com_SrvcMgr_YeVSPR_v_DrvnVehicle</PORT-REF>
+                    </PORT-API-OPTION>    
+«ELSE-»  
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                    «IF SrvcMgr_IsE2EConfigured(sum_SrvcMgr_ConfigSet, "PropSysActv") || SrvcMgr_IsPSAServiceBased(sum_SrvcMgr_ConfigSet)-»
+                      <ERROR-HANDLING>TRANSFORMER-ERROR-HANDLING</ERROR-HANDLING>
+                    «ENDIF-»
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_Com_SrvcMgr_VeActvProp_YeDrvnVeh</PORT-REF>
+                    </PORT-API-OPTION> 
+«ENDIF-»                                    
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SPM_SrvcMgr_GetDTCIdentifier</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_SDMissingMessage</PORT-REF>
+                    </PORT-API-OPTION>
+					<PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SSFM_LearningTableStatus</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SrvcMgr_SPM_SdLearningStatusIndication</PORT-REF>
+                    </PORT-API-OPTION>
+«IF Susd_Ssfm_IsSinglePortSupported(sum_SrvcMgr_ConfigSet.eRootContainer.sSFM)-»
+«IF SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FxFA_VSAD_PSA</PORT-REF>
+                    </PORT-API-OPTION>
+«ELSE-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FxFA_VSAD</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FxFA_PSA</PORT-REF>
+                    </PORT-API-OPTION>
+«ENDIF-»
+«ELSE-»
+«IF SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FsFA_VSAD_PSA</PORT-REF>
+                    </PORT-API-OPTION>
+«ELSE-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FsFA_VSAD</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FsFA_PSA</PORT-REF>
+                    </PORT-API-OPTION>
+«ENDIF-»
+«ENDIF-»
+                   </PORT-API-OPTIONS>
+                   <RUNNABLES>
+                   <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SrvcMgr_ExecutionManager</SHORT-NAME>
+                      <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                        <VARIABLE-ACCESS>
+                      	  <SHORT-NAME>DRPA_SrvcMgr_ExecutionStatus</SHORT-NAME>
+                      	    <ACCESSED-VARIABLE>
+                        	  <AUTOSAR-VARIABLE-IREF>
+                          	    <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SUSD_SrvcMgr_SUSD_PermitExecution</PORT-PROTOTYPE-REF>
+                          		<TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_PermitExecution/SUSD_SWC_ExecutionStatus</TARGET-DATA-PROTOTYPE-REF>
+                        	  </AUTOSAR-VARIABLE-IREF>
+                      		</ACCESSED-VARIABLE>
+                    	</VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                      	  <SHORT-NAME>DRPA_BattVltgSnsrStsAvl</SHORT-NAME>
+                      	    <ACCESSED-VARIABLE>
+                        	  <AUTOSAR-VARIABLE-IREF>
+                          	    <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SUSD_SrvcMgr_BattVltgSnsrStsAvl</PORT-PROTOTYPE-REF>
+                          		<TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_BattVltgSnsrStsAvl/BattVltgSnsrStsEnum</TARGET-DATA-PROTOTYPE-REF>
+                        	  </AUTOSAR-VARIABLE-IREF>
+                      		</ACCESSED-VARIABLE>
+                    	</VARIABLE-ACCESS>
+                    </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+
+                    <DATA-SEND-POINTS>
+                        <VARIABLE-ACCESS>
+						  <SHORT-NAME>DSP_SrcvMgr_ShutdownPermission</SHORT-NAME>
+                  		  <ACCESSED-VARIABLE>
+                    	    <AUTOSAR-VARIABLE-IREF>
+                      		  <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SUSD_ShutdownPermission</PORT-PROTOTYPE-REF>
+                      		  <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SrvcMgr_ShutdownPermission/SUSD_UserRequest</TARGET-DATA-PROTOTYPE-REF>
+                    		</AUTOSAR-VARIABLE-IREF>
+                  		  </ACCESSED-VARIABLE>
+						</VARIABLE-ACCESS>
+«IF sum_SrvcMgr_General.sum_SrvcMgr_GenerateInitRunnable == false-»
+	                    <VARIABLE-ACCESS>
+				          <SHORT-NAME>DSP_SrvcMgr_U19A6_54_Status</SHORT-NAME>
+	              		  <ACCESSED-VARIABLE>
+	                	    <AUTOSAR-VARIABLE-IREF>
+	                  		  <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_Errh_U19A6_54_Status</PORT-PROTOTYPE-REF>
+	                  		  <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SrvcMgr_ERRH_U19A6_54_Status/U19A6_54_Status</TARGET-DATA-PROTOTYPE-REF>
+	                		</AUTOSAR-VARIABLE-IREF>
+	              		  </ACCESSED-VARIABLE>
+						</VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_SrvcMgr_U19A6_57_Status</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SSFM_U19A6_57_Status</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57/invalid</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+«ENDIF-»
+					</DATA-SEND-POINTS>
+«IF sum_SrvcMgr_General.sum_SrvcMgr_GenerateInitRunnable == false-»
+					  <SERVER-CALL-POINTS>
+						<SYNCHRONOUS-SERVER-CALL-POINT>
+						<SHORT-NAME>SynchronousServerCallPoint_surveyServiceDisableCalibrations</SHORT-NAME>
+						<OPERATION-IREF>
+							<CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SrvcMgr_CalibrationController</CONTEXT-R-PORT-REF>
+							<TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_CalibrationController/surveyServiceDisableCalibrations</TARGET-REQUIRED-OPERATION-REF>
+						</OPERATION-IREF>
+						</SYNCHRONOUS-SERVER-CALL-POINT>
+					  </SERVER-CALL-POINTS>
+«ENDIF-»
+                    <SYMBOL>Runnable_SrvcMgr_ExecutionManager</SYMBOL>
+                    </RUNNABLE-ENTITY>
+«IF sum_SrvcMgr_General.sum_SrvcMgr_GenerateInitRunnable == true-»
+					<RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SrvcMgr_Init</SHORT-NAME>
+	                    <DATA-SEND-POINTS>
+	                        <VARIABLE-ACCESS>
+					<SHORT-NAME>DSP_SrvcMgr_U19A6_54_Status</SHORT-NAME>
+	                  		  <ACCESSED-VARIABLE>
+	                    	    <AUTOSAR-VARIABLE-IREF>
+	                      		  <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_Errh_U19A6_54_Status</PORT-PROTOTYPE-REF>
+	                      		  <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SrvcMgr_ERRH_U19A6_54_Status/U19A6_54_Status</TARGET-DATA-PROTOTYPE-REF>
+	                    		</AUTOSAR-VARIABLE-IREF>
+	                  		  </ACCESSED-VARIABLE>
+							</VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_SrvcMgr_U19A6_57_Status</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SSFM_U19A6_57_Status</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57/invalid</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+            						<VARIABLE-ACCESS>
+                          <SHORT-NAME>LearningTableStatus</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SSFM_LearningTableStatus</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SrvcMgr_SSFM_LearningTableStatus/LearningTableStatus</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+						</DATA-SEND-POINTS>
+					  <SERVER-CALL-POINTS>
+						<SYNCHRONOUS-SERVER-CALL-POINT>
+						<SHORT-NAME>SynchronousServerCallPoint_surveyServiceDisableCalibrations</SHORT-NAME>
+						<OPERATION-IREF>
+							<CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SrvcMgr_CalibrationController</CONTEXT-R-PORT-REF>
+							<TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_CalibrationController/surveyServiceDisableCalibrations</TARGET-REQUIRED-OPERATION-REF>
+						</OPERATION-IREF>
+						</SYNCHRONOUS-SERVER-CALL-POINT>
+					  </SERVER-CALL-POINTS>
+					  <SYMBOL>Runnable_SrvcMgr_Init</SYMBOL>
+                    </RUNNABLE-ENTITY>
+«ENDIF-»
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SrvcMgr_DID_E0CC_ReadData_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                      <SYMBOL>Runnable_SrvcMgr_DID_E0CC_ReadData</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SrvcMgr_DID_E0CC_CheckRead_«GetFirstDidE0CCSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                      <SYMBOL>Runnable_SrvcMgr_DID_E0CC_CheckRead</SYMBOL>
+                    </RUNNABLE-ENTITY>
+«IF sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref != null -»
+                      <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_Retrieve_Learning_Table_612</SHORT-NAME>
+                        <DATA-RECEIVE-POINT-BY-ARGUMENTS>                           
+«IF !SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»                                             
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_VePSAR_b_PropSysActv</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_Com_SrvcMgr_VePSAR_b_PropSysActv</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_SrvcMgr/PortInterfaces/VePSAR_b_PropSysActv/VePSAR_b_PropSysActvRxSignal</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_YeVSPR_v_DrvnVehicle</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_Com_SrvcMgr_YeVSPR_v_DrvnVehicle</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_SrvcMgr/PortInterfaces/YeVSPR_v_DrvnVehicle/YeVSPR_v_DrvnVehicleRxSignal</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+«ELSE -»
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_VeActvProp_YeDrvnVeh</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_Com_SrvcMgr_VeActvProp_YeDrvnVeh</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_SrvcMgr/PortInterfaces/VeActvProp_YeDrvnVeh/VeActvProp_YeDrvnVeh_RxSignal</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+
+«ENDIF-»             
+                        </DATA-RECEIVE-POINT-BY-ARGUMENTS>           
+                        <SYMBOL>Runnable_SrvcMgr_RID_0612</SYMBOL>
+                      </RUNNABLE-ENTITY>
+«ENDIF-»
+                      <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_ActivateServices</SHORT-NAME>
+                        <SYMBOL>Runnable_SrvcMgr_ActivateServices</SYMBOL>
+                      </RUNNABLE-ENTITY>
+                      <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_DisableService</SHORT-NAME>
+                        <SYMBOL>Runnable_SrvcMgr_DisableService</SYMBOL>
+                      </RUNNABLE-ENTITY>
+                      <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_DisableServiceGroup</SHORT-NAME>
+                        <SYMBOL>Runnable_SrvcMgr_DisableServiceGroup</SYMBOL>
+                      </RUNNABLE-ENTITY>
+                      <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_DID_E0CD_ReadData_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                        <SYMBOL>Runnable_SrvcMgr_DID_E0CD_ReadData</SYMBOL>
+                      </RUNNABLE-ENTITY>
+					  <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_DID_E0CD_ReadDataLength_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                        <SYMBOL>Runnable_SrvcMgr_DID_E0CD_ReadDataLength</SYMBOL>
+                      </RUNNABLE-ENTITY>
+                      <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_DID_E0CD_CheckRead_«GetFirstDidE0CDSignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                        <SYMBOL>Runnable_SrvcMgr_DID_E0CD_CheckRead</SYMBOL>
+                      </RUNNABLE-ENTITY>
+                      <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_DID_E0CE_ReadData_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                        <SERVER-CALL-POINTS>
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SPM_SrvcMgr_GetDTCIdentifier</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SPM_GetDTCIdentifier/GetDTCIdentifier</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+                      </SERVER-CALL-POINTS>
+                        <SYMBOL>Runnable_SrvcMgr_DID_E0CE_ReadData</SYMBOL>
+                      </RUNNABLE-ENTITY>
+                      <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_DID_E0CE_CheckRead_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                        <SYMBOL>Runnable_SrvcMgr_DID_E0CE_CheckRead</SYMBOL>
+                      </RUNNABLE-ENTITY>
+					  <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_DID_E0CE_ReadDataLength_«GetFirstDidE0CESignal(sum_SrvcMgr_ConfigSet)»</SHORT-NAME>
+                        <SYMBOL>Runnable_SrvcMgr_DID_E0CE_ReadDataLength</SYMBOL>
+                      </RUNNABLE-ENTITY>
+                      «REM»[$Satisfies $DDS_SrvcMgr 009]«ENDREM-»
+                      <RUNNABLE-ENTITY>
+                        <SHORT-NAME>RE_SrvcMgr_RID_0654</SHORT-NAME>
+	                    <DATA-SEND-POINTS>
+	                        <VARIABLE-ACCESS>
+					<SHORT-NAME>DSP_SrvcMgr_U19A6_54_Status</SHORT-NAME>
+	                  		  <ACCESSED-VARIABLE>
+	                    	    <AUTOSAR-VARIABLE-IREF>
+	                      		  <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_Errh_U19A6_54_Status</PORT-PROTOTYPE-REF>
+	                      		  <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SrvcMgr_ERRH_U19A6_54_Status/U19A6_54_Status</TARGET-DATA-PROTOTYPE-REF>
+	                    		</AUTOSAR-VARIABLE-IREF>
+	                  		  </ACCESSED-VARIABLE>
+							</VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_SrvcMgr_U19A6_57_Status</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SSFM_U19A6_57_Status</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57/invalid</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>LearningTableStatus</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SSFM_LearningTableStatus</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SrvcMgr_SSFM_LearningTableStatus/LearningTableStatus</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+						</DATA-SEND-POINTS>
+                        <SERVER-CALL-POINTS>
+                          <SYNCHRONOUS-SERVER-CALL-POINT>
+                            <SHORT-NAME>SynchronousServerCallPoint</SHORT-NAME>
+                            <OPERATION-IREF>
+                              <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SrvcMgr_SPM_SdLearningStatusIndication</CONTEXT-R-PORT-REF>
+                              <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SPM_SDLearningStatusIndication/SPM_SDLearningStatusIndication</TARGET-REQUIRED-OPERATION-REF>
+                            </OPERATION-IREF>
+                          </SYNCHRONOUS-SERVER-CALL-POINT>
+                        </SERVER-CALL-POINTS>
+                        <DATA-RECEIVE-POINT-BY-ARGUMENTS>        
+«IF !SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»                                        
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_VePSAR_b_PropSysActv</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_Com_SrvcMgr_VePSAR_b_PropSysActv</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_SrvcMgr/PortInterfaces/VePSAR_b_PropSysActv/VePSAR_b_PropSysActvRxSignal</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_YeVSPR_v_DrvnVehicle</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_Com_SrvcMgr_YeVSPR_v_DrvnVehicle</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_SrvcMgr/PortInterfaces/YeVSPR_v_DrvnVehicle/YeVSPR_v_DrvnVehicleRxSignal</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+«ELSE -»
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_VeActvProp_YeDrvnVeh</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_Com_SrvcMgr_VeActvProp_YeDrvnVeh</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_SrvcMgr/PortInterfaces/VeActvProp_YeDrvnVeh/VeActvProp_YeDrvnVeh_RxSignal</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+«ENDIF-»
+«IF Susd_Ssfm_IsSinglePortSupported(sum_SrvcMgr_ConfigSet.eRootContainer.sSFM)-»
+«IF SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»
+                          <!-- FxFA (single-port mode, same signal/service): one receive point for VSAD+PSA -->
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_SSFM_FxFA_VSAD_PSA</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FxFA_VSAD_PSA</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SignalGroup_FxFA/DTC_STATUS_FXFA</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+«ELSE-»
+                          <!-- FxFA (single-port mode, different signals): separate receive points for VSAD and PSA -->
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_SSFM_FxFA_VSAD</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FxFA_VSAD</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SignalGroup_FxFA/DTC_STATUS_FXFA</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_SSFM_FxFA_PSA</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FxFA_PSA</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SignalGroup_FxFA/DTC_STATUS_FXFA</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+«ENDIF-»
+«ELSE-»
+«IF SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»
+                          <!-- FsFA (two-port mode, same signal/service): one receive point for VSAD+PSA -->
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_SSFM_FsFA_VSAD_PSA</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FsFA_VSAD_PSA</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SignalGroup_FsFA/DTC_STATUS_FSFA</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+«ELSE-»
+                          <!-- FsFA (two-port mode, different signals): separate receive points for VSAD and PSA -->
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_SSFM_FsFA_VSAD</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FsFA_VSAD</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SignalGroup_FsFA/DTC_STATUS_FSFA</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+                          <VARIABLE-ACCESS>
+                            <SHORT-NAME>DRPA_SSFM_FsFA_PSA</SHORT-NAME>
+                            <ACCESSED-VARIABLE>
+                              <AUTOSAR-VARIABLE-IREF>
+                                <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_FsFA_PSA</PORT-PROTOTYPE-REF>
+                                <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SignalGroup_FsFA/DTC_STATUS_FSFA</TARGET-DATA-PROTOTYPE-REF>
+                              </AUTOSAR-VARIABLE-IREF>
+                            </ACCESSED-VARIABLE>
+                          </VARIABLE-ACCESS>
+«ENDIF-»
+«ENDIF-»
+                        </DATA-RECEIVE-POINT-BY-ARGUMENTS> 
+                        <SYMBOL>Runnable_SrvcMgr_RID_0654</SYMBOL>
+                      </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SrvcMgr_ClearDiagReq_Event</SHORT-NAME>
+                      <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_SSFMClearDiagReq_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_ClearDiagReq</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SSFM_ClearDiagReq/SSFMClearDiagReq</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                      <DATA-SEND-POINTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_SrvcMgr_U19A6_57_Status</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/PP_SrvcMgr_SSFM_U19A6_57_Status</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57/invalid</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-SEND-POINTS>
+                      <SYMBOL>Runnable_SSFM_ClearDiagReq</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>RE_SrvcMgr_SSFM_SDMissingMessage</SHORT-NAME>
+                      <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                        <VARIABLE-ACCESS UUID="54eb8407-d8f8-4b54-9691-467fdada4238">
+                          <SHORT-NAME>DRPA_SSFM_ServiceId_0</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_SrvcMgr/Component/SUM_SrvcMgr/RP_SSFM_SrvcMgr_SDMissingMessage</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SSFM_SrvcMgr_SDMissingMessage/SSFM_ServiceId</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                      <SYMBOL>Runnable_SrvcMgr_SSFM_SDMissingMessage</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                    </RUNNABLES>
+                </SWC-INTERNAL-BEHAVIOR>
+              </INTERNAL-BEHAVIORS>
+            </APPLICATION-SW-COMPONENT-TYPE>
+            <SWC-IMPLEMENTATION>
+              <SHORT-NAME>SwcImplementation_IB_SrvcMgr</SHORT-NAME>
+              <CODE-DESCRIPTORS>
+                <CODE>
+                  <SHORT-NAME>Code_SrvcMgr</SHORT-NAME>
+                  <ARTIFACT-DESCRIPTORS>
+                    <AUTOSAR-ENGINEERING-OBJECT>
+                      <SHORT-LABEL>AE0O1</SHORT-LABEL>
+                      <CATEGORY>SWSRC</CATEGORY>
+                    </AUTOSAR-ENGINEERING-OBJECT>
+                  </ARTIFACT-DESCRIPTORS>
+                </CODE>
+              </CODE-DESCRIPTORS>
+              <PROGRAMMING-LANGUAGE>C</PROGRAMMING-LANGUAGE>
+              <RESOURCE-CONSUMPTION>
+                <SHORT-NAME>SrvcMgr_ResourceConsumption_0</SHORT-NAME>
+                <MEMORY-SECTIONS>
+                  <MEMORY-SECTION>
+                    <SHORT-NAME>CODE</SHORT-NAME>
+                  </MEMORY-SECTION>
+                </MEMORY-SECTIONS>
+              </RESOURCE-CONSUMPTION>
+              <BEHAVIOR-REF DEST="SWC-INTERNAL-BEHAVIOR">/SUM_SrvcMgr/Component/SUM_SrvcMgr/SUM_SrvcMgr_IB</BEHAVIOR-REF>
+            </SWC-IMPLEMENTATION>
+          </ELEMENTS>
+        </AR-PACKAGE>
+        <AR-PACKAGE>
+          <SHORT-NAME>PortInterfaces</SHORT-NAME>
+          <ELEMENTS>
+            <CLIENT-SERVER-INTERFACE>
+              <SHORT-NAME>SrvcMgr_CalibrationController</SHORT-NAME>
+              <IS-SERVICE>false</IS-SERVICE>
+              <OPERATIONS>
+                <CLIENT-SERVER-OPERATION>
+                  <SHORT-NAME>surveyServiceDisableCalibrations</SHORT-NAME>
+                  <POSSIBLE-ERROR-REFS>
+                    <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_CalibrationController/E_NOT_OK</POSSIBLE-ERROR-REF>
+                    <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_CalibrationController/E_OK</POSSIBLE-ERROR-REF>
+                  </POSSIBLE-ERROR-REFS>
+                </CLIENT-SERVER-OPERATION>
+              </OPERATIONS>
+              <POSSIBLE-ERRORS>
+                <APPLICATION-ERROR>
+                  <SHORT-NAME>E_OK</SHORT-NAME>
+                  <ERROR-CODE>0</ERROR-CODE>
+                </APPLICATION-ERROR>
+                <APPLICATION-ERROR>
+                  <SHORT-NAME>E_NOT_OK</SHORT-NAME>
+                  <ERROR-CODE>1</ERROR-CODE>
+                </APPLICATION-ERROR>
+              </POSSIBLE-ERRORS>
+            </CLIENT-SERVER-INTERFACE>
+            <CLIENT-SERVER-INTERFACE>
+              <SHORT-NAME>SrvcMgr_ServiceCalibrationOff</SHORT-NAME>
+              <IS-SERVICE>false</IS-SERVICE>
+              <OPERATIONS>
+                <CLIENT-SERVER-OPERATION>
+                  <SHORT-NAME>SrvcMgr_DisableService</SHORT-NAME>
+                  <ARGUMENTS>
+                    <ARGUMENT-DATA-PROTOTYPE>
+                      <SHORT-NAME>serviceId</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                      <DIRECTION>IN</DIRECTION>
+                    </ARGUMENT-DATA-PROTOTYPE>
+                  </ARGUMENTS>
+                  <POSSIBLE-ERROR-REFS>
+                    <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_ServiceCalibrationOff/E_OK</POSSIBLE-ERROR-REF>
+                    <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_ServiceCalibrationOff/E_NOT_OK</POSSIBLE-ERROR-REF>
+                  </POSSIBLE-ERROR-REFS>
+                </CLIENT-SERVER-OPERATION>
+                <CLIENT-SERVER-OPERATION>
+                  <SHORT-NAME>SrvcMgr_DisableServiceGroup</SHORT-NAME>
+                  <ARGUMENTS>
+                    <ARGUMENT-DATA-PROTOTYPE>
+                      <SHORT-NAME>serviceGroupId</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                      <DIRECTION>IN</DIRECTION>
+                    </ARGUMENT-DATA-PROTOTYPE>
+                  </ARGUMENTS>
+                  <POSSIBLE-ERROR-REFS>
+                    <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_ServiceCalibrationOff/E_OK</POSSIBLE-ERROR-REF>
+                    <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/SUM_SrvcMgr/PortInterfaces/SrvcMgr_ServiceCalibrationOff/E_NOT_OK</POSSIBLE-ERROR-REF>
+                  </POSSIBLE-ERROR-REFS>
+                </CLIENT-SERVER-OPERATION>
+              </OPERATIONS>
+              <POSSIBLE-ERRORS>
+                <APPLICATION-ERROR>
+                  <SHORT-NAME>E_OK</SHORT-NAME>
+                  <ERROR-CODE>0</ERROR-CODE>
+                </APPLICATION-ERROR>
+                <APPLICATION-ERROR>
+                  <SHORT-NAME>E_NOT_OK</SHORT-NAME>
+                  <ERROR-CODE>1</ERROR-CODE>
+                </APPLICATION-ERROR>
+              </POSSIBLE-ERRORS>
+            </CLIENT-SERVER-INTERFACE>
+«IF !SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»            
+            <SENDER-RECEIVER-INTERFACE>
+              <SHORT-NAME>VePSAR_b_PropSysActv</SHORT-NAME>
+              <IS-SERVICE>false</IS-SERVICE>
+              <DATA-ELEMENTS>
+                <VARIABLE-DATA-PROTOTYPE>
+                  <SHORT-NAME>VePSAR_b_PropSysActvRxSignal</SHORT-NAME>
+                  <CATEGORY>VALUE</CATEGORY>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-ONLY</SW-CALIBRATION-ACCESS>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+«IF SrvcMgr_IsPSAServiceBased(sum_SrvcMgr_ConfigSet)-»
+			              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">«SrvcMgr_GetImplementationDataTypePath(sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)»</TYPE-TREF>
+«ELSE -»
+«IF sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.metaType.toString().contains("ComSignal")-»
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/«sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.comSignalType.toLowerCase()»</TYPE-TREF>
+«ELSE -»
+			              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/SUM_SrvcMgr/PortInterfaces/RxSignal_PropSysActv_GroupSignal</TYPE-TREF>
+«ENDIF-»
+«ENDIF-»
+                </VARIABLE-DATA-PROTOTYPE>
+              </DATA-ELEMENTS>
+            </SENDER-RECEIVER-INTERFACE>
+            <SENDER-RECEIVER-INTERFACE>
+              <SHORT-NAME>YeVSPR_v_DrvnVehicle</SHORT-NAME>
+              <IS-SERVICE>false</IS-SERVICE>
+              <DATA-ELEMENTS>
+                <VARIABLE-DATA-PROTOTYPE>
+                  <SHORT-NAME>YeVSPR_v_DrvnVehicleRxSignal</SHORT-NAME>
+                  <CATEGORY>VALUE</CATEGORY>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-ONLY</SW-CALIBRATION-ACCESS>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+«IF SrvcMgr_IsVehSpdAvgDrvnServiceBased(sum_SrvcMgr_ConfigSet)-»
+			              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">«SrvcMgr_GetImplementationDataTypePath(sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref)»</TYPE-TREF>
+«ELSE -»                  
+«IF sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.metaType.toString().contains("ComSignal")-»
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/«sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.comSignalType.toLowerCase()»</TYPE-TREF>
+«ELSE -»
+			              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/SUM_SrvcMgr/PortInterfaces/RxSignal_VehSpdAvgDrvn_GroupSignal</TYPE-TREF>
+«ENDIF-»
+«ENDIF-»
+                </VARIABLE-DATA-PROTOTYPE>
+              </DATA-ELEMENTS>
+            </SENDER-RECEIVER-INTERFACE>
+«ELSE -»
+            <SENDER-RECEIVER-INTERFACE>
+              <SHORT-NAME>VeActvProp_YeDrvnVeh</SHORT-NAME>
+              <IS-SERVICE>false</IS-SERVICE>
+              <DATA-ELEMENTS>
+                <VARIABLE-DATA-PROTOTYPE>
+                  <SHORT-NAME>VeActvProp_YeDrvnVeh_RxSignal</SHORT-NAME>
+                  <CATEGORY>VALUE</CATEGORY>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-ONLY</SW-CALIBRATION-ACCESS>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+«IF !SrvcMgr_IsPropSysActvGroupSignal(sum_SrvcMgr_ConfigSet)-»
+			                <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">«SrvcMgr_GetImplementationDataTypePath(sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)»</TYPE-TREF>
+«ELSE -»                  
+			              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/SUM_SrvcMgr/PortInterfaces/RxSignal_VeActvProp_YeDrvnVeh_GroupSignal</TYPE-TREF>
+«ENDIF-»                            
+                </VARIABLE-DATA-PROTOTYPE>
+              </DATA-ELEMENTS>
+            </SENDER-RECEIVER-INTERFACE>
+«ENDIF-»
+«IF !SrvcMgr_IsSameSignalReference(sum_SrvcMgr_ConfigSet)-»  
+«REM»Generate PropSysActv signal types for signal-based (non-service-based) ComGroupSignal configuration«ENDREM-»
+«IF SrvcMgr_IsPropSysActvGroupSignal(sum_SrvcMgr_ConfigSet) && !SrvcMgr_IsPSAServiceBased(sum_SrvcMgr_ConfigSet)-»
+  		<IMPLEMENTATION-DATA-TYPE>
+	        <SHORT-NAME>RxSignal_PropSysActv_GroupSignal</SHORT-NAME>
+	        <LONG-NAME>
+	            <L-4 L="EN">PropSysActvRxSignal</L-4>
+	        </LONG-NAME>
+	        <CATEGORY>STRUCTURE</CATEGORY>
+	        <SUB-ELEMENTS>
+«FOREACH sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.parent.comGroupSignal AS single_signal-»
+	         <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+	            <SHORT-NAME>RxSignal_«single_signal.shortName»</SHORT-NAME>
+	            <CATEGORY>TYPE_REFERENCE</CATEGORY>
+	            <SW-DATA-DEF-PROPS>
+	                <SW-DATA-DEF-PROPS-VARIANTS>
+	                    <SW-DATA-DEF-PROPS-CONDITIONAL>
+	        «IF single_signal.comSignalType == "UINT8_N"-»
+	                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/SUM_SrvcMgr/PortInterfaces/IMPL_LenNByte«single_signal.comSignalLength»</IMPLEMENTATION-DATA-TYPE-REF>
+	        «ELSE-»
+	                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/«single_signal.comSignalType.toLowerCase()»</IMPLEMENTATION-DATA-TYPE-REF>
+	        «ENDIF-»
+	                    </SW-DATA-DEF-PROPS-CONDITIONAL>
+	                 </SW-DATA-DEF-PROPS-VARIANTS>
+	            </SW-DATA-DEF-PROPS>
+              </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+«ENDFOREACH-»
+			</SUB-ELEMENTS>
+         </IMPLEMENTATION-DATA-TYPE>
+«ENDIF-»
+«REM»Generate VehSpdAvgDrvn signal types for signal-based (non-service-based) ComGroupSignal configuration«ENDREM-»
+«IF SrvcMgr_IsVehSpdAvgDrvnGroupSignal(sum_SrvcMgr_ConfigSet) && !SrvcMgr_IsVehSpdAvgDrvnServiceBased(sum_SrvcMgr_ConfigSet)-»
+  		<IMPLEMENTATION-DATA-TYPE>
+	        <SHORT-NAME>RxSignal_VehSpdAvgDrvn_GroupSignal</SHORT-NAME>
+	        <LONG-NAME>
+	            <L-4 L="EN">DrvnVehicleRxSignal</L-4>
+	        </LONG-NAME>
+	        <CATEGORY>STRUCTURE</CATEGORY>
+	        <SUB-ELEMENTS>
+«FOREACH sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.parent.comGroupSignal AS single_signal-»
+	         <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+	            <SHORT-NAME>RxSignal_«single_signal.shortName»</SHORT-NAME>
+	            <CATEGORY>TYPE_REFERENCE</CATEGORY>
+	            <SW-DATA-DEF-PROPS>
+	                <SW-DATA-DEF-PROPS-VARIANTS>
+	                    <SW-DATA-DEF-PROPS-CONDITIONAL>
+	        «IF single_signal.comSignalType == "UINT8_N"-»
+	                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/SUM_SrvcMgr/PortInterfaces/IMPL_LenNByte«single_signal.comSignalLength»</IMPLEMENTATION-DATA-TYPE-REF>
+	        «ELSE-»
+	                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/«single_signal.comSignalType.toLowerCase()»</IMPLEMENTATION-DATA-TYPE-REF>
+	        «ENDIF-»
+	                    </SW-DATA-DEF-PROPS-CONDITIONAL>
+	                 </SW-DATA-DEF-PROPS-VARIANTS>
+	            </SW-DATA-DEF-PROPS>
+              </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+«ENDFOREACH-»
+			</SUB-ELEMENTS>
+         </IMPLEMENTATION-DATA-TYPE>
+
+«ENDIF-»
+
+«ELSE-»
+«IF SrvcMgr_IsPropSysActvGroupSignal(sum_SrvcMgr_ConfigSet)-»
+«REM»Generate combined signal types when both signals reference the same group signal«ENDREM-»
+  		<IMPLEMENTATION-DATA-TYPE>
+	        <SHORT-NAME>RxSignal_VeActvProp_YeDrvnVeh_GroupSignal</SHORT-NAME>
+	        <LONG-NAME>
+	            <L-4 L="EN">VeActvProp_YeDrvnVeh_RxSignal</L-4>
+	        </LONG-NAME>
+	        <CATEGORY>STRUCTURE</CATEGORY>
+	        <SUB-ELEMENTS>
+«FOREACH sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.parent.comGroupSignal AS single_signal-»
+
+	         <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+	            <SHORT-NAME>RxSignal_«single_signal.shortName»</SHORT-NAME>
+	            <CATEGORY>TYPE_REFERENCE</CATEGORY>
+	            <SW-DATA-DEF-PROPS>
+	                <SW-DATA-DEF-PROPS-VARIANTS>
+	                    <SW-DATA-DEF-PROPS-CONDITIONAL>
+	        «IF single_signal.comSignalType == "UINT8_N"-»
+	                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/SUM_SrvcMgr/PortInterfaces/IMPL_LenNByte«single_signal.comSignalLength»</IMPLEMENTATION-DATA-TYPE-REF>
+	        «ELSE-»
+	                    <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/«single_signal.comSignalType.toLowerCase()»</IMPLEMENTATION-DATA-TYPE-REF>
+	        «ENDIF-»
+	                    </SW-DATA-DEF-PROPS-CONDITIONAL>
+	                 </SW-DATA-DEF-PROPS-VARIANTS>
+	            </SW-DATA-DEF-PROPS>
+              </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+            
+«ENDFOREACH-»
+            </SUB-ELEMENTS>
+      </IMPLEMENTATION-DATA-TYPE>
+«ENDIF-»
+«ENDIF-»
+«REM»Generate unified UINT8_N implementation data types for all signals (PSA and VehSpeed)«ENDREM-»
+«FOREACH SrvcMgr_CollectAllUint8NLengths(sum_SrvcMgr_ConfigSet) AS sigSize-»
+		<IMPLEMENTATION-DATA-TYPE>
+              <SHORT-NAME>IMPL_LenNByte«sigSize»</SHORT-NAME>
+              <CATEGORY>VALUE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <BASE-TYPE-REF DEST="SW-BASE-TYPE">/SUM_SrvcMgr/PortInterfaces/Bytes«sigSize»</BASE-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+         </IMPLEMENTATION-DATA-TYPE>
+
+           <SW-BASE-TYPE>
+              <SHORT-NAME>Bytes«sigSize»</SHORT-NAME>
+              <CATEGORY>FIXED_LENGTH</CATEGORY>
+              <BASE-TYPE-SIZE>8</BASE-TYPE-SIZE>
+              <BASE-TYPE-ENCODING>NONE</BASE-TYPE-ENCODING>
+              <MEM-ALIGNMENT>8</MEM-ALIGNMENT>
+              <NATIVE-DECLARATION>Bytes_«sigSize»</NATIVE-DECLARATION>
+           </SW-BASE-TYPE>
+
+           <IMPLEMENTATION-DATA-TYPE>
+              <SHORT-NAME>Bytes_«sigSize»</SHORT-NAME>
+              <CATEGORY>STRUCTURE</CATEGORY>
+              <SUB-ELEMENTS>
+              	<IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  <SHORT-NAME>Array_«sigSize»</SHORT-NAME>
+                  <CATEGORY>ARRAY</CATEGORY>
+                  <ARRAY-SIZE-SEMANTICS>FIXED-SIZE</ARRAY-SIZE-SEMANTICS>
+                  <SUB-ELEMENTS>
+	                <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+	                  <SHORT-NAME>ArrayElement</SHORT-NAME>
+	                  <CATEGORY>TYPE_REFERENCE</CATEGORY>
+	                  <ARRAY-SIZE>«sigSize»</ARRAY-SIZE>
+	                  <ARRAY-SIZE-SEMANTICS>FIXED-SIZE</ARRAY-SIZE-SEMANTICS>
+	                  <SW-DATA-DEF-PROPS>
+	                    <SW-DATA-DEF-PROPS-VARIANTS>
+	                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+	                        <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+	                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+	                    </SW-DATA-DEF-PROPS-VARIANTS>
+	                  </SW-DATA-DEF-PROPS>
+	       			</IMPLEMENTATION-DATA-TYPE-ELEMENT>
+	       		   </SUB-ELEMENTS>
+	       		 </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+	       	   </SUB-ELEMENTS>
+	       	</IMPLEMENTATION-DATA-TYPE>
+«ENDFOREACH-»
+          </ELEMENTS>
+        </AR-PACKAGE>
+      </AR-PACKAGES>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>
+«ENDFILE»
+«ENDDEFINE»

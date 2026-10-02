@@ -1,0 +1,94 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_LinResponder_Error_Manager.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM SSM Lin Responder Error Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_ERRH_LIN_RESPONDER_ERROR_MANAGER_H
+#define SUM_SSFM_ERRH_LIN_RESPONDER_ERROR_MANAGER_H
+
+«IF Ssfm_IsLNM_SlaveInfoError_Configured(sSFM.sum_Ssfm_ConfigSet)-»
+/**
+ * @brief This macro indicates number of the configured Lin Responder
+ */
+#define SSFM_NUM_OF_CFG_LINRESPONDER «sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo.size»u
+
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0-»
+/**
+ * @brief This macro indicates number of Internal Electronic Failure LNM Error
+ */
+#define SSFM_NUM_OF_IEF_LNMERROR «Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF")»u
+«ENDIF-»
+
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+/**
+ * @brief This macro indicates number of Missing Message LNM Error
+ */
+#define SSFM_NUM_OF_MISSING_MSG_LNMERROR «Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG")»u
+«ENDIF-»
+
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+#define SSFM_RUNNABLE_MISSING_MSG_PERIODICITY_MS «(sSFM.sum_Ssfm_General.sum_Ssfm_MissingMsg_Periodicity).toInteger()»u
+«ENDIF-»
+
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0-»
+extern Sum_Ssfm_Debouncer Sum_Ssfm_Ief_LNMError_Debouncers[SSFM_NUM_OF_IEF_LNMERROR];
+«ENDIF-»
+
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+extern Sum_Ssfm_Debouncer Sum_Ssfm_MissingMsg_LNMError_Debouncers[SSFM_NUM_OF_MISSING_MSG_LNMERROR];
+«ENDIF-»
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0-»
+extern void Sum_Ssfm_IeF_Dem_CB_DTCStatusChanged(uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew);
+«ENDIF-»
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+extern void Sum_Ssfm_LINResponder_CbkRxTOut_Handler(uint16 LINSlaveInfo_idx);
+extern void Sum_Ssfm_LINResponder_CbkRxRec_Handler(uint16 LINSlaveInfo_idx);
+extern Sum_Ssfm_EvaluationStatus Sum_Ssfm_LinResponder_MissingMsg_Handler(Sum_Ssfm_Debouncer* const deb_event);
+«ENDIF-»
+«ENDIF-»
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

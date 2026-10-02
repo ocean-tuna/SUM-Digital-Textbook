@@ -1,0 +1,5 @@
+3;15
+\cellcolor{ETASlightgray}\textbf{Port Name};SSC_DIAG_ReadMemorySecurityVerification
+\cellcolor{ETASlightgray}\textbf{Port Interface};SSC_DIAG_ReadMemorySecurityVerification
+\cellcolor{ETASlightgray}\textbf{Port Type};Client Sever Interface
+\cellcolor{ETASlightgray}\textbf{Description};The port is connected to the SUM_SSC. The port will be called from SUM_DIAG request SUM_SSC perform read memory security verify.

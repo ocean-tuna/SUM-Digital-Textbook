@@ -1,0 +1,37 @@
+@startuml Sum_Ssfm_Errh_U19A3_92_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_Errh_U19A3_92_Handler"
+
+**Interfaces Legend**
+   //ri111 //: SECPError_Notification 
+   //ri100 //: Sum_Ssfm_BatteryVoltageRange_Min_To_MaxV
+   //pi151 //: SecP_PerformanceIncorrectOperation_SetEventStatus
+   //II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)   
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+
+component [SSFM::Sum_Ssfm_Errh_U19A3_92_Handler] as U19A3_92{
+	portin pri111
+	portin pri100
+	portout ppi151
+
+}
+
+   interface II184
+
+   pri111 --up-( ri111
+   pri100 --up-( ri100
+   
+   ppi151 --down-0 pi151
+   U19A3_92 --down-( II184
+
+@enduml

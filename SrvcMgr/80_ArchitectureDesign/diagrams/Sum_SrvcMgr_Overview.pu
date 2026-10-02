@@ -1,0 +1,32 @@
+@startuml Sum_SrvcMgr_Overview
+
+top to bottom direction
+skinparam linetype ortho
+
+note top of SUM_SrvcMgr
+Modify in future the names of the components according
+to the definition in the document
+end note
+
+component SUM_SrvcMgr {
+    [Sum_SrvcMgr_Initialization] as I
+
+    component Controllers {
+        [Sum_SrvcMgr_Calibration_Controller] as IH
+    }
+
+    component Managers {
+        [Sum_SrvcMgr_ExecutionManager] as E
+
+        component Others {
+            [Sum_SrcsMgr_LearningSession_Manager]
+            [Sum_SrvcMgr_Service_Manager]
+        }
+    }
+}
+
+I --0)-- E
+E ---l0)--- Others
+I ---d0)--- IH
+
+@enduml

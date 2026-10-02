@@ -1,0 +1,81 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«EXTENSION Util::U_Code_Utils»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+
+«DEFINE SSFM FOR Ecu»
+
+«FILE "Sum_Ssfm_Cfg.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : ECU Configuration Source File
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+/*
+ ***************************************************************************************************
+ * Includes
+ ***************************************************************************************************
+ */
+#include "Sum_Ssfm_Cfg.h"
+
+/*
+ ***************************************************************************************************
+ * NvM RAM Block Definitions
+ ***************************************************************************************************
+ */
+
+/* RAM mirror to NvM block for DID 0xE0B8 - Communication Figure Of Merit */
+/* PRQA S 1531 1 # This object can be used in other translation units and is defined here for template needs */
+uint8 «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_CommFigureOfMeritNvmRef.nvMRamBlockDataAddress-»[«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_CommFigureOfMeritNvmRef.nvMNvBlockLength	-»] = {0u};
+
+/* RAM mirror to NvM block for DID 0xE0B9 - Signal Status Info Loss Of Communication */
+/* PRQA S 1531 1 # This object can be used in other translation units and is defined here for template needs */
+uint8 «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMNvBlockLength-»] = {0u};
+
+/* RAM mirror to NvM block for DID 0xE0BA - Signal Status Info Value of Signal Protection Calculation Incorrect */
+/* PRQA S 1531 1 # This object can be used in other translation units and is defined here for template needs */
+uint8 «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigProtectionCalcIncorrectNvmRef.nvMRamBlockDataAddress-»[«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigProtectionCalcIncorrectNvmRef.nvMNvBlockLength-»] = {0u};
+
+«IF Ssfm_isEnableERRHLocalSupervision(sSFM.sum_Ssfm_General)-»
+/* RAM mirror to NvM block for DID 0xF094 - Local Supervision Watchdog Main Status Of SOH */
+/* PRQA S 1531 1 # This object can be used in other translation units and is defined here for template needs */
+uint16 «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef.nvMRamBlockDataAddress-»[«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef.nvMNvBlockLength-»] = {0u};
+«ENDIF-»
+
+«IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))-»
+/* RAM mirror to NvM block for DID 0xE0BB - MAC Verification Status Per Key Slot */
+/* PRQA S 1531 2 # This object can be used in other translation units and is defined here for template needs */
+/* PRQA S 1533 1 # Defined here for modularity reason */
+uint8 «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMRamBlockDataAddress-»[«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMNvBlockLength-»] = {0u};
+«ENDIF-»
+
+/* EOF */
+«ENDFILE-»
+«ENDDEFINE»

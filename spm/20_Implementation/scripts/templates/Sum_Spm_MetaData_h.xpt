@@ -1,0 +1,59 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_MetaData.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for handling the SPM MetaData
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+# ifndef SPM_METADATA_HNDLR_
+# define SPM_METADATA_HNDLR_
+
+# include "Sum_Spm_Cfg.h"
+
+/******************************************************************
+ * Function : SPM_softpowr_tx_metadata                            *
+ ******************************************************************/
+
+Std_ReturnType SPM_Send_SMFrame ( SPM_dt_Prv * data /* IN */ );
+Std_ReturnType SPM_Send_PMFrame ( SPM_HB_dt_Prv * data /* IN */ );
+«IF (Spm_IsETHCommandPresent(spm) == true)-»
+Std_ReturnType
+SPM_Send_ETHWkUpFrame (SPM_WkUp_dt_Prv * data /* IN */);
+«ENDIF-»
+# endif /* SPM_METADATA_HNDLR_ */
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

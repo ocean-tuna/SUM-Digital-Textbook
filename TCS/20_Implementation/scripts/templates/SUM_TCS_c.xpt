@@ -1,0 +1,772 @@
+«IMPORT bsw»
+«IMPORT bsw::TcsModule»
+«EXTENSION templates::mathlib»
+«EXTENSION templates::TCS_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND TCS FOR ecu»
+«ENDDEFINE»
+
+«DEFINE TCS FOR Ecu»
+
+«FILE "SUM_TCS.c" -»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_TCS
+ * Date        : Mar 31, 2026
+ * Revision    : 8.0.1_Pr10
+ * Description : TCS Main
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+/*
+ ******************************************************************************
+ * Includes
+ ******************************************************************************
+ */
+#include "SUM_TCS.h"
+#include "Rte_SUM_TCS.h"
+#include "SUM_TCS_Prv.h"
+#include "SUM_TCS_Cfg.h"
+
+/*
+ * Local static variables *
+ */
+static boolean permit_execution;
+static uint32 precisionCounter;
+/*Variable to hold last NVM write request status */
+/* PRQA S 3218 1 # This variable could be used in the future in multiple files*/
+static VAR(Std_ReturnType, RTE_CODE) Tcs_LastRequestResult_TcsTimeValue;
+/* Variable used to store TCS Init Value
+ * Must stay uint8[] to match NvM_Cfg.c extern declaration (uint8 SumTCSInitValue[]). */
+/* PRQA S 1531 1 # This variable can be used in multiple files and can not be turned into static as well as moved to static code*/
+uint8 SumTCSInitValue[SUM_TCS_TIMESYNCMESSAGE_NVM_SIZE];
+/*
+ ****************  internal functions  ****************
+ */
+«IF tcs.tcsGeneral.tcsGenerateInitRunnable == true-»
+static FUNC(void,SUM_TCS_CODE) TCS_Init(void);
+«ENDIF-»
+static FUNC(void, SUM_TCS_CODE) Tcs_NvmGetErrorStatus(const Tcs_GenericNvmAccessType * blockNvmConfig, Std_ReturnType * lastRequestResult);
+static FUNC(void, SUM_TCS_CODE) Tcs_NvmWriteBlock(const Tcs_GenericNvmAccessType * blockNvmConfig, Std_ReturnType * lastRequestResult);
+static void TCS_Prv_increment_current_time(TimeSyncMessageType *currentTime);
+static uint64 TCS_Prv_byteArray_to_uint64(const uint8* in, uint8 size);
+static void TCS_Prv_uint64_to_byteArray(uint64 in, uint8* out);
+static void TCS_Prv_output_timeSyncMsg(TimeSyncMessageType currentTime);
+static TimeSyncMessageType TCS_Prv_getInitTime(void);
+static void TCS_Prv_setInitTime(TimeSyncMessageType TimeSyncMsg);
+static TimeSyncMessageType TCS_Prv_getLocalClock(void);
+static void TCS_Prv_setLocalClock(TimeSyncMessageType TimeSyncMsg);
+
+/***********************************************************************************
+
+  Function name :   TCS_Prv_byteArray_to_uint64
+  Description   :   Convert a big-endian byte array to a uint64 value
+  Parameter in  :   in - pointer to a big-endian buffer (MSB first)
+                    size - number of bytes to convert
+  Parameter out :   None
+  Return value  :   The time value as uint64
+  Remarks       :   Endianness-independent via bit shifting.
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h" /* PRQA S 5087 EOF */ /* include SUM_TCS_MemMap.h required here for memory mapping */
+static uint64 TCS_Prv_byteArray_to_uint64(const uint8* in, uint8 size)
+{
+    uint64 result = 0u;
+    uint8 i;
+
+    for (i = 0u; i < size; i++)
+    {
+        result = (result << 8u) | (uint64)in[i];
+    }
+    return result;
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+
+/***********************************************************************************
+  Function name :   TCS_Prv_increment_current_time
+  Description   :   Increment the current time by the configured precision:
+                    increment every precisionCounter by precisionCounter.
+  Parameter in  :   A pointer to the TimeSyncMessageType (uint64) to increment
+  Parameter out :   Overwrites the input parameter in place
+  Return value  :   None
+  Remarks       :   
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+static void TCS_Prv_increment_current_time(TimeSyncMessageType *currentTime)
+{
+    uint32 low = (uint32)(*currentTime & 0xFFFFFFFFuLL);
+    uint8  high = (uint8)(*currentTime >> 32u);
+
+    low += precisionCounter;
+    if (low < (uint32)(*currentTime & 0xFFFFFFFFuLL))
+    {
+        /* Overflow occurred: increment the high byte */
+        high++;
+        /* Truncate the high byte to the 4 low bits */
+        high &= SUM_TCS_TIMESYNCMESSAGE_HIGH_BITMASK;
+    }
+    *currentTime = ((uint64)high << 32u) | (uint64)low;
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   TCS_Prv_uint64_to_byteArray
+  Description   :   Convert a uint64 value to a 5-byte big-endian buffer
+  Parameter in  :   in - the time value as uint64 (lower 40 bits used)
+  Parameter out :   out - pointer to an existing buffer of at least 5 bytes
+  Return value  :   None
+  Remarks       :   Used for NvM write and DEM/DCM output. Endianness-independent.
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+static void TCS_Prv_uint64_to_byteArray(uint64 in, uint8* out)
+{
+    uint8 i;
+    uint64 val = in;
+
+    for (i = 0u; i < SUM_TCS_TIMESYNCMESSAGE_NVM_SIZE; i++)
+    {
+        out[SUM_TCS_TIMESYNCMESSAGE_NVM_SIZE - 1u - i] = (uint8)(val & 0xFFu);
+        val >>= 8u;
+    }
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   TCS_Prv_output_timeSyncMsg
+  Description   :   Output uint64 timeSyncMsg to port
+  Parameter in  :   currentTime
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$SDD_TCS 023]
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+/* PRQA S 3206 2 # The argument will be used depending on specific project configuration */
+static void TCS_Prv_output_timeSyncMsg(TimeSyncMessageType currentTime)
+{
+    (void) Rte_Write_TCS_SWC_Clock_GlobalTime(currentTime);
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   TCS_Prv_getLocalClock
+  Description   :   Get the local clock time
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   The current local time as uint64
+  Remarks       :   None
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+static TimeSyncMessageType TCS_Prv_getLocalClock(void)
+{
+    /* PRQA S 3469 1*/ /*It is an rte function which will be linked in system */
+    return Rte_IrvRead_Runnable_TCS_TimeManagement_EA_Localtime_Clock();
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   TCS_Prv_setLocalClock
+  Description   :   Update the local clock time
+  Parameter in  :   TimeSyncMessageType TimeSyncMsg
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   makes testing easier
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+static void TCS_Prv_setLocalClock(TimeSyncMessageType TimeSyncMsg)
+{
+	/* PRQA S 3432 2*/ /*It is not possible to use brackets here as per AUTOSAR concept. */
+    Rte_IrvWrite_Runnable_TCS_TimeManagement_EA_Localtime_Clock(TimeSyncMsg);
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   TCS_Prv_getInitTime
+  Description   :   Get the initial clock time from memory
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   TimeSyncMessageType timesyncmsg (converted from 5-byte big-endian NvM block)
+  Remarks       :   None
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+static TimeSyncMessageType TCS_Prv_getInitTime(void)
+{
+    return TCS_Prv_byteArray_to_uint64(tcs_Nvm_TcsTimeValueBlock_FP.NvmRamBlock, SUM_TCS_TIMESYNCMESSAGE_NVM_SIZE);
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   TCS_Prv_setInitTime
+  Description   :   Store the initial clock time in memory
+  Parameter in  :   uint64 TimeSyncMsg
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+static void TCS_Prv_setInitTime(TimeSyncMessageType TimeSyncMsg)
+{
+    TCS_Prv_uint64_to_byteArray(TimeSyncMsg, tcs_Nvm_TcsTimeValueBlock_FP.NvmRamBlock);
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+
+/***********************************************************************************
+
+  Function name :   TCS_Init
+  Description   : TCS initialization routine, initialize local static variables
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$SDD_TCS 005], [$SDD_TCS 006], [$SDD_TCS 007], [$SDD_TCS 017], [$SDD_TCS 018], [$SDD_TCS 027] [$SDD_TCS 033]
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+«IF tcs.tcsGeneral.tcsGenerateInitRunnable == true-»
+static FUNC(void,SUM_TCS_CODE) TCS_Init(void)
+«ELSE-»
+/* PRQA S 1503 1 # This function will and must be called by the BSW Init rule */
+FUNC (void, SUM_TCS_CODE) TCS_Init(void) /* PRQA S 5087 EOF */
+«ENDIF-»
+{
+    static boolean Sum_TCS_Initialization = FALSE;
+    TimeSyncMessageType initTime;
+    if (Sum_TCS_Initialization == FALSE)
+	{
+		/* Set Initialization status of TCS to INIT */
+        Sum_TCS_Initialization = TRUE;
+
+        /* initialize permit execution to false, if ready to run this will be reset in *
+        * the TimeManagement function                                                 *
+        */
+        permit_execution = FALSE;
+
+        /* initialize the precision counter, used to determine when to increment the local clock,
+        * note SumTCSGlobalTimePrecision must be a multiple of TCS_t_TimeManagement_Periodicity,
+        * i.e., s = nt where n = subCounter
+        * This is checked in the validation script.
+        */
+        precisionCounter = ((uint32) SumTCSGlobalTimePrecision / (uint32) TCS_t_TimeManagement_Periodicity);
+
+        /* read the stored initial clock value from NvM (5-byte big-endian to uint64) */
+        initTime = TCS_Prv_getInitTime();
+
+        /* save the initial clock value to the local clock */
+        /* PRQA S 3432 2*/ /*It is not possible to use brackets here as per AUTOSAR concept. */
+        Rte_IrvWrite_Runnable_TCS_TimeManagement_EA_Localtime_Clock(initTime);
+
+        /* initialize the clock output port */
+        TCS_Prv_output_timeSyncMsg(initTime);
+    }
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/*
+ ********************  Runnables  ********************
+ */
+/***********************************************************************************
+
+  Function name :   Runnable_TCS_MasterClockPolling
+  Description   :   Reads master clock time sync message and saves as new initial value.
+                    The Master Clock Signal is received as uint64.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$SDD_TCS 001], [$SDD_TCS 003], [$SDD_TCS 013],
+                 [$SDD_TCS 020], [$SDD_TCS 010], [$SDD_TCS 023], [$SDD_TCS 026], [$SDD_TCS 034]
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+/* PRQA S 1503 EOF # Functions/runnables to be called by external modules */
+FUNC (void, SUM_TCS_CODE) Runnable_TCS_MasterClockPolling(void)
+{
+    TimeSyncMessageType timeSyncMsg;
+    static TimeSyncMessageType lastReadTime = TCS_ZERO;
+«IF Tcs_IsTimeSyncServiceBased(tcs.tcsGeneral)-»
+    static «Tcs_GetImplementationDataTypeName(tcs.tcsGeneral.tCS_ServiceBased_TimeSyncMessage_Ref)» srv_signal;
+    Rte_TransformerError transformerError;
+«ELSEIF Tcs_IsTimeSyncGroupSignal(tcs.tcsGeneral)-»
+    static RxSignal_TCS_TimeSyncMessage_GroupSignal signal_group = {0};
+«IF Tcs_IsE2EConfigured(tcs.tcsGeneral, "TimeSyncMessage")-»
+    Rte_TransformerError transformerError;
+«ENDIF-»
+«ENDIF-»
+
+    if (permit_execution != FALSE)
+    {
+        /* Only run if the Master Clock Signal is available */
+        if (Rte_DRead_RP_TCS_TimeSyncMessage_Av_SignalAvailability() == SIG_STATUS_AVAILABLE)
+        {
+«IF Tcs_IsTimeSyncServiceBased(tcs.tcsGeneral)-»
+            /* Service-based: read into service struct with transformer error */
+            if (Rte_Read_RP_TCS_TimeSyncMessage_TimeSyncMessage(&srv_signal, &transformerError) == RTE_E_OK)
+            {
+                timeSyncMsg = TCS_Prv_byteArray_to_uint64(srv_signal.«Tcs_GetImplementationDataTypeElementName(tcs.tcsGeneral.tCS_ServiceBased_TimeSyncMessage_Ref)», sizeof(srv_signal.«Tcs_GetImplementationDataTypeElementName(tcs.tcsGeneral.tCS_ServiceBased_TimeSyncMessage_Ref)»));
+«ELSEIF Tcs_IsTimeSyncGroupSignal(tcs.tcsGeneral)-»
+            /* ComGroupSignal: read into group signal struct */
+«IF Tcs_IsE2EConfigured(tcs.tcsGeneral, "TimeSyncMessage")-»
+            if (Rte_Read_RP_TCS_TimeSyncMessage_TimeSyncMessage(&signal_group, &transformerError) == RTE_E_OK)
+«ELSE-»
+            if (Rte_Read_RP_TCS_TimeSyncMessage_TimeSyncMessage(&signal_group) == RTE_E_OK)
+«ENDIF-»
+            {
+                timeSyncMsg = (TimeSyncMessageType) signal_group.RxSignal_«tcs.tcsGeneral.tCS_TimeSyncMessageSignalRef.shortName»;
+«ELSE-»
+            /* ComSignal: read uint64 directly */
+            if (Rte_Read_RP_TCS_TimeSyncMessage_TimeSyncMessage(&timeSyncMsg) == RTE_E_OK)
+            {
+«ENDIF-»
+                if (timeSyncMsg != lastReadTime)
+                {
+                    /* update local clock */
+                    TCS_Prv_setLocalClock(timeSyncMsg);
+
+                    /* zero out SubCounter to let TCS_TimeManagement know that a new clock signal has been received */
+                    /* PRQA S 3417 2 # Due to RTE 12.0.0 implementation of RTE_ATOMIC */
+                    /* PRQA S 3432 2*/ /*It is not possible to use brackets here as per AUTOSAR concept. */
+                    Rte_IrvWrite_Runnable_TCS_MasterClockPolling_EA_SubCounter(TCS_ZERO);
+
+                    /* save new init value (uint64 to 5-byte big-endian NvM block) */
+                    TCS_Prv_setInitTime(timeSyncMsg);
+                    lastReadTime = timeSyncMsg;
+                }
+            }
+        }
+    }
+}
+
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+  Function name :   Runnable_TCS_TimeManagement
+  Description   :   Maintains and outputs local clock time
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$SDD_TCS 011], [$SDD_TCS 015], [$SDD_TCS 016],
+                    [$SDD_TCS 019] [$SDD_TCS 020]
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+/* PRQA S 1503 EOF # Functions/runnables to be called by external modules */
+FUNC (void, SUM_TCS_CODE) Runnable_TCS_TimeManagement(void)
+{
+    uint32 subCounter;
+    TimeSyncMessageType currentTime;
+    boolean timeChanged = FALSE;
+
+    if (permit_execution != FALSE)
+    {
+        /* Read the subcounter. If the subcounter is zero, we received a new Master Clock Signal.*/
+    	/* PRQA S 3469 2*/ /*It is an rte function which will be linked in system */
+        subCounter = Rte_IrvRead_Runnable_TCS_TimeManagement_EA_SubCounter();
+
+        /*The  local clock is incremented even a Master Clock signal has not been received */
+        if ((subCounter % precisionCounter) == TCS_ZERO)
+        {
+            /* Read the local time */
+            currentTime = TCS_Prv_getLocalClock();
+
+            /* If the subCounter is a non-zero multiple of the precisionCounter, increment the local clock by defined precision  */
+            if (subCounter != TCS_ZERO)
+            {
+                TCS_Prv_increment_current_time(&currentTime);
+                /* update local clock and NvM (uint64 to 5-byte big-endian) */
+                TCS_Prv_setInitTime(currentTime);
+                TCS_Prv_setLocalClock(currentTime);
+            }
+            timeChanged = TRUE;
+        }
+
+        /* If there has been a change in the local clock time write it out */
+        if (timeChanged == TRUE)
+        {   
+            /*Update Global Time.*/
+            TCS_Prv_output_timeSyncMsg(currentTime);
+        }
+
+        /* Increment the subCounter. Note this will be reset to 0 once a new valid master clock signal has been received */
+        subCounter++;
+        /* PRQA S 3417 2 # Due to RTE 12.0.0 implementation of RTE_ATOMIC */
+        /* PRQA S 3432 2*/ /*It is not possible to use brackets here as per AUTOSAR concept. */
+        Rte_IrvWrite_Runnable_TCS_TimeManagement_EA_SubCounter(subCounter);
+    }  
+}
+
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Runnable_TCS_Dem_Clock
+  Description   :   Return current TimeSyncMessage
+  Parameter in  :   None
+  Parameter out :   uint8* Data
+  Return value  :   Std_ReturnType RTE_E_OK
+  Remarks       :   Satisfies: [$SDD_TCS 008]
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+/* PRQA S 1503 EOF # Functions/runnables to be called by external modules */
+/* PRQA S 3432 2*/ /*It is not possible to use brackets here as per AUTOSAR concept. */
+FUNC (Std_ReturnType, AUTOMATIC) Runnable_TCS_Dem_Clock(P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+{
+    TimeSyncMessageType currentTime;
+
+    if (permit_execution != FALSE)
+    {
+        /* read the local clock time */
+    	/* PRQA S 3469 1*/ /*It is an rte function which will be linked in system */
+        currentTime = Rte_IrvRead_Runnable_TCS_Dem_Clock_EA_Localtime_Clock();
+
+        /* convert uint64 to 5-byte big-endian output expected by DEM */
+        TCS_Prv_uint64_to_byteArray(currentTime, Data);
+    }
+    return RTE_E_OK;
+}
+
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+  Function name :   Runnable_TCS_PermitExecutionShutdown
+  Description   :   Handle Permit Execution and Shutdown mechanisms
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$SDD_TCS 009], [$SDD_TCS 010], [$SDD_TCS 023], [$SDD_TCS 024], [$SDD_TCS 032]
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+/* PRQA S 1503 EOF # Functions/runnables to be called by external modules */
+FUNC (void, SUM_TCS_CODE) Runnable_TCS_PermitExecutionShutdown(void)
+		{
+	uint8 execStatus;
+	static uint8 ShutdownPermCnt = TCS_ENABLE_SHUTDOWN;
+	static TCS_Execution_Status_Type Execution_Status = TCS_INIT_MODE;
+
+	/* read the SUSD port to see if we're ready to run */
+	if (Rte_Read_SUSD_TCS_PermitExecution_SUSD_SWC_ExecutionStatus(&execStatus) == RTE_E_OK)
+	{
+		ShutdownPermCnt = (ShutdownPermCnt + 1u) %  TCS_SHUTDOWN_CNT_LIMIT;
+
+		switch (Execution_Status)
+		{
+		case TCS_INIT_MODE:
+
+			ShutdownPermCnt = TCS_ENABLE_SHUTDOWN;
+
+			if ((execStatus | TCS_PermitExecution_Mask) == TCS_PERMITEXECUTION)
+			{
+			    /* initialize the subCounter to 0 */
+				/* PRQA S 3432 2*/ /*It is not possible to use brackets here as per AUTOSAR concept. */
+			    Rte_IrvWrite_Runnable_TCS_PermitExecutionShutdown_EA_SubCounter(TCS_ZERO);
+				permit_execution = TRUE;
+				Execution_Status = TCS_RUN_MODE;
+			}
+			else
+			{
+				permit_execution = FALSE;
+			}
+
+			break;
+
+		case TCS_RUN_MODE:
+
+			if(((execStatus | TCS_PermitExecution_Mask) != TCS_PERMITEXECUTION) ||
+					((execStatus | TCS_RESETREQUEST_MASK) != TCS_PERMITEXECUTION))
+			{
+				permit_execution = FALSE;
+				
+                /*Start writing tcs_Nvm_TcsTimeValueBlock_FP into NvM*/
+                Tcs_NvmWriteBlock(&tcs_Nvm_TcsTimeValueBlock_FP, &Tcs_LastRequestResult_TcsTimeValue);
+                
+                if(Tcs_LastRequestResult_TcsTimeValue == TCS_E_PENDING)
+                {
+                    ShutdownPermCnt = (uint8) TCS_ZERO;
+                }
+                else
+                {
+                    /* NvmWrite failed, go directly to shutdown*/
+                    ShutdownPermCnt = TCS_ENABLE_SHUTDOWN;
+                }                    
+
+                Execution_Status = TCS_SHUTDOWN;
+			}
+			else
+			{
+				permit_execution = TRUE;
+				ShutdownPermCnt = TCS_ENABLE_SHUTDOWN;
+			}
+
+			break;
+
+		case TCS_SHUTDOWN:
+
+			if(TCS_E_PENDING == Tcs_LastRequestResult_TcsTimeValue)
+			{
+				Tcs_NvmGetErrorStatus(&tcs_Nvm_TcsTimeValueBlock_FP, &Tcs_LastRequestResult_TcsTimeValue);
+			}
+			else
+			{
+				ShutdownPermCnt = TCS_ENABLE_SHUTDOWN;
+
+				if ((execStatus | TCS_PermitExecution_Mask) == TCS_PERMITEXECUTION)
+				{
+					permit_execution = TRUE;
+					Execution_Status = TCS_RUN_MODE;
+				}
+				else
+				{
+					/* TCS functionality cannot be executed */
+					permit_execution = FALSE;
+				}
+			}
+			break;
+
+		default:
+			/*Nothing*/
+			break ;
+		}
+
+		(void) Rte_Write_TCS_SUSD_ShutdownPermission_SUSD_UserRequest(ShutdownPermCnt);
+	}
+
+}
+
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   TCS_TotalVehicleTimeRead
+  Description   :   Function for providing Total Vehicle Time value through DID
+  Parameter in  :   OpStatus - Operation Status
+  Parameter out :   Data - Holds Total Vehicle Time value
+  Return value  :   Std_ReturnType E_OK
+  Remarks       :   Satisfies: [$SDD_TCS 021]
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+/* PRQA S 1503 EOF # Functions/runnables to be called by external modules */
+/* PRQA S 3432 2*/ /*It is not possible to use brackets here as per AUTOSAR concept. */
+FUNC(Std_ReturnType, SUM_TCS_CODE) TCS_TotalVehicleTimeRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                              P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+{
+    TimeSyncMessageType local_clock;
+    Std_ReturnType ret;
+
+    if(Data != NULL_PTR)
+    {
+        switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+                /* get the local clock */
+                local_clock = TCS_Prv_getLocalClock();
+                /* convert uint64 to 5-byte big-endian output expected by DCM */
+                TCS_Prv_uint64_to_byteArray(local_clock, Data);
+                break;
+            default:
+            	/*DCM Operation not supported*/
+                break;
+        }
+
+        ret = E_OK;
+    }
+    else
+    {
+        ret = E_NOT_OK;
+    }
+
+    return ret;
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   TCS_TotalVehicleTimeCheckRead
+  Description   : Function to check read status of Total Vehicle Time value through DID
+  Parameter in  :   OpStatus - Operation Status
+  Parameter out :   ErrorCode - response from Dcm
+  Return value  :   Std_ReturnType E_OK
+  Remarks       :   Satisfies: [$SDD_TCS 021] [$SDD_TCS 025]
+ ************************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+/* PRQA S 1503 EOF # Functions/runnables to be called by external modules */
+/* PRQA S 3432 2*/ /*It is not possible to use brackets here as per AUTOSAR concept. */
+FUNC(Std_ReturnType, SUM_TCS_CODE) TCS_TotalVehicleTimeCheckRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                     P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    switch (OpStatus)
+    {
+        case DCM_INITIAL:
+        case DCM_PENDING:
+            *ErrorCode = TCS_ZERO;
+            break;
+        default:
+        	/*DCM Operation not supported*/
+            break;
+    }
+
+    return(E_OK);
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/******************************************************************************
+ * Function name : Tcs_NvmGetErrorStatus
+ * Description   : This function checks the status of the last write request of
+ *                 the given NVM block.
+ * Parameter in  : blockNvmConfig - struct with all configuration items of the
+ *                 NVM block.
+ * Parameter out : lastRequestResult - result of the NVM write request:
+ *                 TCS_E_PENDING if it's still pending, E_NOT_OK if failed,
+ *                 E_OK if completed successfully.
+ * Return value  : none
+ *****************************************************************************/
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+static FUNC(void, SUM_TCS_CODE) Tcs_NvmGetErrorStatus(const Tcs_GenericNvmAccessType * blockNvmConfig, 
+                                                      Std_ReturnType * lastRequestResult)
+{
+	NvM_RequestResultType nvmRequestResult = 0x00;
+
+    if (TCS_E_PENDING == *lastRequestResult)
+    {
+         /* Check last request result. */
+        if (RTE_E_OK != blockNvmConfig->Tcs_RteCallNvmGetErrorStatus_fp(&nvmRequestResult))
+        {
+            /* An error occurred. */
+            *lastRequestResult = E_NOT_OK;
+        }
+        else
+        {
+            if (NVM_REQ_OK == nvmRequestResult)
+            {
+                /* Last request finished successfully. */
+                *lastRequestResult = E_OK;
+            }
+            else if (NVM_REQ_PENDING == nvmRequestResult)
+            {
+                /* A request is currently pending. Retry on next cycle. */
+            }
+            else
+            {
+                /* Last request finished unsuccessfully or other error occurred. */
+                *lastRequestResult = E_NOT_OK;
+            }
+        }
+    }
+    else
+    {
+        /* Nothing to do for this block */
+    }
+}
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+
+/******************************************************************************
+ * Function name : Susd_NvmWriteBlock
+ * Description   : This function handles the request for storing into NVM the
+ *                 RAM block value of the given NvM block.
+ * Parameter in  : blockNvmConfig - struct with all configuration items of the
+ *                 NVM block.
+ * Parameter out : lastRequestResult - result of the NVM write request:
+ *                 TCS_E_PENDING if the NvM_WriteBlock request is accepted,
+ *                 E_OK/E_NOT_OK otherwise
+ * Return value  : none
+ *****************************************************************************/
+/* [$Satisfies: $SDD_TCS 032] */
+#define SUM_TCS_START_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+static FUNC(void, SUM_TCS_CODE) Tcs_NvmWriteBlock(const Tcs_GenericNvmAccessType * blockNvmConfig,
+                                             Std_ReturnType * lastRequestResult)
+{
+    DisableWrite DisableWriteData = TRUE;
+    Std_ReturnType retRte;    
+	
+    /* Check BatteryVoltage_DisableNVMWrite from SUSD if it is good to perform NvmWrite */
+    retRte = Rte_Read_RP_SUSD_TCS_BatteryVoltage_DisableNVMWrite_DisableWriteData(&(DisableWriteData));
+
+    if ((retRte == E_OK) && (DisableWriteData == FALSE))
+    {
+        /* Battery voltage is OK, perform to NvmWrite */
+        blockNvmConfig->Tcs_RteCallNvmSetRamBlockStatus_fp(TRUE);
+		/* Request to store RAM block value into NVM. */
+		if(blockNvmConfig->Tcs_RteCallNvmWriteBlock_fp(blockNvmConfig->NvmRamBlock) == RTE_E_OK)
+        {
+            /* Successfully accepted for write. Result pending. */
+			*lastRequestResult = TCS_E_PENDING;
+        }
+    }
+    else
+    {
+ 		/* Battery Voltage Operating not in range or RTE read fails, not accepted for write. Result not ok. */
+        *lastRequestResult = E_NOT_OK;
+    }
+}
+
+«IF tcs.tcsGeneral.tcsGenerateInitRunnable == true-»
+/* PRQA S 1503 EOF # The following functions will be scheduled by OS Tasks */
+/**
+ * @brief			Runnable function for SUM TCS Initialization.
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+FUNC(void, SUM_TCS_CODE) Runnable_TCS_Init(void)
+{
+	/* Initialize TCS */
+	TCS_Init();
+}
+
+«ENDIF-»
+#define SUM_TCS_STOP_SEC_CODE
+#include "SUM_TCS_MemMap.h"
+/*************************************End Of File***********************************/
+«ENDFILE-»
+«ENDDEFINE»

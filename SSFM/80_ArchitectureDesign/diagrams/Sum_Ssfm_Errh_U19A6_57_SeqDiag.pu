@@ -1,0 +1,41 @@
+@startuml Sum_Ssfm_Errh_U19A6_57_SeqDiag
+
+participant Dem 
+box SUM_SSFM
+    participant Sum_Ssfm_Errh_U19A6_57_Handler as ERRH_U19A6_57
+end box
+participant Sum_SrvcMgr as SrvcMgr
+participant Sum_SUSD as SUSD
+
+activate ERRH_U19A6_57
+
+ERRH_U19A6_57 -> ERRH_U19A6_57: Check if calibration parameter is set
+
+alt Calibration parameter is set
+    ERRH_U19A6_57 -> SUSD: Ask for battery voltage range
+    SUSD --> ERRH_U19A6_57
+	
+    alt (No OBD Support and voltage in range) or (OBD Support and not under voltage)
+
+        ERRH_U19A6_57 -> SrvcMgr: Read SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57 status
+        SrvcMgr --> ERRH_U19A6_57
+
+        alt Service Discovery Failure detected
+            ERRH_U19A6_57 -> ERRH_U19A6_57: Apply debouncing mechanism
+            
+            alt Debouncing confirms failure
+                ERRH_U19A6_57 -> Dem: set the U19A6_57 DTC
+            end
+        else No Service Discovery Failure
+            ERRH_U19A6_57 -> ERRH_U19A6_57: Apply debouncing mechanism
+            
+            alt Debouncing confirms no failure
+                ERRH_U19A6_57 -> Dem: reset the U19A6_57 DTC
+            end
+        end	
+    end
+end
+
+deactivate ERRH_U19A6_57
+
+@enduml

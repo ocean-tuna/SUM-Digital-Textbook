@@ -1,0 +1,5 @@
+4; 8; @@V
+Name; \textbf{PNC_State}
+Type; Definition
+Range; SUM_PNC_NO_COMMUNICATION 0x00\\SUM_PNC_PREPARE_SLEEP0x01\\SUM_PNC_READY_SLEEP 0x02\\SUM_PNC_REQUESTED 0x03
+Description; Used for Mode Request (PN Request fromSUM_PNC) and Mode Switch(Current state from ComM) States reflect the state transitions identified for partial networks in ComM. Requestor of Partial Network will use following states for Mode Requests for function PNC_BswM_CurrentPNCModeReq <n> \begin{itemize} \item SUM_PNC_NO_COMMUNICATION \item SUM_PNC_REQUESTED \item Mode Switch Interface \item PNC_BswM_CurrentPNCModeUser<n> \end{itemize} for individual PN will return the current PN state using all states defined in range.

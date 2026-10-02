@@ -1,0 +1,58 @@
+\chapter{Architecture Constraints}
+
+\section{Environment}
+\label{sec:Environment}
+
+\input{generated/tables/tools.tex}
+
+\section{Layers Definition}
+
+\begin{center}
+	\includegraphics{images/layers.png}
+\end{center}
+
+The applied system architecture is based on Autosar v4.0.3. For detailed information on it refer to Autosar.org website.
+
+\section{Generic component interface}
+\label{sec:Generic_Component_Interface}
+
+\UMLDiagramModified{generated/diagrams/Generic_Component_Interface}{Generic Component Interface}{0.5}
+
+\subsection{Port Interfaces}
+\label{sec:port-interfaces}
+
+\Requirement{023}
+{\input{generated/tables/port_interfaces.tex}}
+{\Satisfies{SRS_TCS 009} \Satisfies{SRS_TCS 012}  \Satisfies{SRS_TCS 018} \Satisfies{SRS_TCS 031}}
+
+\subsection{TCS DID services to Dcm}
+\label{sec:DID}
+
+\Requirement{025}
+{\input{generated/tables/DID.tex}}
+{\Satisfies{SRS_TCS 024} \Satisfies{SRS_TCS 025}}
+
+\section{Other constraints and assumptions}
+
+\subsection{Assumptions}
+\label{sec:assumptions}
+
+\begin{enumerate}
+\item The common interfaces among SUMs and SWCs are defined in \file{GM_SUM_Interfaces.arxml}.
+\item The ports and interfaces unique to SUM_TCS shall be provided in \file{SUM_TCS_Cfg_SWCD.arxml}.
+\item The resolution of a \code{TimeSyncMessage} is 100 ms.
+This is equal to saying that the timestamp in the \code{TimeSyncMessage} is a counter representing the number of 100 ms increments.
+It follows that the 36 bits of the \code{TimeSyncMessage} can represent up to $2^{36} \cdot 100$ ms (approximately 6.872E9 seconds, 79536 days, 217 years).
+\end{enumerate}
+
+\subsection{Constraints}
+\label{sec:constraints}
+
+\begin{description}
+\item[Internal Data Types:] Special design considerations have been taken into account due to the configurability required to implement SUM_TCS.
+Data types which are not defined exclusively in the RTE are used in order to facilitate the configuration required for this module.
+\item[Non-Volatile Memory Access:] In order to fulfill the requirement to store the \code{SumTCSInitValue} in memory, a RAM mirror block is used for storing this data in non-volatile memory.
+It is assumed the user will configure the NVM stack to support this required information.
+Further, it is expected that during shutdown, the appropriate BSW services will write that specific NVM block to persistent storage. The operation should be performed only if the battery voltage is good after checking it from SUM_SUSD.
+\item[Exlusive Areas:] In order to prohibit concurrent data access, SUM_TCS configures each runnable to use the \code{RunsInsideExclusiveArea} protection.
+\end{description}

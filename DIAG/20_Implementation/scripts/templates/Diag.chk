@@ -1,0 +1,91 @@
+import bsw;
+import bsw::DiagModule;
+
+extension org::eclipse::xtend::util::stdlib::io;
+
+// DIAG Validations
+context DiagGeneral ERROR "DIAG: ECU Address is not greater than 0." :
+	(this.ecuAddress > 0)
+;
+
+context DiagGeneral ERROR "DIAG: Manufacturer Enable Counter (MEC) is not greater than 0." :
+	(this.mecInitialValue > 0)
+;
+
+context DiagGeneral ERROR "DIAG: Permit execution mask is empty." :
+	(this.permitExecutionMask != null)
+;
+
+context DiagGeneral ERROR "DIAG: Read memory by address (RMBA) is not configured." :
+	(this.rMBA_Support != null)
+;
+
+
+context DiagGeneral ERROR "DIAG: Dynamically Define Data By Memory Address (DDDI) is not configured." :
+	(this.dDDI_Support != null)
+;
+
+context DiagGeneral ERROR "DIAG: Reference to NvM Block Descriptor block for MEC block is not configured." :
+	(this.dIAG_MEC_NvMRef != null)
+;
+
+/* Check if the reference for the BSPMP_RmtProgmActvAuth signal exists*/
+context DiagGeneral  ERROR "DIAG: The reference to the BSPMP_RmtProgmActvAuth signal in ComSignal or ComSignalGroup is not configured.":
+	(this.dIAG_BSPMP_RmtProgmActvAuthRef != null)
+;
+
+/* Check if the value of the BSPMP_RmtProgmActvAuth signal is correct */
+context DiagGeneral 
+	if (this.dIAG_BSPMP_RmtProgmActvAuthRef != null)
+	ERROR "DIAG: The ComSignalType for BSPMP_RmtProgmActvAuth signal must be a UINT8, BOOLEAN, or UINT8_N (DIAG_ServiceBased_OTA_Ref).":
+	(this.dIAG_BSPMP_RmtProgmActvAuthRef.comSignalType == "UINT8") ||
+	(this.dIAG_BSPMP_RmtProgmActvAuthRef.comSignalType == "BOOLEAN")||
+	(this.dIAG_BSPMP_RmtProgmActvAuthRef.comSignalType == "UINT8_N" && this.dIAG_ServiceBased_OTA_Ref != null)
+;
+
+
+context DiagGeneral ERROR "DIAG: Reference to NvM Block Descriptor block for OTA PSF block is not configured." :
+	(this.dIAG_OTA_PSF_NvMRef != null)
+;
+
+context DiagGeneral if (this.diagGenerateInitRunnable == true) ERROR "DIAG: if DiagGenerateInitRunnable is true, then DIAG_TE_Runnable_DIAG_Init_Period shall be configured." :
+	(this.dIAG_TE_Runnable_DIAG_Init_Period != null)
+;
+
+context DiagGeneral if (this.dIAG_DID_F1B0_Reference != null) ERROR "DIAG: if DIAG_DID_F1B0_Reference is set, then ecuAddress should be present." :
+	(this.ecuAddress != null)
+;
+
+context DiagGeneral if (this.sum_Diag_EnableDID_E0CC == true) ERROR "DIAG: if sum_Diag_EnableDID_E0CC is enabled, then dIAG_DID_E0CC_Reference must be configured." :
+	(this.dIAG_DID_E0CC_Reference != null)
+;
+
+context CommChannels ERROR "DIAG: Configure at least one ComM channel" :
+	(this.commChannel.size > 0)
+;
+
+context DiagGeneral ERROR "DIAG: Periodicity of Main runnable is not set." :
+	(this.dIAG_TE_Main_Period != null)
+;
+
+context DiagGeneral ERROR "DIAG: Periodicity of shutdown permission runnable is not set." :
+	(this.dIAG_TE_Shutdown_Permission_Period != null)
+;
+
+context DiagGeneral ERROR "DIAG: Periodicity of BswM Mode runnable is not set." :
+	(this.dIAG_TE_BswM_ModeUser_Period != null)
+;
+
+context DiagGeneral ERROR "DIAG: Periodicity of MEC handler runnable is not set." :
+	(this.dIAG_TE_MEC_Handler_Period != null)
+;
+
+context DiagGeneral ERROR "DIAG: Periodicity of OTA PSF runnable is not set." :
+	(this.dIAG_TE_OTA_PSF_Period != null)
+;
+
+context DiagGeneral 
+	if (this.dIAG_BSPMP_RmtProgmActvAuthRef != null && this.dIAG_ServiceBased_OTA_Ref != null) 
+	ERROR "DIAG: DIAG_ServiceBased_OTA_DataTypeMappingSet must be configured when DIAG_ServiceBased_OTA_Ref is set." :
+	(this.dIAG_ServiceBased_OTA_DataTypeMappingSet != null)
+;

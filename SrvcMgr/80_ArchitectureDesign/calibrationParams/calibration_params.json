@@ -1,0 +1,10 @@
+[
+    {
+        "Name": "SUM_SrvcMgr_Example1_Thresh",
+        "Description": "",
+        "Multiplicity": "",
+        "Minimum": 0,
+        "Maximum": 1,
+        "Default": 0
+    }
+]

@@ -1,0 +1,29 @@
+@startuml Sum_SUSD_DID_E0D7_SeqDiagram
+
+participant SUM_SUSD as SUSD
+
+== DID 0xE0D7 & RID 0x041A Handling ==
+group DID 0xE0D7 Read
+    DCM -> SUSD : ReadDataLength (DID 0xE0D7) Request
+    activate SUSD
+    SUSD -> SUSD : Calculate length of DID 0xE0D7 based on number of records
+    SUSD --> DCM : DataLength of DID 0xE0D7
+    deactivate SUSD
+    
+    DCM -> SUSD : Read DID 0xE0D7 Request
+    activate SUSD
+    SUSD -> SUSD : Prepare buffer with DID 0xE0D7 data
+    SUSD --> DCM : DID 0xE0D7 Response
+    deactivate SUSD
+end
+
+DCM -> SUSD : RID 0x041A Request (Clear Activity Records)
+activate SUSD
+SUSD -> SUSD : Clear Activity Records (RAM & NvM)
+SUSD -> SUSD : Clear Total Activity Timer (RAM & NvM)
+SUSD -> SUSD : Clear Total WakeUp Counter (RAM & NvM)
+SUSD -> SUSD : Set Monitor Disabled = False
+SUSD -> RTE : BatteryVltg_MonrDisbl(False)
+deactivate SUSD
+
+@enduml

@@ -1,0 +1,16 @@
+@startuml sleepProc
+
+state PN_IDLE {
+    state PNC_ENABLE_CHECK:* Request BswM to deactivate PN's Tx and Rx Pdu group
+    state PNC_ENABLE_CHECK:* Notify SUM modules
+}
+
+state PN_ACTIVE {
+    state PNC_PREPARE_SLEEP:* Local Activation Criteria == FALSE **&&**
+    state PNC_PREPARE_SLEEP:\t (Sensor_Act == FALSE AND Signal_Act == FALSE)
+    state PNC_PREPARE_SLEEP:* NM Remote Criterion == FALSE (DM timer expired)
+}
+
+PNC_PREPARE_SLEEP -> PNC_ENABLE_CHECK
+
+@enduml

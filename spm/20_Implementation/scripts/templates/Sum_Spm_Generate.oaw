@@ -1,0 +1,431 @@
+<!--
+/* ********************************************************************************************************************
+ *
+ * COPYRIGHT RESERVED, 2013 Robert Bosch GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as the communication of its contents to
+ * others without explicit authorization is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or design.
+ *
+ ******************************************************************************************************************* */
+
+/* Administrative Information (automatically filled in)
+* $Domain____:$
+* $Namespace_:$
+* $Class_____:$
+* $Name______:$
+* $Variant___:
+* $Revision__:0$
+* $Author____:BOSCH$
+**********************************************************************************************************************
+*/
+ -->
+
+<workflow>
+  <!-- Property file containing model package and generator version info -->
+	<property file="Spm_workflow.properties" />
+
+
+<!-- HEADERS NAD SOURCES -->
+
+	<!-- generate Sum_Spm_Cfg_CDD.arxml -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="arxml::Sum_Spm_Cfg_CDD_arxml::Root FOR model" />
+	</component>
+
+    <!-- generate Sum_SpmTypes.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_SpmTypes_h::Root FOR model" />
+	</component>
+
+	    <!-- generate Sum_Spm_WakeUpHelper.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_WakeUpHelper_h::Root FOR model" />
+	</component>
+
+    <!-- generate Sum_Spm_Cfg.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Cfg_h::Root FOR model" />
+	</component>
+
+
+    <!-- generate Sum_Spm_Cfg.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Cfg_c::Root FOR model" />
+	</component>
+
+	    <!-- generate Sum_Spm_SM_Req_EthIf.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_SM_Req_EthIf_h::Root FOR model" />
+	</component>
+
+    <!-- generate Sum_Spm_Request_Queue.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Request_Queue_h::Root FOR model" />
+	</component>
+
+
+    <!-- generate Sum_Spm_Request_Queue.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Request_Queue_c::Root FOR model" />
+	</component>
+
+    <!-- generate Sum_Spm_SM_Req_EthIf.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_SM_Req_EthIf_c::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_SoftwMgr.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_SoftwMgr_c::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_SoftwMgr.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_SoftwMgr_h::Root FOR model" />
+	</component>
+
+	    <!-- generate Sum_Spm_PBCfg.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_PBCfg_h::Root FOR model" />
+	</component>
+
+		    <!-- generate Sum_Spm_RequesterLst.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_RequesterLst_h::Root FOR model" />
+	</component>
+
+		    <!-- generate Sum_Spm_RequesterLst.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_RequesterLst_c::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_WakeUp.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_WakeUp_h::Root FOR model" />
+	</component>
+
+		    <!-- generate Sum_Spm_WakeUp.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_WakeUp_c::Root FOR model" />
+	</component>
+
+			    <!-- generate Sum_Spm_MetaData.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_MetaData_h::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_HeartBeat_Mgr.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_HeartBeat_Mgr_h::Root FOR model" />
+	</component>
+
+		    <!-- generate Sum_Spm_HeartBeat_Mgr.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_HeartBeat_Mgr_c::Root FOR model" />
+	</component>
+
+		    <!-- generate Sum_Spm_SrvcMgrIf.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_SrvcMgrIf_h::Root FOR model" />
+	</component>
+
+			    <!-- generate Sum_Spm_SrvcMgrIf.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_SrvcMgrIf_c::Root FOR model" />
+	</component>
+
+	    <!-- generate Sum_Spm_PowerProfileStateMachine.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_PowerProfileStateMachine_h::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_PowerProfileStateMachine.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_PowerProfileStateMachine_c::Root FOR model" />
+	</component>
+
+
+    <!-- generate Sum_Spm_PBCfg.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_PBCfg_c::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_VariantManagement.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_VariantManagement_h::Root FOR model" />
+	</component>
+
+
+    <!-- generate Sum_Spm_VariantManagement.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_VariantManagement_c::Root FOR model" />
+	</component>
+	
+	<!-- generate Sum_Spm_PwrMgr.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_PwrMgr_h::Root FOR model" />
+	</component>
+
+
+    <!-- generate Sum_Spm_PwrMgr.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_PwrMgr_c::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_Services.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Services_h::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_Services.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Services_c::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_Interaction_VehicleEnergyOptimizer.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Interaction_VehicleEnergyOptimizer_h::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_Interaction_VehicleEnergyOptimizer.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Interaction_VehicleEnergyOptimizer_c::Root FOR model" />
+	</component>
+
+		<!-- generate Sum_spm_Diagnostic.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_spm_Diagnostic_h::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_spm_Diagnostic.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_spm_Diagnostic_c::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_spm_ErrorHandler.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_spm_ErrorHandler_h::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_spm_ErrorHandler.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_spm_ErrorHandler_c::Root FOR model" />
+	</component>
+
+
+		<!-- generate Sum_spm_PowerOnDevice.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_spm_PowerOnDevice_h::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_spm_PowerOnDevice.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_spm_PowerOnDevice_c::Root FOR model" />
+	</component>
+
+		<!-- generate Sum_Spm_DevicePowerState.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_DevicePowerState_h::Root FOR model" />
+	</component>
+
+			<!-- generate Sum_Spm_DevicePowerState.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_DevicePowerState_c::Root FOR model" />
+	</component>
+
+
+	<!-- generate Sum_Spm_Request_Queue.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Request_Queue_c::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_Request_Queue.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Request_Queue_h::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_MetaData.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_MetaData_h::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_MetaData.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_MetaData_c::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_Cbk.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Cbk_c::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_Cbk.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_Cbk_h::Root FOR model" />
+	</component>
+
+    <!-- generate Sum_Spm.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_h::Root FOR model" />
+	</component>
+
+	<!-- generate Sum_Spm_PwrMgr.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_WufRollingBuffer_h::Root FOR model" />
+	</component>
+
+
+    <!-- generate Sum_Spm_PwrMgr.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Spm_WufRollingBuffer_c::Root FOR model" />
+	</component>
+
+
+</workflow>

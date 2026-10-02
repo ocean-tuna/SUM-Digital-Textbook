@@ -1,0 +1,53 @@
+@startuml Sum_Ssfm_DTCU1961_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DTCU1961_Handler"
+
+**Interfaces Legend**
+   //II152 //: ERRH_ExecutionStatus
+   //ri117 //: ISPKSP
+   //II159 //: Debounced Error
+   //II150 //: BatteryVoltage 
+   //II156 //: isTransportMode
+   //II157 //: DisableDTCs
+   //II164 //: isGeneralSequenceOrMemoryFail
+   //pi131 //: DTC_1961_SecurityPeripheralPerformance_SetEventStatus
+   //II160 //: Undebounced Error
+   
+endlegend
+
+note top of EC
+is responsible for asking the DEM to set the DTC 1961 according to what has been verified by the Secp Errors Aggregator.
+end note
+
+
+component [SSFM::Sum_Ssfm_DTCU1961_Handler] as EC{
+	portin ri117
+    portout pi131
+
+	[Sum_Ssfm_DTCU1961_Handler]  as E
+}
+   interface II152
+   interface II159
+   interface II150
+   interface II156
+   interface II157
+   interface II164
+   interface II160
+
+
+
+  II152 -> E
+  ri117 -> E
+  II159 -> E
+  II150 -> E
+  II156 -> E
+  II157 -> E
+  II164 -> E
+  E -> pi131
+  E -> II160  
+
+
+@enduml

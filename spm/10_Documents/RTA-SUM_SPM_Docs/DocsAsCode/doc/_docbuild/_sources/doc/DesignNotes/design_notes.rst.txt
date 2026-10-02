@@ -1,0 +1,351 @@
+========================
+RTA-SUM SPM Design Notes
+========================
+
+***********
+System View
+***********
+
+Network topology
+================
+RTA-SUM SPM is a Complex Device Driver in the standardized AUTOSAR. RTA-SUM SPM main task is to manage the request for activating/deactivating specific software services.
+
+SPM can receive Activation/Deactivation request for software services in two ways:
+
+* **Locally**: from a local software entity
+* **Remotelly**: from a remote node in the communication network by Ethernet frame
+
+At the same time, SPM can handle the activation/deactivation of:
+
+* an own (local) software Service
+* a remote software Service. In this case the current SPM just acts as the requester or a request gateway
+
+.. note::
+
+    An SPM can directly activate/deactivate only its own (local) software Services. For the remote one it just appears as the
+    activation/deactivation requester.
+
+The remote communication between nodes to activate/deactivate entities always involves the ECUs' own SPM instances as agents.
+
+So that, the activation/deactivation task gets itself in a recursive algorithm, in which the same routine is called until the among
+the several instance of the SPM in the network nodes. In other words, the Activation/Deactivation of a software service appears like a graph navigation to
+find the network node that hosts the software service and so the related SPM instance that is able to activate/deactivate it.
+
+An example is provided in the following figure:
+
+.. figure:: ../../pictures/spmGraph.png
+    :scale: 50%
+    :alt: Graph of the network graph
+
+SPM to SPM communication
+========================
+
+Each Requester SPM waits for a response from the requested one. This response shall inform the request about two possible effects of a SPM request:
+
+#. Request has ben accepted: Provided an ACK value to the requesters
+#. Request is on-going: The requester SPM's next one is going down in the graph navigation to find who SPM is the manager of the requested service
+
+In the last case, the requested SPM instance replies to its requester with a numeric code (this is the ProfileStatusValue).
+
+A SPM instance:
+
+* Sends request and receives status information to lower-node in the network graph  (as Requester)
+* Provides status information about a request to its "higher-node" in the network graph and forwards the request to the its lower-nodes (as Requested).
+
+Overall, a SM frame is sent by the Software Manager if occours one of the following conditions: 
+
+* Software Manager will populate and send the REQ_STATUS_PROF_STATE side of a SM frame if a remote PROFILE_REQUEST is received properly by a remote Target Device. 
+* Software Manager will populate and send the REQ_STATUS_PROF_STATE side of a SM frame if a Power Profile requested previously by a remote Target Device changes it state.
+* Software Manager will populate and send the PROFILE_REQUEST side of a SM frame if it needs to activate a remote Power Profile (i.e. a Power Profile located on a remote Target Device).
+
+*******************
+SPM Internal Design
+*******************
+
+SPM Class Diagram
+=================
+
+The idea of the SPM internal design is to implement all the SPM functionalities as a single module. This means a real differentiation between Software Manager and Power Manager
+does not appear in the software design.
+
+Assuming all the components of the SPM inner architecture as Objects, the design appears as follows:
+
+
+PowerOnDevice
+=============
+
+The design should match a Finite State Machine.
+
+This Finite State Machine has a default event that triggers it. The default trigger event is the periodicity of the :code:`Runnable_SPM_PowerManager_MainFunction()`
+
+**NOTE**: pay attention that delay of steps are all greater than Power Manager periodicity. 
+
+.. uml::
+
+    [*] --> PM_Communication_Off: /**//this//**.current_step_id = 1;
+        
+    state PM_Communication_On {
+        state PM_Step_Aggregation: **en**:\n\t**//this//**.__com__.add(\n\t\tpgtt_ins->wkUpStep[**//this//**.current_step_id].com);
+        state PM_Step_Aggregation:        \t**//this//**.current_step_id += 1;
+        state PM_Step_Aggregation:        \t**//this//**.__isChanged__ = SPM_checkNewCommandStatus();
+
+        state PM_Step_Dlyed
+    }
+
+    PM_Communication_Off -> PM_Communication_Off: evPowerOndeviceReq[pgtt_inst == nil]
+
+    PM_Communication_Off -up-> PM_Step_Dlyed: evPowerOnDeviceReq[\n\tpgtt_inst != nil && \n\tpgtt_ins->wkUpStep[**//this//**.current_step_id].dly > 0]/\n**//this//**.dly_cntr = pgtt->ins->wkUpStep[**//this//**.current_step_id].dly; 
+    PM_Communication_Off -down-> PM_Step_Aggregation: evPowerOnDeviceReq[\n\tpgtt_inst != nil && \n\tpgtt_ins->wkUpStep[**//this//**.current_step_id].dly == 0]; 
+
+    PM_Step_Dlyed -right-> PM_Step_Dlyed: [**//this//**.dly_cntr > 0]/**//this//**.dly_cntr -= 1;
+
+    PM_Step_Dlyed -left-> PM_Step_Aggregation: [**//this//**.dly_cntr == 0]
+
+    PM_Step_Aggregation -> PM_Step_Dlyed: [**//this//**.pgtt_ins->wkUpStep[**//this//**.current_step_id].dly > 0]/\n\t**//this//**.dly_cntr = pgtt->ins->wkUpStep[**//this//**.current_step_id].dly;
+
+
+Parameters that are accessed by **this** are private attributes of each instance of the Finite State Machine.
+
+.. raw:: html
+
+    <u>underlined</u> parameters are output.
+
+The types can be:
+
+* **uint16**: *dly_cntr*
+* **uint8**: *current_step_id*
+* **boolean**: *isChange*
+
+PowerOffDevice
+==============
+
+.. uml::
+
+    [*] --> PM_Communication_On
+
+    PM_Communication_On -> PM_Communication_On: evPowerOffDevice[pgtt_inst == nil]
+    
+    state PM_Communication_Shutdown {
+        state C1 <<choice>>
+        state C2 <<choice>>
+        state PM_Shutdown_Completed: **do**: //No message Transmission on BUS//
+        state PM_Shutdown_Requested
+    
+        [*] -> PM_Shutdown_Requested
+    }
+    
+    PM_Communication_On --> PM_Communication_Shutdown: evPowerOffDevice[pgtt_inst != nill]/\n\t\tthis.step_id = pgtt_inst->wkUpSeqLen;\n\t\tthis.dly_cntr =  pgtt_inst->wkUpStep[this.step_id].dly - 1;
+    
+    PM_Shutdown_Requested -down-> C1
+    C1 -left-> PM_Shutdown_Requested: [this.dly_cntr > 0]\n**/**this.dly_cntr -= 1;
+    C1 -down-> C2: [this.dly_cntr == 0]\n\t**/**this.__com__[BYTE_ID] &= ~(1 << pgtt_inst->wkUpStep[this.step_id].com);\nthis.step_id -= 1;
+    C2 -right-> PM_Shutdown_Requested: [this.step_id > 0]
+    C2 --> PM_Shutdown_Completed: [this.step_id == 0]
+
+
+DevicePowerStatus management
+============================
+
+The api :code:`SPM_DevicePowerState()` is a *Stateful* API.
+
+The API SHALL tracks:
+
+- The status of the current device
+- The status of the remote hosts in communication with the current device
+
+The implementation can define some functions to trigger the Device status change according to:
+
+- Device Type (Current, Remote)
+- aggregates logic rules in boolean expressions
+
+======================= =========================== ====================================== =================================== =================================
+  Device Power State       Device Previous State      Condition for Local Device               Condition for Remote Device          Remote Device role
+======================= =========================== ====================================== =================================== =================================
+FAULTED                        OFF                     evRequestFailed                      evHeartBeatTimeOut                            Requester         
+REBOOT                         N/A                     Spm_PermExec == FALSE                evHeartBeatRcved
+                                                                                            \[                                               Any
+                                                                                            (new_hb_VAL + c_cnt) < old_hb_VAL
+                                                                                            \]
+PENDING_SHUTDOWN               ON                       evNoRequest                         evHeartBeatRcved                                 Any
+                                                                                            \[                           
+                                                                                            new_hb_VAL  == 0
+                                                                                            \]
+OFF                       **DEFAULT**                       N/A                             evHeartBeatTimeOut                               Any
+                                                                                            \[
+                                                                                            (DeviceMonitorStatus == False)
+                                                                                            \]
+ON                             Any                   Spm_PermExec **OR** SPM_MSK = 0xFF     evHeartBeatTimeOut                              Requester
+                                                                                            \[
+                                                                                            new_hb_VAL == old_hb_VAL
+                                                                                            \]
+
+======================= =========================== ====================================== =================================== =================================
+
+Event definition:
+
+- evNoRequest: The wake-up frame has been received with bit 0 in mapped position for the current device encoding **AND** *ALL* Power Profiles are in INACTIVE state.
+- evRequestFailed: The SPM has tried to activate an *accepted* Power Profile, but the activation failed for any reason as follows:
+
+    * Remote FAIL:
+      
+      - Node that hosts a Power Profile Service dependency has not woken
+      - SM that manages the Power Profile remote dependency has reject the dependency 
+    
+    * Local FAIL
+
+      - The service activation request to the SrvcMngr returns a FAIL for a local services
+
+- evHeartBeatRcved: Heartbeat message received in the allowed time window
+- evHeartBeatTimeOut: HeartBeat message has not received in the allowed time window
+
+function tips can be as follows:
+
+.. code:: C
+
+    DPS_RetType SPM_DevicePowerState()
+    {
+        static DPS_RetType retVal = SPM_DPS_OFF;
+
+        while( (1 != 0))
+        {
+            if( SPM_isFAULTED() )
+            {
+                retVal = SPM_DPS_FAULTED;
+                break;
+            }
+
+            if( SPM_isREBOOT() )
+            {
+                retVal = SPM_DPS_REBBOT;
+                break;
+            }
+
+            if( SPM_isPRENDING_SHUTDOWN() )
+            {
+                retVal = SPM_DPS_PENDING_SHUTDOWN;
+                break;
+            }
+
+            if( SPM_isOFF() )
+            {
+                retVal = SPM_DPS_OFF;
+                break;
+            }
+
+            if( SPM_isON() )
+            {
+                retVal = SPM_DPS_ON;
+                break;
+            }
+
+            retVal = SPM_DSP_INITIALIZING;
+            break;
+        }
+    }
+
+Interaction with CanIf
+----------------------
+
+.. code:: C
+
+    Std_ReturnType CanIf_XCore_LocalCore_Transmit
+    (
+        PduIdType CanIfTxSduId,
+        const PduInfoType * CanIfTxInfoPtr
+    );
+
+
+CanIfTxSduId is used as follows:
+
+- :code:`ltxPduCustId_t = CanIf_Prv_ConfigSet_tpst->TxPduIdTable_Ptr[CanIfTxSduId];`
+- :code:`lRetVal_en = CanIf_XCore_LocalCore_Transmit(CanIfTxSduId, CanIfTxInfoPtr);`
+
+The structure record (array type) :code:`CanIf_Prv_ConfigSet_tpst->TxPduIdTable_Ptr` (PBcfg.c) is initialized with value
+:code:`CanIf_TxPduId_MappingTable[]`. This last contains the mapping between PDU and positions in array.
+
+an example is:
+
+.. code:: C
+
+  static const uint16 CanIf_TxPduId_MappingTable[] = 
+  {        
+    /*ApplicationECU_PCSM_MSG_Tx_VLM_CAN_3_controller_OUT*/
+    0,	      
+    /*ApplicationECU_Prtctd_MSG_Tx_VLM_CAN_3_controller_OUT*/
+    1,	      
+    /*ApplicationECU_TestResult_Tx_VLM_CAN_3_controller_OUT*/
+    2,	      
+    /*ApplicationECU_Unprotected_Tx_VLM_CAN_3_controller_OUT*/
+    3,	      
+    /*DTCInfo_VLM_PDU_VLM_CAN_3_controller_OUT*/
+    4  };
+
+The item :code:`static const CanIf_Cfg_TxPduConfig_tst CanIf_TxPduGen_a[]` contains then all the information for PDus as per configuration.
+
+Possible design of Ethernet Wake-up Frame
+=========================================
+
+.. uml::
+
+    participant Spm
+    participant EthSM
+    participant SoAd
+    participant TcpIp
+
+    Spm -> EthSM : EthSM_RequestComMode(Network Handle id, \nCOMM_FULL_COMMUNICATION_WITH_WAKEUP_REQUEST)
+    Spm -> SoAd : Soad_IfTransmit(\n\tStdReturnType,\n\tPduIdType,\n\tconst PduIdType *)
+    activate Spm
+    activate SoAd
+
+    SoAd -> TcpIp: TcpIp_UdpTransmit(\n\tStd_ReturnType,\n\tTcpIp_SocketIdType,\n\tconst uint8*,\n\tconst TcpIp_SocketAddrType \*,\n\tuint16)
+    activate TcpIp
+
+    loop copy of Tx PDU data in dst buffer **not** expired
+        TcpIp -> SoAd: SoAd_CopyTxData(\n\tBufReq_ReturnType,\n\tTcpIp_SocketIdType,\n\tuint8 \*,\n\tuint16)
+        activate SoAd
+    
+        SoAd --> TcpIp
+        deactivate SoAd
+    end loop
+
+    TcpIp --> SoAd
+    deactivate TcpIp
+
+    SoAd --> Spm
+    deactivate SoAd
+
+**ISSUE**: seems to be not supported by RTA-CAR.
+
+The TC10 pulse shall be sent (done by EthSM_RequestComMode()) before triggering the sending the Ethernet Wake-Up frame (done by Soad_IfTransmit()).
+If the Soad_IfTransmit() API returns E_NOT_OK, the next execution of the PowerManager's main function
+will trigger again the sending of the frame. 
+
+Please, take into account that the 'Network Handle id' is retrieved by SPM thanks to a configuration parameter (SpmGeneral/spmETHWkUpFrmRef/spmETHSwitchNetwork)
+ that references a EthSMNetwork. If it is not configured, the TC10 pulse will not be sent. 
+
+
+PDU Group Handling
+==================
+Each Power Profile could have one or more PDU groups (Tx and Rx) associated which behaviour is handled by the SPM. 
+When a Power Profile is activated, the PDU groups associated to it should be enabled; if the Power Profile is inactive, PDU groups should be disabled.
+
+.. note::
+    
+    Actually, there is a reference in the SPM's ParamDef spm/spmConfigSet/spmConfiguredPowPrf/spmSrvcPduGroupTxRef and spm/spmConfigSet/spmConfiguredPowPrf/spmSrvcPduGroupRxRef containers.
+
+The Enable/Disable feature is achieved thanks to the :code:`BswMPduGroupSwitch` BswM action: it calls the ComM in order to enable or disable a PDU group. 
+So, for each PDU group, a Mode Request port is needed w.r.t. the BswM and relative creation of a MODE-SWITCH-INTERFACE. 
+
+SPM calls :code:`Rte_switch()` functions (one for each PDU group) that are stored as function pointer in the arrays 
+:code:`Spm_Rte_SwitchPduGroup_<<NameOfPowProfAssociated>>_tx_refs[]` or :code:`Spm_Rte_SwitchPduGroup_<<NameOfPowProfAssociated>>_rx_refs[]` at the end of a Power Profile (De)Activation process. 
+
+At the end of the procedure of (De)Activation of a Power Profile, the following is done by the function :code:`Spm_SwitchNetworkPdu()`:
+
+======================= =========================== ======================= 
+    PowProf Request         Result of procedure        PDU Group's Action   
+======================= =========================== =======================
+Activation                        OK                    Enable PDU group   
+Activation                        NOT_OK               Disable PDU group
+Deactivation                       OK                    Disable PDU group 
+Deactivation                       NOT_OK               Disable PDU group
+======================= =========================== =======================

@@ -1,0 +1,11 @@
+{
+   "Name": "TcsGenerateInitRunnable",
+   "Description": "Configuration parameter TcsGenerateInitRunnable is used to allow the generation of a periodic runnable to run function RE_TCS_Init one time. If TRUE the Tcs should generate the periodic runnable to execute init() function one time otherwise, the init() function is called by a BswM action list during startup.",
+   "Multiplicity": "1..1",
+   "Category": "ECUC-BOOLEAN-PARAM-DEF",
+   "Range": "0..1",
+   "Default": "false",
+   "Container": "TcsGeneral",
+   "Req_Definition": [],
+   "Req_Satisfies": []
+}

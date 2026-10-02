@@ -1,0 +1,1150 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_PowerProfileStateMachine.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for SPM Power Profile State Machine
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+/*-----------------------------------------------------------------------------
+ *    Include files
+ *----------------------------------------------------------------------------*/
+
+#include "Sum_Spm_PowerProfileStateMachine.h"
+#include "Sum_Spm_SrvcMgrIf.h"
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_PowerOnDevice.h"
+#include "Sum_Spm_Interaction_VehicleEnergyOptimizer.h"
+#include "Sum_Spm_ErrorHandler.h"
+
+/******************************************************************************
+ * BEGIN: source code of a multiple instance class
+ ******************************************************************************/
+
+/* PRQA S 3469 EOF # Following macro are used to access data structure */
+/* PRQA S 3472 EOF # Following macro are used to access data structure */
+#define PowerProfileState(i)                                   (  SPM_PrfStsMgr_RAM[i].sm )
+#define spmPrfStsMgrInstCode_VAL(i)                            (  SPM_PrfStsMgr_RAM[i].spmPrfStsMgrInstCode )
+#define Spm_CurrentPduStatus(i)                                (  SPM_PrfStsMgr_RAM[i].PduStatus )
+#define Spm_SetCommandToBeSent(i)                              (  SPM_PrfStsMgr_RAM[i].CommandSend )
+
+#define Spm_SetPowProfileStateIsChanged(i)                     (  SPM_PrfStsMgr_RAM[i].isStateProfileChanged =  TRUE )
+
+#define SPM_ACT_DEACT_CMD_NOT_SENT                             ( 0x00u )
+#define SPM_ACT_DEACT_CMD_SENT                                 ( 0x01u )
+#define SPM_ACT_DEACT_CMD_SENT_RCVD_ERROR_TAG                  ( 0x02u )
+#define SPM_ACT_DEACT_CMD_ACKED                                ( 0x03u )
+
+#define GetActReqStatus(i)                                     ( (SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step & 0x03u))
+#define SetActReqIsSentToRemoteTrgDvc(i)                       ( (SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step = ((SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step & 0xFCu) | SPM_ACT_DEACT_CMD_SENT)) )
+#define SetActCorrectAckReceivedFromRemoteTrgDvc(i)            ( (SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step = ((SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step & 0xFCu) | SPM_ACT_DEACT_CMD_ACKED)) )
+#define SetReqIsRjctByRemoteTrgDvc(i)                          ( ( SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step = ((SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step & 0xFCu) | SPM_ACT_DEACT_CMD_SENT_RCVD_ERROR_TAG)) )
+
+#define ResetActReqIsSentToRemoteTrgDvc(i)                     ( (SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step &= 0xFCu) )
+
+#define GetDeactReqStatus(i)                                   ( ((SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step >> 2u) & 0x03u))
+/* PRQA S 3214 2 # Following macro are left for future use */
+#define GetDeactReqIsSentToRemoteTrgDvc(i)                     ( ((SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step >> 2u) & 0x03u) == SPM_ACT_DEACT_CMD_SENT )
+#define GetDeactCorrectAckReceivedFromRemoteTrgDvc(i)          ( ((SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step >> 2u) & 0x03u) == SPM_ACT_DEACT_CMD_ACKED )
+#define SetDeactReqIsSentToRemoteTrgDvc(i)                     ( (SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step = ((SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step & 0xF3u) | (SPM_ACT_DEACT_CMD_SENT << 2u))) )
+#define SetDeactCorrectAckReceivedFromRemoteTrgDvc(i)          ( (SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step = ((SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step & 0xF3u) | (SPM_ACT_DEACT_CMD_ACKED << 2u))) )
+#define ResetDeactReqIsSentToRemoteTrgDvc(i)                   ( (SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step &= 0xF3u) )
+
+#define SPM_SET_AT_LEAST_ONE_ACT_CMD_SENT(i)                   ( (SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step |= (0x01u << 4u) ) )
+#define SPM_GET_AT_LEAST_ONE_ACT_CMD_SENT(i)                   ( ((SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step >> 4u) & 0x01u) == 1u )
+/*-----------------------------------------------------------------------------
+ *    Defines
+ *----------------------------------------------------------------------------*/
+
+static void Spm_SwitchNetworkPdu(const uint16 indexOfPowProf, const uint8 cmd);
+static void Spm_SwitchNetworkPduTx(const uint16 indexOfPowProf, const uint8 cmd);
+static void Spm_SwitchNetworkPduRx(const uint16 indexOfPowProf, const uint8 cmd);
+static boolean Spm_IsANewActivationCommandNeeded(const uint32 indexOfPowProf);
+static uint32 Spm_GetRetryPeriodicityFromTrgDvcState(const SpmDevicePowerStateCode TrgDvcState);
+static uint32 Spm_GetRetryPeriodicityFromRejection(const uint8 rejectionCode);
+static void Spm_HandleRejectionRetry(const uint8 indexOfPowProf, const uint8 StatusRequest);
+static boolean Spm_ActivateServiceSrvcMgrHandlerFunction(const uint32 index, const boolean IsActivation);
+static SpmPresencyDependencyTypeRequest Spm_RetrieveDependencyTypeFromRequesterList(const uint32 index);
+static void Spm_RemotePowerProfile_ActReq(const uint32 index);
+static void Spm_ProcessActReqStatus(const uint32 index, const uint8 actReqStatus, const SpmDevicePowerStateCode TrgDvcState);
+static void Spm_RemotePowerProfile_DeactReq(const uint32 index);
+static void Spm_ActDeactRetry_SetPeriodicity(const uint32 index, const uint32 periodicityInTicks);
+static void Spm_ActDeactRetry_ReloadOngoingTracker(const uint32 index);
+static boolean Spm_IsServiceUsedByOtherProfiles(const uint32 currentProfileIndex, boolean IsConditionCheckedForService);
+static void Spm_SuspendRemoteProfileActivationRetry(const uint8 indexOfPowProf, const SpmRejectionReasonType rejectionKind);
+«LET spm.spmConfigSet.spmPowPrf AS pp-»
+«IF pp.spmComIPduGroupEvnt_Tx.size > 0 || pp.spmComIPduGroupEvnt_Rx.size > 0-»
+static void Spm_DisableRxPduAndTriggerDisablingTxPdu(const uint32 indexOfPowProf);
+static void Spm_HandlePduGroups(SpmPresencyDependencyTypeRequest PresentReq, uint32 index);
+«ENDIF-»
+«ENDLET-»
+
+/**
+ * @brief Check if there is at least one remote request (i.e. from another ECU)
+ *        to activate a power profile, that is not locally requested too.
+ *
+ * @retval TRUE: if there is at least one remote request to activate a power profile, with no local activation requests
+ * @retval FALSE: otherwise
+ */
+/* PRQA S 1532 1 # Function defined here for modularity reason */
+boolean Spm_CheckRemoteRequestPresence(void)
+{
+   uint16 i; /* Index for power profiles. */
+   uint8 j;  /* Index for requesters. */
+   boolean hasRemoteRequester;
+   boolean hasLocalRequester;
+   boolean ret = FALSE;
+
+   /* Iterate through all power profiles. */
+   for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++)
+   {
+      hasRemoteRequester = FALSE;
+      hasLocalRequester  = FALSE;
+
+      /* Iterate through all requesters for the current power profile. */
+      for(j = 0u; j < SPM_PrfStsMgr_RAM[i].reqLst.size; j++)
+      {
+         /* SpmRequestDependencyType must be either ACTIVATED or ACTIVATE_AND_CONSUMED. */
+         if((SPM_PrfStsMgr_RAM[i].reqLst.spmReqLst[j].ReqType == SPM_PRF_ACTIVATED) ||
+            (SPM_PrfStsMgr_RAM[i].reqLst.spmReqLst[j].ReqType == SPM_PRF_DEP_ACT_AND_CONS))
+         {
+            /* If requesterIP != 0, requester on another ECU (remote requester). */
+            if(SPM_PrfStsMgr_RAM[i].reqLst.spmReqLst[j].requesterIP == 0u)
+            {
+               hasLocalRequester = TRUE;
+            }
+            else
+            {
+               hasRemoteRequester = TRUE;
+            }
+         }
+      }
+
+      /* Interested just in only-remote requests. */
+      if((hasRemoteRequester == TRUE) && (hasLocalRequester == FALSE))
+      {
+         ret = TRUE;
+         break;
+      }
+   }
+
+   return ret;
+}
+
+/**
+ * @brief Check if there is at least one local request (i.e. from the same ECU)
+ *       to activate a power profile.
+ *
+ * @retval TRUE: if at least one local request to activate a power profile
+ *         FALSE: otherwise
+ */
+/* PRQA S 1532 1 # Function defined here for modularity reason */
+boolean Spm_CheckLocalRequestPresence(void)
+{
+   uint16 i; /* Index for power profiles. */
+   uint8 j;  /* Index for requesters. */
+   boolean ret = FALSE;
+
+   /* Iterate through all power profiles. */
+   for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++)
+   {
+      /* Iterate through all requesters for the current power profile. */
+      for(j = 0u; j < SPM_PrfStsMgr_RAM[i].reqLst.size; j++)
+      {
+         /* If requesterIP == 0, requester on the same ECU (local requester). */
+         if(SPM_PrfStsMgr_RAM[i].reqLst.spmReqLst[j].requesterIP == 0u)
+         {
+            /* SpmRequestDependencyType must be either ACTIVATED or ACTIVATE_AND_CONSUMED. */
+            if((SPM_PrfStsMgr_RAM[i].reqLst.spmReqLst[j].ReqType == SPM_PRF_ACTIVATED) ||
+               (SPM_PrfStsMgr_RAM[i].reqLst.spmReqLst[j].ReqType == SPM_PRF_DEP_ACT_AND_CONS))
+            {
+               ret = TRUE;
+               break;
+            }
+         }
+      }
+      if(ret == TRUE)
+      {
+         break;
+      }
+   }
+
+   return ret;
+}
+
+/**
+ * @brief Check if there are requester on profiles located on the TrgDvcIp
+ *
+ * @param[in] TrgDvcIp Remote trgdvc id.
+ *
+ * @retval TRUE: if there is at least one requester for a profile located on that TrgDvc
+ * @retval FALSE: otherwise
+ */
+/* PRQA S 1532 1 # Defined here for modularity reason. */
+boolean Spm_GetIfProfileRunningOnRemoteTrgDvc(const uint32 TrgDvcIp){
+
+	boolean ret = FALSE;
+   uint8 index;
+   SpmPresencyDependencyTypeRequest PresentReq;
+
+	for(index = 0u; index < SPM_CONF_POW_PRF_NUM; index++){
+		if(SPM_PrfStsMgr_RAM[index].TrgDvcIp == TrgDvcIp){
+         PresentReq = Spm_RetrieveDependencyTypeFromRequesterList(index); 
+			if( (PresentReq == Spm_ONLY_ACTIVATED_REQ_PRESENT) || (PresentReq == Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT) ){
+            ret = TRUE; 
+            break;
+         }
+		}
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Check if the requester TrgDvcIp needs a feedback for this PowerProfile.
+ *
+ * The requester does not need any feedback if the PowerProfile is a dependency of
+ * the TrgDvc's root request.
+ *
+ * Please, take into account there are scenario in error handling where the requester is not present in
+ * the requester list BUT it still need a feedback (i.e. when its request is rejected for LowBatteryVoltage reason)
+ *
+ * @param[in] TrgDvcIp Remote trgdvc id.
+ * @param[in] powProfIndex Index of the power profile.
+ *
+ * @retval TRUE: if the TrgDvc needs a feedback.
+ * @retval FALSE: otherwise
+ */
+/* PRQA S 1532 1 # Defined here for modularity reason. */
+boolean Spm_GetTrgDvcNeedsFeedbackForThisPowProf(const uint32 trgDvcIp, const uint8 powProfIndex){
+   boolean ret = TRUE;
+   uint8 indexDepList;
+
+   for(indexDepList = 0u; indexDepList < SPM_PrfStsMgr_RAM[powProfIndex].reqLst.size; indexDepList++){
+
+      if( SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[indexDepList].requesterIP == trgDvcIp ){
+         if(SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[indexDepList].initFeedbackProvided == SPM_NO_FEEDBACK_NEEDED){
+            ret = FALSE;
+         }
+         break;
+
+      }
+   }
+   return ret;
+}
+
+/**
+ * @brief Check if Service is used by any other profiles.
+ *
+ *
+ * @param[in] currentProfileIndex Index of the power profile.
+ * @param[in] IsConditionCheckedForService boolean indicating if this is a service check or a pdu check.
+ *
+ * @retval TRUE: if the Service is used by other profiles.
+ * @retval FALSE: otherwise
+ */
+static boolean Spm_IsServiceUsedByOtherProfiles(const uint32 currentProfileIndex, boolean IsConditionCheckedForService) {
+	uint32 i;
+	boolean retVal = FALSE;
+    SpmPresencyDependencyTypeRequest PresentReq, requestToCheck;
+   uint16 serviceId = (uint16)(SpmPowPrf_Cfg_WrpTable[currentProfileIndex].powPrf_data->PowPrfID >> 16u);
+
+
+   requestToCheck = IsConditionCheckedForService? Spm_ONLY_ACTIVATED_REQ_PRESENT : Spm_ONLY_CONSUMED_REQ_PRESENT;
+
+
+   // Iter over all the configured profiles
+    for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++) {
+      // Exclude the current one
+      if(i != currentProfileIndex) {
+         //Get the Service ID from the PowerProfile ID (upper 16 bit)
+         uint16 otherServiceId = (uint16)(SpmPowPrf_Cfg_WrpTable[i].powPrf_data->PowPrfID >> 16u);
+
+         // if same service
+         if(otherServiceId == serviceId) {
+               // Get if any dependency active
+                PresentReq = Spm_RetrieveDependencyTypeFromRequesterList(i);
+               
+                if((PresentReq == requestToCheck) ||
+                   (PresentReq == Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT)){
+               
+                  retVal = TRUE; // Then the service is used
+                  break;
+               }
+         }
+      }
+   }
+   return retVal;
+}
+
+/**
+ * @brief Function that is used to suspend remote profiles activation retry.
+ * 
+ * This function differentiates between two retry strategies defined within Spm:
+ * 1) Spm internally implements a recovery strategy for specific rejection reasons (currently only Spm_REJECTED_LACK_OF_POWER).
+ *    In this case the list of requesters for the profile is left unaltered but a set of actions is performed with the goal of
+ *    avoiding that a faulty remote power profile could make us keep that remote ECU in ON state.
+ * 2) Spm does not implement any internal recovery startegy. In this case the list of requester is cleared with the usual mechanism
+ *    of enqueuing a deactivation request. This request will be dealt with by the SM main loop and will kick off the norma deactivation
+ *    path.
+ * The goal of suspending retries is to let that remote ECU go to sleep should this remote profile be the only reason that keeps it up.
+ *
+ * @param[in] indexOfPowProf: Index of the remote PowerProfile for which to request deactivation.
+ * @param[in] rejectionKind: rejection reason returned by the remote profile.
+ *
+ */
+static void Spm_SuspendRemoteProfileActivationRetry(const uint8 indexOfPowProf, const SpmRejectionReasonType rejectionKind) {
+   if((SPM_GET_PROF_IS_LOC_FROM_CONF(indexOfPowProf) == FALSE)){
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+«REM» Spm recovery strategy for Spm_REJECTED_LACK_OF_POWER is based on the availability of LowVoltPrioService.
+ If not available no retry startegy is possible and we behave like in the case of Spm_REJECTED_LACK_OF_THERMAL_CAPABILITY.
+«ENDREM»
+      if(rejectionKind == Spm_REJECTED_LACK_OF_POWER) {
+         /* For this specific rejection reason Spm defines a recovery action.
+          * Spm stores the current lackOfPowerPriority that triggered Spm_REJECTED_LACK_OF_POWER response
+          * so that Spm can check later whether or not battery conditions have improved and try activation
+          * again if battery has improved compared to the recorded lackOfPowerPriority.
+          */
+         /* PRQA S 3101 1 # Cast is safe: Spm_GetPriorityLevelValue returns 0-8, fits in sint8 */
+         SPM_PrfStsMgr_RAM[indexOfPowProf].Rejection.LackOfPowerPriority = (sint8)Spm_GetPriorityLevelValue();
+   
+         /* Setting RetryNone = TRUE is used to set the profile status as Spm_SUSPENDED_REQ_PRESENT and allows us
+          * to leave unalterd the way we check for activation and to leave the list of requesters valid.
+          */
+         SPM_PrfStsMgr_RAM[indexOfPowProf].Rejection.RetryNone = TRUE;
+   
+         /*
+          * Additionally though, if no other profile is using them, we need to manually relase the following resources:
+          */
+         if (FALSE == Spm_IsServiceUsedByOtherProfiles(indexOfPowProf, TRUE)) {
+            /*
+             * - disable the service wrapped by the remote profile by calling Spm_ActivateServiceSrvcMgrHandlerFunction
+             *   with FALSE as parameter.
+             */
+            (void)Spm_ActivateServiceSrvcMgrHandlerFunction(indexOfPowProf, FALSE);  /* FALSE = deactivate */
+         }
+
+         if (FALSE == Spm_IsServiceUsedByOtherProfiles(indexOfPowProf, FALSE)) {
+            /*
+             * - notify SSFM that PDUs associated to this profile don't need to be monitored anymore.
+             */
+            Spm_SrvcMgrIfUpdateSrvcStatus(spmPrfStsMgrInstCode_VAL(indexOfPowProf), FALSE);
+   
+«LET spm.spmConfigSet.spmPowPrf AS pp-»
+«IF pp.spmComIPduGroupEvnt_Tx.size > 0 || pp.spmComIPduGroupEvnt_Rx.size > 0-»
+            /*
+             * - switch off the PDUs associated to this the profile.
+             */
+            Spm_DisableRxPduAndTriggerDisablingTxPdu(indexOfPowProf);
+«ENDIF-»
+«ENDLET-»
+         }
+         /*
+          * - reset flags used to evaluate sending of Act/Deact frame.
+          */
+         ResetDeactReqIsSentToRemoteTrgDvc(indexOfPowProf);
+         ResetActReqIsSentToRemoteTrgDvc(indexOfPowProf);
+      }
+      /* add here any other rejection reason that requires activation retry supsension for which Spm does not 
+       * define any internal retry mechanism.
+       */
+      else if(rejectionKind == Spm_REJECTED_LACK_OF_THERMAL_CAPABILITY){
+          /* This specific profile has returned a feedback for wich activation retry strategy needs to
+          * be disabled and its list of requesters needs to be cleared in order to allow future activations
+          * of this dependency.
+          * Therefore we queue a deactivation request for each requester in its list.
+          */
+         Spm_ForceRemoteProfileDeactivationRequest(indexOfPowProf);
+      }
+«ELSE-»
+      if((rejectionKind == Spm_REJECTED_LACK_OF_THERMAL_CAPABILITY) || (rejectionKind == Spm_REJECTED_LACK_OF_POWER)){
+          /* This specific profile has returned a feedback for wich activation retry strategy needs to
+          * be disabled and its list of requesters needs to be cleared in order to allow future activations
+          * of this dependency.
+          * Therefore we queue a deactivation request for each requester in its list.
+          */
+         Spm_ForceRemoteProfileDeactivationRequest(indexOfPowProf);
+      }
+«ENDIF-»
+      else{
+         /* This rejection request does not imply supending activation retry */
+      }
+   }
+}
+
+/**
+ * @brief Wrapper function of the SrgvcMgr_ActivateServices.
+ *
+ *
+ */
+static boolean Spm_ActivateServiceSrvcMgrHandlerFunction(const uint32 index, const boolean IsActivation){
+
+   uint16 ServiceId = (uint16)(SpmPowPrf_Cfg_WrpTable[index].powPrf_data->PowPrfID >> 16u);
+   CommandStatusType result;
+   boolean ret_value;
+
+   /* [$Satisfies $DDS_SPM 0027] */
+   /* PRQA S 1340 1 # Following ptr IsActivation is taken as const input parameter since it will be NOT modified by the C/S SrvcMgr_ActivateServices.  */
+   (void)Rte_Call_RP_SPM_SrvcMgr_ActivateSrvc_ActivateServices(&ServiceId, &IsActivation, 1, &result);
+
+   if(SPM_GET_PROF_IS_LOC_FROM_CONF(index) == TRUE){
+
+      if(result == E_OK_LOCAL_ENABLED){
+         ret_value = TRUE;
+      }else{
+         ret_value = FALSE;
+      }
+
+   }else{
+
+      if(result == E_OK_REMOTE_ENABLED){
+         ret_value = TRUE;
+      }else{
+         ret_value = FALSE;
+      }
+
+   }
+
+   return ret_value;
+}
+
+/**
+ * @brief Retrieves, from the requesters list, the global type of activation request for a specific provile.
+ *
+ * This function parses the Requesters List associated with this Power Profile and returns how the profile needs to
+ * to activated. Each requester might just need the service (ACTIVATED), only the associated PDUs (CONSUMED),
+ * or both. This fuctions returns a global activation type that will satisfy all the requesters.
+ *
+ * @param[in]  index: index of the PowerProfile to retrieve dependencyType for.
+ *
+ * @return SpmPresencyDependencyTypeRequest:
+ *     Spm_NO_REQ_PRESENT: if there is no requester present OR all DEACTIVATED_WITH_FEEDBACK/DEACTIVATED_NO_FEEDBACK
+ *     Spm_ONLY_ACTIVATED_REQ_PRESENT: if there are only ACTIVATED requests
+ *     Spm_ONLY_CONSUMED_REQ_PRESENT: if there are only CONSUMED requests
+ *     Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT: if there are both CONSUMED and ACTIVATED requests
+ *     Spm_SUSPENDED_REQ_PRESENT: if the profile activation has been flagged as suspended
+ *
+ */
+static SpmPresencyDependencyTypeRequest Spm_RetrieveDependencyTypeFromRequesterList(const uint32 index){
+
+   SpmPresencyDependencyTypeRequest return_value = Spm_NO_REQ_PRESENT;
+   uint8 itm;
+
+   if(SPM_PrfStsMgr_RAM[index].Rejection.RetryNone == TRUE){
+      return_value = Spm_SUSPENDED_REQ_PRESENT;
+   }else{
+      for(itm = 0u; itm < SPM_PrfStsMgr_RAM[index].reqLst.size; itm++){
+         if( SPM_PrfStsMgr_RAM[index].reqLst.spmReqLst[itm].ReqType == SPM_PRF_DEP_ACT_AND_CONS )
+         {
+            return_value = Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT;
+         }
+         else if( SPM_PrfStsMgr_RAM[index].reqLst.spmReqLst[itm].ReqType == SPM_PRF_CONSUMED )
+         {
+            /*
+             * Did we previously already set ACTIVATED_ONLY?
+             * If yes then we set the return value to ACTIVATED and CONSUMED
+             */
+            return_value = (return_value == Spm_ONLY_ACTIVATED_REQ_PRESENT) ? Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT : Spm_ONLY_CONSUMED_REQ_PRESENT;
+         }
+         else if( SPM_PrfStsMgr_RAM[index].reqLst.spmReqLst[itm].ReqType == SPM_PRF_ACTIVATED )
+         {
+            /*
+             * Did we previously already set CONSUMED_ONLY?
+             * If yes then we set the return value to ACTIVATED and CONSUMED
+             */
+            return_value = (return_value == Spm_ONLY_CONSUMED_REQ_PRESENT) ? Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT : Spm_ONLY_ACTIVATED_REQ_PRESENT;
+         }
+         else
+         {
+            /* do nothing */
+         }
+
+         /*
+          * If ACTIVATED and CONSUMED is set we can then leave the loop since we already know we need to activate
+          * associated service and PDUs
+          */
+         if( return_value == Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT)
+         {
+            break;
+         }
+      }
+   }
+
+   return return_value;
+}
+
+
+
+/**
+ * @brief Switches the network PDU state for a given power profile.
+ *
+ * This function iterates over the transmission and reception PduGroup
+ * associated with the specified power profile index. For each entry in these tables, it calls the
+ * function pointer stored in the data array with the command 'cmd' as its argument.
+ *
+ * The function is used to enable or disable the network PDUs associated with
+ * a specific power profile, depending on the command provided.
+ *
+ * @param indexOfPowProf Index of the power profile whose network PDU state is to be switched.
+ * @param cmd The command to be passed to each function in the mode switch tables.
+ *
+ */
+/* [$Satisfies $DDS_SPM 0028] *//* [$Satisfies $DDS_SPM 0042] */
+static void Spm_SwitchNetworkPdu(const uint16 indexOfPowProf, const uint8 cmd)
+{
+	Spm_SwitchNetworkPduTx(indexOfPowProf, cmd);
+   Spm_SwitchNetworkPduRx(indexOfPowProf, cmd);
+}
+static void Spm_SwitchNetworkPduTx(const uint16 indexOfPowProf, const uint8 cmd)
+{
+   uint8 i;
+
+   for(i = 0u; i < SpmPowPrf_Cfg_WrpTable[indexOfPowProf].modeSwitchTableTx_Len; i++)
+   {
+         (void)SpmPowPrf_Cfg_WrpTable[indexOfPowProf].modeSwitchTableTx_Data[i](cmd);
+   }
+}
+static void Spm_SwitchNetworkPduRx(const uint16 indexOfPowProf, const uint8 cmd)
+{
+   uint8 i;
+
+   for(i = 0u; i < SpmPowPrf_Cfg_WrpTable[indexOfPowProf].modeSwitchTableRx_Len; i++)
+   {
+         (void)SpmPowPrf_Cfg_WrpTable[indexOfPowProf].modeSwitchTableRx_Data[i](cmd);
+   }
+}
+
+/**
+ * @brief Checks if a new activation/deactivation command is needed to be sent.
+ *
+ * This function checks whether activation/deactivation retry interval is elapsed.
+ * If so, returns true and resets the tracker values. If not, returns false and
+ * updates the tracker value by decrementing it.
+ *
+ * @param indexOfPowProf Index of the power profile whose activation retry interval is to be checked.
+ *
+ */
+/* [$Satisfies $DDS_SPM 0054] */
+static boolean Spm_IsANewActivationCommandNeeded(const uint32 indexOfPowProf){
+
+   boolean ret = FALSE;
+
+   if(SPM_PrfStsMgr_RAM[indexOfPowProf].Spm_RemotePowProf_ActDeactRetry_OngoingTrackerInTicks == 0u){
+      ret = TRUE;
+      Spm_ActDeactRetry_ReloadOngoingTracker(indexOfPowProf);
+   }else{
+      SPM_PrfStsMgr_RAM[indexOfPowProf].Spm_RemotePowProf_ActDeactRetry_OngoingTrackerInTicks--;
+   }
+
+   return ret;
+}
+
+/**
+ * @brief Returns the retry periodicity (in ticks) based on the target device power state.
+ *
+ * Used to set the retry rate when no feedback has been received yet for the current send:
+ * - Initializing: Slow retry rate (remote SM not yet ready)
+ * - On / other states: Fast retry rate (remote SM should be responsive)
+ *
+ * @param TrgDvcState Current power state of the target device.
+ * @return Retry periodicity in ticks.
+ */
+/* [$Satisfies $DDS_SPM 0668] */
+static uint32 Spm_GetRetryPeriodicityFromTrgDvcState(const SpmDevicePowerStateCode TrgDvcState){
+
+   uint32 retryTicks;
+
+   if (TrgDvcState == SPM_Initializing){
+      retryTicks = (uint32)SPM_ACT_RETRY_SLOW_TICKS;
+   }
+   else{
+      retryTicks = (uint32)SPM_ACT_RETRY_FAST_TICKS;
+   }
+
+   return retryTicks;
+}
+
+/**
+ * @brief Returns the retry periodicity (in ticks) for a given rejection code.
+ *
+ * Maps rejection codes to Fast or Slow retry periodicity.
+ *
+ * @param rejectionCode The rejection code received from remote SM.
+ * @return Retry periodicity in ticks (period / SM cycle).
+ */
+/* [$Satisfies $DDS_SPM 0656] */
+static uint32 Spm_GetRetryPeriodicityFromRejection(const uint8 rejectionCode){
+
+   uint32 retryTicks;
+
+   switch(rejectionCode) {
+      case SPM_OK_ACTIVATION:
+      case SPM_OK_DEACTIVATION:
+      case (uint8)Spm_REQUEST_NOT_APPLICABLE:
+      case (uint8)Spm_REJECTED_REQUEST_INVALID:
+      case (uint8)Spm_REJECTED_RESET_DETECTED:
+      case (uint8)Spm_REJECTED_LOSS_OF_HEARTBEAT:
+         /* Fast retry */
+         retryTicks = (uint32)SPM_ACT_RETRY_FAST_TICKS;
+         break;
+
+      case (uint8)Spm_REJECTED_PROFILE_UNKNOWN:
+      case (uint8)Spm_REJECTED_LACK_OF_PERMISSION:
+      case (uint8)Spm_REJECTED_LACK_OF_COMPUTATION_RESOURCES:
+      case (uint8)Spm_REJECTED_PROFILE_BLOCKED:
+         /* Slow retry  */
+         retryTicks = (uint32)SPM_ACT_RETRY_SLOW_TICKS;
+         break;
+
+      default:
+         retryTicks = (uint32)SPM_ACT_RETRY_SLOW_TICKS;
+         break;
+   }
+
+   return retryTicks;
+}
+
+/**
+ * @brief Handles retry logic when a rejection is received for a profile.
+ *
+ * Updates the retry periodicity based on the rejection code.
+ * - If the request was in SENT state: reloads the retry counter with the new periodicity.
+ * - If the request was in ACKED state -> resets to NOT_SENT so the command is re-sent immediately in the next SM cycle.
+ *
+ * @param indexOfPowProf Index of the power profile for which rejection is received.
+ * @param StatusRequest The rejection code received from remote SM.
+ */
+/* [$Satisfies $DDS_SPM 0657] */
+static void Spm_HandleRejectionRetry(const uint8 indexOfPowProf, const uint8 StatusRequest){
+
+   uint32 newReloadValue = Spm_GetRetryPeriodicityFromRejection(StatusRequest);
+
+   /* Update the reload value with the periodicity matching the rejection reason */
+   
+   Spm_ActDeactRetry_SetPeriodicity(indexOfPowProf, newReloadValue);
+
+   /* If activation was previously acknowledged, reset to NOT_SENT and reload retry counter for periodic retry */
+   if(GetActReqStatus(indexOfPowProf) == SPM_ACT_DEACT_CMD_ACKED){
+      ResetActReqIsSentToRemoteTrgDvc(indexOfPowProf);
+      Spm_ActDeactRetry_ReloadOngoingTracker(indexOfPowProf);
+   }
+   /* else If activation request was sent, reload retry counter with the new periodicity */
+   else if(GetActReqStatus(indexOfPowProf) == SPM_ACT_DEACT_CMD_SENT){
+      Spm_ActDeactRetry_ReloadOngoingTracker(indexOfPowProf);
+   }
+   else{
+      /* no action needed */
+   }
+}
+/**
+ * @brief Checks the feedback for activation/deactivation request.
+ *
+ * This function checks the feedback received from remote SM for activation/deactivation
+ * request and set the activation/deactivation request status if the request is correctly acknowledged.
+ *
+ * @param indexOfPowProf Index of the power profile for which feedback is received.
+ * @param StatusRequest Request status of the power profile for which feedback is received.
+ * @param StateProfile Profile status of the power profile for which feedback is received.
+ *
+ */
+/* [$Satisfies $DDS_SPM 0054] */
+/* PRQA S 1532 1 # The struct is defined here for modularity reason. */
+void Spm_CheckFeedbackReceivedByRequested(const uint8 indexOfPowProf, const uint8 StatusRequest, const uint8 StateProfile){
+
+   switch(StatusRequest) {
+
+      case SPM_OK_ACTIVATION:
+         if((StateProfile != SPM_Inactive) && (StateProfile != SPM_Deactivating)) {
+            SetActCorrectAckReceivedFromRemoteTrgDvc(indexOfPowProf);
+         } else {
+            /* State mismatch: profile state not consistent with OK, apply Fast retry */
+            Spm_HandleRejectionRetry(indexOfPowProf, StatusRequest);
+            SetReqIsRjctByRemoteTrgDvc(indexOfPowProf);
+         }
+         break;
+
+      case SPM_OK_DEACTIVATION:
+         SetDeactCorrectAckReceivedFromRemoteTrgDvc(indexOfPowProf);
+         break;
+
+	 
+      /* no retry for lack of power / thermal capability */
+  
+      case (uint8)Spm_REJECTED_LACK_OF_POWER:
+         /* [$Satisfies $DDS_SPM 0666] */
+         Spm_SuspendRemoteProfileActivationRetry(indexOfPowProf, Spm_REJECTED_LACK_OF_POWER);
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»             
+         /* Trigger activation for LVOptmzerChk Application Interface ID profile */
+         Spm_LowVoltLVOptmzerChkApplicationInterfaceID_TriggerActivation();
+«ENDIF-»
+         break;
+      case (uint8)Spm_REJECTED_LACK_OF_THERMAL_CAPABILITY:
+         /* [$Satisfies $DDS_SPM 0666] */
+         Spm_SuspendRemoteProfileActivationRetry(indexOfPowProf, Spm_REJECTED_LACK_OF_THERMAL_CAPABILITY);
+         break;
+	 
+      case (uint8)Spm_REQUEST_NOT_APPLICABLE:
+      case (uint8)Spm_REJECTED_REQUEST_INVALID:
+      case (uint8)Spm_REJECTED_RESET_DETECTED:
+      case (uint8)Spm_REJECTED_PROFILE_UNKNOWN:
+      case (uint8)Spm_REJECTED_LACK_OF_PERMISSION:
+      case (uint8)Spm_REJECTED_LACK_OF_COMPUTATION_RESOURCES:
+      case (uint8)Spm_REJECTED_PROFILE_BLOCKED:
+      case (uint8)Spm_REJECTED_LOSS_OF_HEARTBEAT:
+         Spm_HandleRejectionRetry(indexOfPowProf, StatusRequest);
+         SetReqIsRjctByRemoteTrgDvc(indexOfPowProf);
+         break;
+
+      default:
+         /* No action in default case. */
+         break;
+   }
+
+   /* Update the state of the remote power profile with the state received by remote. */
+   PowerProfileState(indexOfPowProf) = StateProfile;
+}
+
+/**
+ * @brief Manages the command to be sent to a remote power profile.
+ *
+ * @param[in]  index: index of the PowerProfile inside the SPM_PrfStsMgr_RAM array.
+ *
+ * The function processes the current event and updates the state machine state accordingly to the type of request present in the requester list
+ * associated to the profile.
+ *
+ * If at least one requester is present with the label ACTIVATED/ACTIVATED&&CONSUMED and the state of the remote trgdvc is not ON, a PowerOnDevice() request is done.
+ * Once the trgdvc become ON, the flag CommandSend is set to ACTIVATE in order to let know the Spm_SoftwMgr_PopulateSMFrame() that a request shall be sent to the trgdvc
+ * to activate this profile. The command is sent just once: this is done by the Spm_RemotePowProf_Activation_Step flag that prevent to send two or more activation
+ * messages consecutively. The Spm_ActivateServiceSrvcMgrHandlerFunction() function is called (wrapper of the C/S SrvcMgr_ActivateServices).
+ *
+ * If there are no requester with the label ACTIVATED/ACTIVATED&&CONSUMED and the state of the profile is ACTIVATED, the flag CommandSend is set to DEACTIVATE in order to
+ * let know the Spm_SoftwMgr_PopulateSMFrame() that a request shall be sent to the trgdvc to deactivate this profile. The command is sent just once: this is done by the
+ * Spm_RemotePowProf_Activation_Step flag that prevent to send two or more deactivation messages consecutively. The Spm_ActivateServiceSrvcMgrHandlerFunction() function is
+ * called (wrapper of the C/S SrvcMgr_ActivateServices).
+ *
+ * In parallel, if there is at least one request with the CONSUMED/ACTIVATED&&CONSUMED label, the PDU associated to this profile are activated.
+ * If there are NO one, the PDU are deactivated.
+ */
+/* PRQA S 1532 2 # Function defined here for modularity reason */
+void Spm_RemotePowerProfile_FSM(const uint32 index){
+
+   SpmPresencyDependencyTypeRequest PresentReq;
+
+   PresentReq = Spm_RetrieveDependencyTypeFromRequesterList(index);
+
+   if( ((PresentReq == Spm_NO_REQ_PRESENT) || (PresentReq == Spm_ONLY_CONSUMED_REQ_PRESENT)) &&
+        (SPM_GET_AT_LEAST_ONE_ACT_CMD_SENT(index) == TRUE)
+   ){
+      ResetActReqIsSentToRemoteTrgDvc(index);
+      Spm_RemotePowerProfile_DeactReq(index);
+   }
+
+   if( ((PresentReq == Spm_ONLY_ACTIVATED_REQ_PRESENT) || (PresentReq == Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT))){
+
+      ResetDeactReqIsSentToRemoteTrgDvc(index);
+      Spm_RemotePowerProfile_ActReq(index);
+
+   }
+
+«LET spm.spmConfigSet.spmPowPrf AS pp-»
+«IF pp.spmComIPduGroupEvnt_Tx.size > 0 || pp.spmComIPduGroupEvnt_Rx.size > 0-»
+   Spm_HandlePduGroups(PresentReq, index);
+«ENDIF-»
+«ENDLET-»
+
+}
+
+/**
+ * @brief Processes the activation request status for a remote power profile.
+ *
+ * @param[in]  index: index of the PowerProfile inside the SPM_PrfStsMgr_RAM array.
+ * @param[in]  actReqStatus: current activation request status value.
+ * @param[in]  TrgDvcState: current target device power state.
+ */
+/* PRQA S 1532 2 # Function defined here for modularity reason */
+static void Spm_ProcessActReqStatus(const uint32 index, const uint8 actReqStatus, const SpmDevicePowerStateCode TrgDvcState){
+   switch (actReqStatus)
+   {
+      case SPM_ACT_DEACT_CMD_NOT_SENT:
+         Spm_SetCommandToBeSent(index) = SPM_ACTIVATE;
+         if(Spm_ActivateServiceSrvcMgrHandlerFunction(index, TRUE) == TRUE){
+            Spm_SrvcMgrIfUpdateSrvcStatus(spmPrfStsMgrInstCode_VAL(index), TRUE);
+         }
+         SetActReqIsSentToRemoteTrgDvc(index);
+         /* Set initial retry rate based on device state (slow if Initializing, fast if On). */
+         Spm_ActDeactRetry_SetPeriodicity(index, Spm_GetRetryPeriodicityFromTrgDvcState(TrgDvcState));
+         SPM_SET_AT_LEAST_ONE_ACT_CMD_SENT(index);
+         break;
+      case SPM_ACT_DEACT_CMD_SENT:
+         /* [$Satisfies $DDS_SPM 0054] */
+         if (Spm_IsANewActivationCommandNeeded(index) == TRUE){
+            /* No feedback received yet: keep retry periodicity tied to current target-device state. */
+            Spm_ActDeactRetry_SetPeriodicity(index, Spm_GetRetryPeriodicityFromTrgDvcState(TrgDvcState));
+            Spm_ActDeactRetry_ReloadOngoingTracker(index);
+            Spm_SetCommandToBeSent(index) = SPM_ACTIVATE;
+         }
+         break;
+      case SPM_ACT_DEACT_CMD_SENT_RCVD_ERROR_TAG:
+         if (Spm_IsANewActivationCommandNeeded(index) == TRUE){
+            /* Retry periodicity already set from rejection code. */
+            Spm_SetCommandToBeSent(index) = SPM_ACTIVATE;
+         }
+         break;
+      case SPM_ACT_DEACT_CMD_ACKED:
+         break;
+      default:
+         ResetActReqIsSentToRemoteTrgDvc(index);
+         break;
+   }
+}
+
+/**
+ * @brief Manages the activation request to be sent to a remote power profile.
+ * If the state of the remote trgdvc is Faulted/Reboot, Reset all the requested power profile.
+ * If the state of the remote trgdvc is not ON, a PowerOnDevice() request is done.
+ * Once the trgdvc become ON, the flag CommandSend is set to ACTIVATE in order to let know the
+ * Spm_SoftwMgr_PopulateSMFrame() that a request shall be sent to the trgdvc to activate this profile.
+ * The command is sent periodically until it is correctly acknowledged by the requested SM : this is done by the
+ * Spm_RemotePowProf_Activation_Step flag that keeps track of the request status. The Spm_RemotePowProf_ActDeactRetry_OngoingTrackerInTicks
+ * is used to check whether the interval is elapsed since the previous activation request.
+ * While the request is sent for the first time, The Spm_ActivateServiceSrvcMgrHandlerFunction() function is called (wrapper of the C/S SrvcMgr_ActivateServices).
+ *
+ * @param[in]  index: index of the PowerProfile inside the SPM_PrfStsMgr_RAM array.
+ *
+ */
+static void Spm_RemotePowerProfile_ActReq(const uint32 index){
+
+	Spm_DevicePowerStateInfo Spm_BufferRead;
+	SpmDevicePowerStateCode TrgDvcState;
+
+   Rte_IrvRead_RE_SPM_SoftMgr_MainFunction_Spm_DevicePowerState(&Spm_BufferRead);
+   TrgDvcState = Spm_DevicePowerStateParser(SPM_PrfStsMgr_RAM[index].TrgDvcIp, &Spm_BufferRead);
+   
+   /* [$Satisfies $DDS_SPM 0124] *//* [$Satisfies $DDS_SPM 0126] */
+   (void)Spm_PowerOnDevice(SPM_PrfStsMgr_RAM[index].TrgDvcIp);
+
+	/* [$Satisfies $DDS_SPM 0055] */
+    /* Handle faulted or reboot states */
+    if ((TrgDvcState == SPM_Faulted) || (TrgDvcState == SPM_Reboot)) {
+        /* Reset FSM and align necessary flags */
+        ResetActReqIsSentToRemoteTrgDvc(index);
+
+    }
+
+   /* Check the target device status */
+   /* [$Satisfies $DDS_SPM 0665] *//* [$Satisfies $DDS_SPM 0668] *//* [$Satisfies $DDS_SPM 0669] */
+   if ((TrgDvcState == SPM_On) || (TrgDvcState == SPM_ShutdownPending) || (TrgDvcState == SPM_Initializing)){
+      Spm_ProcessActReqStatus(index, GetActReqStatus(index), TrgDvcState);
+
+      /*
+       * If the TrgDvc is in ShutdownPending, it needs to receive again the activation command.
+       */
+      /* [$Satisfies $DDS_SPM 0531] */
+      if (TrgDvcState == SPM_ShutdownPending) {
+         Spm_SetCommandToBeSent(index) = SPM_ACTIVATE;
+      }
+
+   }
+}
+
+/**
+ * @brief Manages the deactivation request to be sent to a remote power profile.
+ *
+ * The flag CommandSend is set to DEACTIVATE in order to let know the Spm_SoftwMgr_PopulateSMFrame() that a request
+ * shall be sent to the trgdvc to deactivate this profile.
+ * The command is sent periodically until it is correctly acknowledged by the requested SM :
+ * this is done by the Spm_RemotePowProf_Activation_Step flag that keeps track of the request status.
+ * The Spm_RemotePowProf_ActDeactRetry_OngoingTrackerInTicks is used to check whether the interval is elapsed since the previous deactivation request.
+ * While the request is sent for the first time, The Spm_ActivateServiceSrvcMgrHandlerFunction() function is called (wrapper of the C/S SrvcMgr_ActivateServices).
+ *
+ * @param[in]  index: index of the PowerProfile inside the SPM_PrfStsMgr_RAM array.
+ *
+ */
+static void Spm_RemotePowerProfile_DeactReq(const uint32 index){
+
+   switch (GetDeactReqStatus(index))
+   {
+      case SPM_ACT_DEACT_CMD_NOT_SENT:
+
+         Spm_SetCommandToBeSent(index) = SPM_DEACTIVATE;
+         SetDeactReqIsSentToRemoteTrgDvc(index);
+         /* Deactivation retry always uses FAST periodicity */
+         /* [$Satisfies $DDS_SPM 0676] */
+         Spm_ActDeactRetry_SetPeriodicity(index, (uint32)SPM_ACT_RETRY_FAST_TICKS);
+         Spm_ActDeactRetry_ReloadOngoingTracker(index);
+          //if not used by other profiles
+         if(FALSE == Spm_IsServiceUsedByOtherProfiles(index, TRUE))
+         {
+            /* [$Satisfies $DDS_SPM 0030] */
+            if(Spm_ActivateServiceSrvcMgrHandlerFunction(index, FALSE) == TRUE){
+               Spm_SrvcMgrIfUpdateSrvcStatus(spmPrfStsMgrInstCode_VAL(index), FALSE);
+            }
+         }
+         else
+         {
+            /* Service used by other profiles so it can't be deactivated */
+         }
+
+         break;
+      case SPM_ACT_DEACT_CMD_SENT:
+         /* Ensure deactivation retry periodicity is always FAST */
+         /* [$Satisfies $DDS_SPM 0676] */
+         Spm_ActDeactRetry_SetPeriodicity(index, (uint32)SPM_ACT_RETRY_FAST_TICKS);
+         /* This function check if the timer associated is zero. */
+         /* [$Satisfies $DDS_SPM 0054] */
+         if (Spm_IsANewActivationCommandNeeded(index) == TRUE){
+            Spm_SetCommandToBeSent(index) = SPM_DEACTIVATE;
+         }
+         break;
+      case SPM_ACT_DEACT_CMD_ACKED:
+         /* Do nothing. */
+         break;
+      default:
+         ResetDeactReqIsSentToRemoteTrgDvc(index);
+         break;
+   }
+}
+
+/**
+ * @brief Sets the retry periodicity for activation/deactivation commands.
+ *
+ * Stores the periodicity value (in ticks) that will be used as the reload value
+ * for the ongoing retry tracker when it expires.
+ *
+ * @param[in]  index: index of the PowerProfile inside the SPM_PrfStsMgr_RAM array.
+ * @param[in]  periodicityInTicks: retry periodicity value in ticks to store.
+ */
+static void Spm_ActDeactRetry_SetPeriodicity(const uint32 index, const uint32 periodicityInTicks){
+   SPM_PrfStsMgr_RAM[index].Spm_RemotePowProf_ActDeactRetry_StoredPeriodicityInTicks = periodicityInTicks;
+}
+
+/**
+ * @brief Reloads the ongoing retry tracker with the stored periodicity.
+ *
+ * Resets the ongoing retry tracker counter to the previously stored periodicity value,
+ * restarting the countdown until the next activation/deactivation retry.
+ *
+ * @param[in]  index: index of the PowerProfile inside the SPM_PrfStsMgr_RAM array.
+ */
+static void Spm_ActDeactRetry_ReloadOngoingTracker(const uint32 index){
+   SPM_PrfStsMgr_RAM[index].Spm_RemotePowProf_ActDeactRetry_OngoingTrackerInTicks = SPM_PrfStsMgr_RAM[index].Spm_RemotePowProf_ActDeactRetry_StoredPeriodicityInTicks;
+}
+
+«LET spm.spmConfigSet.spmPowPrf AS pp-»
+«IF pp.spmComIPduGroupEvnt_Tx.size > 0 || pp.spmComIPduGroupEvnt_Rx.size > 0-»
+static void Spm_DisableRxPduAndTriggerDisablingTxPdu(const uint32 indexOfPowProf)
+{
+   «IF pp.spmComIPduGroupEvnt_Rx.size > 0-»
+   Spm_SwitchNetworkPduRx((uint16)indexOfPowProf, (uint8)RTE_MODE_MDG_SPM_PduGroupState_SPM_PDU_GROUP_DISABLE);
+   «ENDIF-»
+
+   «IF pp.spmComIPduGroupEvnt_Tx.size > 0»
+   SPM_GET_PDUTX_SWITCHOFF_DELAY_TRACKER(indexOfPowProf) = SPM_PDU_TX_SWITCHOFF_DELAY_TICK;
+   Spm_CurrentPduStatus(indexOfPowProf) = Spm_PendingSwitchOff;
+   «ELSE»
+   Spm_CurrentPduStatus(indexOfPowProf) = Spm_Switched_Off;
+   «ENDIF»
+}
+
+/* [$Satisfies $DDS_SPM 0056] *//* [$Satisfies $DDS_SPM 0655] */
+static void Spm_HandlePduGroups(SpmPresencyDependencyTypeRequest PresentReq, uint32 index)
+{
+   boolean consumedRequestPresent;
+   boolean switchOffRequested;
+
+   consumedRequestPresent = ((PresentReq == Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT) ||
+                             (PresentReq == Spm_ONLY_CONSUMED_REQ_PRESENT));
+   switchOffRequested = ((PresentReq == Spm_NO_REQ_PRESENT) ||
+                         (PresentReq == Spm_ONLY_ACTIVATED_REQ_PRESENT));
+
+   /* PDU handling is driven by the current PDU status. */
+   switch (Spm_CurrentPduStatus(index))
+   {
+      case Spm_Pdu_No_Action:
+      case Spm_Switched_Off:
+         /* Startup and already-off states share the same enable transition. */
+         if(consumedRequestPresent == TRUE)
+         {
+            Spm_SwitchNetworkPdu((uint16)index, (uint8)RTE_MODE_MDG_SPM_PduGroupState_SPM_PDU_GROUP_ENABLE);
+            Spm_SrvcMgrIfUpdateSrvcStatus(spmPrfStsMgrInstCode_VAL(index), TRUE);
+            Spm_CurrentPduStatus(index) = Spm_Switched_On;
+         }
+         break;
+
+      case Spm_Switched_On:
+         if((switchOffRequested == TRUE) && (FALSE == Spm_IsServiceUsedByOtherProfiles(index, FALSE)))
+         {
+            Spm_SrvcMgrIfUpdateSrvcStatus(spmPrfStsMgrInstCode_VAL(index), FALSE);
+            Spm_DisableRxPduAndTriggerDisablingTxPdu(index);
+         }
+         break;
+
+      case Spm_PendingSwitchOff:
+         if(consumedRequestPresent == TRUE)
+         {
+            Spm_SwitchNetworkPdu((uint16)index, (uint8)RTE_MODE_MDG_SPM_PduGroupState_SPM_PDU_GROUP_ENABLE);
+            Spm_SrvcMgrIfUpdateSrvcStatus(spmPrfStsMgrInstCode_VAL(index), TRUE);
+            Spm_CurrentPduStatus(index) = Spm_Switched_On;
+         }
+«IF pp.spmComIPduGroupEvnt_Tx.size > 0»
+         else if((switchOffRequested == TRUE) || (PresentReq == Spm_SUSPENDED_REQ_PRESENT))
+         {
+            if(SPM_GET_PDUTX_SWITCHOFF_DELAY_TRACKER(index) > 0u)
+            {
+               SPM_GET_PDUTX_SWITCHOFF_DELAY_TRACKER(index)--;
+            }
+            if(SPM_GET_PDUTX_SWITCHOFF_DELAY_TRACKER(index) == 0u)
+            {
+               Spm_SwitchNetworkPduTx((uint16)index, (uint8)RTE_MODE_MDG_SPM_PduGroupState_SPM_PDU_GROUP_DISABLE);
+               Spm_CurrentPduStatus(index) = Spm_Switched_Off;
+            }
+         }
+«ENDIF»
+         else
+         {
+            /* Nothing to do here */
+         }
+         break;
+
+      default:
+         /* Nothing to do here */
+         break;
+   }
+}
+«ENDIF-»
+«ENDLET-»
+
+
+
+/**
+ * @brief Manages the state transitions of a local power profile state machine.
+ *
+ * @param[in]  index: index of the PowerProfile inside the SPM_PrfStsMgr_RAM array.
+ *
+ * The function processes the current event and updates the state machine state accordingly to the type of request present in the requester list
+ * associated to the profile.
+ *
+ * If at least one requester is present with the label ACTIVATED/ACTIVATED&&CONSUMED and the state of the profile is INACTIVE, the Spm_ActivateServiceSrvcMgrHandlerFunction()
+ * function is called (wrapper of the C/S SrvcMgr_ActivateServices).
+ * In case the activation done by the API is:
+ *    - OK, the state transition to ACTIVATED;
+ *    - NOT_OK, the statte transition to ACTIVATING and in the next iteration the API is called again;
+ *
+ * If there are no requester with the label ACTIVATED/ACTIVATED&&CONSUMED and the state of the profile is ACTIVATED, the Spm_ActivateServiceSrvcMgrHandlerFunction()
+ * function is called (wrapper of the C/S SrvcMgr_ActivateServices).
+ * In case the deactivation done by the API is:
+ *    - OK, the state transition to DEACTIVATED;
+ *    - NOT_OK, the state transition to DEACTIVATING and in the next iteration the API is called again;
+ *
+ * If the state of the profile change, the flag isStateProfileChanged is set to TRUE in order to inform the Spm_SoftwMgr_PopulateSMFrame()
+ * that a feedback to the requester is needed.
+ *
+ * In parallel, if there is at least one request with the CONSUMED/ACTIVATED&&CONSUMED label, the PDU associated to this profile are activated.
+ * If there are NO one, the PDU are deactivated.
+ */
+/* PRQA S 1532 2 # Function defined here for modularity reason */
+void Spm_LocalPowerProfile_FSM ( const uint32 index )
+{
+
+   SpmPresencyDependencyTypeRequest PresentReq;
+   uint8 PowerProfileState_Previous_FSM_Computation;
+
+   PowerProfileState_Previous_FSM_Computation = PowerProfileState(index);
+   PresentReq = Spm_RetrieveDependencyTypeFromRequesterList(index);
+
+   /* [$Satisfies $DDS_SPM 0006] */
+   switch (PowerProfileState(index))
+   {
+      /* [$Satisfies $DDS_SPM 0017] */
+      case SPM_Deactivating:
+      case SPM_Activated:
+         if((PresentReq == Spm_NO_REQ_PRESENT) || (PresentReq == Spm_ONLY_CONSUMED_REQ_PRESENT)){
+
+            PowerProfileState(index) = SPM_Inactive;
+            //if not used by other profiles
+            if(FALSE == Spm_IsServiceUsedByOtherProfiles(index, TRUE))
+            {
+               /* If the SrvcMgr has activated previously the Service, here it is impossible that the service is Calibrated OFF*/
+               /* [$Satisfies $DDS_SPM 0027] *//* [$Satisfies $DDS_SPM 0030] *//* [$Satisfies $DDS_SPM 0041] *//* [$Satisfies $DDS_SPM 0046] */
+               if(TRUE == Spm_ActivateServiceSrvcMgrHandlerFunction(index, FALSE)){
+                  Spm_SrvcMgrIfUpdateSrvcStatus(spmPrfStsMgrInstCode_VAL(index), FALSE);
+               }else{
+                  PowerProfileState(index) = SPM_Deactivating;
+               }
+            }
+            else
+            {
+               /* Service used by other profiles so it can't be deactivated */
+            }
+
+         }
+         break;
+
+      case SPM_Inactive:
+      case SPM_Activating:
+         if((PresentReq == Spm_ONLY_ACTIVATED_REQ_PRESENT) || (PresentReq == Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT)){
+
+            if( TRUE == Spm_ActivateServiceSrvcMgrHandlerFunction(index, TRUE)){
+               /* [$Satisfies $DDS_SPM 0044] *//* [$Satisfies $DDS_SPM 0045] */
+               PowerProfileState(index) = SPM_Activated;
+               Spm_SrvcMgrIfUpdateSrvcStatus(spmPrfStsMgrInstCode_VAL(index), TRUE);
+            }else{
+               PowerProfileState(index) = SPM_Activating;
+            }
+         }
+         break;
+      /* PRQA S 2016 2 # No action should be done in the default state. */
+      default:
+         break;
+   } /* end switch */
+
+«LET spm.spmConfigSet.spmPowPrf AS pp-»
+«IF pp.spmComIPduGroupEvnt_Tx.size > 0 || pp.spmComIPduGroupEvnt_Rx.size > 0-»
+   Spm_HandlePduGroups(PresentReq, index);
+«ENDIF-»
+«ENDLET-»
+
+   if(PowerProfileState_Previous_FSM_Computation != PowerProfileState(index)){
+      /* [$Satisfies $DDS_SPM 0010] */
+      Spm_SetPowProfileStateIsChanged( index );
+   }
+}
+
+/* ****************************************************************************
+ * END: FUNCTIONS OF COMPONENT
+ ******************************************************************************/
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

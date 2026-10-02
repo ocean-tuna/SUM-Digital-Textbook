@@ -1,0 +1,26 @@
+@startuml Sum_SrvcMgr_ExecutionManager_SeqDiag
+
+control Scheduler as TE
+participant RTE as R
+box SUM_SrvcMgr
+    participant Sum_SrvcMgr_ExecutionManager as E
+end box
+
+TE -> E: Scheduling Event
+E -> E: Runnable_SrvcMgr_ExecutionManager()
+activate E
+
+E -> R: Read from interface //SUSD_PermitExecution//
+activate R
+R --> E
+deactivate R
+E -> E: Evaluate the state Of the State Machine
+
+E -> R: Write on interface //SrvcMgr_ShutdownPermission//
+
+activate R
+R --> E
+deactivate R
+deactivate E
+
+@enduml 

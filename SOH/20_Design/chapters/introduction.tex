@@ -1,0 +1,60 @@
+\chapter{Introduction and Goals}
+
+This document intends to describe the design of the SUM_SOH module.
+The scope of this document is to capture the implementation based on the requirements as defined in GB8002 AUTOSAR Standard Utility Module Specification.
+For a better process and higher quality design, we can consider this work as an extension to the before-mentioned document.
+
+\section{Introduction}
+This section lists some of the driving forces that software architects must consider in their decisions. In particular, we will first present the purpose of the system, and then we will describe the purpose of the document.
+
+\subsection{System Purpose}
+
+This document refers to a set of standard software compositions which are named GM Standardized Utility Modules (SUM).
+Use of the SUM modules allows for the standardized specification of behaviorial requirements and expectations concerning the interface to the software infrastructure (BSW Services).
+Hence, we can completely abstract functional software from the software infrastructure.
+We can use SUMs to communicate a set of standardized implementations of the interactions between SW-C and BSW.
+
+The SUM_SOH is a software module in the application layer of the standardized architecture of AUTOSAR.
+
+SUM_SOH implements the following functionalities:
+
+\begin{itemize}
+	\item Reset reliability monitor
+	\item Memory Status reliability monitor
+	\item Platform reliability monitor
+	\item Communication reliability monitor
+	\item Watchdog Manager reliability monitor
+	\item Data provider via DIDs
+\end{itemize}
+
+
+
+\subsection{Document Purpose}
+
+This document introduces the key ideas of the architecture of SUM_SOH.
+Its intended audience comprises System Architects, Product Architects, Developers and Testers who need a rough understanding of the concepts of the product.
+The document describes the product and its functionality on the component level, the interaction and communication between those components and the integration of ETAS wide shared-components.
+The document does not explain the design of the components in detail.
+
+\section{Goals of the Architecture}
+
+The main goals of the architecture are:
+
+\begin{enumerate}
+\item \textbf{Configurability}: The module has to be designed with the highest possible level of configurability, to be easy to adapt it in the future to changes on the standard or even in some project requirements.
+\item \textbf{Maintainability}: The architecture of the component shall be clearly defined and easy to understand, to guarantee the maximum possible level of maintainability.
+\item \textbf{Performance}: The component shall be designed to maximize run-time execution speed as well as minimize memory consumption.
+\item \textbf{Correctness of Implementation}: The Detailed Design shall follow the requirements listed in the Architecture document (GB8002).
+\end{enumerate}
+
+\section{Stakeholders}
+
+Stakeholders for SUM\_SOH module are GM, Bosch, Systems engineers, Software architect, QA personnel.
+
+\section{Definitions, Acronyms and Abbreviations}
+\label{sec:Definitions}
+\input{generated/tables/definitions.tex}
+
+\section{Referenced Documents}
+
+\input{generated/tables/references.tex}

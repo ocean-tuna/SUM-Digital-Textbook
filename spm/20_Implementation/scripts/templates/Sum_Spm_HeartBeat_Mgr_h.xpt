@@ -1,0 +1,75 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_HeartBeat_Mgr.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : header for Spm Heartbeat manager
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef SUM_SPM_HEARTBEATH_MGR_H_
+#define SUM_SPM_HEARTBEATH_MGR_H_
+
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_SoftwMgr.h"
+#include "Sum_Spm_PwrMgr.h"
+#include "Sum_Spm_DevicePowerState.h"
+
+#define SPM_HB_CNTR_MAX_VALUE     				( 0xFFFFFFFFu )
+
+/* [$Satisfies $DDS_SPM 0308] */
+#define SPM_STEADYSTATE_DELAY_HB_MS				( Rte_CData_Spm_HB_Periodicity_ms() )
+#define SPM_INITIAL_DEBOUNCE_DELAY_HB_MS		( Rte_CData_Spm_HB_Periodicity_BurstPhase_ms() )
+
+#define SPM_INITIAL_DEBOUNCE_DELAY_HB_TICK 		(SPM_INITIAL_DEBOUNCE_DELAY_HB_MS / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS)
+#define SPM_STEADYSTATE_DELAY_HB_TICK			(SPM_STEADYSTATE_DELAY_HB_MS / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS)
+
+#define SPM_NUMBER_OF_INITIALSENDING			(0x03u)
+
+typedef struct {
+	/* [$Satisfies $DDS_SPM 0300] */
+	SPM_HB_dt_Prv Spm_PayloadToWrite;
+	uint8   Spm_InitialBurstPhase;	/** Necessary to understand if the initial phase is ended. */
+	uint16  Spm_TimerTracker_Tick;
+} Spm_HB_Tx_InfoType;
+
+void Spm_PM_HB_Tx_Handler(void);
+void Spm_PM_Rx_Polling_Handler(void);
+void SPM_PM_Init_HB_BurstPhase(void);
+boolean Sum_Spm_InitialHbBurstPhaseCompleted(void);
+
+#endif
+
+/* EOF */
+
+«ENDFILE -»
+«ENDDEFINE -»

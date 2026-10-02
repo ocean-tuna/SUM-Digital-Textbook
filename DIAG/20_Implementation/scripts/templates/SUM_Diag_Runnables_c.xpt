@@ -1,0 +1,833 @@
+«IMPORT bsw»
+«IMPORT bsw::DiagModule»
+«EXTENSION templates::mathlib»
+«EXTENSION Util::DIAG_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND DIAG FOR ecu»
+«ENDDEFINE»
+
+«DEFINE DIAG FOR Ecu»
+
+«FILE "SUM_Diag_Runnables.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Banner
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *--------------------------------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *--------------------------------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *--------------------------------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_DIAG
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr24
+ * Description : SUM_DIAG Runnables entities File
+ ***************************************************************************************************
+ * END:Banner
+ ***************************************************************************************************
+*/
+
+#include "SUM_Diag.h"
+#include "Rte_SUM_DIAG.h"
+#include "SUM_DIAG_Ram.h"
+
+
+static uint8 SUM_DIAG_diagnostic_session_mode;
+
+
+static FUNC(void, SUM_DIAG_CODE) Diag_IncreaseActiveRequestCounterIRV(void);
+static FUNC(void, SUM_DIAG_CODE) Diag_DecreaseActiveRequestCounterIRV(void);
+
+/***********************************************************************************
+  Function name :   Diag_IncreaseActiveRequestCounterIRV
+  Description   :   Helper function to increase the active request counter IRV. 
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   [$Satisfies $SDD_DIAG 115]
+************************************************************************************/
+static FUNC(void, SUM_DIAG_CODE) Diag_IncreaseActiveRequestCounterIRV(void){
+    
+    uint8 currentValue;
+    /* PRQA S 3469 1 # This macro is needed to access the IRV as per RTE definition. */
+    currentValue = Rte_IrvRead_Runnable_Shutdown_Permission_IR_NumberActiveDiagnosticRequest(); 
+
+    if(currentValue < 255u){
+        currentValue++;
+        Rte_IrvWrite_Runnable_RequestHandler_Indication_IR_NumberActiveDiagnosticRequest( (currentValue) );
+    }
+
+}
+
+/***********************************************************************************
+  Function name :   Diag_DecreaseActiveRequestCounterIRV
+  Description   :   Helper function to decrease the active request counter IRV. 
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   [$Satisfies $SDD_DIAG 116]
+************************************************************************************/
+static FUNC(void, SUM_DIAG_CODE) Diag_DecreaseActiveRequestCounterIRV(void){
+    
+    uint8 currentValue;
+    /* PRQA S 3469 1 # This macro is needed to access the IRV as per RTE definition. */
+    currentValue = Rte_IrvRead_Runnable_Shutdown_Permission_IR_NumberActiveDiagnosticRequest(); 
+
+    if(currentValue > 0u){
+        currentValue--;
+        Rte_IrvWrite_Runnable_RequestHandler_Confirmation_IR_NumberActiveDiagnosticRequest( (currentValue) );
+    }
+
+}
+
+#if (DIAG_GENERATE_INIT_RUNNABLE_STATUS == STD_ON)
+static FUNC (void, SUM_DIAG_CODE) DIAG_Init (void);
+#endif
+
+/***********************************************************************************
+
+  Function name :   RE_DIAG_Init
+  Description   :   DIAG initialization routine, initialize local static variables
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 003] [$Satisfies $SDD_DIAG 081] [$Satisfies $SDD_DIAG 090]
+                    [$Satisfies $SDD_DIAG 092]
+                    Note, from the GB8002 specification:
+                    It is assumed that the ECU initialization sequence is designed such that any Non-volatile memory needed
+                    for the SUM_DIAG function is available prior to SUM_DIAG being initialized.
+ ************************************************************************************/
+#define SUM_DIAG_START_SEC_CODE
+/* PRQA S 5087 EOF */ /* include SUM_DIAG_MemMap.h required here for memory mapping */
+#include "SUM_DIAG_MemMap.h"
+
+#if (DIAG_GENERATE_INIT_RUNNABLE_STATUS == STD_ON)
+FUNC (void, SUM_DIAG_CODE) RE_DIAG_Init(void) /* PRQA S 3408 */ /* PRQA S 1503 # this function has a declaration and definition but is not called anywhere in the code, because it is called by EcuM module at the integration level.*/
+{
+	static uint32 Diag_init_status = 0x0;
+
+	/* Check to make sure DIAG_init will only call once */
+	if(Diag_init_status != SUM_INITIALIZED)
+	{
+		DIAG_Init();
+		Diag_init_status = SUM_INITIALIZED;
+	}
+}
+#endif
+
+#if (DIAG_GENERATE_INIT_RUNNABLE_STATUS == STD_ON)
+static FUNC (void, SUM_DIAG_CODE) DIAG_Init (void)
+#else
+FUNC (void, SUM_DIAG_CODE) DIAG_Init (void) /* PRQA S 3408 */ /* PRQA S 1503 # this function has a declaration and definition but is not called anywhere in the code, because it is called by EcuM module at the integration level.*/
+#endif
+{
+    /* initialize permit execution to false, if ready to run this will be reset in *
+     * the main function                                                           *
+     */
+	boolean SUM_DIAG_Stored_OTA_PSF;
+    SUM_DIAG_permit_execution = FALSE;
+    SUM_DIAG_ecu_reset_requested = FALSE;
+
+    /* Set initial default state for MEC cycle */
+    SUM_DIAG_MEC_Cycle_States = DIAG_START_OF_CYCLE;
+    SUM_DIAG_MEC_Write_State  = DIAG_MEC_DEFAULT;
+    SUM_DIAG_OTA_Write_State  = DIAG_OTA_DEFAULT;
+
+    /* initialize the diagnostic session mode*/
+    SUM_DIAG_diagnostic_session_mode = DCM_DEFAULT_SESSION;
+
+    /* Read stored OTA_PSF value from OTA PSF RAM mirror block */
+    SUM_DIAG_Stored_OTA_PSF = getOtaPsf();
+
+	/* When OTA_PSF is SET, the ECU shall Set the EnableCondition-OTAPSF to FALSE */
+	/* When OTA_PSF is CLEARED, the ECU shall SET the EnableCondition-OTAPSF to TRUE */
+	if (SUM_DIAG_Stored_OTA_PSF == TRUE)
+	{
+		(void)Rte_Call_EnableCondition_OTA_PSF_SetEnableCondition(FALSE);
+	}
+	else
+	{
+		(void)Rte_Call_EnableCondition_OTA_PSF_SetEnableCondition(TRUE);
+	}
+
+«IF (diag.diagGeneral.mecStorageInHsm == true)-»
+    /* [$Satisfies $SDD_DIAG 134] Initialize HSM MEC -double-read retry + first-time set */
+    (void)Diag_HSM_MEC_Init();
+«ELSE-»
+    /* output port for mec */
+    (void)Rte_Write_PP_DIAG_SSC_GetMEC_GetMec(getManufacturerEnableCounter());
+    (void)Rte_Write_PP_DIAG_SOH_GetMEC_GetMec(getManufacturerEnableCounter());
+    (void)Rte_Write_PP_DIAG_SSFM_GetMEC_GetMec(getManufacturerEnableCounter());
+«ENDIF-»
+}
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Runnable_DIAG_Main
+  Description   :   Main DIAG routine, evaluates permit execution and initializes
+                    output ports, MEC and Tester Address / Subnet ID
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 002][$Satisfies $SDD_DIAG 003][$Satisfies $SDD_DIAG 022][$Satisfies $SDD_DIAG 095]
+ ************************************************************************************/
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+FUNC (void, SUM_DIAG_CODE) Runnable_DIAG_Main (void) /* PRQA S 1503 # This function is mapped to a periodic task configured within OS. */
+{
+    uint8 execStatus;
+
+    if (SUM_DIAG_permit_execution == FALSE)
+    {
+        /* Read the SUSD port to see if we're ready to run */
+        if (Rte_Read_SUSD_DIAG_PermitExecution_SUSD_SWC_ExecutionStatus(&execStatus) == RTE_E_OK)
+        {
+            if ((execStatus | DIAG_PERMITEXECUTION_MASK) == 0xFFu)
+            {
+                SUM_DIAG_permit_execution = TRUE;
+
+                /* good to go, so initialize the output ports and NvM variables */
+                initializeForRun();
+            }
+        }
+    }
+    else
+    {
+        /* Read PermitExecution to check ECU Reset bit (bit 6)*/
+        if (Rte_Read_SUSD_DIAG_PermitExecution_SUSD_SWC_ExecutionStatus(&execStatus) == RTE_E_OK)
+        {
+            if ((execStatus & DIAG_ECURESET_BIT_MASK) == 0u)
+            {
+                SUM_DIAG_ecu_reset_requested = TRUE;
+            }
+            else
+            {
+                SUM_DIAG_ecu_reset_requested = FALSE;
+            }
+        }
+    }
+}
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Runnable_Shutdown_Permission
+  Description   :   Evaluates shutdown and write status to SUSD port
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   [$Satisfies $SDD_DIAG 004][$Satisfies $SDD_DIAG 066][$Satisfies $SDD_DIAG 005][$Satisfies $SDD_DIAG 093]
+ ************************************************************************************/
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+FUNC (void, SUM_DIAG_CODE) Runnable_Shutdown_Permission (void) /* PRQA S 1503 # This function is mapped to a periodic task configured within OS. */
+{
+	static uint8 rolling_count = DIAG_MAX_ROLLING_COUNT;
+	uint8 current_diagnostic_session_mode;
+    uint8 SUM_DIAG_active_request_count; 
+
+    if (SUM_DIAG_permit_execution != FALSE)
+    {
+    	/* read the diagnostic session mode from BswM */
+        current_diagnostic_session_mode = Rte_Mode_BswM_DiagSession_SUM_DIAG_SESSION();
+        /* read the number of active diagnostic request*/
+        /* PRQA S 3469 1 # This macro is needed to access the IRV as per RTE definition. */
+        SUM_DIAG_active_request_count = Rte_IrvRead_Runnable_Shutdown_Permission_IR_NumberActiveDiagnosticRequest();
+        /* ECUReset requested via PermitExecution bit 6 - allow shutdown in any session */
+        if (SUM_DIAG_ecu_reset_requested != FALSE)
+        {
+            (void)Rte_Write_DIAG_ShutdownPermission_SUSD_UserRequest(DIAG_ENABLE_SHUTDOWN);
+        }
+        /* request process occurring, do not shutdown but let SUSD know we're ok */
+        else if ((SUM_DIAG_active_request_count > 0u) || (current_diagnostic_session_mode != RTE_MODE_MDG_BswM_DiagSession_DEFAULT_SESSION))
+        {
+            /* write rolling count to SUSD interface, i.e, keep alive */
+            if (Rte_Write_DIAG_ShutdownPermission_SUSD_UserRequest(rolling_count) == RTE_E_OK)
+            {
+                /* adjust rolling count, note, will be counting down from max to min */
+                if (rolling_count == DIAG_MIN_ROLLING_COUNT)
+                {
+                    rolling_count = DIAG_MAX_ROLLING_COUNT;
+                }
+                else
+                {
+                    --rolling_count;
+                }
+            }
+        }
+        else
+        {
+            /* no requests are being processed, notify SUSD that DIAG is ready to shutdown */
+            (void)Rte_Write_DIAG_ShutdownPermission_SUSD_UserRequest(DIAG_ENABLE_SHUTDOWN);
+        }
+    }
+    else
+    {
+        /* no requests are being processed, notify SUSD that DIAG is ready to shutdown */
+        (void)Rte_Write_DIAG_ShutdownPermission_SUSD_UserRequest(DIAG_ENABLE_SHUTDOWN);
+    }
+}
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Runnable_BswM_ModeUser
+  Description   :   Read mode status from BswM for CommunicationMode and DiagSession,
+                    notify SSM of CommunicationMode for channel
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 023] [$Satisfies $SDD_DIAG 024] [$Satisfies $SDD_DIAG 025]
+ ************************************************************************************/
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+FUNC (void, SUM_DIAG_CODE) Runnable_BswM_ModeUser (void) /* PRQA S 1503 # This function is mapped to a periodic task configured within OS. */
+{
+    uint8                                index;
+    SUM_DiagNormalCom_ModeType            comm_mode;
+    Diag_NormalCommStatus_Channel_Type    *commStatus_channel;
+
+    if (SUM_DIAG_permit_execution != FALSE)
+    {
+        /* read the diagnostic session mode from BswM */
+        SUM_DIAG_diagnostic_session_mode = Rte_Mode_BswM_DiagSession_SUM_DIAG_SESSION();
+        if (SUM_DIAG_diagnostic_session_mode != DCM_DEFAULT_SESSION)
+        {
+            /* to avoid MISRA/PC Lint warning, currently this static variable is not used *
+             * other than to store the diagnostic session, may be used in the future     *
+             */
+        }
+
+        /* loop thru the ports/channels looking for a change in mode */
+        for (index = 0; index < DIAG_NUMBER_OF_CHANNELS; index++)
+        {
+            /* pointer to port/channel info */
+            commStatus_channel = &Diag_NormalCommStatus_Channel[index];
+
+            /* read the comm mode from BswM for this channel */
+            comm_mode = commStatus_channel->Rte_ReadFunc_BswMCommMode();
+
+            if (comm_mode != commStatus_channel->CurrentMode)
+            {
+                /* notify SSM the comm mode has changed for this channel */
+                if (commStatus_channel->Rte_WriteFunc(comm_mode) == RTE_E_OK)
+                {
+                    /* save the new comm_mode */
+                    commStatus_channel->CurrentMode = comm_mode;
+                }
+            }
+        }
+    }
+}
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Runnable_MEC_Handler
+  Description   :   Read vehicle power mode, track state transitions, decrement the MEC
+                    when appropriate and write to MEC output port
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 026] [$Satisfies $SDD_DIAG 027][$Satisfies $SDD_DIAG 098]
+                    Added for OI_137, OI_138, OI_147
+ ************************************************************************************/
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+FUNC (void, SUM_DIAG_CODE) Runnable_MEC_Handler(void) /* PRQA S 1503 # This function is mapped to a periodic task configured within OS. */
+{
+    SUM_VehiclePowerMode_Signal_States currentvehiclePowerMode;
+
+    static uint8 localMEC;
+
+    if (SUM_DIAG_permit_execution != FALSE)
+    {
+«IF (diag.diagGeneral.mecStorageInHsm == true)-»
+        /* [$Satisfies $SDD_DIAG 133] Poll HSM MEC write state machine if write is in progress */
+        if (SUM_DIAG_HSM_MEC_Write_State == DIAG_HSM_MEC_WRITE_POLL)
+        {
+            (void)Diag_HSM_MEC_WritePoll();
+        }
+«ENDIF-»
+
+        /* read the current Vehicle Power Mode from SUSD */
+        currentvehiclePowerMode = Rte_DRead_SUSD_Vehicle_Power_Mode_VehiclePowerMode();
+
+        switch (SUM_DIAG_MEC_Cycle_States)
+        {
+            case DIAG_START_OF_CYCLE:
+                if (currentvehiclePowerMode == OFF)
+                {
+                    SUM_DIAG_MEC_Cycle_States = DIAG_NORMAL_OPERATION;
+                }
+                break;
+            case DIAG_NORMAL_OPERATION:
+                if ((currentvehiclePowerMode == RUN) || (currentvehiclePowerMode == PROPULSION))
+                {
+                    SUM_DIAG_MEC_Cycle_States = DIAG_SLEEP;
+                }
+                break;
+            case DIAG_SLEEP:
+                if (currentvehiclePowerMode == OFF)
+                {
+«IF (diag.diagGeneral.mecStorageInHsm == true)-»
+                    /* [$Satisfies $SDD_DIAG 132] HSM path: read MEC from HSM, decrement, write back only if changed */
+                    {
+                        uint8 hsmMecValue;
+                        uint8 hsmMecStatus;
+                        if (Diag_HSM_MEC_Read(&hsmMecValue, &hsmMecStatus) == E_OK)
+                        {
+                            if (hsmMecValue > 0u)
+                            {
+                                localMEC = hsmMecValue - 1u;
+                                if (localMEC != hsmMecValue)
+                                {
+                                    (void)Diag_HSM_MEC_WriteStart(localMEC);
+                                }
+                            }
+                            SUM_DIAG_HSM_MEC_Read_Value = (hsmMecValue > 0u) ? (hsmMecValue - 1u) : 0u;
+                        }
+                        else
+                        {
+                            (void)Rte_Call_RP_DemService_U19A392_SetEventStatus(DEM_EVENT_STATUS_FAILED);
+                        }
+                    }
+«ELSE-»
+                    /* second sleep received with a 'normal operation' taking place prior so
+                     * decrement the local MEC and ask for a write */
+                    localMEC = getManufacturerEnableCounter();
+                    if (localMEC > 0u)
+                    {
+                        localMEC--;
+                        (void)ProcessMECWrite(&localMEC);
+                    }
+«ENDIF-»
+                    /* start the cycle all over again*/
+                    SUM_DIAG_MEC_Cycle_States = DIAG_START_OF_CYCLE;
+                }
+                break;
+            default:
+            	/*Do nothing*/
+                break;
+        }
+
+    }
+}
+
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Runnable_RequestHandler_Indication
+  Description   :   Main ServiceRequestNotification Indication Handler, switches on
+                :   SID to call appropriate service request Indication
+  Parameter in  :   uint8 SID, byte* RequestData, uint16 DataSize, uint8 ReqType, uint16 SourceAddress
+  Parameter out :   uint8* ErrorCode
+  Return value  :   Std_ReturnType E_OK or E_NOT_OK
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 002][$Satisfies $SDD_DIAG 033][$Satisfies $SDD_DIAG 034]
+ ************************************************************************************/
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+/* PRQA S 1503 EOF */ /* This function is called by EcuM module at the integration level. */
+/* PRQA S 3432 8 # Suppress violation warnings for MR12 20.7, see Compiler.h for details */
+FUNC (Std_ReturnType, RTE_CODE) Runnable_RequestHandler_Indication (VAR(uint8, AUTOMATIC) SID,
+                                                                    P2CONST(uint8, AUTOMATIC, RTE_APPL_DATA) RequestData,
+                                                                    VAR(uint32, AUTOMATIC) DataSize,
+                                                                    VAR(uint8, AUTOMATIC) ReqType,
+                                                                    VAR(uint16, AUTOMATIC) ConnectionId,
+                                                                    P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode,
+                                                                    VAR(Dcm_ProtocolType, AUTOMATIC) ProtocolType,
+                                                                    VAR(uint16, AUTOMATIC) TesterSourceAddress)
+{
+
+    Std_ReturnType retValue = E_OK;
+
+    /*To resolve MISRA Rule2.7 violation*/
+    SUM_PARAM_UNUSED(ReqType);
+    SUM_PARAM_UNUSED(TesterSourceAddress);
+    SUM_PARAM_UNUSED(ConnectionId);
+    SUM_PARAM_UNUSED(ProtocolType);
+
+    if (SUM_DIAG_permit_execution != FALSE)
+    {
+        
+        /* switch to the appropriate diagnostic service Indication handler */
+        switch ((UDSDiagnosticServiceIds)SID) /* PRQA S 4342 EOF # cast to fulfill condition of switch case */
+        {
+            case DiagnosticSessionControl:
+                retValue = DiagnosticSessionControl_Indication(SID, RequestData, DataSize, ReqType, TesterSourceAddress, ErrorCode);
+                Diag_IncreaseActiveRequestCounterIRV();
+                break;
+            case ECUReset:
+                retValue = EcuReset_Indication(SID, RequestData, DataSize, ReqType, TesterSourceAddress, ErrorCode);
+                Diag_IncreaseActiveRequestCounterIRV();
+                break;
+            case CommunicationControl:
+                retValue = CommunicationControl_Indication(SID, RequestData, DataSize, ReqType, TesterSourceAddress, ErrorCode);
+                Diag_IncreaseActiveRequestCounterIRV();
+                break;
+#if (RMBA_SERVICE_SUPPORT == STD_ON)
+            case ReadMemoryByAddress:
+                retValue = Diag_RMBA_Indication(RequestData, DataSize, ReqType, ErrorCode);
+                Diag_IncreaseActiveRequestCounterIRV();
+                break;
+#endif
+#if (DDDI_SERVICE_SUPPORT == STD_ON)
+            case DynamicallyDefineDataIdentifier:
+                retValue = Diag_DDDI_Indication(RequestData, DataSize, ErrorCode);
+                Diag_IncreaseActiveRequestCounterIRV();
+                break;
+#endif
+            default:
+            	/*Nothing to do*/
+                break;
+        }
+    }
+    return retValue;
+}
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Runnable_RequestHandler_Confirmation
+  Description   :   Main ServiceRequestNotification Confirmation Handler, switches on
+                :   SID to call appropriate service request Confirmation
+  Parameter in  :   uint8 SID, uint8 ReqType, uint16 SourceAddress, uint8 ConfirmationStatus
+  Parameter out :   None
+  Return value  :   Std_ReturnType E_OK
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 002][$Satisfies $SDD_DIAG 033]
+ ************************************************************************************/
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+FUNC (Std_ReturnType, RTE_CODE) Runnable_RequestHandler_Confirmation (VAR(uint8, AUTOMATIC) SID,
+                                                                      VAR(uint8, AUTOMATIC) ReqType,
+                                                                      VAR(uint16, AUTOMATIC) ConnectionId,
+                                                                      VAR(Dcm_ConfirmationStatusType, AUTOMATIC) ConfirmationStatus,
+                                                                      VAR(Dcm_ProtocolType, AUTOMATIC) ProtocolType,
+                                                                      VAR(uint16, AUTOMATIC) TesterSourceAddress) /* PRQA S 1503 # This function is called by EcuM module at the integration level. */
+{
+    Std_ReturnType retValue = E_OK;
+
+    /*To resolve MISRA Rule2.7 violation*/
+    SUM_PARAM_UNUSED(ReqType);
+    SUM_PARAM_UNUSED(TesterSourceAddress);
+    SUM_PARAM_UNUSED(ConnectionId);
+    SUM_PARAM_UNUSED(ProtocolType);
+
+    if (SUM_DIAG_permit_execution != FALSE)
+    {
+        /* switch to the appropriate diagnostic service Confirmation handler */
+        switch ((UDSDiagnosticServiceIds)SID)
+        {
+            case DiagnosticSessionControl:
+                retValue = DiagnosticSessionControl_Confirmation(SID, ReqType, TesterSourceAddress, ConfirmationStatus);
+                Diag_DecreaseActiveRequestCounterIRV();
+                break;
+            case ECUReset:
+                Diag_DecreaseActiveRequestCounterIRV();
+                break;
+            case CommunicationControl:
+                retValue = CommunicationControl_Confirmation(SID, ReqType, TesterSourceAddress, ConfirmationStatus);
+                Diag_DecreaseActiveRequestCounterIRV();
+                break;
+#if (RMBA_SERVICE_SUPPORT == STD_ON)
+            case ReadMemoryByAddress:
+                Diag_DecreaseActiveRequestCounterIRV();
+                break;
+#endif
+#if (DDDI_SERVICE_SUPPORT == STD_ON)
+            case DynamicallyDefineDataIdentifier:
+                Diag_DecreaseActiveRequestCounterIRV();
+                break;
+#endif
+            default:
+            	/*Nothing to do*/
+                break;
+        }
+    }
+    return retValue;
+}
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Runnable_OTA_PSF
+  Description   :	It implements Automatic Disabling of DTCs when OTA PSF is SET in
+                    in-vehicle ECUs, and stores the OTA PSF value in the the mirror RAM block
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 013][$Satisfies $SDD_DIAG 028][$Satisfies $SDD_DIAG 029]
+                               [$Satisfies $SDD_DIAG 030][$Satisfies $SDD_DIAG 031][$Satisfies $SDD_DIAG 032]
+                               [$Satisfies $SDD_DIAG 099][$Satisfies $SDD_DIAG 100][$Satisfies $SDD_DIAG 101]
+                               [$SDD_DIAG 107][$SDD_DIAG 035]
+ ************************************************************************************/
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+FUNC(void, SUM_DIAG_CODE) Runnable_OTA_PSF (void) /* PRQA S 1503 # This function is mapped to a periodic task configured within OS. */
+{
+	«IF Diag_IsRmtProgActvAuthGroupSignal(diag.diagGeneral)»
+    static RxSignal_BSPMP_RmtProgmActvAuth_GroupSignal signal_group = {0};
+    «ELSEIF Diag_IsOTAServiceBased(diag.diagGeneral)-»
+    static «Diag_GetImplementationDataTypeName(diag.diagGeneral.dIAG_ServiceBased_OTA_Ref)» srv_signal;
+    Rte_TransformerError transformerError;
+    «ENDIF»
+    static boolean ota_psf_Sigdata;
+    boolean ota_psf_data;
+    Std_ReturnType ret_value;
+    boolean SUM_DIAG_stored_ota_psf;
+    SignalStatusType sig_status;
+    Std_ReturnType ret_val_av, ret_val_fa;
+    boolean fault_active;
+
+    SUM_DIAG_stored_ota_psf = getOtaPsf();
+
+    if (SUM_DIAG_permit_execution != FALSE)
+    {
+        ret_val_av = Rte_Read_SUM_DIAG_RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_Av_SignalAvailability(&sig_status);
+    «IF (!Diag_SsfmIsSinglePortSupported(sSFM))-»
+		ret_val_fa = Rte_Read_SUM_DIAG_RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_FsFA_DTC_STATUS_FSFA(&fault_active);
+	«ELSE-»
+		ret_val_fa = Rte_Read_SUM_DIAG_RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_FxFA_DTC_STATUS_FXFA(&fault_active);
+	«ENDIF-»
+
+		/* Check the signal availability and if there is no FxFA or FsFa from SSFM  */ /* PRQA S 3415 3 # side effects can be ignored */
+		if ((E_OK == ret_val_av) && (sig_status == SIG_STATUS_AVAILABLE) && (ret_val_fa == E_OK) && (fault_active == FALSE))
+		{
+	«IF Diag_IsRmtProgActvAuthGroupSignal(diag.diagGeneral)-»
+			/* Reception of the OTA-PSF flag via the Com Signal Group */
+			ret_value = Rte_Read_SUM_DIAG_RP_Com_DIAG_BSPMP_RmtProgmActvAuth_RmtProgmActvAuthRxSignal(&signal_group);
+			ota_psf_Sigdata = signal_group.RxSignal_«diag.diagGeneral.dIAG_BSPMP_RmtProgmActvAuthRef.shortName»;
+	«ELSEIF Diag_IsOTAServiceBased(diag.diagGeneral)-»
+			ret_value = Rte_Read_SUM_DIAG_RP_Com_DIAG_BSPMP_RmtProgmActvAuth_RmtProgmActvAuthRxSignal(&srv_signal, &transformerError);
+			ota_psf_Sigdata = srv_signal.«Diag_GetImplementationDataTypeElementName(diag.diagGeneral.dIAG_ServiceBased_OTA_Ref)»;
+	«ELSE-»
+			/* Reception of the OTA-PSF flag via the Com Signal */
+			ret_value = Rte_Read_SUM_DIAG_RP_Com_DIAG_BSPMP_RmtProgmActvAuth_RmtProgmActvAuthRxSignal(&ota_psf_Sigdata);
+	«ENDIF-»
+			if (ret_value == E_OK)
+			{
+				/* Reception of the precondition from a Swc */
+				(void)Rte_Read_OTA_PSF_Precondition_VDP_ota_psf(&ota_psf_data);
+
+				/* Ota_psf_Sigdata value is written to NvM taking into account the precondition */
+				if( (SUM_DIAG_stored_ota_psf != ota_psf_Sigdata) && (SUM_DIAG_stored_ota_psf == FALSE) && (ota_psf_data == TRUE))
+				{
+					setOtaPsf(ota_psf_Sigdata);
+					(void)Rte_Call_EnableCondition_OTA_PSF_SetEnableCondition(FALSE);
+					(void)ProcessOTAWrite();
+					/* Send the Ota flag value to the SSFM and Swc */
+                    (void)Rte_Write_SUM_DIAG_PP_DIAG_SWC_RmtPrgmOtaPsf_Status_DIAG_RemoteProgrammingOtaPsf(TRUE); //ota psf value true
+				}
+
+				else if((SUM_DIAG_stored_ota_psf != ota_psf_Sigdata) && (SUM_DIAG_stored_ota_psf == TRUE))
+				{
+					setOtaPsf(ota_psf_Sigdata);
+					(void)Rte_Call_EnableCondition_OTA_PSF_SetEnableCondition(TRUE);
+					(void)ProcessOTAWrite();
+					/* Send the Ota flag value to the SSFM and Swc */
+                    (void)Rte_Write_SUM_DIAG_PP_DIAG_SWC_RmtPrgmOtaPsf_Status_DIAG_RemoteProgrammingOtaPsf(FALSE); // ota psf value false
+				}
+				else
+				{
+					/*No changes */
+					(void)Rte_Write_SUM_DIAG_PP_DIAG_SWC_RmtPrgmOtaPsf_Status_DIAG_RemoteProgrammingOtaPsf(SUM_DIAG_stored_ota_psf);
+				}
+			}
+		}
+		else
+        {
+            /* If fault active update the port with default value 0 */
+            (void)Rte_Write_SUM_DIAG_PP_DIAG_SWC_RmtPrgmOtaPsf_Status_DIAG_RemoteProgrammingOtaPsf(FALSE);
+        }
+    }
+
+}
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+
+/***********************************************************************************
+
+  Function name :   Runnable_SwitchedToDefaultSession
+  Description   :	It enables normal communication (by setting the Normal_msg_transmission IRV)
+                    when there is a transition to a default session
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 083]
+ ************************************************************************************/
+
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+FUNC(void, SUM_DIAG_CODE) Runnable_SwitchedToDefaultSession(void)/* PRQA S 1503 # This function is mapped to a task configured within OS. */
+{
+	Rte_IrvWrite_Runnable_SwitchedToDefaultSession_IR_Normal_msg_transmission((SUM_DiagNormalCom_Enable));
+}
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Runnable_DIAG_ControlDTCSetting_Disabled
+  Description   :	It stores TRUE, so ControlDTCSetting_Disabled in the IRV IR_DIAG_ControlDTCsetting
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 006]
+ ************************************************************************************/
+
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+FUNC(void, SUM_DIAG_CODE) Runnable_DIAG_ControlDTCSetting_Disabled(void)/* PRQA S 1503 # This function is mapped to a task configured within OS. */
+{
+	Rte_IrvWrite_Runnable_DIAG_ControlDTCSetting_Disabled_IR_DIAG_ControlDTCsetting((TRUE));
+}
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Runnable_DIAG_ControlDTCSetting_Disabled
+  Description   :	It stores FALSE, so ControlDTCSetting_Enabled in the IRV IR_DIAG_ControlDTCsetting
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 006]
+ ************************************************************************************/
+
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+FUNC(void, SUM_DIAG_CODE) Runnable_DIAG_ControlDTCSetting_Enabled(void)/* PRQA S 1503 # This function is mapped to a task configured within OS. */
+{
+	Rte_IrvWrite_Runnable_DIAG_ControlDTCSetting_Enabled_IR_DIAG_ControlDTCsetting((FALSE));
+}
+
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+
+
+/***********************************************************************************
+
+  Function name :   Runnable_DID_F1B0_ReadData
+  Description   :	Handles the reading of diagnostic data for DID F1B0
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 108]
+ ************************************************************************************/
+
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+/* PRQA S 1503 # This function is mapped to a task configured within OS. */
+FUNC(Std_ReturnType, SUM_DIAG_CODE) Runnable_DID_F1B0_ReadData(
+    VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+	uint8 * Data){
+    Std_ReturnType retValue = E_NOT_OK;
+
+    if (SUM_DIAG_permit_execution != FALSE)
+    {
+        switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+                /* Set Data to DIAG_ECUADDRESS */
+                *Data = DIAG_ECUADDRESS;
+                retValue = E_OK;
+                break;
+            default:
+                /* Do Nothing */
+                break;
+        }
+    }
+    else
+    {
+        /* Do Nothing */
+    }
+
+    return retValue;
+}
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+
+«IF (diag.diagGeneral.sum_Diag_EnableDID_E0CC == true)-»
+/***********************************************************************************
+
+  Function name :   Runnable_Diag_DID_E0CC_ReadData
+  Description   :	Handles the reading of diagnostic data for DID E0CC (Service Discovery Learning Table Status)
+  Parameter in  :   None
+  Parameter out  :   None
+  Return value  :   Std_ReturnType
+  Remarks       :   [$Satisfies $SDD_DIAG 120][$Satisfies $SDD_DIAG 121][$Satisfies $SDD_DIAG 122]
+ ************************************************************************************/
+
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+/* PRQA S 1503 # This function is mapped to a task configured within OS. */
+FUNC(Std_ReturnType, SUM_DIAG_CODE) Runnable_Diag_DID_E0CC_ReadData(
+    VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+	uint8 * Data){
+    Std_ReturnType retValue = E_NOT_OK;
+
+    if (SUM_DIAG_permit_execution != FALSE)
+    {
+        switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+                /* Set Data to 0x05 (Not Supported) - indicates CAN-only ECU without SrvcMgr */
+                *Data = 0x05u;
+                retValue = E_OK;
+                break;
+            default:
+                /* Do Nothing */
+                break;
+        }
+    }
+    else
+    {
+        /* Do Nothing */
+    }
+
+    return retValue;
+}
+#define SUM_DIAG_STOP_SEC_CODE
+#include "SUM_DIAG_MemMap.h"
+«ENDIF-»
+
+
+«ENDFILE»
+«ENDDEFINE»

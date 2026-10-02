@@ -1,0 +1,59 @@
+@startuml actLocECUSleep
+skinparam ParticipanrPadding 20
+skinparam BoxPadding 20
+
+
+participant BswM
+participant "Sensors SWCs"
+participant SUM_PNC
+participant SUM_SSFM
+participant SUM_SUSD
+participant SWCs
+
+
+BswM -> SUM_PNC: 1. SUM_PNC_Init
+activate SUM_PNC
+deactivate SUM_PNC
+
+"Sensors SWCs" -> SUM_PNC: 2. Activation_Sensor
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_PNC: 3. PNC_MainFunction
+activate SUM_PNC
+
+SUM_PNC -> BswM: 4. PNC_BswM_CurrentPNCModeReq
+activate BswM
+deactivate BswM
+
+BswM -> SUM_PNC: 5. PNC_BswM_CurrentPNCModeUser
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> BswM: 6. PNC_BswMPduGroupSwitchRxReq
+activate BswM
+deactivate BswM
+
+SUM_PNC -> SUM_SSFM: 7. PNC_ActiveRxPDUEnable
+activate SUM_SSFM
+deactivate SUM_SSFM
+
+BswM -> SUM_PNC: 8. PNC_ComM_CurrentModeUser
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> BswM: 9. PNC_BswMPduGroupSwitchTxReq
+activate BswM
+deactivate BswM
+
+SUM_PNC -> SWCs: 10. PNC_ActiveTxPDUEnable
+activate SWCs
+deactivate SWCs
+
+deactivate SUM_PNC
+SUM_PNC -> SUM_SUSD: 11. Shutdown_permission_SUSD
+SUM_PNC -> SUM_SUSD: 12. SUSD_PNC_UpdateRecord (SUM_PNC_Local_WR)
+activate SUM_SUSD
+deactivate SUM_SUSD
+
+@enduml

@@ -1,0 +1,29 @@
+1;2
+\textbf{Term/Abbreviation};\textbf{Definition}
+API;Application Program Interface
+BSW;Basic Software
+BswM;Basic Software Mode Manager
+CAN;Controller Area Network
+Dcm;Diagnostic Communication Module
+DID;Data IDentifier
+DTC;Diagnostic Trouble Code
+DIAG;Diagnostic Application Services
+ECU;Electronic Control Unit
+EcuM;ECU State Manager
+ERRH;Error Handling Module
+LIN;Local Interconnect Network
+LNM;LIN Network Manager
+NVRAM;Non Volatile Random Access Memory
+NvM;NVRAM Manager
+OS;Operating System
+OAW;Open Architecture Ware
+PMS;Power Mode Slave
+PNC;Partial Network Coordinator
+RTE;Run Time Environment
+SOH;State Of Health Manager
+SSM;Signal Status Monitor
+SSC;Security Service Coordinator
+SUM;Standard Utility Module
+SUSD;Startup Shut down Coordinator
+SW;Software
+SW-C;Software Component

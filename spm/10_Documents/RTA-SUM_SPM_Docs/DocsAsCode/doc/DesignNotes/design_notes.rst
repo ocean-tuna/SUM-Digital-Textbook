@@ -1,0 +1,2731 @@
+.. image:: ../logo.png
+   :align: right
+   :alt: Company Logo
+   :width: 200px
+   
+========================
+RTA-SUM SPM Design Notes
+========================
+
+***********
+System View
+***********
+
+Network topology
+================
+RTA-SUM SPM is a Complex Device Driver in the standardized AUTOSAR. RTA-SUM SPM main task is to manage the request for activating/deactivating specific software services.
+
+SPM can receive Activation/Deactivation request for software services in two ways:
+
+| - **Locally**: from a local software entity
+| - **Remotelly**: from a remote node in the communication network by Ethernet frame
+
+At the same time, SPM can handle the activation/deactivation of:
+
+| - an own (local) software Service
+| - a remote software Service. In this case the current SPM just acts as the requester or a request gateway
+
+For the remote request, SPM uses the **SM frame** that is defined as follow:
+
+.. rubric:: [$DDS_SPM 0007]
+
+Every SMFrame message:
+
+* have both message types in ascending Msg Type Order (PROFILE_REQUEST, REQ_STATUS_PROF_STATE).
+* Specify an Entry Length of zero if there is no information to convey for a message type.
+
+.. rubric:: [$Satisfies $SRS_SPM 0010]
+
+The Payload associated with ``SMFrame.PROFILE_REQUEST`` represents the activation/deaction request done by the SM to a remote SM. 
+``PROFILE_REQUEST`` uses the following fields:
+
+.. rubric:: [$DDS_SPM 0001]
+
+* Msg Type = 00 (1 byte)
+* Entry Length (2 byte value counting the number of remaining bytes in this Msg Type)
+* Activation Profile IDs (5 bytes each: 4 bytes ServiceID + 1 byte profile number) Repeating with Request Status and Profile State
+
+.. rubric:: [$Satisfies $SRS_SPM 0006]
+
+.. rubric:: [$DDS_SPM 0002]
+
+Request enumeration (1 byte each) repeating with Activation Profile IDs
+* Request enumeration SHALL be given by the table in:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Value
+     - Literal
+     - Description
+   * - 0x00
+     - Empty
+     - Not used - avoiding putting a real action request as the default value
+   * - 0x01
+     - ACTIVATE
+     - Request to activate a profile
+   * - 0x02
+     - DEACTIVATE
+     - Request to deactivate a profile
+   * - 0x03...0xFF
+     - Reserved for future
+     - Potential future literals can include ENABLE, DISABLE
+
+.. rubric:: [$Satisfies $SRS_SPM 0006]
+
+The Payload associated with ``SMFrame.REQ_STATUS_PROF_STATE`` represents the status of the requests received from a remote SM.
+``REQ_STATUS_PROF_STATE`` uses the following fields:
+
+.. rubric:: [$DDS_SPM 0003]
+
+* Msg Type = 01 (1 byte)
+* Entry Length (2 byte value counting the number of remaining bytes in this Msg Type)
+* Activation Profile IDs (5 bytes each: 4 bytes ServiceID + 1 byte profile number) Repeating with Request Status and Profile State
+* Request Status Value (1 byte) Repeating with Profile IDs and Profile State
+
+.. rubric:: [$Satisfies $SRS_SPM 0007]
+
+.. rubric:: [$DDS_SPM 0004]
+
+* The request status field SHALL be populated with the enumerations provided in the Table
+
+Actually, the following Literals are implemented w.r.t. the full table reported by the ``$SRS_SPM 0007``:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Value
+     - Literal
+     - Description
+   * - 0x01
+     - OK_ACTIVATION
+     - Set to this value when an activation request is accepted. The requester is added to the requester list.
+   * - 0x02
+     - OK_DEACTIVATION
+     - Set to this value when a deactivation request is accepted. The requester is removed from the requester list.
+
+.. rubric:: [$Satisfies $SRS_SPM 0007]
+
+.. rubric:: [$DDS_SPM 0005]
+
+Profile State Value (1 byte) Repeating with Profile IDs and Request Status
+
+.. rubric:: [$Satisfies $SRS_SPM 0008]
+
+.. rubric:: [$DDS_SPM 0006]
+
+The Profile State field uses the enumeration provided:
+.. list-table::
+
+   * - Value
+     - Literal
+     - Description
+   * - 0x00
+     - INACTIVE
+     - Set to this value when the profile is valid and is currently in an inactive state.
+   * - 0x01
+     - ACTIVATING
+     - Set to this value when the profile is valid and is currently in an activating state.
+   * - 0x02
+     - ACTIVATED
+     - Set to this value when the profile is valid and is currently in an activated state.
+   * - 0x03
+     - DEACTIVATED
+     - Set to this value when the profile is valid and is currently in a deactivating state.
+   * - 0x04...0xFE
+     - Reserved
+     - Reserved for future state expansion.
+   * - 0xFF
+     - UNKNOWN
+     - Set to this value when the profile requested is unknown to the SM or when the profile requester does not have permission to request the profile.
+
+Please, take into account that the UNKNOWN literal is unimplemented. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0009]
+
+.. rubric:: [$DDS_SPM 0009]
+
+The network communication implementation for ``RequestStatusProfileState`` is implemented using the ``REQ_STATUS_PROFILE_STATE`` message
+where the request status is captured by the ``Request Status`` field and the profile state is captured by the ``Profile State`` field.
+
+.. rubric:: [$Satisfies $SRS_SPM 0085]
+
+The SM Send/Receive Mechanism is done by: 
+
+.. rubric:: [$DDS_SPM 0048]
+
+The SM frame SHALL be sent through the ``(VLAN)_SwMgrInfoTx_Evt`` where VLAN is the VLAN which the TrgDvc belongs to.
+This operation is handled by the ``Spm_HandleVLANCommunication()`` SPM's API that will call the right PPort.
+
+.. rubric:: [$Satisfies $SRS_SPM 0164] [$Satisfies $SRS_SPM 0076]
+
+.. note::
+
+    An SPM can directly activate/deactivate only its own (local) software Services. For the remote one it just appears as the
+    activation/deactivation requester.
+
+The remote communication between nodes to activate/deactivate entities always involves the ECUs' own SPM instances as agents.
+
+So that, the activation/deactivation task gets itself in a recursive algorithm, in which the same routine is called until the among
+the several instance of the SPM in the network nodes. In other words, the Activation/Deactivation of a software service appears like a graph navigation to
+find the network node that hosts the software service and so the related SPM instance that is able to activate/deactivate it.
+
+An example is provided in the following figure:
+
+.. figure:: ../../pictures/spmGraph.png
+    :scale: 50%
+    :alt: Graph of the network graph
+
+SPM to SPM communication
+========================
+
+Each Requester SPM waits for a response from the requested one. This response shall inform the request about two possible effects of a SPM request:
+
+#. Request has ben accepted: Provided an ACK value to the requesters
+#. Request is on-going: The requester SPM's next one is going down in the graph navigation to find who SPM is the manager of the requested service
+
+In the last case, the requested SPM instance replies to its requester with a numeric code (this is the ProfileStatusValue).
+
+A SPM instance:
+
+| - Sends request and receives status information to lower-node in the network graph  (as Requester)
+| - Provides status information about a request to its "higher-node" in the network graph and forwards the request to the its lower-nodes (as Requested).
+
+Overall, a SM frame is sent by the Software Manager if occours one of the following conditions: 
+
+| - Software Manager will populate and send the REQ_STATUS_PROF_STATE side of a SM frame if a remote PROFILE_REQUEST is received properly by a remote Target Device. 
+| - Software Manager will populate and send the REQ_STATUS_PROF_STATE side of a SM frame if a Power Profile requested previously by a remote Target Device changes it state.
+| - Software Manager will populate and send the PROFILE_REQUEST side of a SM frame if it needs to activate a remote Power Profile (i.e. a Power Profile located on a remote Target Device).
+
+The SM frame is sent over the VLAN network to which the TrgDvc belongs. Please, take into account that the VLANId corresponds to the second MSB  of the trgdvc IP ( I.e. for TrgDvcIP 192.11.1.4 the
+VLANId is 11). 
+So, consequently, an SPM will receive SM frame over each VLANId configured. 
+
+SPM-SUSD Interaction
+====================== 
+
+.. _SPM-SUSD-Shutdown :
+
+Shutdown Permission Management
+--------------------------------
+
+The SPM receives the PermitExecution value from the SUSD. This value is used to determine if the SPM can start its functions. 
+
+
+The SPM send the ShutdownPermission to the SUSD with the following logic: 
+
+.. rubric:: [$DDS_SPM 0530]
+
+| - SPM sets the value of the interface ``SPM_ShutdownPermission`` to 0xFFu to vote for shutdown if all the following conditions are met:
+
+* Shutdown Delay Timer elapsed. The timer is started either if SPM is in Unbranded state or the last burst HeartBeat has been sent.
+* Own wakeup bit is not set.
+* NO local profiles are requested.
+* SpmStayAwakeTimer has elapsed.
+* NO managed target devices are requested by remote via wake-up frames.
+
+| - SPM sets the value of the interface ``SPM_ShutdownPermission`` to 0xFEu (Shutdown Ready) when conditions are met:
+
+* Final shutdown heartbeats have been sent.
+
+| - Otherwise, if at least one local profile is requested, SPM sets the value of the interface ``SPM_ShutdownPermission`` to the actual rolling counter.
+
+**NOTE**: The SpmStayAwakeTimer is set to the configured value when a target device for a local profile is in Fault or Reboot state. 
+The SPM instance will remain active for the configured period and only once the timer has expired it can transition to the PrepareToShutdown state, if the other conditions are met.
+
+.. rubric:: [$Satisfies $SRS_SPM 0032][$Satisfies $SRS_SPM 0058][$Satisfies $SRS_SPM 0059][$Satisfies $SRS_SPM 0137][$Satisfies $SRS_SPM 0138][$Satisfies $SRS_SPM 0157][$Satisfies $SRS_SPM 0164][$Satisfies $SRS_SPM 0054][$Satisfies $SRS_SPM 0252][$Satisfies $SRS_SPM 0253] [$Satisfies $SRS_SPM 0259]
+
+.. uml::
+
+    @startuml
+    [*] --> Initialized : Initialization Complete
+
+    Initialized --> Running : PermitExecution IS asserted
+
+    Running --> PrepareToShutdown : (1) PermitExecution IS deasserted
+    Running --> PrepareToShutdown : (2) NO profiles are NOT Inactive
+    Running --> PrepareToShutdown : (3) SpmStayAwakeTimer has elapsed
+    Running --> PrepareToShutdown : (4) Target Off bit (bit1) falling edge detected
+
+    PrepareToShutdown --> ShutdownReady : Final HBs sent
+    PrepareToShutdown --> Running : PermitExecution is asserted
+
+    state Running {
+        note right: If the PermitExecution is asserted, the SPM executes its functions and ends by considering its profiles activities.\n
+    }
+
+    state PrepareToShutdown {
+        note right: Remote requests ignored (queue not parsed).\nLocal requests rejected with E_NOT_OK.
+    }
+
+    state ShutdownReady {
+        note right: ShutdownPermission = 0xFE.\nSUSD can proceed with shutdown.
+    }
+
+    @enduml
+
+.. rubric:: [$DDS_SPM 0414]
+
+SUM_SPM implements a port, ``PermitExecution``, which can receive notification from 
+SUM_SUSD to execute its functions or prepare for shutdown. 
+
+SUM_SPM may use the configuration ``SPM_PermitExecution_Mask`` in its logic to allow configuration of which 
+PermitExecution bits are considered to trigger a start of its functions.
+
+.. rubric:: [$Satisfies $SRS_SPM 0112]
+
+.. rubric:: [$DDS_SPM 0415]
+
+SPM starts execution of its functions when the Wakeup(s) Active bit in the ``SUSD_SPM_PermitExecution`` interface is TRUE.
+
+.. rubric:: [$Satisfies $SRS_SPM 0113]
+
+.. rubric:: [$DDS_SPM 0416]
+
+When the ECU Reset bit in the ``PermitExecution`` bit is FALSE, then SUM_SPM sets its ``ShutdownPermission`` to Enable to support ECU reprogramming.
+
+.. rubric:: [$Satisfies $SRS_SPM 0114]
+
+.. rubric:: [$DDS_SPM 0650]
+
+**Target Off Bit Detection (Shutdown Target)**
+
+The function ``Sum_Spm_CheckHBCounterShallBeSentFullScale()`` checks the Shutdown Target bit (bit 1) of ``PermitExecution`` 
+to determine when the last heartbeat shall be sent out. The detection mechanism:
+
+* Checks if the Shutdown Target bit (bit 1) is 0 (shutdown requested).
+* Sets ``Spm_HBCounterShallBeSentFullScale`` to TRUE when the bit is 0.
+
+.. rubric:: [$Satisfies $SRS_SPM 0259]
+
+.. rubric:: [$DDS_SPM 0651]
+
+**Final Heartbeat Status Management**
+
+The final heartbeat transmission status is managed via a global variable (``Spm_FinalHeartbeatSent``) with getter/setter functions:
+
+* ``Sum_Spm_IsFinalHeartbeatSent()``: Returns TRUE if the final shutdown heartbeat has been sent.
+* ``Sum_Spm_Set_FinalHeartbeatSent(sent)``: Sets the final heartbeat sent status.
+
+In PrepareToShutdown state:
+
+* If ``Sum_Spm_IsFinalHeartbeatSent()`` returns TRUE, SPM writes 0xFE to ``ShutdownPermission`` signaling SUSD can proceed with shutdown.
+* The flag is set to TRUE after the final shutdown heartbeat with full-scale counter (0xFF) is transmitted.
+* The flag is reset to FALSE when transitioning back to Running state to prepare for the next shutdown cycle.
+
+.. rubric:: [$Satisfies $SRS_SPM 0259]
+
+.. rubric:: [$DDS_SPM 0652]
+
+**Request Handling in PrepareToShutdown State**
+
+Once SPM enters PrepareToShutdown state, it rejects all activation/deactivation requests and checks the shutdown target bit:
+
+* **Remote requests**: Ignored since the request queue is not parsed in this state.
+* **Local requests**: The SPM checks the current state and returns ``E_NOT_OK`` if not in Running state, preventing local profile activation/deactivation during shutdown preparation.
+
+.. rubric:: [$Satisfies $SRS_SPM 0259]
+
+DID 0xE0D7
+--------------
+
+
+.. rubric:: [$DDS_SPM 0600]
+
+The SPM calls the `SUSD_SPM_UpdateRecord` interface function to update the diagnostic record in the SUSD module related to the DID 0xE0D7.
+
+.. rubric:: [$Satisfies $SRS_SPM 0221]
+
+.. rubric:: [$DDS_SPM 0601]
+
+For RID 0x02, the SPM shall communicate to SUSD whether at least one remote request is present.
+In particular, the SPM checks if there is at least one power profile activated exclusively by a remote ECU,
+which means that no local SWC has requested the activation of that same profile
+(i.e. ``requesterIP != 0`` for all active requesters of that profile).
+
+In this scenario (at least one such profile exists), SUSD expects to receive 0x02 flagged TRUE (based on SUM's design).
+
+.. rubric:: [$Satisfies $SRS_SPM 0221]
+
+.. rubric:: [$DDS_SPM 0602]
+
+When no power profile is activated exclusively by a remote ECU, because every 
+profile either has no active request or has at least one local SWC requester 
+(``requesterIP == 0``) that takes priority, no remote request is considered 
+present.
+
+In this scenario, SUSD expects to receive 0x02 flagged FALSE (based on SUM's 
+design).
+
+.. rubric:: [$Satisfies $SRS_SPM 0221]
+
+.. rubric:: [$DDS_SPM 0603]
+
+Requirement tell us that SPM SHALL comunicate 0x20 when 'An activation profile has been locally activated':
+this means that at least one power profile has an active request originated by a local SWC (i.e. ``requesterIP == 0``), regardless of whether the profile itself is hosted locally or on a remote ECU.
+
+A request is considered **local** when the ``requesterIP`` field of the requester entry is zero, indicating the request was issued by a SWC on the same ECU via the ``SPM_ActivateProfile`` C/S interface.
+
+SUSD expect to receive 0x20 flagged TRUE in this scenario (by SUM's design).
+
+.. rubric:: [$Satisfies $SRS_SPM 0221]
+
+.. rubric:: [$DDS_SPM 0604]
+
+Requirement tell us that SPM SHALL comunicate 0x20 when 'An activation profile has been locally activated':
+this means that if SPM detects that no profile has an active local requester (``requesterIP == 0``), it sends 0x20 flagged FALSE (by SUM's design).
+
+.. rubric:: [$Satisfies $SRS_SPM 0221]
+
+.. rubric:: [$DDS_SPM 0610] 
+
+**RID 0X26** when a Wake-up frame is received with a valid wake up bit. It should be noted that, when the Spm instance acts as an intermediate node, it can receive both Can and Ethernet Wake-up frames.
+
+.. rubric:: [$Satisfies $SRS_SPM 0221]
+
+.. rubric:: [$DDS_SPM 0605] 
+
+To avoid unnecessary repeated calls to the client/server interface (e.g., periodic calls to SUSD_SPM_UpdateRecord), SPM will call the interface only once per status change. 
+It will invoke the interface when it detects that the RID status has changed, and will not call it again until another status change is detected.
+This is valid for RID 0x20, 0x02 and 0x26, with disconnected logic. The RIDs will not affect each other.
+
+It will be SUSD job handle the DID's FSM.
+
+.. rubric:: [$Satisfies $SRS_SPM 0221]
+
+.. rubric:: [$DDS_SPM 0606]
+
+So, to summarise, the SPM SHALL communicate, to the SUSD module, the following information regarding the 0xE0D7 :
+
+| - RID 0x02 with a valid RxID; the RxWR and RxLAR fields are not needed by the SDV-6001 requirement.
+| - RID 0x20 with a valid RxID; the RxWR and RxLAR fields are not needed by the SDV-6001 requirement.
+| - RID 0x26 with a valid RxID; the RxWR field shall be set to the last byte of the CAN ID or IP Address of the Wake-up frame.
+
+.. rubric:: [$Satisfies $SRS_SPM 0221]
+
+.. rubric:: [$DDS_SPM 0609]
+
+In addition, the SPM SHALL provide C/S interface `SPM_SUSD_ActivityRecordCmd` to receive commands from the SUSD to update 0xE0DE and 0xE0DF records:
+
+.. figure:: ../../pictures/activityrecordcmd.jpg
+    :scale: 50%
+    :alt: SPM_SUSD_ActivityRecordCmd operation signature
+
+An additional "StopUpdate" command (0x03) has been added to match the non-active states of 0xE0D7 state machine.
+
+.. rubric:: [$Satisfies $SRS_SPM 0224]
+  
+SPM-ServiceManager interaction
+================================
+
+SPM_ServiceActivationStatusNotification
+----------------------------------------
+
+.. rubric:: [$DDS_SPM 0417]
+
+SUM SPM provides a sender-receiver interface ``SPM_ServiceActivationStatusNotification``
+as described below to provide indication to other SUMs (SSFM, SSC ..etc.) about the activated service list and 
+if setting a DTC is allowed based on DTC suppression Timer as defined in SDV-8002. SUM SSFM uses that to 
+determine services to start monitoring and when to inhibit setting of DTCs (Loss of Function, invalid data, etc.).
+``SPM_ServiceActivationStatusNotification_Ifc`` interface dataElement definition:
+
+.. code-block:: c
+
+   SPM_ServiceActivationStatusNotification_Ifc.DataElement {
+       Uint16* serviceIdList, // List of Services Activated
+       bool* dtcAllowedList, // List of DTC Allowed Boolean 
+       uint16 listLength // Length of the 2 output lists
+   }
+
+**NOTE**: The list will maintain the up-to-date active services list at any point in time and should not change in the case of losing the Heartbeat of a remote device with a profile that the local SPM has activated (i.e. Loss of Node DTC should not affect this interface so that the Loss of Function can occur)
+
+.. rubric:: [$Satisfies $SRS_SPM 0126] [$Satisfies $SRS_SPM 0179]
+
+
+SrvcMgr_SPM_ActivateServices
+------------------------------
+
+In :ref:`GeneralActDeact` section it is described how this interface is handled.
+
+Helper Function
+==================
+
+.. rubric:: [$DDS_SPM 0141]
+
+SPM calls the HelperFunction defined in ``*spm.spmGeneral.spmNameOfWakeUpHelperFunction*`` paramdef's field.
+
+.. rubric:: [$Satisfies $SRS_SPM 0096][$Satisfies $SRS_SPM 0101][$Satisfies $SRS_SPM 0102][$Satisfies $SRS_SPM 0183][$Satisfies $SRS_SPM 0202]
+
+.. rubric:: [$DDS_SPM 0412]
+
+When SPM calls the HelperFunction, it passes as input parameter a pointer to an array (of size 64 bits) that holds the wakeup bits needed (asserted + received if present) of the Frame A.
+
+.. rubric:: [$Satisfies $SRS_SPM 0097]
+
+.. rubric:: [$DDS_SPM 0114]
+
+The bitfield to the Wakeup Helper follows the bit definitions specific for the Wakeup Frame in SDV-2017.
+
+.. rubric:: [$Satisfies $SRS_SPM 0098]
+
+.. rubric:: [$DDS_SPM 0115]
+
+SPM sends the same bitfield to the Wakeup Helper Function as sent to the Wakeup Frame (in the same software execution cycle).
+
+.. rubric:: [$Satisfies $SRS_SPM 0121]
+
+*******************
+SPM Internal Design
+*******************
+
+SPM Class Diagram
+=================
+
+The idea of the SPM internal design is to implement all the SPM functionalities as a single module. This means a real differentiation between Software Manager and Power Manager
+does not appear in the software design.
+
+.. rubric:: [$DDS_SPM 0404]
+
+The periodic runnable ``Runnable_SPM_PowerManager_MainFunction()`` is the only entity responsible for implementing the Power Manager.
+
+.. rubric:: [$Satisfies $SRS_SPM 0094]
+
+.. rubric:: [$DDS_SPM 0403]
+
+The periodic runnable ``SPM_SoftMgr_MainFunction()`` is the only entity responsible for all of the swEntities on that ECU.
+
+.. rubric:: [$Satisfies $SRS_SPM 0057] [$Satisfies $SRS_SPM 0094] [$Satisfies $SRS_SPM 0055]
+
+Assuming all the components of the SPM inner architecture as Objects, the design appears as follows:
+
+SPM Initialization Phase
+========================
+
+At startup, SPM shall initialize all the data structures needed by the SPM:
+
+- It retrieves each power profile location from SD.
+- It retrieves information regarding the PGTT entries.
+
+There are 2 ways of initialization thanks to the *SpmGenerateInitRunnable* parameter that runs SPM_Init only once during startup:
+
+When parameter *SpmGenerateInitRunnable* is True:
+
+- The SPM_Init runnable shall call the SPM_Init function periodically, as defined by the *SpmInitFuncPeriodicity* parameter.
+
+When parameter *SpmGenerateInitRunnable* is False:
+
+- The SPM_Init function is added to the BswM init action list and executed by BswM.
+
+.. _GeneralActDeact:
+
+Activation/Deactivation of a Profile
+====================================
+
+A Profile can be local (located on the same ECU of current SPM instance) or remote (located on a remote ECU with respect to the SPM instance).
+SPM can handle request coming both from local requester (a intra-ECU SWC) or remote one (inter-ECU). 
+
+The owner of the Power Profile will set the state of it. This means that is responsability of the 
+SPM located on the same ECU of the Profile to activate/deactivate it. Moreover, if the requester is Remote, SPM will provide a feedback 
+about the request by SM frame.  If the requester is local, no feedback is provided to the SWC. 
+
+.. rubric:: [$DDS_SPM 0647]
+
+The SPM needs to provide a feedback to the EACH valid request received by SM frame, even if the requester has already requested the same action before.
+The process is triggered by the API ``Spm_AppendRequesterInReqList()``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0256]
+
+.. rubric:: [$DDS_SPM 0054]
+
+
+The requesting SPM SHALL send SM frame periodically until the activate or deactivate request is correctly acknowledged by the remote (requested) SM. The periodicity of the activate/deactivate request SHALL be calibratable 
+and depends on the rejection code received from the remote SM. Two calibratable retry rates are supported:
+
+| - **Fast retry**: (default 10 ms)  used for transient/critical rejection conditions.
+| - **Slow retry**: (default 100 ms) used for persistent/less-critical rejection conditions.
+
+.. rubric:: [$Satisfies $SRS_SPM 0089] [$Satisfies $SRS_SPM 0169] [$Satisfies $SRS_SPM 0078] [$Satisfies $SRS_SPM 0268]
+
+.. rubric:: [$DDS_SPM 0656]
+
+
+The retry rate is selected based on the rejection code received from the remote SM as defined in Request Status Enumeration Table SDVA-5006. The mapping is implemented in the ``Spm_GetRetryPeriodicityFromRejection()`` function:
+
+.. list-table:: Retry Rate per Rejection Code
+   :header-rows: 1
+
+   * - Value
+     - Literal
+     - Retry Rate
+   * - 0x00
+     - SPM_REQUEST_NOT_APPLICABLE
+     - Fast
+   * - 0x01
+     - SPM_OK_ACTIVATION
+     - Fast
+   * - 0x02
+     - SPM_OK_DEACTIVATION
+     - Fast
+   * - 0x10
+     - REJECTED_REQUEST_INVALID
+     - Fast
+   * - 0x11
+     - REJECTED_RESET_DETECTED
+     - Fast
+   * - 0x12
+     - REJECTED_PROFILE_UNKNOWN
+     - Slow
+   * - 0x13
+     - REJECTED_LACK_OF_PERMISSION
+     - Slow
+   * - 0x14
+     - REJECTED_LACK_OF_COMPUTATION_RESOURCES
+     - Slow
+   * - 0x15
+     - REJECTED_LACK_OF_POWER
+     - None (no retry)
+   * - 0x16
+     - REJECTED_LACK_OF_THERMAL_CAPABILITY
+     - None (no retry)
+   * - 0x17
+     - REJECTED_PROFILE_BLOCKED
+     - Slow
+   * - 0x18
+     - REJECTED_LOSS_OF_HEARTBEAT
+     - Fast
+
+.. rubric:: [$Satisfies $SRS_SPM 0269] [$Satisfies $SRS_SPM 0078]
+
+.. rubric:: [$DDS_SPM 0657]
+
+
+When a rejection is received, the ``Spm_HandleRejectionRetry()`` function updates the retry behaviour for the affected power profile:
+
+| - It retrieves the appropriate retry periodicity (fast or slow) from ``Spm_GetRetryPeriodicityFromRejection()``.
+| - It stores the new periodicity via ``Spm_ActDeactRetry_SetPeriodicity()``, which writes to the ``Spm_RemotePowProf_ActDeactRetry_StoredPeriodicityInTicks`` reload value.
+| - If the **activation** request was in ``SPM_ACT_DEACT_CMD_ACKED`` state, it resets to ``SPM_ACT_DEACT_CMD_NOT_SENT`` and reloads the retry tick tracker for immediate re-send in the next SM cycle.
+| - If the activation/deactivation request was in ``SPM_ACT_DEACT_CMD_SENT`` state, it reloads the retry tick tracker via ``Spm_ActDeactRetry_ReloadOngoingTracker()``.
+
+.. note::
+  For **deactivation** requests, the retry tick tracker is not reloaded after an ACKED state; only activation requests perform this immediate retry after ACKED.
+
+.. rubric:: [$Satisfies $SRS_SPM 0269] [$Satisfies $SRS_SPM 0169] [$Satisfies $SRS_SPM 0078]
+
+.. rubric:: [$DDS_SPM 0666]
+
+
+When the rejection code maps to a **None** retry rate (``REJECTED_LACK_OF_POWER`` or ``REJECTED_LACK_OF_THERMAL_CAPABILITY``), ``Spm_SuspendRemoteProfileActivationRetry()`` is called. No SM frame retransmission takes place. The ``RetryNone`` flag is set to ``TRUE`` for the affected power profile, which causes ``Spm_RetrieveDependencyTypeFromRequesterList()`` to return ``Spm_SUSPENDED_REQ_PRESENT``. This prevents the remote dependency from triggering a ``PowerOnDevice`` request, allowing the remote device to sleep.
+
+The behaviour differs per rejection code:
+
+| - **REJECTED_LACK_OF_POWER**: the current VEO activation priority level is stored in ``LackOfPowerPriority``. If no other profile shares the same resources, SPM releases them: the associated service is deactivated via ``Spm_ActivateServiceSrvcMgrHandlerFunction(FALSE)``, SSFM is notified via ``Spm_SrvcMgrIfUpdateSrvcStatus()``, PDUs are switched off via ``Spm_DisableRxPduAndTriggerDisablingTxPdu()``, and activation/deactivation request flags are reset.
+| - **REJECTED_LACK_OF_THERMAL_CAPABILITY**: a local deactivation request is queued for each requester in the profile's list via ``Spm_ForceRemoteProfileDeactivationRequest()``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0272]
+
+.. _Spm_ReqPath:
+
+Request Handling
+----------------
+SPM can receive: 
+
+| - local request to activate/deactivate a Profile by C/S CS_SPM_ProfileRequest on the SPM_ActivateProfile()/SPM_DeactivateProfile() operation.
+| - remote request to activate a Profile by SM frame. Spm_ReadIncoming_SM_Message() will dequeue item from the Rte queue wherer are stored the SM frame received and handle it. 
+
+.. rubric:: [$DDS_SPM 0012]
+
+SM activates swEntity it manages based on a local request or remote request. 
+SM has the capabilities to automatically activate swEntity's dependencies. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0060]
+
+.. rubric:: [$DDS_SPM 0018]
+
+The SM validates a remote request by:
+
+| - ``SUM_SPM_prv_GetIpAddressBinarySearchLocal()`` API validates the IP host received
+| -  ``Spm_GetPowProfIndexFromSwIDProfNumber()`` API validates the power profile ID received
+
+.. rubric:: [$Satisfies $SRS_SPM 0077]
+
+.. rubric:: [$DDS_SPM 0025]
+
+The SPM checks if the activation request is valid by checking if the profile is known to the SPM thanks to the ``Spm_GetPowProfIndexFromSwIDProfNumber()`` (for remote activation) and ``Spm_GetPowProfIndexFromAppID()`` (for local activation) APIs.  
+
+.. rubric:: [$Satisfies $SRS_SPM 0062]
+
+.. rubric:: [$DDS_SPM 0047] 
+
+The SrcPM_ID of the SM frame shall match with the SpmSrcIp that match the SpmVLANId to which the TrgDvc that will receive the SM frame belongs to.
+
+.. rubric:: [$Satisfies $SRS_SPM 0164]
+
+If the the profile is known: 
+
+| - Check if the Power Profile can be activated based on: 
+
+    | - value of the *SpmPowprf/SpmLocActivationAllowed* parameter (valid only for local request).
+    | - Vehicle Power Mode value received from SUSD.
+    | - LowVoltageBattery Priority received from Energy Optimizer.
+    | - Learning Session status is set as PENDING or not.
+
+| - In case of a local request, the request is checked against any other under process request to prevent conflicting requests. For instance, if the same ApplicationInterfaceID is in process of deactivation, the activation request will be discarded.
+| - In case of a remote request, the SM frame is checked against any conflicting request by calling Spm_prv_SM_RemoteActDeactRequestDispatch(). If the same Power Profile ID exists on a single frame for both activation and deactivation, all the requests for that Power Profile are discarded and a REJECTED_REQUEST_INVALID feedback is provided.  
+| - Spm_prv_prfReqDispatcher() is called. Its responsability is to enqueue the Power Profile ID received and (recursively) all its dependencies.
+
+    | - Spm_prv_prfReqDispatcher() perform a breadth-first search in the dependency graph starting from the requested profile and enqueue recursively all the dependencies. The function prevent enqueueing the same profile multiple times in the queue by checking if the profile has already been enqueued. 
+
+| - Spm_DequeueReqActionHandler() is called periodically by the main in order to dequeue all the item in the interal queue and call the Spm_DequeueReqActionHandler() or Spm_RequesterList_DeactivationRequestHandler() in order to populate the requester list associated to each Power Profile. Furthermore, feedback only needs to be set for the required root Power Profile in order to send it through the SM frame.
+
+.. rubric:: [$DDS_SPM 0014]
+
+The SM tracks the requesters of each profile managed by using the ``SpmPowerProfileStateMachine_RAM_SubStruct.SpmRequesterList_RAM_SubStruct`` struct:
+
+| - when an activation request for a profile is received, ``Spm_RequesterList_ActivationRequestHandler()`` API adds the requester to the list setting the proper type of request in the ``ReqType`` field. 
+| - when a deactivation is received from the same requester, ``Spm_RequesterList_DeactivationRequestHandler()`` API changes the ``ReqType`` variable associated with the profile to ``Spm_REQ_DEACTIVATION``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0065]
+
+.. rubric:: [$DDS_SPM 0032]
+
+When a valid DeactivateProfile request is received the requester's flag ``ReqType`` in the requester list is changed to ``Spm_REQ_DEACTIVATION`` by the ``Spm_RequesterList_DeactivationRequestHandler()`` API.
+
+.. rubric:: [$Satisfies $SRS_SPM 0071] [$Satisfies $SRS_SPM 0068]
+
+.. rubric:: [$DDS_SPM 0036]
+
+``Spm_RequesterList_DeactivationRequestHandler()`` API changes the request type of the requester IP from the Power Profile's requester list to ``Spm_REQ_DEACTIVATION``. 
+
+If the requester has not previously requested activation, the API adds the requester to the list, as not already present, and updates the ``ReqType`` to ``Spm_REQ_DEACTIVATION``; a feedback is provided if the Power Profile being deactivated is acting as root.
+
+.. rubric:: [$Satisfies $SRS_SPM 0086]
+
+.. rubric:: [$DDS_SPM 0033]
+
+When a remote requester is removed from the list of requesters for a profile (i.e. request a deactivation), the SM will provide feedback by ``SMFrame.REQ_STATUS_PROF_STATE``. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0145]
+
+| - Spm_LocalPowerProfile_FSM()/Spm_RemotePowerProfile_FSM() are called periodically in order to take action w.r.t. the Power Profile state and the request stored in the Power Profile's request list ( :ref:`FSM-Loc` / :ref:`FSM-Rem` ) 
+
+The following are a set of requirements that describe how the SPM handles the activation/deactivation requests:
+
+.. rubric:: [$DDS_SPM 0015]
+
+When a new valid ActivateProfile request is received and the state of the profile is **Inactive**:
+
+* The requester IP address is added to the requester list by ``Spm_RequesterList_ActivationRequestHandler()`` API setting the proper type of request in the ``ReqType`` field. 
+* When ``Spm_LocalPowerProfile_FSM()`` detects that there is a requester with ``ACTIVATED/ACTIVATED_CONSUMED`` flag and the state of the profile is *Inactive* it triggers the change of the state to **Activating**
+* When ``Spm_RemotePowerProfile_FSM()`` detects that there is a requester with ``ACTIVATED/ACTIVATED_CONSUMED`` flag, an activation request is sent to the remote provider of the service (if it was not previously sent)
+
+.. rubric:: [$Satisfies $SRS_SPM 0066][$Satisfies $SRS_SPM 0077]
+
+.. rubric:: [$DDS_SPM 0016]
+
+When a valid ActivateProfile request is received and the state of the profile is **Activating**:
+
+* The requester IP address is added to the requester list by ``Spm_RequesterList_ActivationRequestHandler()`` API (if it is not already present).
+* The activation process continues
+
+.. rubric:: [$Satisfies $SRS_SPM 0069] [$Satisfies $SRS_SPM 0077] [$Satisfies $SRS_SPM 0090]
+
+.. rubric:: [$DDS_SPM 0017]
+
+When a valid ActivateProfile request is received and the state of the profile is **Deactivating**:
+
+* The requester IP address is added to the requester list by ``Spm_RequesterList_ActivationRequestHandler()`` API.
+* When ``Spm_LocalPowerProfile_FSM()`` detects that there is a requester and the state of the profile is *Deactivating* it triggers the change of the state to **Activating**
+
+.. rubric:: [$Satisfies $SRS_SPM 0073]
+
+.. uml:: ../../csv/general_req_path.uml
+
+.. rubric:: [$DDS_SPM 0029]
+
+Power Profile requesters are stored inside the ``SpmPowerProfileStateMachine_RAM_SubStruct.SpmRequesterList_RAM_SubStruct`` struct that 
+is not stored in the Non Volatile Memory. So, at each re-start the SM does not know the previous requesters.
+
+.. rubric:: [$Satisfies $SRS_SPM 0088]
+
+Local Request Handling
+-----------------------
+Local Request of activation/deactivation of a PowerProfile are done by a SWC calling the C/S operations SPM_ActivateProfile(uint16 ApplicationInterfaceID)/SPM_DeactivateProfile(uint16 ApplicationInterfaceID).
+PowerProfile's ApplicationInterfaceID is the one configured in the *SpmPowprf/SpmApplIntID* paramter.
+The SPM will start the activation/deactivation process if the parameter *SpmPowprf/SpmLocActivationAllowed* is set to *true*.
+
+.. rubric:: [$DDS_SPM 0024]
+
+The SPM provides an API ``SPM_ActivateProfile()`` to allow local SWCs to activate profiles. The return value SHALL be ``E_NOT_OK`` if the profile is unknown for the SPM or there is an ongoing deactivation request for the same profile. 
+``SPM_ActivateProfile`` operation signature:
+
+.. code-block:: c
+
+   Std_ReturnType SPM_ActivateProfile ( 
+        uint16 ApplicationInterfaceID                  
+   )       
+
+This API is an Operation of the C/S ``CS_SPM_ProfileRequest`` interface.
+
+.. rubric:: [$Satisfies $SRS_SPM 0128][$Satisfies $SRS_SPM 0075]
+
+.. rubric:: [$DDS_SPM 0034]
+
+Local Power Profile deactivation request to an SM is done using the ``SPM_DeactivateProfile()`` method.
+
+.. rubric:: [$Satisfies $SRS_SPM 0084]
+
+.. rubric:: [$DDS_SPM 0031]
+
+The SPM provides an API ``SPM_DeactivateProfile`` to allow local SWCs to deactivate profiles. 
+The return value SHALL be ``E_NOT_OK`` if the profile is unknown for the SPM or there is an ongoing activation request for the same profile. ``SPM_DeactivateProfile`` operation 
+signature:
+
+.. code-block:: c
+
+   Std_ReturnType SPM_DeactivateProfile ( 
+        uint16 ApplicationInterfaceID                  
+   )            
+
+This API is an Operation of the C/S ``CS_SPM_ProfileRequest`` interface.
+
+.. rubric:: [$Satisfies $SRS_SPM 0129]
+
+.. rubric:: [$DDS_SPM 0540]
+
+``SPM_ActivateProfile()`` and ``SPM_DeactivateProfile()`` use a set of inter-runnable variables to check for conflicting local requests. The variables are as follows:
+
+* Spm_LastDeactReqID: The ApplicationInterfaceID of the latest deactivation request.
+* Spm_LastDeactReqFlag: A flag indicating the latest deactivation process is still ongoing or not.
+* Spm_LastActReqID: The ApplicationInterfaceID of the latest activation request.
+* Spm_LastActReqFlag: A flag indicating the latest activation process is still ongoing or not.
+
+Whenever an activation request is received, the ``SPM_ActivateProfile()`` checks if a deactivation request for the same ApplicationInterfaceID is under process or not.
+If there is such request under process, the activation request is discarded and the runnable returns ``E_NOT_OK``.
+
+Likewise, whenever a deactivation request is received, the ``SPM_DeactivateProfile()`` checks if an activation request for the same ApplicationInterfaceID is under process or not.
+If there is such request under process, the deactivation request is discarded and the runnable returns ``E_NOT_OK``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0091]
+
+
+.. rubric:: [$DDS_SPM 0043]
+
+So, when a DeactivateProfile request is received and the power profile is in the **Inactive state**, no action is done since the ``Spm_RequesterList_DeactivationRequestHandler()`` API will have no impact.
+
+.. rubric:: [$Satisfies $SRS_SPM 0067]
+
+Get Activation Permission of Power Profile
+------------------------------------------
+Any SWC may query the activation permission for a given power profile using the C/S operation SPM_GetProfileActivationPermission by providing the ApplicationInterfaceID.
+If the ApplicationInterfaceID is not found, the operation returns E_NOT_OK as the error value.
+
+.. rubric:: [$DDS_SPM 0542]
+
+The SPM provides an API ``SPM_GetProfileActivationPermission`` to allow local SWCs to get the activation permission for a power profile. 
+The return value SHALL be ``E_NOT_OK`` and the permission ``FALSE`` if the profile is unknown for the SPM. ``SPM_GetProfileActivationPermission`` operation signature:
+
+.. code-block:: c
+
+   Std_ReturnType SPM_GetProfileActivationPermission ( 
+        uint16 ApplicationInterfaceID,
+        boolean *PermissionStatus           
+   )            
+
+This API is an Operation of the C/S ``CS_SPM_ProfileActivationPermission`` interface.
+
+.. rubric:: [$Satisfies $SRS_SPM 0243]
+
+Get Power Profile State as a Local SWC
+--------------------------------------
+Local SWC may query the current state of a given power profile using the C/S operation SPM_GetProfileState by providing the ApplicationInterfaceID.
+If the ApplicationInterfaceID is not found, the operation returns E_NOT_OK as the error value.
+
+.. rubric:: [$DDS_SPM 0541]
+
+The SPM provides an API ``SPM_GetProfileState`` to allow local SWCs to get the current state of a power profile. 
+The return value SHALL be ``E_NOT_OK`` if the profile is unknown for the SPM. ``SPM_GetProfileState`` operation 
+signature:
+
+.. code-block:: c
+
+   Std_ReturnType SPM_GetProfileState ( 
+        uint16 ApplicationInterfaceID,
+        uint8 * ProfileState           
+   )            
+
+This API is an Operation of the C/S ``CS_SPM_RequestStatusProfileState`` interface.
+
+.. rubric:: [$Satisfies $SRS_SPM 0076]
+
+Power Profile dependencies type 
+-------------------------------
+
+Each dependencies can have one of the following type: 
+
+| - ACTIVATED: the dependency Profile SHALL be activated (i.e. call SrvcMgr);
+| - CONSUMED: the PDU associated to the Profile SHALL be activated;
+| - ACTIVATED && CONSUMED: the dependency Profile SHALL be activated (i.e. call SrvcMgr_ActivateServices) AND the PDU associated to the Profile SHALL be activated; 
+
+.. note::
+    
+    The Power Profile received in the request will be by default handled as ACTIVATED && CONSUMED. The dependency type is meaningfull only for 
+    the dependencies and it is a configurable parameter. 
+
+In the following a set of requirements that describe how the SPM handles the dependencies of a Power Profile:
+
+.. rubric:: [$DDS_SPM 0026] 
+
+SUM SPM SHALL do the following when attempting to activate an activation profile: if the profile has remote dependencies with ``ACTIVATED/ACTIVATED_CONSUMED`` dependency type, the SPM sends a remote ACTIVATE command. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0124] [$Satisfies $SRS_SPM 0079]
+
+.. rubric:: [$DDS_SPM 0030]
+
+If there are no requesters with ``ACTIVATED/ACTIVATED_CONSUMED`` reqDependencyType for a Power Profile that is *Activated* or *Activating*, the ``Spm_LocalPowerProfile_FSM()``/``Spm_RemotePowerProfile_FSM()`` API will trigger the deactivation process for that Power Profile.
+
+.. rubric:: [$Satisfies $SRS_SPM 0061] [$Satisfies $SRS_SPM 0071] [$Satisfies $SRS_SPM 0068] [$Satisfies $SRS_SPM 0148]
+
+.. rubric:: [$DDS_SPM 0042] 
+
+If the profile requested has a dependency type CONSUMED, SPM enables the corresponding PDU-Group for that service by ``Spm_SwitchNetworkPdu()`` API.
+
+.. rubric:: [$Satisfies $SRS_SPM 0125] [$Satisfies $SRS_SPM 0087]
+
+.. _FSM-Loc:
+
+FSM of a Local Power Profile
+----------------------------
+
+A profile is defined as local as per *Spm/SpmConfigSet/SpmPowPrf/SpmProfileIsLocal*. 
+
+The SPM will execute periodically a FSM over a Power Profile in order to handle it. This is done by Spm_LocalPowerProfile_FSM(). 
+
+The following is a set of requirements that describe how the SPM handles the state of local profiles: 
+
+.. rubric:: [$DDS_SPM 0044]
+
+When the profile-owning software entity itself is activated transition to **Activated**.
+
+.. rubric:: [$Satisfies $SRS_SPM 0070]
+
+.. rubric:: [$DDS_SPM 0045]
+
+A profile SHALL transition into the **Activated** state as soon as the swEntity associated with the profile and its network communication are both activated.
+The activation of dependencies can continue in this activated state. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0080] [$Satisfies $SRS_SPM 0190]
+
+.. rubric:: [$DDS_SPM 0046]
+
+When the software entity owning the profile has been deactivated AND all the dependencies in the profile have
+been successfully requested to be deactivated, transition to **Inactive**.
+
+.. rubric:: [$Satisfies $SRS_SPM 0072]
+
+
+
+Spm_RetrieveDependencyTypeFromRequesterList() is called in order to understand the type of request present in the Power Profile's requester list.
+
+.. note::
+
+    These Power Profile's lists are populated as described in the :ref:`Spm_ReqPath` charts.
+
+The following scenatio can occours: 
+
+| - Spm_NO_REQ_PRESENT: there are NO ACTIVATED/ACTIVATE_CONSUMED request;
+| - Spm_ONLY_CONSUMED_REQ_PRESENT: there are only CONSUMED request; 
+| - Spm_ONLY_ACTIVATED_REQ_PRESENT: there are only ACTIVATED request; 
+| - Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT: there are both ACTIVATED/CONSUMED request; 
+
+If the state of the Profile is Inactive (or Activating) and there are request Spm_ONLY_ACTIVATED_REQ_PRESENT or Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT, the SrvcMgr_ActivateServices is called. 
+
+.. rubric:: [$DDS_SPM 0027] 
+
+* For the profile dependencies that are local, SPM uses the SUM SrvcMgr client server operation ``SrvcMgr_ActivateServices`` to activate the profile.
+
+.. rubric:: [$Satisfies $SRS_SPM 0124] [$Satisfies $SRS_SPM 0079]
+
+The following scenario can occours: 
+
+| - If the operation is successfull, the state of the Profile become Activated. 
+| - If the operataion is NOT successfull, the state of the Profile became Activating.
+
+If the state of the is Activated (or Deactivating) and there are NO request Spm_ONLY_ACTIVATED_REQ_PRESENT or Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT and the service is not used by other profiles, the SrvcMgr_ActivateServices is called.
+
+.. rubric:: [$DDS_SPM 0041] 
+
+* For the profile dependencies that are local, SPM uses the SUM SrvcMgr client-server operation ``SrvcMgr_ActivateServices`` defined in ``SDV_8201`` to deactivate the profile dependencies.
+
+.. rubric:: [$Satisfies $SRS_SPM 0125] [$Satisfies $SRS_SPM 0087]
+
+The following scenario can occours: 
+
+| - If the operation is successfull, the state of the Profile become Inactive. 
+| - If the operataion is NOT successfull, the state of the Profile became Deactivating.
+
+.. rubric:: [$DDS_SPM 0010]
+
+When the state of a local profile changes, the boolean variable ``isStateProfileChanged`` (associated to that profile) is set to TRUE in order to let the ``API Spm_SoftwMgr_PopulateSMFrame()`` know that an SM frame with the updated state of the profile is needed to be sent for each remote requester of the profile. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0074][$Satisfies $SRS_SPM 0077]
+
+Moreover, if there are request Spm_ONLY_CONSUMED_REQ_PRESENT or Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT the PDUs associated to the service are enabled.
+Otherwise, the PDUs are disabled. 
+
+.. _FSM-Rem:
+
+FSM of a Remote Power Profile
+------------------------------
+
+A profile is defined as remote as per *Spm/SpmConfigSet/SpmPowPrf/SpmProfileIsLocal*. 
+
+.. rubric:: [$DDS_SPM 0011]
+
+The SM knows the location of a software entity hosted on a remote host by exploiting the ``Sd_GetNodeAddress()`` API. If ``SchM_CData_Sd_SdEnableExtendedLearningTableFormat`` is TRUE, SPM will get the SD configuration for the specific service before calling the API. Otherwise, SPM will call it with default values for InstanceId, MajorVersion.       
+
+.. rubric:: [$Satisfies $SRS_SPM 0056]
+
+The address of the Profile's provider needs to match to at least one IP defined in the *Spm/spmConfigSet/SpmPgttEntries/SpmTrgDvc/SpmTrgDvcID* list.
+
+The SPM (SPM_0) will act as requester of an activation to another SPM (SPM_1) of the service.
+
+.. note:: 
+    SPM_0 and SPM_1 has no real meaning. Is just for explanation purpose.
+
+In this scenario, the SPM (SPM_0) that receive the request from a SWC (local request) or remote (another SPM) is just responsible to send
+a command to the remote ECU (SPM_1) in order to activate/deactivate the profile w.r.t. the request present in the Power Profile's requester list. 
+
+The SPM will execute periodically a FSM over a Power Profile in order to handle it. This is done by Spm_RemotePowerProfile_FSM(). 
+Spm_RetrieveDependencyTypeFromRequesterList() is called in order to understand the type of request present in the Power Profile's requester list. 
+
+.. note::
+
+    These Power Profile's lists are populated as described in the :ref:`Spm_ReqPath` charts.
+
+The following scenatio can occours: 
+
+| - Spm_NO_REQ_PRESENT: there are NO ACTIVATED/ACTIVATE_CONSUMED request;
+| - Spm_ONLY_CONSUMED_REQ_PRESENT: there are only CONSUMED request; 
+| - Spm_ONLY_ACTIVATED_REQ_PRESENT: there are only ACTIVATED request; 
+| - Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT: there are both ACTIVATED/CONSUMED request; 
+
+If request's type is Spm_ONLY_ACTIVATED_REQ_PRESENT or Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT and the activation request is not already sent the following operation occours: 
+
+| - The state of the ECU where is located the Profile is retrieved thank the DevicePowerState IRV:
+| - If the remote ECU is Off, PowerOnDevice() is called in order to be sure to turn ON the remote ECU and the device is set as Requested;
+| - If the remote ECU is On: 
+
+    | - a command to activate the profile is set to the flag CommandSend in order to let Spm_SoftwMgr_PopulateSMFrame() API know that a remote request SHALL be sent;
+    | - SrvcMgr_ActivateServices is called;
+
+| - If the remote ECU is ShutdownPending a command to activate the profile is set to the flag CommandSend in order to let Spm_SoftwMgr_PopulateSMFrame() API know that a remote request SHALL be sent; the return value of the SrvcMgr_ActivateServices then is checked and the notification to SUMs will be sent through SPM_ServiceActivationStatusNotification_Ifc.
+| - If the remote ECU is Initializing, a command to activate the profile is set to the flag CommandSend in order to let Spm_SoftwMgr_PopulateSMFrame() API know that a remote request SHALL be transmitted immediately, prior to aliveness being observed from the remote host, to eliminate circumstantial delays.
+
+.. rubric:: [$DDS_SPM 0531]
+
+The SM frame SHALL be resent its ActivateProfile request when SPM receives the status of a remote node that has profiles requested from this SM as Pending Shutdown while that profile is still
+required.
+
+.. rubric:: [$Satisfies $SRS_SPM 0134]
+
+.. rubric:: [$DDS_SPM 0665]
+
+Prior to aliveness being observed from the remote host, while the remote device is still in Initializing state, an ActivateProfile Request SHALL be transmitted immediately, to eliminate some circumstantial delays. The condition in ``Spm_RemotePowerProfile_ActReq()`` SHALL include ``SPM_Initializing`` alongside ``SPM_On`` and ``SPM_ShutdownPending``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0270]
+
+.. rubric:: [$DDS_SPM 0668]
+
+
+When the first ActivateProfile Request is sent while the DevicePowerState is ``SPM_Initializing`` and no acknowledgment is received, the retry periodicity SHALL be set to the **slow rate** (``SPM_ACT_RETRY_SLOW_TICKS``). The function ``Spm_GetRetryPeriodicityFromTrgDvcState()`` returns the slow rate when the target device state is ``SPM_Initializing``. The device state used to set the periodicity is recorded in a local static variable ``Spm_LastTrgDvcStateForRetryRate[]`` so that device state transitions can be detected.
+
+.. rubric:: [$Satisfies $SRS_SPM 0273]
+
+.. rubric:: [$DDS_SPM 0669]
+
+
+When the DevicePowerState transitions from ``SPM_Initializing`` to ``SPM_On`` and the activation request is still unacknowledged (``SPM_ACT_DEACT_CMD_SENT``), the retry periodicity SHALL be updated to the **fast rate** (``SPM_ACT_RETRY_FAST_TICKS``). In the ``SPM_ACT_DEACT_CMD_SENT`` case of ``Spm_RemotePowerProfile_ActReq()``, the periodicity is only updated from the device state when ``Spm_LastTrgDvcStateForRetryRate[index] != TrgDvcState``, ensuring that a rejection-based periodicity override is preserved when the device state has not changed.
+
+.. rubric:: [$Satisfies $SRS_SPM 0274]
+
+.. rubric:: [$DDS_SPM 0676]
+
+
+Unlike activation requests (whose retry periodicity depends on the DevicePowerState and rejection codes), **deactivation** requests SHALL always use the **fast retry rate** (``SPM_ACT_RETRY_FAST_TICKS``). In ``Spm_RemotePowerProfile_DeactReq()``:
+
+| - When the deactivation command is first sent (``SPM_ACT_DEACT_CMD_NOT_SENT``), the retry periodicity is set to ``SPM_ACT_RETRY_FAST_TICKS`` via ``Spm_ActDeactRetry_SetPeriodicity()`` and the ongoing tracker is loaded via ``Spm_ActDeactRetry_ReloadOngoingTracker()``.
+| - When retrying an already-sent deactivation (``SPM_ACT_DEACT_CMD_SENT``), the periodicity is enforced to ``SPM_ACT_RETRY_FAST_TICKS`` via ``Spm_ActDeactRetry_SetPeriodicity()`` before checking if a new command needs to be sent.
+
+This ensures that deactivation retries complete promptly and do not keep the device awake unnecessarily, allowing the device to transition to sleep without being blocked by a slow deactivation retry cycle.
+
+.. rubric:: [$Satisfies $SRS_SPM 0275] [$Satisfies $SRS_SPM 0276]
+
+If request's type is Spm_ONLY_CONSUMED_REQ_PRESENT or Spm_NO_REQ_PRESENT and the deactivation request is not already sent the following scenario occours:
+
+.. rubric:: [$DDS_SPM 0040] 
+
+| - a command to deactivate the profile is set to the flag CommandSend in order to let Spm_SoftwMgr_PopulateSMFrame() API know that a remote DEACTIVATE request SHALL be sent;
+
+.. rubric:: [$Satisfies $SRS_SPM 0125] [$Satisfies $SRS_SPM 0087]
+
+| - Check if other profiles are using the service.
+  - If not other profile is using the service, SrvcMgr_ActivateServices is called; the return value of the SrvcMgr_ActivateServices then is checked and the notification to SUMs will be sent through SPM_ServiceActivationStatusNotification_Ifc.
+
+
+Moreover, if there are request Spm_ONLY_CONSUMED_REQ_PRESENT or Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT and the PDUs associated to the service are disabled then they are enabled.
+
+If there are no requests and no other profile is using the PDU Groups and the PDUs associated to the service are enabled then they are disabled.
+
+If the remote host goes into the Faulted/Reboot state, the PM must keep retrying to wake it up. After the host becomes active, he SM SHALL reissue all previously requested profiles to the host.
+
+PDU Group Handling
+-------------------
+Each Power Profile could have one or more PDU groups (Tx and Rx) associated which behaviour is handled by the SPM. 
+When a Power Profile is activated, the PDU groups associated to it should be enabled; if the Power Profile is inactive, PDU groups should be disabled.
+
+.. note::
+    
+    Actually, there is a reference in the SPM's ParamDef spm/spmConfigSet/spmConfiguredPowPrf/spmSrvcPduGroupTxRef and spm/spmConfigSet/spmConfiguredPowPrf/spmSrvcPduGroupRxRef containers.
+
+The Enable/Disable feature is achieved thanks to the :code:`BswMPduGroupSwitch` BswM action: it calls the ComM in order to enable or disable a PDU group. 
+So, for each PDU group, a Mode Request port is needed w.r.t. the BswM and relative creation of a MODE-SWITCH-INTERFACE. 
+
+SPM calls :code:`Rte_switch()` functions (one for each PDU group) that are stored as function pointer in the arrays 
+:code:`Spm_Rte_SwitchPduGroup_<<NameOfPowProfAssociated>>_tx_refs[]` or :code:`Spm_Rte_SwitchPduGroup_<<NameOfPowProfAssociated>>_rx_refs[]` at the end of a Power Profile (De)Activation process. 
+
+.. rubric:: [$DDS_SPM 0028] 
+
+* For every profile dependency in Step 2:
+
+    * If the dependency type is CONSUMED and the corresponding PDU-Group for that service is disabled, SPM enables the corresponding PDU-Group for that service by ``Spm_SwitchNetworkPdu()`` API.
+
+.. rubric:: [$Satisfies $SRS_SPM 0124] [$Satisfies $SRS_SPM 0079]
+
+Overall, the behavior is :
+
+======================= ========================================= =========================== ======================= 
+    PowProf Request                  PDU status                     Result of procedure        PDU Group's Action
+======================= ========================================= =========================== =======================
+Activation                    Init or Off                                    OK                   Enable PDU group   
+Activation                    Init or off                                  NOT_OK                 No action
+Deactivation                  On and not used by other profiles             OK                    Disable PDU group 
+Deactivation                  On and not used by other profiles             NOT_OK                No action
+Activation                    On                                             OK                   No Action 
+Activation                    On                                            NOT_OK                No Action
+Deactivation                  Off                                             OK                  No Action
+Deactivation                  Off                                           NOT_OK                No Action
+Deactivation                  On and used by other profiles                   OK                  No Action
+Deactivation                  On and used by other profiles                 NOT_OK                No Action
+======================= ========================================= =========================== =======================
+
+.. rubric:: [$DDS_SPM 0056]
+
+PDU Groups state are stored inside the ``SpmPowerProfileStateMachine_RAM_SubStruct.PduStatus``. This is done to check 
+the state before enabling/disabling PDU groups to avoid repetitive enabling/disabling requests.
+
+.. rubric:: [$Satisfies $SRS_SPM 0125]
+
+.. rubric:: [$DDS_SPM 0655]
+
+When a Power Profile is deactivated, ``Spm_HandlePduGroups()`` disables the Rx PDU group (``SpmComIPduGroupEvnt_Rx``) immediately and places the Tx PDU group (``SpmComIPduGroupEvnt_Tx``) into the ``Spm_PendingSwitchOff`` intermediate state. A per-profile countdown counter ``PduTxSwitchOffDelayTracker`` is initialised to ``SPM_PDU_TX_SWITCHOFF_DELAY_TICK`` ticks, derived at compile time from the ``Spm_PduTx_SwitchOff_Delay_ms`` calibratable parameter divided by the power manager cycle period ``SPM_SM_PERIODICITY_MS``. In each execution of ``RE_SPM_PowerManager_MainFunction``, the counter is decremented; when it reaches zero, the Tx PDU group is disabled and ``PduStatus`` transitions to ``Spm_Switched_Off``. If a re-activation request arrives while the counter is still running, the enable branch of ``Spm_HandlePduGroups()`` re-enables the Tx PDU group and cancels the pending switch-off.
+
+.. rubric:: [$Satisfies $SRS_SPM 0268]
+
+Service discovery learning indication management logic
+--------------------------------------------------------
+
+In order to reduce the traffic over the ETH network when a new learning session is being run, SPM deactivates all active profiles and rejects new activations.
+
+.. rubric:: [$DDS_SPM 0653]
+
+SPM offers a C/S SPM_SDLearningStatusIndication on the Runnable_SPM_SdLearningStatusIndication operation through which SrvcManager notifies the status of the Learning Session.
+
+When *SPM_SDLearningStatus* transitions to:
+
+* *SUM_LRNG_PENDING*, SPM shall deactivate all active profiles and notify requesters with *Spm_REJECTED_PROFILE_BLOCKED* reason;
+* *SUM_LRNG_FAILED* from *SUM_LRNG_PENDING*, SPM shall query SD for Nodes IP address by calling Sd_GetNodeAddress in order to refresh the IP list and reset PowerProfiles internal flags;
+* *SUM_LRNG_SUCCESSFUL* from *SUM_LRNG_PENDING*, SPM shall query SD for Nodes IP address by calling Sd_GetNodeAddress in order to refresh the IP list;
+* *SUM_LRNG_NOT_STARTED from *SUM_LRNG_PENDING*, SPM shall query SD for Nodes IP address by calling Sd_GetNodeAddress in order to refresh the IP list (this should ideally not be a valid scenario).
+
+.. rubric:: [$Satisfies $SRS_SPM 0260][$Satisfies $SRS_SPM 0262][$Satisfies $SRS_SPM 0263][$Satisfies $SRS_SPM 0264][$Satisfies $SRS_SPM 0265]
+
+.. rubric:: [$DDS_SPM 0654]
+
+SPM retains the current Learning Session status by setting the IRV *Rte_Irv_SPM_Spm_Learning_Status*.
+
+This variable is accessible from other runnables and is used to check whether the current status is *SUM_LRNG_PENDING*. In case *Rte_Irv_SPM_Spm_Learning_Status == SUM_LRNG_PENDING*, 
+new local and remote activation requests will be denied. Remote activation requesters will be reported *Spm_REJECTED_PROFILE_BLOCKED* reason.
+
+.. rubric:: [$Satisfies $SRS_SPM 0263][$Satisfies $SRS_SPM 0261]
+
+SPM Activation Profile Error Handling
+======================================
+
+SPM SHALL monitor the target device status for each targets that are:
+
+* Requesters for SPM own power profiles, i.e. the profiles that are activated by remote power profiles as dependencies
+* Requested for SPM own power profiles, i.e. the profiles that requests the activation of remote profiles as dependencies
+
+
+Loss Of Communication with a Requester SM
+-----------------------------------------
+
+.. rubric:: [$DDS_SPM 0532]
+
+SPM SHALL handle possible errors in communication with requesting (remote) SM by the periodic call of handling function `Spm_LoC_wRequester_Handler()` from Software Manager Main Function.
+
+.. rubric:: [$Satisfies $SRS_SPM 0092]
+
+.. rubric:: [$DDS_SPM 0533]
+
+SPM error handling function `Spm_LoC_wRequester_Handler()` identifies the IP address/es of requesting SMs thanks to a scan of the requester lists for each SPM local profiles.
+
+.. rubric:: [$Satisfies $SRS_SPM 0092]
+
+.. rubric:: [$DDS_SPM 0534]
+
+WHEN a requesting SM appears in the list of the SPM profile requesters, the function `Spm_LoC_wRequester_Handler()` performs the following actions:
+
+* For each specific power profile requester, it verifies that the remote requester does not have any requests or deactivation requests in progress by checking the `spmReqItm::ReqType` field. 
+
+  * IF the `spmReqItm::ReqType` field is set to SPM_NULL_REQ or SPM_REQ_DEACTIVATION no actions is taken for that requester. 
+  * OTHERWISE, it checks the requester's Power State by using `Spm_DevicePowerStateParser` function.
+
+
+.. rubric:: [$Satisfies $SRS_SPM 0092]
+
+.. rubric:: [$DDS_SPM 0535]
+
+The error handling function `Spm_LoC_wRequester_Handler()` retrieves the Power State of all target devices by the Inter-runnable variable
+`Rte_Irv_SPM_Spm_DevicePowerState`. It also obtains the Power State of the desired target device using the `Spm_DevicePowerStateParser()` function,
+which uses the field `spmReqItm::requesterIP` as a filter.
+
+.. rubric:: [$Satisfies $SRS_SPM 0092]
+
+.. rubric:: [$DDS_SPM 0536]  
+     
+WHEN  the error handling function `Spm_LoC_wRequester_Handler()` detects that an active requesting SM (Power Profile activation request is on-going or kept it up)
+is `SPM_Faulted` or `SPM_Reboot` power state THEN `Spm_LoC_wRequester_Handler()` :
+
+* uses the `Spm_AppendFeedbackErrorItemToList()` function to add the error to the next outgoing SM frame with the following information:
+    * Profile identifier
+    * Target IP
+    * Error code based on the requester's power state. If SPM_Faulted, the error code is `Spm_REJECTED_LOSS_OF_HEARTBEAT`, otherwise it is `Spm_REJECTED_RESET_DETECTED`.
+* sets `spmReqItm::ReqType` field to `SPM_NULL_REQ` for the specific power profile requester,
+* sets the `SpmStayAwakeTimer` timer to the configured value if the Profile is local.
+
+
+.. rubric:: [$Satisfies $SRS_SPM 0092] [$Satisfies $SRS_SPM 0251] [$Satisfies $SRS_SPM 0252]
+
+.. rubric:: [$DDS_SPM 0537]
+
+IN CASE the requesting SM IP address is not present in the pre-configured/calibrated table of Power Graph for the current SPM node THEN
+the error handling function `Spm_LoC_wRequester_Handler()` does not take any action on out-coming SM message but it removes the item from local profile
+requester list setting the field `spmReqItm::REqType` to SPM_NULL_REQ.
+
+.. rubric:: [$Satisfies $SRS_SPM 0092]
+
+
+Activation/Deactivation Error Handling
+---------------------------------------
+
+Profile Activation Behavior on SM Restart
+
+.. rubric:: [$DDS_SPM 0538]  
+
+Upon restarting, SM shall perform a cleanup of all previously activated profiles to ensure that any software entities activated before the restart are not left in an undefined or unmanageable state. Profiles that are not designated as default activations on SM startup shall be deactivated. This approach ensures a clean system state and requires all profile requesters to reinitiate activation requests with the SM after the restart.
+
+Additionally, the SM shall not automatically resend profile activation requests to other SMs that were made prior to the restart. Such requests will only be sent if the activation criteria are re-evaluated and met after the restart. This ensures that all activations are based on the current system state and prevents unintended or stale activations.
+
+.. rubric:: [$Satisfies $SRS_SPM 0219]
+
+.. rubric:: [$DDS_SPM 0539]  
+
+When SPM reads an SM Frame, before calling `Spm_Handler_prfReqDispatcherForActivationFromRemote()` or `Spm_prv_prfReqDispatcher()` for activation/deactivation, it checks for any conflicting request. A conflicting request happens when in a single SM Frame, there are 2 or more requests for the power profile under check with different request types.
+For instance, if there are 2 requests for a power profile one asking for activation and the other asking for deactivation, in this SM Frame a conflict happened.
+SPM discards all such requests and for that power profile adds an error with the following information:
+
+* Profile identifier
+* Target IP
+* Error code REJECT_REQUEST_INVALID
+
+.. rubric:: [$Satisfies $SRS_SPM 0091]
+
+.. rubric:: [$DDS_SPM 0055]
+
+If a restart condition has been detected, then the SM SHALL re-request all profiles that it previously requested to that host. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0171]
+
+Low Voltage priority level Handling
+--------------------------------------
+
+Each Power Profile configured has two LowVoltagePriority: *LowVoltagePriority_VEH_OFF* and *LowVoltagePriority_VEH_ON*. When a request to activate a local profile is received, the SPM will check the value of the *LowVoltagePriority_VEH_ON* if the Power Mode is Vehicle On or the *LowVoltagePriority_VEH_OFF* if the Power Mode is Vehicle Off w.r.t. the last value received from the Energy Optimizer. 
+
+.. rubric:: [$DDS_SPM 0057]
+  
+The SPM module calls the ``Spm_ReadLowVoltagePriorityStatus()`` API to read and save the Low Voltage Priority level value.
+This value can only be obtained from the low voltage energy optimizer after confirming its availability from the SSFM module
+via the SignalAvailability port interface. If the data is available, the SPM module receives it and notifies the NvM that the content of the RAM mirror block have changed, so that it can be stored in the Nvm during shutdown; otherwise, no action is taken.
+
+It should be noted that during the SPM module startup phase, since the NvMSelectBlockForReadAll parameter is set to TRUE, the last Low Voltage Battery Priority level value saved in Nvm is retrieved, if available. 
+Furthermore, during the shutdown phase, the value present in the RAM mirror block will be saved in the NvM,  as the NvMSelectBlockForWriteAll parameter is set to TRUE.
+
+.. rubric:: [$Satisfies $SRS_SPM 0258][$Satisfies $SRS_SPM 0242]
+
+.. rubric:: [$DDS_SPM 0035]
+
+The ``Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority()`` API allows to check whether a profile activation request can be handled based on the the Low Voltage Battery Priority level value.
+
+| - If the current profile is local to the ECU, the SPM checks the Vehicle Power Mode and compares the saved Low Voltage Priority value with the one configured for a specific profile.
+   
+    | - If the saved value is smaller than the one configured for the profile, the API returns TRUE, indicating that the activation request can be handled;
+    | - If the saved value is greater than or equal to the one configured for the profile, the API returns FALSE, indicating that the activation request is refused OR the profile SHALL be deactivated;
+
+| - If the current profile is NOT local to the ECU, the API returns TRUE, indicating that the activation request can be handled.
+
+.. rubric:: [$Satisfies $SRS_SPM 0194]
+
+.. rubric:: [$DDS_SPM 0050]
+
+If the ``Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority()`` API considers that the activation request from the remote device can not be handled, the REJECTED_LACK_OF_POWER tag will be set 
+in the feedback ``SMFrame.REQ_STATUS_PROF_STATE``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0194]
+
+.. rubric:: [$DDS_SPM 0037]
+
+If the ``Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority()`` API considers that the activation request coming from local can not be handled, the request is rejected.
+
+.. rubric:: [$Satisfies $SRS_SPM 0194]
+
+.. rubric:: [$DDS_SPM 0038]
+
+The API ``Spm_ErrorHandler_LowVoltageBattery()`` periodically check if profiles can remain Active/Activating w.r.t. the LowVoltageBattery Priority. 
+If it detects that a profile does not satisfies anymore the conditions, the ``Spm_SendDeactivationRequestForEachRequester()`` API will send deactivation request for each its requester
+in order to automatically deactivate the profile. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0203]
+
+.. rubric:: [$DDS_SPM 0648]
+
+When the SPM receives REJECTED_LACK_OF_POWER as a response to a previous activation request, the SPM trigger the activation of the profile
+with the Application Interface ID: LVOptmzerChk by calling the function ``Spm_LowVoltLVOptmzerChkApplicationInterfaceID_TriggerActivation()``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0257]
+
+.. rubric:: [$DDS_SPM 0649]
+
+The function ``Spm_LowVoltLVOptmzerChkApplicationInterfaceID_PeriodicCheck()`` is called periodically in order to check if the profile with Application Interface ID: LVOptmzerChk needs to be deactivated or not.
+If the profile was previously activated by ``Spm_LowVoltLVOptmzerChkApplicationInterfaceID_TriggerActivation()``, this function needs to deactivate the profile if one of the two conditions 
+is satisfied:
+
+| - 5 seconds have passed from the activation;
+| - SSFM notifies the SPM by SignalAvailability port interface that the value of the Low Voltage Battery Priority level is available;
+
+.. rubric:: [$Satisfies $SRS_SPM 0257]
+
+.. rubric:: [$DDS_SPM 0667]
+
+
+``Spm_RecoveryHandler_RejectedLackOfPower()`` is called periodically to detect when the VEO activation priority level has improved for profiles that were suspended due to ``REJECTED_LACK_OF_POWER``.
+
+For each power profile where ``RetryNone == TRUE`` and ``LackOfPowerPriority`` holds a valid recorded value (≠ ``-1``): if the current VEO priority level returned by ``Spm_GetPriorityLevelValue()`` is **strictly lower** than the value stored at rejection time, the lack-of-power condition is considered cleared. SPM then resets ``LackOfPowerPriority`` to ``-1`` and clears ``RetryNone`` to ``FALSE``, re-enabling activation retries for the affected profile.
+
+.. rubric:: [$Satisfies $SRS_SPM 0271]
+
+VehiclePowerMode Handling
+-------------------------
+
+.. rubric:: [$DDS_SPM 0051]
+
+When ``SpmProfActivationTimeOutVehOff`` is 0, it means that the profile cannot be activated in off power mode.
+
+.. rubric:: [$Satisfies $SRS_SPM 0197] [$Satisfies $SRS_SPM 0151]
+
+.. rubric:: [$DDS_SPM 0052]
+
+For local power profiles only: ``Spm_ErrorHandler_VehOff`` API handles ``SpmProfActivationTimeOutVehOff`` according to the Vehicle Power Mode. 
+If the VehPowMode is OFF, the Power Profile with SpmProfActivationTimeOutVehOff equal to zero is deactivated. If the timeout configured is greater then zero, it is decreased till it reach the zero.
+If al least one local requester is activated the power profile will be deactivated once the vehicle Off timeout expires. The VehPowMode OFF condition is not applied to activation requests made by remote.
+
+.. rubric:: [$Satisfies $SRS_SPM 0165]
+
+In case the Power Mode is Vehicle Off, then a power profile can stay activated only for a specific amount of time. This amount of time is defined as *SpmProfActivationTimeOutVehOff*.
+
+This timer can be configured for each power profile. The timer starts as soon as the SPM takes care about the activation of a Power Profile and when it expires, the Power Profile shall start the deactivation procedure. 
+
+If a profile has the *SpmProfActivationTimeOutVehOff* parameter set to 0u, when a request to activate it is received and the Power Mode is Vehicle Off, the request is discarded for local requests.
+
+.. rubric:: [$DDS_SPM 0053]
+
+If a remote requester ask for an activation of a profile that can not be handled for the current VehPowMode, the REJECTED_LACK_OF_PERMISSION tag will be set in the feedback ``SMFrame.REQ_STATUS_PROF_STATE``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0151]
+
+HeartBeat Management
+======================
+
+HeartBeat (SOME/IP frame) is used in order to convey the status of the controller (i.e. the flag Permit Execution received from SUSD). 
+
+.. rubric:: [$DDS_SPM 0302]
+
+PM publishes a periodic heartbeat on the ``sftpwrmgr_heartbeat_Gen`` interface to inform remote hosts that the host where the PM resides is available for communication.
+
+.. rubric:: [$Satisfies $SRS_SPM 0049]
+
+.. rubric:: [$DDS_SPM 0305]
+
+The first Heartbeat sent by the PM has a value of zero. PM starts sending heartbeat as soon as the SPM software is enabled for running by system conditions.
+
+.. rubric:: [$Satisfies $SRS_SPM 0050]
+
+.. rubric:: [$DDS_SPM 0306]
+
+After the initial transmission of a zero ``HeartbeatCounter`` value, the PM increments the ``HeartbeatCounter`` by one with each subsequent transmission of the message.
+
+.. rubric:: [$Satisfies $SRS_SPM 0051]
+
+.. rubric:: [$DDS_SPM 0307]
+
+PM transmits the Heartbeat message with a ``HeartbeatCounter`` value of 2^32-1 whenever the SUSD de-asserts the bit in the Permit Execution value.
+
+.. rubric:: [$Satisfies $SRS_SPM 0053]
+
+The above functionalities are achieved by the Spm_PM_HB_Tx_Handler() function (that is called by the periodic Runnable_SPM_PowerManager_MainFunction()): 
+
+| - it check the Permit Execution received from SUSD by calling Sum_Spm_GetHBCounterShallBeSentFullScale(); 
+| - it calls the Spm_HandlerHBTxTimer() function that handle the periodic transmission of the HB (initial burst phase and next steady state phase);
+| - SPM_Send_PMFrame() function attach the metadata to the buffer before calling the Rte_Send function. 
+
+The HeartBeat is sent in Multicast on all the IP defined in the *Spm/spmConfigSet/SpmPgttEntries/SpmWkngDvc/SpmDstIp*.
+
+Each remote target device can have multiple IP associated to it (defined in the *Spm/spmConfigSet/SpmPgttEntries/SpmTrgDvc/SpmTrgDvcID* list). 
+So, each frame received with SrcIP belonging to the list of *SpmTrgDvcIP* will contribute to determining the status of the remote controller.
+
+The HeartBeat frame message is defined as follows:
+
+.. rubric:: [$DDS_SPM 0301]
+
+The Custom Header of PM messages is sent with the ID 0xFFFE 7FFE.
+
+.. rubric:: [$Satisfies $SRS_SPM 0011]
+
+.. rubric:: [$DDS_SPM 0300]
+
+The ``SrcPM_ID`` is the 4 bytes of the Src IP address.
+
+.. rubric:: [$Satisfies $SRS_SPM 0004]
+
+.. rubric:: [$DDS_SPM 0304]
+
+The ``HeartbeatCounter`` is an incremental counter of the type uint32 where it will count from 0 to 2^32-1.
+
+.. rubric:: [$Satisfies $SRS_SPM 0012]
+
+.. rubric:: [$DDS_SPM 0309]
+
+Heartbeat message has a uint16 field ``NumberProfileActive`` that represents the number of NOT INACTIVE power profiles.
+
+.. rubric:: [$Satisfies $SRS_SPM 0215] [$Satisfies $SRS_SPM 0217]
+
+.. rubric:: [$DDS_SPM 0310]
+
+SM provides the ``Spm_GetNotInactiveProfNumberForHB()`` API that returns the number of NOT INACTIVE power profiles.
+
+.. rubric:: [$Satisfies $SRS_SPM 0218]
+
+.. rubric:: [$DDS_SPM 0308]
+
+PM broadcasts the Heartbeat message at a calibratable periodic rate for the first 3 counts (default 5ms) and a separate calibratable periodic rate for all subsequent counts (default 1 second).
+
+.. rubric:: [$Satisfies $SRS_SPM 0052]
+
+.. rubric:: [$DDS_SPM 0639]
+
+PM prevents shutdown until a calibratable period of time after the last burst Heartbeat has been sent (default 2s).
+
+.. rubric:: [$Satisfies $SRS_SPM 0054]
+
+.. rubric:: [$DDS_SPM 0641]
+
+PM prevents shutdown as long as calibratable own wakeup bit is set in the received wakeup frame.
+
+.. rubric:: [$Satisfies $SRS_SPM 0054]
+
+.. rubric:: [$DDS_SPM 0402]
+
+PM stores HeartBeat value in the ``Spm_PowMgr_TrgDvc_Type.MonitoringType`` struct that is not stored in the Non Volatile Memory. So, at each re-start the PM does not know the previous HeartBeat's value.
+
+.. rubric:: [$Satisfies $SRS_SPM 0054]
+
+.. rubric:: [$DDS_SPM 0312]
+
+To send the HeartBeat the PPorts ``(VLAN)_PwrMgrHeartbeatTx_Evt`` is used to forward the HB on each necessary network.
+
+.. rubric:: [$Satisfies $SRS_SPM 0172]
+
+.. rubric:: [$DDS_SPM 0405]
+
+Before the transmission of a HeartBeat, SM frame and ETH WakeUp frame, the ``SPM_softpowr_tx_metadata()`` API is called in order to retrieve Metadata needed.
+
+.. rubric:: [$Satisfies $SRS_SPM 0115]
+
+Power Graph Traversal Table
+=============================
+The Power Graph Traversal Table (PGTT) is a node-graph relationship where each hardware components component is represented up as a node and the ability of 
+one hardware component to control the power of another hardware component is shown as an edge. This power graph is utilized by power managers running on various 
+nodes of the graph to determine how to activate another node when that node is required for the activation of an activation profile.
+The PGTT is defined in the *Spm/spmConfigSet* paramdef's container.
+
+It contains the following subcontainer (more detailled in the User Guide): 
+
+| - SpmTrgDvc: contains information of all the reachable ECUs in the network
+| - SpmWkngDvc: contains HeartBeat's network information and associate SpmTrgDvc with SpmWkUpSeq
+| - SpmWkUpSeq: contains information related to sequences needed to turn on remote ECUs.  
+
+.. rubric:: [$DDS_SPM 0418]
+
+Each Target Device can have multiple IP address associated. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0164][$Satisfies $SRS_SPM 0017]
+
+.. rubric:: [$DDS_SPM 0129]
+
+The Target Device Field is a 4 byte value representing the IP address of the device to be woken up.
+
+.. rubric:: [$Satisfies $SRS_SPM 0017]
+
+The PM:
+
+.. rubric:: [$DDS_SPM 0127]
+
+* treats the Waking Device field as a 4 byte value representing the PM IP Address.
+
+.. rubric:: [$Satisfies $SRS_SPM 0016]
+
+.. rubric:: [$DDS_SPM 0131]
+
+* treats the Wakeup Sequence field as a 1 byte value representing the order of wakeup command execution.
+
+.. rubric:: [$Satisfies $SRS_SPM 0018]
+
+.. rubric:: [$DDS_SPM 0132]
+
+* treats the Wakeup Command as a 1 byte value representing an enumeration of wakeup commands.
+
+.. rubric:: [$Satisfies $SRS_SPM 0019]
+
+.. rubric:: [$DDS_SPM 0133]
+
+SPM will sends/stops sending the command corresponding to the enumerated value found in the Wakeup Command field during the wakeup sequence.
+
+.. rubric:: [$Satisfies $SRS_SPM 0019]
+
+.. rubric:: [$DDS_SPM 0134]
+
+The PM treats the Wakeup Step Delay Field as a 2 byte value representing a time delay in milliseconds before proceeding to the next step in the PowerOnDevice Sequence.
+
+.. rubric:: [$Satisfies $SRS_SPM 0020]
+
+.. rubric:: [$DDS_SPM 0128]
+
+* executes wakeup commands from PGTT entries that have its own IP Address represented in the Waking Device field.
+
+.. rubric:: [$Satisfies $SRS_SPM 0016]
+
+.. _PoD :
+
+PowerOnDevice/PowerOffDevice and WakeUp Sequence
+==================================================
+
+The PowerOnDevice and PowerOffDevice are the two main operations that the PM can execute in order to turn ON/OFF a remote target device.
+The SPM understand if a remote target device needs to be turned ON/OFF by checking if it is requested or not (i.e. a target device is labelled as requested if at least one of its profiles is requested).
+
+A *WakeUp sequence* is composed of *WakeUp step* that shall be executed sequentially in order to turn ON the remote target device.
+If the target device needs to be turned OFF, the command of the *WakeUp step* are de-asserted one by one. 
+
+See :ref:`wkupStep` to more details about the *WakeUp Step*
+
+The *PowerOnDevice()* is triggered by SM when a remote target device SHALL be turn ON.
+
+.. rubric:: [$DDS_SPM 0039]
+
+``Spm_SoftwMgr_PowerOffDevice_Handler()`` requests ``PowerOffDevice`` to its local PM to turn OFF a remote host.
+
+.. rubric:: [$Satisfies $SRS_SPM 0087]
+
+.. rubric:: [$DDS_SPM 0400]
+
+PM stores ``PowerOnDevice`` request in the ``Spm_PowMgr_TrgDvc_Type.MonitoringType`` struct that is not stored in the Non Volatile Memory. So, at each re-start the PM does not know the previous request.
+
+.. rubric:: [$Satisfies $SRS_SPM 0054]
+
+Please, take into account that these action will be invoked ONLY for the requested target device.
+
+.. rubric:: [$DDS_SPM 0130]
+
+The WakeUp Sequence is performed on targets whose Target Device field matches the device specified in the ``PowerOnDevice``  and ``PowerOffDevice`` requests.
+
+.. rubric:: [$Satisfies $SRS_SPM 0017]
+
+.. rubric:: [$DDS_SPM 0135]
+
+SPM sends the commands identified by the proper PGTT Waking and Target Device fields in the order of the Wakeup Sequence field, beginning with the value of 1 when needed.
+
+.. rubric:: [$Satisfies $SRS_SPM 0026] [$Satisfies $SRS_SPM 0167]
+
+The ``Sum_Spm_WakeUpSequence_Handler()`` is called periodically by the PM main function in order to check if there are wake up sequence to be executed and to execute them.
+
+The function ``Sum_Spm_OngoingSequence_Handler()`` prevent that an ongoing wake up sequence is interrupted by another one. This means that 
+if a wake up sequence is already ongoing for a target device, no other wake up sequence can be started for the same target device.
+
+The function ``Sum_Spm_InitiateSequence_Handler()`` is called if there are NO wake up sequence ongoing. 
+It checks if there is a wake up sequence to be executed. If there is, it trigger the state machine of the wake up sequence execution.
+
+
+
+.. rubric:: [$DDS_SPM 0113]
+
+If the wake up Command Type in the wake up sequnce is 0x02 (Send Ethernet Wakeup Frame A) a bit in position Command Value is set in the Frame A.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)
+
+.. rubric:: [$Satisfies $SRS_SPM 0021]
+
+.. rubric:: [$DDS_SPM 0148]
+
+If the wake up Command Type in the wake up sequnce is 0x03 (Send Ethernet Wakeup Frame B) a bit in position Command Value is set in the Frame B.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)
+
+.. rubric:: [$Satisfies $SRS_SPM 0021]
+
+.. rubric:: [$DDS_SPM 0644]
+
+If the wake up Command Type in the wake up sequnce is 0x04 (Send Ethernet Wakeup Frame C) a bit in position Command Value is set in the Frame C.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)
+
+.. rubric:: [$Satisfies $SRS_SPM 0021]
+
+.. rubric:: [$DDS_SPM 0144]
+
+If the wake up Command Type in the wake up sequnce is 0x05 (Send CAN Wakeup Frame A) a bit in position Command Value is set in the Frame A.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)
+
+.. rubric:: [$Satisfies $SRS_SPM 0021]
+
+.. rubric:: [$DDS_SPM 0145]
+
+If the wake up Command Type in the wake up sequnce is 0x06 (Send CAN Wakeup Frame B) a bit in position Command Value is set in the Frame B.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)
+
+.. rubric:: [$Satisfies $SRS_SPM 0021]
+
+.. rubric:: [$DDS_SPM 0645]
+
+If the wake up Command Type in the wake up sequnce is 0x07 (Send CAN Wakeup Frame C) a bit in position Command Value is set in the Frame C.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)
+
+.. rubric:: [$Satisfies $SRS_SPM 0021]
+
+.. rubric:: [$DDS_SPM 0146]
+
+If the wake up Command Type in the wake up sequnce is 0x08 (Perform GPIO Wakeup) a bit in position Command Value is set in the buffer that will be passed to the Wakeup Helper Function.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)
+
+.. rubric:: [$Satisfies $SRS_SPM 0021]
+
+It will execute the action defined in the *WakeUp Step* as follow: 
+
+call to *Sum_Spm_PowerOnSeq_AdvanceStep()* API that will: 
+    
+.. rubric:: [$DDS_SPM 0138]
+
+- combines consecutive Wakeup Frame steps into the same transmission when the Wakeup Step Delay Field has a value of zero. e.g. Step 1 is Wakeup Frame with bit 8 set and Step 2 is Wakeup Frame with bit 6 set, the result is one transmission with both bits 6 and 8 set.
+
+.. rubric:: [$Satisfies $SRS_SPM 0026] [$Satisfies $SRS_SPM 0167]
+   
+- call to *Sum_Spm_WakeUpCmdDispatcher()* API that will:
+
+.. rubric:: [$DDS_SPM 0147]
+
+- If the wake up Command Type in the wake up sequnce is *SEND_TC10_SWTCH_1* or *SEND_TC10_SWTCH_2*, the TC10 is sent over the network associated with the Ethernet Switch in the EthSM configuration.
+
+.. rubric:: [$Satisfies $SRS_SPM 0021]
+
+- append bit in the proper buffer otherwise;
+
+.. rubric:: [$DDS_SPM 0136]
+
+#. waits for the Wakeup Step Delay period of time before processing the next Wakeup Command in the Sequence.
+
+.. rubric:: [$Satisfies $SRS_SPM 0026] [$Satisfies $SRS_SPM 0167]
+
+.. rubric:: [$DDS_SPM 0137]
+
+#. processes all of the *WakeUp step* for the given Target Device
+
+.. rubric:: [$Satisfies $SRS_SPM 0026] [$Satisfies $SRS_SPM 0167]
+
+When the *Sum_Spm_InitiateSequence_Handler()* API detects that a *PowerOffDevice()* request (i.e. the target device is NOT requested), it will perform the WakeUp sequence contrarywise as follow:
+
+#. call to *Sum_Spm_WakeUpCmdDispatcher()* API that will: 
+
+    | - perform NO action if the command is *SEND_TC10_SWTCH_1* or *SEND_TC10_SWTCH_2*;
+    | - remove bit from proper buffer otherwise;
+
+.. rubric:: [$DDS_SPM 0139]
+
+#. wait that the delay timer between steps is elapsed
+
+.. rubric:: [$Satisfies $SRS_SPM 0033]
+
+Additional information about  ``PowerOnDevice`` and ``PowerOffDevice``:
+
+.. rubric:: [$DDS_SPM 0116]
+
+PM only honors ``PowerOnDevice`` commands from its corresponding SM.
+
+.. rubric:: [$Satisfies $SRS_SPM 0025]
+
+
+.. rubric:: [$DDS_SPM 0118]
+
+PM provides a ``PowerOffDevice()`` API to allow its local SM to request powering off devices that the PM had previously powered on.
+
+.. rubric:: [$Satisfies $SRS_SPM 0029]
+
+.. rubric:: [$DDS_SPM 0119]
+
+PM only honors ``PowerOffDevice`` commands from its corresponding SM.
+
+.. rubric:: [$Satisfies $SRS_SPM 0030]
+
+.. rubric:: [$DDS_SPM 0124]
+
+SM makes the ``PowerOnDevice`` request to the PM even if the requested host is already awake.
+
+.. rubric:: [$Satisfies $SRS_SPM 0083]
+
+.. rubric:: [$DDS_SPM 0126]
+
+SM requests wakeup of an IP address through its local PM using the ``PowerOnDevice`` request, specifying the IP address in the request. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0082][$Satisfies $SRS_SPM 0199]
+
+
+.. _PoD_Retry :
+
+PowerOnDevice Retry
+---------------------
+
+If a remote Target Device is in Faulted or Shutdown Pending state and there are profiles requested to be activated provided by it, the SPM needs to retry to PowerOn the remote Target Device by first executing the 
+PowerOff WakeUp sequence and then the PowerOn WakeUp sequence. 
+
+If it is in Faulted or Shutdown Pending state and there are NO profiles requested to be activated, the SPM will not execute the PowerOnDevice retry procedure.
+Once the PowerOnDevice retry procedure is started, it will be executed at a calibratable periodic rate SpmTrgDvcPowerOnDeviceRetryPeriodicity (default 10s).
+The PowerOnDevice retry procedure will stop when the Target Device is recovered (i.e. the Target Device state is On) or when there are no more profiles requested to be activated provided by the Target Device.
+
+The complete transitions are described in the following FSM.
+
+Once the Target Device reaches the Faulted/ShutdownPending state while its profiles are requested, the following FSM start:
+
+.. uml::
+
+    @startuml
+
+        [*] --> Spm_No_PowerOn_Retry_Ongoing 
+
+        Spm_No_PowerOn_Retry_Ongoing : en: Reset of the periodic timers
+        Spm_PowerOff_Retry_Ongoing : perform the PowerOff WkUp seq
+        Spm_PowerOn_Retry_Ongoing : perform the PowerOn WkUp seq
+
+        Spm_No_PowerOn_Retry_Ongoing --> Spm_PowerOff_Retry_Ongoing 
+        Spm_PowerOff_Retry_Ongoing --> Spm_WaitTime_Retry_Ongoing: PowerOff sequence \ncompleted
+        Spm_WaitTime_Retry_Ongoing --> Spm_PowerOn_Retry_Ongoing: Wait timer between PowerOff/PowerOn \nelapsed
+        Spm_PowerOn_Retry_Ongoing --> Spm_WaitTime_ToRestart: PowerOn \nsequence completed
+        Spm_WaitTime_ToRestart --> Spm_No_PowerOn_Retry_Ongoing: Wait periodicity's timer elapsed
+
+    @enduml
+
+.. rubric:: [$DDS_SPM 0151]
+
+The complete PowerOnDevice retry consist in:
+
+| - Perform the PowerOff sequence;
+| - Wait for SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence (default 1s);
+| - Perform the PowerOn sequence;
+
+This behavior is handled by the ``Sum_Spm_PowerOnDeviceRetryHandler()`` API.
+
+.. rubric:: [$Satisfies $SRS_SPM 0142] 
+
+.. rubric:: [$DDS_SPM 0150]
+
+The PowerOnDevice retry is performed at calibratable rate SpmTrgDvcPowerOnDeviceRetryPeriodicity (default 10s) if the requested TrgDvc is in Faulted or ShutdownPending state.
+
+.. rubric:: [$Satisfies $SRS_SPM 0160] 
+
+
+DevicePowerStatus management
+-----------------------------
+The following are the state of a generic Target Device. 
+The transition between the state are done in the code as per 'DevicePowerState transition diagram' of SDV-2017.
+
+.. rubric:: [$DDS_SPM 0208]
+
+**Faulted** when any of the following are true:
+
+* the local device has been activated but is still Off (timeouts and hysteresis to be specified in the Domain-specific Specs).
+* the PM Heartbeat of a remote device is not received within the DTC Timeout length of time (defined in the PGTT) after sending the initial wakeup request (from Initializing state).
+* the PM Heartbeat of a remote device is not received within the DTC Timeout length of time (defined in the PGTT) after an initial Heartbeat reception (from On, Pending_Shutdown, or Reboot states), and the device is still being monitored (IsRequested or IsRequester).
+
+.. rubric:: [$Satisfies $SRS_SPM 0037]
+
+.. rubric:: [$DDS_SPM 0209]
+
+**Reboot** when any of the following are true:
+
+* the local device has just been restarted and is not yet fully functional.
+* the PM has determined that a remote device has reset based on receiving a HeartbeatCounter value that is less than the penultimate HeartBeat value received. This can occur from the On, Pending_Shutdown, or Faulted states.
+
+.. rubric:: [$Satisfies $SRS_SPM 0038]
+
+.. rubric:: [$DDS_SPM 0210]
+
+**Pending_Shutdown** when any of the following are true:
+
+* the local device is On but is in the process of shutting down.
+* the PM Heartbeat of a remote device is received with a HeartbeatCounter value in the shutdown pending range (>= 2^32-256, i.e. >= 0xFFFFFF00). This can occur from any monitored state (Off, Initializing, On, Reboot, or Faulted).
+
+.. rubric:: [$Satisfies $SRS_SPM 0039]
+
+.. rubric:: [$DDS_SPM 0211]
+
+**Off** when any of the following are true:
+
+* the local device is Off.
+* the DTC Timeout has elapsed and the device is no longer being monitored (neither IsRequested nor IsRequester). This applies when transitioning from the On, Pending_Shutdown, or Reboot states.
+* the device is no longer being monitored (neither IsRequested nor IsRequester) while in the Faulted state.
+* the device is no longer marked as a Requester while in the Initializing state.
+
+.. rubric:: [$Satisfies $SRS_SPM 0040]
+
+.. rubric:: [$DDS_SPM 0212]
+
+**On**  when any of the following are true:
+
+* the local device is operating normally and is not in any of the other states.
+* the PM Heartbeat of a remote device has been received with a normal value (not in the Power Down range) while in the Off or Initializing states.
+* the PM Heartbeat of a remote device has been received with a correctly increasing value (greater than the penultimate HeartBeat value) while in the Reboot or Faulted states.
+
+.. rubric:: [$Satisfies $SRS_SPM 0041]
+
+.. rubric:: [$DDS_SPM 0213]
+
+**Initializing** from the time that the device is marked as Requested or as a Requester (IsRequested or IsRequester) while in the Off state, and until it reaches any of the other states.
+
+.. rubric:: [$Satisfies $SRS_SPM 0042]
+
+The api :code:`SPM_DevicePowerState()` is a *Stateful* API.
+
+The API SHALL tracks:
+
+| - The status of the current device
+| - The status of each Target Device defined in the PGTT
+
+The status of the current device is managed by the SPM itself. It reflect the status of the FSM of the SPM_SoftMgr_MainFunction() API.
+
+The values are defined as per :ref:`SPM-SUSD-Shutdown` section.
+
+
+The following is the FSM of the Target Device as per 'DevicePowerState transition diagram' of SDV-2017.
+
+.. uml:: ../../uml/target_device_fsm.uml
+
+For the ``Requester`` Target Device, the SPM will just track the HB value received from the remote host without performing any action in Powering On and Powering Off the remote host.
+
+In the following are described the main HB's value transitions supported from a logic perspective.
+
+Process of turning ON a remote Target Device: 
+
+.. uml:: ../../uml/seq_turning_on_target_device.uml
+
+Process of detecting FAULTED a remote Target Device after it was ON: 
+
+.. uml:: ../../uml/seq_faulted_after_on.uml
+
+
+
+Process of detecting FAULTED a remote Target Device after the wakeup sequence: 
+
+.. uml:: ../../uml/seq_faulted_after_wakeup.uml
+
+Process of turning OFF a remote Target Device (both valid): 
+
+.. uml:: ../../uml/seq_turning_off_direct.uml
+
+.. uml:: ../../uml/seq_turning_off_via_shutdown.uml
+
+Monitoring of Remote Hosts: 
+
+.. rubric:: [$DDS_SPM 0303]
+
+``Spm_TrgDvcFSMManager()`` API monitors heartbeat deadlines for each host and each Heartbeat value received is stored in ``Spm_PowMgr_TrgDvc_Type.MonitoringType``.
+
+The Spm_PM_Rx_Polling_Handler() function processes the HeartBeat for all configured Target Devices and updates their MonitoringType struct accordingly:
+
+* WkUpSeqHBState - boolean flag set to TRUE when a HB is received
+* PreviousHB - last HB value received
+* PenultimateHB - penultimate HB value received
+
+.. rubric:: [$Satisfies $SRS_SPM 0116]
+
+.. rubric:: [$DDS_SPM 0313]
+
+When processing a received HeartbeatCounter value, ``Spm_TrgDvcFSMManager()`` treats any value
+in the range [0xFFFFFF00 .. 0xFFFFFFFF] as a shutdown pending indication. The check used is:
+``Sum_Spm_GetPreviousHBval(i) > (0xFFFFFFFFu - 256u)``.
+This covers the primary power-off value 0xFFFFFFFF (see $SRS_SPM 0053), the secondary (0xFFFFFFFE)
+and tertiary (0xFFFFFFFD) Linux SoC values (see $SRS_SPM 0267), and any value >= 0xFFFFFF00 (see $SRS_SPM 0266).
+
+.. rubric:: [$Satisfies $SRS_SPM 0266] [$Satisfies $SRS_SPM 0267]
+
+.. rubric:: [$DDS_SPM 0204]
+
+PM can track the status of a remote host and inform the SM by the ``Spm_DevicePowerState`` IRV.
+
+.. rubric:: [$Satisfies $SRS_SPM 0034] [$Satisfies $SRS_SPM 0035]
+
+.. rubric:: [$DDS_SPM 0205]
+
+In the SPM module, the role of each Target Device with which it interacts is monitored based on the following actions:
+
+  - If a request to activate a local power profile is received, the Target Device is marked as ``Requester`` by using the Sum_Spm_SetAsRequester() function;
+  - If a remote power profile is requested by the SM instance, the Target Device is marked as ``Requested`` by using the Sum_Spm_SetAsRequested() function.
+
+It should be noted that a Target device can assume both roles simultaneously if the Target device requests and manages power profiles.
+
+Once a target device is no longer requested, it can be turned off and the bit associated with the Requested role is reset by the Sum_Spm_ResetAsRequested() function.
+For the requester side, the Spm_SoftwMgr_Requester_Handler() function checks whether the requester has at least one active request in order to maintain it
+as a requester, otherwise it resets the bit associated with the Requester role by using the Sum_Spm_ResetAsRequester() function.
+
+.. rubric:: [$Satisfies $SRS_SPM 0034] [$Satisfies $SRS_SPM 0035]
+
+.. rubric:: [$DDS_SPM 0206]
+
+PM publishes the ``Spm_DevicePowerState`` IRV to reflect the status of any of the following of EACH Target Device defined in the PGTT.
+
+.. rubric:: [$Satisfies $SRS_SPM 0036]
+
+.. rubric:: [$DDS_SPM 0207]
+
+PM stores the state of remote hosts inside ``Spm_PowMgr_TrgDvc_Type.MonitoringType`` struct.
+
+.. rubric:: [$Satisfies $SRS_SPM 0043]
+
+.. rubric:: [$DDS_SPM 0020]
+
+When a remote activation request is received, SM sets the Target device, meaning host that has sent the request, as the requester
+by calling Sum_Spm_SetAsRequester() function.
+
+.. rubric:: [$Satisfies $SRS_SPM 0077]
+
+
+TC10 pulsation
+----------------
+
+The TC10 pulse shall be sent (done by EthSM_RequestComMode()) when during the parsing of the *WakeUp Sequence* the commands *SEND_TC10_SWTCH_1* or *SEND_TC10_SWTCH_2* are found.
+
+More specifically, 
+
+.. rubric:: [$DDS_SPM 0101]
+
+SPM calls the ``EthSM_RequestComMode(id, COMM_FULL_COMMUNICATION_WITH_WAKEUP_REQUEST)`` API to send the TC10 Wakeups.
+
+.. rubric:: [$Satisfies $SRS_SPM 0095] [$Satisfies $SRS_SPM 0127][$Satisfies $SRS_SPM 0192]
+
+Please, take into account that the 'Network Handle id' is retrieved by SPM by searching associated EthSMNetwork in the EthSM.
+
+.. rubric:: [$DDS_SPM 0149]
+
+The TC10 is sent only if EthSMNetwork associated with the Ethernet Switch is found in the EthSM configuration.
+
+.. rubric:: [$Satisfies $SRS_SPM 0021][$Satisfies $SRS_SPM 0192]
+    
+WakeUp Frame
+---------------
+The message contains information about which remote targets need to be in wake-up state for satisfying SPM requests.
+
+.. rubric:: [$DDS_SPM 0105]
+
+The sender of the wakeup frame asserts hosts that need to be awakened by setting the bit corresponding to the desired hosts to 1 and all other hosts to 0.
+
+.. rubric:: [$Satisfies $SRS_SPM 0013]
+
+.. rubric:: [$DDS_SPM 0107]
+
+The PM de-asserts wakeup for a host that it had previously asserted by setting the bit corresponding to the host to 0.
+
+.. rubric:: [$Satisfies $SRS_SPM 0013]
+
+.. rubric:: [$DDS_SPM 0140]
+
+When powering down a device, the PM: sends a message with zero values where 1's are required for wakeup.
+
+.. rubric:: [$Satisfies $SRS_SPM 0033]
+
+.. rubric:: [$DDS_SPM 0100]
+
+SPM transmits and receives the Wakeup Frames using the AUTOSAR stack on:
+
+* Ethernet (acting as upper layer of the RTE since the ETH WUF is SOME/IP).
+* CAN if the device is connected to the Wakeup CAN Network.
+
+.. rubric:: [$Satisfies $SRS_SPM 0118] 
+
+.. rubric:: [$DDS_SPM 0103]
+
+Once the PM starts transmitting the wakeup command to activate a Target Device, it sends at a calibratable periodic rate (default 1 second) as well as within 5ms of any change in value.
+
+.. rubric:: [$Satisfies $SRS_SPM 0045]
+
+.. rubric:: [$DDS_SPM 0109]
+
+When sending the Wakeup Frame, the PM keeps track of all the bits that it has set in the protocol-specific buffers:
+
+* **ETH protocol**: ``Spm_Local_WkUpFrame_A_ETH_TxPersistent[]``, ``Spm_Local_WkUpFrame_B_ETH_TxPersistent[]`` and ``Spm_Local_WkUpFrame_C_ETH_TxPersistent[]``
+* **CAN protocol**: ``Spm_Local_WkUpFrame_A_CAN_TxPersistent[]``, ``Spm_Local_WkUpFrame_B_CAN_TxPersistent[]`` and ``Spm_Local_WkUpFrame_C_CAN_TxPersistent[]``
+
+.. rubric:: [$Satisfies $SRS_SPM 0046]
+
+.. rubric:: [$DDS_SPM 0117]
+
+PM is also responsible for keeping the Target Device awake as long as the SM is still functional and has not made a ``PowerOffDevice`` request for that same Target Device.
+This is done since all the WakeUp bits are stored in the respective protocol-specific buffers mentioned above.
+
+.. rubric:: [$Satisfies $SRS_SPM 0028] [$Satisfies $SRS_SPM 0031]
+
+.. rubric:: [$DDS_SPM 0106]
+
+PM always asserts the wakeup for the requested host even if the host is already awake.
+
+.. rubric:: [$Satisfies $SRS_SPM 0027]
+
+.. rubric:: [$DDS_SPM 0311]
+
+SUM_SPM implements function ``Sum_Spm_WkUpTiming_Handler()`` to handle the transmition of wakup frame which calls the following functions:
+  * ``Sum_Spm_StoreWkUpFrameBuffer()`` to store the wakeup frame buffer data to avoid losing the data before it is transmitted. This function ensures that the wakeup frame data is stored in designated buffers for subsequent handling and transmission.
+  * ``Sum_Spm_WkUpFrameBuffer_Handler()`` to handle the time periodic transmission for wakeup frame buffer . This function ensures that the wakeup frame data is transmitted in a burst periodic fashion for a calibrated amount of time at a specific time interval.
+  * ``Sum_Spm_IsNoDevicesActivated as()`` to check if no devices are activated before clearing the buffer to transmit an all-zero wakeup frame. This function ensures that the buffer is only cleared if no devices are activated.
+
+.. rubric:: [$Satisfies $SRS_SPM 0045]
+
+How Intermediate Node manages Wakeup Frame
+--------------------------------------------
+
+If the SPM is deployed in a CHM (intermediate node) it will:
+
+- Send periodically WUF over CAN to other intermediate nodes (exploiting *CanIf_Transmit()* API) 
+- Send ETH WUF to target edge nodes when ETH WUF commands (SEND_ETH_WKUP_FRM_A, SEND_ETH_WKUP_FRM_B, or SEND_ETH_WKUP_FRM_C) are present in the wakeup sequence for target devices
+- Receive WUF over CAN from other intermediate nodes (by the callback *Spm_RxIndication()* API)
+- Receive WUF over ETH (done inside *Spm_ETHWkUpFrame_Rx_Polling_Handler()* API). Done in polling. The frame can be received over the VLANs configured in SpmVLANId.
+
+.. rubric:: [$DDS_SPM 0108]
+
+When transmitting the Wakeup Frame, SPM sets the bits by applying **OR** logic to the following:
+
+* the bits required based on internal requests from the Power Graph Traversal Table
+* the bits received from any incoming Wakeup Frame (either CAN or Ethernet) that has been received since the last time SPM transmitted the Wakeup Frame. The output frame is reset by ``Spm_TxConfirmation()`` API.
+
+.. rubric:: [$Satisfies $SRS_SPM 0120]
+
+.. rubric:: [$DDS_SPM 0111]
+
+A PM that has both an Ethernet and Wakeup CAN connection, performs the following for Wakeup Frame messages received on Unicast Ethernet:
+
+* processes the information received in the Ethernet Wakeup Frame messages in ``Spm_ETHWkUpFrame_Rx_Polling_Handler()`` API.
+* stores the received WUF in the rolling buffer via ``Sum_Spm_WufRollingBuffer_StoreWuf()`` (see :ref:`RollingBufferStore`).
+* the buffer sent by ``CanIf_Transmit()`` API is the union of the ``Spm_Local_WkUpFrame_X_CAN_TxPersistent[]`` (where X is the frame identifier: A, B, or C) buffer and the information received on Ethernet.
+
+.. rubric:: [$Satisfies $SRS_SPM 0048][$Satisfies $SRS_SPM 0144][$Satisfies $SRS_SPM 0164]
+
+.. rubric:: [$DDS_SPM 0233]
+
+A PM that has both an Ethernet and Wakeup CAN connection, performs the following for Wakeup Frame messages received on Multicast Ethernet:
+
+* processes the information received in the Ethernet Wakeup Frame messages in ``Spm_ETHWkUpFrame_Multicast_Rx_Polling_Handler()`` API for its own dependencies.
+* stores the received WUF in the rolling buffer via ``Sum_Spm_WufRollingBuffer_StoreWuf()`` (see :ref:`RollingBufferStore`).
+* call ``Spm_ExecuteWakeUpFrameActions()`` API in order to understand if the received Multicast WUF contains its own wakeup bit.
+
+.. rubric:: [$Satisfies $SRS_SPM 0048]
+
+.. rubric:: [$DDS_SPM 0112]
+
+A PM that has both an Ethernet and Wakeup CAN connection, SHALL perform the following for Wakeup Frame messages received on CAN:
+
+* processes the information received in the CAN Wakeup Frame messages in ``Spm_RxIndication()`` API.
+* stores the received WUF in the rolling buffer via ``Sum_Spm_WufRollingBuffer_StoreWuf()`` (see :ref:`RollingBufferStore`).
+* the buffer sent on the interface ``(VLAN)_PwrMgrWakeupTx_Evt`` is the union of the ETH-specific buffers: ``Spm_Local_WkUpFrame_A_ETH_TxPersistent[]``, ``Spm_Local_WkUpFrame_B_ETH_TxPersistent[]`` and ``Spm_Local_WkUpFrame_C_ETH_TxPersistent[]``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0048][$Satisfies $SRS_SPM 0144][$Satisfies $SRS_SPM 0164][$Satisfies $SRS_SPM 0254][$Satisfies $SRS_SPM 0255]
+
+.. rubric:: [$DDS_SPM 0401]
+
+* PM stores the wakeup assertion to local or remote devices in protocol-specific buffers that are not stored in the Non Volatile Memory:
+
+  - **CAN WUF**: ``Spm_Local_WkUpFrame_A_CAN_TxPersistent[]``, ``Spm_Local_WkUpFrame_B_CAN_TxPersistent[]`` and ``Spm_Local_WkUpFrame_C_CAN_TxPersistent[]``
+  - **ETH WUF**: ``Spm_Local_WkUpFrame_A_ETH_TxPersistent[]``, ``Spm_Local_WkUpFrame_B_ETH_TxPersistent[]`` and ``Spm_Local_WkUpFrame_C_ETH_TxPersistent[]``
+
+  So, at each re-start the PM does not know the previous asserted wakeup bit.
+
+.. rubric:: [$Satisfies $SRS_SPM 0054][$Satisfies $SRS_SPM 0254][$Satisfies $SRS_SPM 0255]
+
+Wake-up of an managed edge Node when SPM is configured as intermediate node
+------------------------------------------------------------------------------
+
+.. rubric:: [$DDS_SPM 0524]
+
+FOR Spm ECU node that is configured as a Intermediate node, WHEN the Spm receives the indication about in-coming CAN/ETH wake-up frame THEN Spm calls function `Sum_Spm_WkupEdgeNodes`.
+
+.. rubric:: [$Satisfies $SRS_SPM 0017][$Satisfies $SRS_SPM 0132]
+
+.. rubric:: [$DDS_SPM 0520]
+
+For each Target device in SPM configuration, function `Sum_Spm_WkupEdgeNodes` checks if SPM directly handles the edge nodes that are mapped in the asserted bits of CAN/ETH wake-up frames, by a No-NULL trgHndl_p pointer value.
+
+.. rubric:: [$Satisfies $SRS_SPM 0017]
+
+.. rubric:: [$DDS_SPM 0521]
+
+In `Sum_Spm_WkupEdgeNodes`, if the record trgHndl_p (reference type) in struct Spm_PowMgr_TrgDvc_List exists for a specific list item, SPM checks within the WUF Rolling Buffer, whether or not the wake up bit (identified by the associated frame type and bit position, within that frame type) for that specific target device has been asserted.
+
+.. rubric:: [$Satisfies $SRS_SPM 0017]
+
+.. rubric:: [$DDS_SPM 0523]
+
+For each target device in `Spm_PowMgr_TrgDvc_List`, IF:
+
+* current item contains information in record trgHndl_p AND 
+* the respective bit in the configured CAN/ETH wake-up frame is asserted,
+
+`TargetDevicerequestedByRemote` is set to TRUE/FALSE for the target device in order to keep track of the fact that the wake-up sequence has been triggered by a remote host or not
+
+.. rubric:: [$Satisfies $SRS_SPM 0017]
+
+.. rubric:: [$DDS_SPM 0527]
+
+SINCE the record *trgHndl_p* refers to a calibration parameter, function `Spm_GetFrameByteFromSlot` needs to implement a default state to avoid any kind of operation, WHEN
+the referred record value of _SpmTrgWkupFrm_ is greater than 2.
+
+.. rubric:: [$Satisfies $SRS_SPM 0018]
+
+How Edge and Intermediate Nodes manage Wakeup Frame
+---------------------------------------------------
+
+.. rubric:: [$DDS_SPM 0110]
+
+Both Edge and Intermediate nodes can now send Ethernet Wakeup Frames periodically using protocol-specific buffers.
+
+The behavior differs based on node type:
+
+* **Edge Nodes**: Send ETH WUF Unicast to intermediate nodes (using ETH buffers)
+* **Intermediate Nodes**: Can send both ETH WUF Unicast to target edge nodes (using ETH buffers) AND CAN WUF (using CAN buffers)
+
+The WUF burst phase is initiated for both CAN and ETH unicast transmission when the node is configured as intermediate.
+
+.. rubric:: [$Satisfies $SRS_SPM 0047]
+
+.. rubric:: [$DDS_SPM 0142]
+
+The ETH WUF frame SHALL be sent through the ``(VLAN)_PwrMgrWakeupTx_Evt`` where VLAN is the VLAN which the SpmIntermediateDstAddrs belongs including in its payload all the devices that needs to be awaken in the entire path.
+This operation is handled by the ``Spm_HandleVLANCommunication()`` SPM's API that will call the right PPort.
+
+For Ethernet wakeup frames from non-managing nodes, the frames are unicasted to each IP address specified in the device's PGTT's Wakeup Command Destination IP Addresses field (accessible via ``SPM_GET_PGTT_INTERMEDIATE_DST_IP`` and ``SPM_GET_PGTT_INTERMEDIATE_DST_IP_SIZE`` macros). If no IP address is specified in the PGTT, then the ethernet WUF transmission is not required.
+
+.. rubric:: [$Satisfies $SRS_SPM 0164] [$Satisfies $SRS_SPM 0133] [$Satisfies $SRS_SPM 0150] [$Satisfies $SRS_SPM 0174]
+
+.. rubric:: [$DDS_SPM 0143]
+
+The SrcPMId of the ETH WUF will correspond to the SpmSrcIp that match the SpmVLANId to which the SpmIntermediateDstAddrs belongs to.
+
+.. rubric:: [$Satisfies $SRS_SPM 0164] 
+
+.. rubric:: [$DDS_SPM 0234]
+
+A PM that has only Ethernet and NOT CAN connection, performs the following for Wakeup Frame messages received on Multicast Ethernet:
+
+* the ``Spm_ETHWkUpFrame_Multicast_Rx_Polling_Handler()`` API calls ``Spm_ExecuteWakeUpFrameActions()`` API in order to understand if the received Multicast WUF contains its own wakeup bit.
+
+.. rubric:: [$Satisfies $SRS_SPM 0048]
+
+The frame is sent over the VLAN whose address is obtained from the configured parameter list SpmIntermediateDstAddrs. 
+Please, remember that the second MSB octet of the previous IP corresponds to the VLAN. I.e. the SpmIntermediateDstAddrs 192.10.1.4 belongs to the VLANId 10.
+
+It will just append its own bit on the ETH WUF and send it to its own intermediate node.
+
+Loss Of Node
+=============
+
+.. rubric:: [$DDS_SPM 0200]
+
+PM treats the Loss of Node DTC Field as a 2 byte value representing the base of the DTC to be set if the corresponding Target Device cannot be reached.
+
+.. rubric:: [$Satisfies $SRS_SPM 0022]
+
+.. rubric:: [$DDS_SPM 0201]
+
+PM treats the DTC Timeout as a 2 byte value representing the length of time in milliseconds to delay before the PM sets a Loss of Node DTC as defined in the DevicePowerState Functionality Section.
+
+.. rubric:: [$Satisfies $SRS_SPM 0023]
+
+.. rubric:: [$DDS_SPM 0202]
+
+For setting a Loss of Node DTC, the PM calls the ``Sum_Spm_WriteLossofNode()`` API that: 
+
+| - retrieves the DTC Base ID that are labeled as *Faulted* by ``Spm_TrgDvcFSMManager()`` API. 
+| - calls the ``Rte_Write`` for the ``SPM_LossOfNodeIndication`` in order to inform the SSFM about the loss of a Node.
+
+.. rubric:: [$Satisfies $SRS_SPM 0044][$Satisfies $SRS_SPM 0204]
+
+.. rubric:: [$DDS_SPM 0203]
+
+SUM SPM provides a sender-receiver interface ``SPM_LossOfNodeIndication`` as described below to provide Loss of Node Indication on-change to SUM SSFM that in turn sets/clears a Loss Of Node DTC.
+The on-change behavior means that the interface publishes only the node DTC/status that has changed since the last time the interface was published.
+
+dataElement associated with the ``SPM_LossOfNodeIndication`` interface: 
+
+.. code-block:: c
+
+   enum nodeStatus {
+       LOST = 0x00,
+       RECOVERED = 0x01
+   }
+
+   SPM_LossOfNodeIndication.DataElement{
+       uint16* nodeDtcCodeValue, // 2 bytes DTC Code Value
+       uint8* nodeStatus, // LOST: Node is lost, RECOVERED: Node is not lost
+       uint16 nodeListLength // Node List length 
+   }
+
+.. rubric:: [$Satisfies $SRS_SPM 0103] [$Satisfies $SRS_SPM 0204]
+
+SPM_GetDTCIdentifier
+=====================
+
+
+.. rubric:: [$DDS_SPM 0413]
+
+SUM SPM provides a client-server operation ``SPM_GetDTCIdentifier`` as described below to enable SUM SSFM to obtain the DTC identifier (2-bytes DTC code value) associated with an IP address in the Power Graph. This value will be used to facilitate the proper Loss Of Node, Loss of Function, and Invalid Data DTC setting. 
+``SPM_GetDTCIdentifier`` operation signature: 
+
+.. code-block:: c
+
+   void SPM_GetDTCIdentifier (     
+           uint32 ipAddress,       
+           uint16 * dtcCodeValue      
+        )
+
+This API is an Operation of the C/S ``SPM_GetDTCIdentifier`` interface.
+
+.. rubric:: [$Satisfies $SRS_SPM 0104]
+
+Diagnostic DID
+=================
+
+DID 0xE0DD
+-----------
+
+.. rubric:: [$DDS_SPM 0625]
+
+SPM provides PPort ``PP_SPM_DCM_DID_E0DD_ActivationProfileActivationStatus`` to allow the retrieve of the DID 0xE0DD, which contains information relating to the status of the active profiles in the ECU. 
+
+.. rubric:: [$Satisfies $SRS_SPM 0226]
+
+.. rubric:: [$DDS_SPM 0626]
+
+The DID is satisfied with the following two functions: 
+
+| - ``Runnable_SPM_DID_E0DD_ActivationProfileActivationStatus``
+
+**Purpose**
+
+    Main diagnostic function that populates a 64-byte buffer with power profile activation status.
+    The bitmap index is a unique position value, associated with each profile (mandatory for the local profiles) in ``SpmProfBitMapIndex`` (valid range [0-511]), used to provide information on the active status of profiles via the DID 0xE0DD.
+
+**Logic**
+
+    1. Initialize 64-byte buffer to all zeros
+    2. Loop through all configured power profiles
+    3. For each profile: if  the state is not SPM_Inactive AND bitmap index is valid, 
+        set the corresponding bit to 1 using ``Spm_DID_E0DD_SetBitToOne()``
+    4. Return E_OK
+
+
+| - ``Spm_DID_E0DD_SetBitToOne``
+
+**Purpose**
+
+    Utility function to set a specific bit to 1 in the byte array.
+    The position is the bitmap index configured for that particular profile.
+
+**Logic**
+
+    1. Validate position < 512 (the valid range is [0-511])
+    2. Calculate byte position: ``position / 8``
+    3. Calculate bit position: ``7 - (position % 8)`` (MSB-first ordering)
+    4. Set bit: ``Data[bytePosition] |= 1 << bitPosition``
+
+**Bit Ordering Example**
+
+    * Position 0: Byte 0, Bit 7 (MSB)
+    * Position 7: Byte 0, Bit 0 (LSB)
+    * Position 8: Byte 1, Bit 7 (MSB)
+
+.. rubric:: [$Satisfies $SRS_SPM 0225]
+
+The generation of the code is done if a DcmDspDid is referenced in ``spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref`` parameter.
+
+Please, take into account that Confgen will populate the ``SpmProfBitMapIndex`` parameter field if the profile is local. 
+So, if the profile is remote, the ``SpmProfBitMapIndex`` will be NOT automatically populated. 
+
+DID E0DE/DID E0DF
+-------------------
+
+In the following, a summary of the behaviour that these DID shall have. 
+
+Please, take into account that both DIDs needs update record for the *current* PowerOff session OR the *previous* PowerOff session.
+
+.. note:: 
+
+    For PowerOFF session we refer when the PowerMode is different from Propulsion.
+
+**Data Structures**
+
+.. code-block:: c
+
+   typedef struct{
+       uint32 ActivityTimerInTick;  /* Cumulative amount of ticks that the profile was active. */
+       uint8 ActivationCount;       /* Number of times the profile was directly locally activated. */
+   }SpmDiagActivityTiming; 
+
+   typedef struct{
+       uint16 ServiceId; 
+       uint8 ProfNumber; 
+       uint8 LastByteIPRequester; 
+       SpmDiagActivityTiming ActualPowerOffRecords;    
+   }SpmDiagActivatedProfileStruct;
+
+The data are stored in the following queues:
+
+| - ``Sum_Spm_DID_E0DE_Queue``: queue that holds 5 items of ``SpmDiagActivatedProfileStruct`` type. Needed for profiles **locally** activated; 
+| - ``Sum_Spm_DID_E0DF_Queue``: queue that holds 5 items of ``SpmDiagActivatedProfileStruct`` type. Needed for profiles **remotely** activated; 
+
+.. rubric:: [$DDS_SPM 0629]
+
+So, each time SPM receive a **local** activation request: 
+
+ .. uml::
+
+    @startuml
+    start
+    :Receive activation request from local;
+    if (SUSD informed we can update data\nand we are in PowerOff session?) then (yes)
+      
+      if (Profile already present in E0DF queue? \n(call Spm_FindItemByServiceIdAndProfNumber())) then (yes)
+        :Create a new local item \n(that will be appended later to E0DE queue at the end of this flowchart);
+        note left: call Spm_TransferFromRemoteToLocal() 
+        :Copy ActivityTimerInTick retrived from E0DF queue in new item.;
+        :Remove item from E0DF queue;
+        note left: call Sum_Algo_Deque_PopAtPosition()
+      endif
+      if (Request already present in E0DE queue? \n(call Spm_FindItemByServiceIdAndProfNumber())) then (yes)
+        if (Is Profile Status Inactive?) then (yes)
+        note left: this branch is addressed by Spm_CheckAndUpdateLocallyActivatedProfile()
+          :Remove item from E0DE queue (and fill the gap in the queue);
+          note right: This is done by API \nSum_Algo_Deque_PopAtPosition()
+          :Add 1 to ActivationCount of ActualPowerOffRecords field; 
+          :Enqueue at the first available slot; 
+          note right: A slot is for sure present since we popped an element two step above
+        else (no)
+          : no action.;
+        endif 
+      else (no)
+        note right: Handle E0DE Queue Management is directly\n done by calling Spm_AddItemToFifoQueue(). \n function will check if the queue is full and update it in FIFO way.
+        if (E0DE queue is full?) then (yes)
+          :Update the E0DE queue in FIFO way;\n(remove oldest entry);
+        else (no)
+          :Enqueue at the first available slot; 
+        endif
+      endif
+    else (no)
+      :Skip queue update;
+    endif
+    :Continue processing;
+    stop
+    @enduml
+
+The entry point of the above flow is the ``Spm_HandleLocalActivationRequest() API``.
+
+Please, take into account that the above checks are needed before the call of ``Spm_prv_prfReqDispatcher() API`` BUT after the validation of the activation request.
+
+If the profile requested is already in E0DF queue, it will be removed and its data regarding ActivityTimerInTick (both actual and previous PowerOff session) 
+will be updated in the E0DE queue as new Item.
+If the profile requested is NOT in E0DF queue:
+
+| - if it is already in E0DE queue:
+    
+    | - its status is Inactive, its ActivationCount will be incremented by 1 and the item will be re-enqueued at the first available slot;
+    | - its status is Active, no action is done;
+
+| - if it is NOT in E0DE queue, a new item will be created and enqueued at the first available slot of the E0DE queue.
+
+.. warning::
+    Note that a profile can be both locally activated AND remotely at the same time. But as long as there is a local activation criterion, the profile is still considered directly locally activated.
+
+.. rubric:: [$Satisfies $SRS_SPM 0229]
+
+.. rubric:: [$DDS_SPM 0630]
+
+So, each time SPM receives a **remote** activation request: 
+
+ .. uml::
+
+    @startuml
+    start
+    :Receive activation request from remote;
+    if (SUSD informed we can update data\nand we are in PowerOff session?) then (yes)
+      if (Profile already present in E0DE queue?\n (call Spm_FindItemByServiceIdAndProfNumber())) then (yes)
+        :Skip queue update;
+      else (no)
+        if (Request already present in E0DF queue?\n (call Spm_FindItemByServiceIdAndProfNumber())) then (yes)
+          if (Is Profile Status Inactive?) then (yes)
+            :Remove item from E0DF queue (and fill the gap in the queue);
+            note right: This is done by API \nSum_Algo_Deque_PopAtPosition()
+            :Add 1 to ActivationCount of ActualPowerOffRecords field; 
+            :Enqueue at the first available slot; 
+            note right: A slot is for sure present since we popped an element two step above
+          else (no)
+            : no action.;
+          endif 
+        else (no)
+          note right: Handle E0DF Queue Management is directly\n done by calling Spm_AddItemToFifoQueue(). \n function will check if the queue is full and update it in FIFO way.
+          if (E0DF queue is full?) then (yes)
+            :Update the E0DF queue in FIFO way;\n(remove oldest entry);
+          else (no)
+            :Enqueue at the first available slot; 
+          endif
+        endif
+      endif
+    else (no)
+      :Skip queue update;
+    endif
+    :Continue processing;
+    stop
+    @enduml
+
+The entry point of the above flow is the ``Spm_HandleRemoteActivationRequest() API``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0230]
+
+.. rubric:: [$DDS_SPM 0631]
+
+| - Use :code:`PPort PP_SPM_Dcm_DataDidE0DE` to the DCM in order to exploit the SPM DID E0DE functionality.
+| - Use :code:`PPort PP_SPM_Dcm_DataDidE0DF` to the DCM in order to exploit the SPM DID E0DF functionality.
+
+These ports enable the DCM to access diagnostic data identifiers:
+
+| - **DID E0DE (Locally Activated Activation Profile Off Power Mode Activity Records)**: Contains information about profiles that were directly activated by local software components during PowerOff sessions, including activity timers and activation counts.
+
+| - **DID E0DF (Remotely Activated Activation Profile Off Power Mode Activity Records)**: Contains information about profiles that were activated by remote requests during PowerOff sessions, including the IP requester information, activity timers, and activation counts.
+
+Both ports are implemented through their respective runnable functions:
+
+| - ``Runnable_Spm_DID0xE0DE()`` for serializing E0DE data
+| - ``Runnable_Spm_DID0xE0DF()`` for serializing E0DF data
+
+.. rubric:: [$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]
+
+.. rubric:: [$DDS_SPM 0632]
+
+**Activation Count**
+
+The Activation Count is increased by one when the profile requested is already in the proper queue and its state is Inactive.
+
+.. rubric:: [$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]
+
+.. rubric:: [$DDS_SPM 0633]
+
+**Activity Timer**
+
+To update the ActivityTimerInTick field, SPM will use the ``Sum_Spm_UpdateActivityTimer()`` API that is called periodically by the ``SPM_SoftMgr_MainFunction()`` API.
+Basically, it will increase of 1 the ActivityTimerInTick field of the ActualPowerOffRecords field of the queue item which profile is in Active state AND if the E0D7 state AND VehPowerMode are satisfied. 
+
+In order to do that, the ``Sum_Spm_UpdateActivityTimer()`` checks the conditions with the ``Spm_IsQueueUpdateAllowed()``. If the conditions are satisfied, 
+the function ``Spm_IncrementActivityTimerAtPositionIfProfileIsActive()``
+are called for each item in the E0DE and E0DF queues respectively.
+
+.. rubric:: [$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]
+
+.. rubric:: [$DDS_SPM 0634]
+
+**Power Off Session Handling**
+
+To handle the *current* and *previous* PowerOff session, the SPM will use the ``Spm_VehPowModeHandlerForDiagnosticDID()`` that it is called when the Vehicle Power Mode interface 
+is read properly. The above API will: 
+
+| - update the flag VehPowModeConditionSatisfiedForDID accordingly to the current Vehicle Power Mode;
+| - call the  ``Spm_ClearQueueDID_E0DE_E0DF()`` in order to clean up the E0DE and E0DF content if a new PowerOff session is started;
+
+.. rubric:: [$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]
+
+**DID and NvM population**
+
+In order to populate the DID and write in NvM: 
+
+| - the Activity Timer field will be populated with the ActivityTimerInTick fields from the current PowerOff sessions and converted in Seconds (since the variable is in ticks).
+| - the Activation Count field will be populated with the sum of the ActivationCount fields from the current and previous PowerOff sessions.
+
+The write in NvM needs to be done when the Runnable SPM_ActivityRecordsCmd receives as command SUM_ARC_NvMStore. 
+
+.. warning::
+    
+    Remember to store the byte in Big Endian! 
+
+When the Runnable SPM_ActivityRecordCmd receives the SUM_ARC_Reset command, the function Spm_ClearQueueDID_E0DE_E0DF() is called to clear the DID queues. After clearing, the operation automatically proceeds to save the cleared state to NvM to ensure data consistency and prevent stale data from persisting across power cycles.
+
+.. rubric:: [$DDS_SPM 0637]
+
+**DID 0xE0DE and 0xE0DF Data Serialization**
+
+To serialize the DID 0xE0DE (Locally Activated Activation Profile Off Power Mode Activity Records) and DID 0xE0DF (Remotely Activated Activation Profile Off Power Mode Activity Records) data, SPM uses the ``Runnable_Spm_DID0xE0DE()`` and ``Runnable_Spm_DID0xE0DF()`` functions respectively.
+
+Both functions follow a similar serialization pattern:
+
+| - Service ID (2 bytes): Serialized in big-endian format using bit shifting operations
+| - Profile Number (1 byte): Direct assignment from the queue item
+| - Last Byte IP Requester (1 byte): Only for E0DF, represents the last byte of the IP address of the remote requester
+| - Activity Timer (3 bytes): Converted from ticks to seconds using the formula ``(ActivityTimerInTick * SPM_SM_PERIODICITY_MS) / 1000U``, then split into three bytes (MSB to LSB) in big-endian format
+| - Activation Count (1 byte): Direct assignment from the ActualPowerOffRecords
+
+The serialization process iterates through the maximum queue size (SPM_DID_E0DE_E0DF_QUEUE_SIZE_L) and only processes valid queue items returned by ``Sum_Algo_Deque_GetAt()``. Each field is serialized sequentially into the output buffer using a position counter (serialOpId_pos_u8) that advances based on the field size.
+
+The data buffer is initialized with zeros before population to ensure unused positions contain valid data.
+
+.. rubric:: [$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]
+
+.. rubric:: [$DDS_SPM 0638]
+
+**DID Condition Check Read Functions**
+
+The condition check read functions ``Runnable_Spm_DID0xE0DE_CheckRead()`` and ``Runnable_Spm_DID0xE0DF_CheckRead()`` provide error handling for the diagnostic data identifier read operations. Both functions currently return DCM_POS_RESP indicating successful condition checks, allowing the main DID read operations to proceed.
+
+.. rubric:: [$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]
+
+.. rubric:: [$DDS_SPM 0658]
+
+**WUF Rolling Buffer — Design Concept**
+
+SPM maintains WUF validity using a time-windowed rolling buffer. The buffer is divided into ``SPM_WUF_NUM_SLOTS`` (6) time slots, each representing a ``SPM_WUF_SLOT_PERIOD_MS`` (75 ms) window. A WUF received at the very start of a slot is guaranteed to remain visible for at least 5 further rotations (375 ms) and at most 6 rotations (450 ms) before its slot is discarded.
+
+Within each time slot, received WUF bytes are accumulated by bitwise OR, so multiple WUFs arriving in the same window are merged rather than overwritten.
+
+The buffer is implemented as a ``Sum_Algo_Deque`` of ``Spm_WufSlot_Type`` elements with static backing memory. The deque is kept permanently full at ``SPM_WUF_NUM_SLOTS`` elements:
+
+- **front (index 0)** — oldest slot, the next one to be discarded on rotation.
+- **back (index NUM_SLOTS − 1)** — write slot, where newly received WUFs are OR'd in.
+
+Because the deque is always full, the write slot is at the fixed index ``SPM_WUF_NUM_SLOTS − 1`` and the oldest slot is always at index 0. No dynamic index tracking is required.
+
+.. rubric:: [$Satisfies $SRS_SPM 0046] [$Satisfies $SRS_SPM 0047] [$Satisfies $SRS_SPM 0048]
+
+.. rubric:: [$DDS_SPM 0659]
+
+**WUF Rolling Buffer — Initialization**
+
+``Sum_Spm_WufRollingBuffer_Init()`` initialises all buffer sets and must be called once during SPM startup from ``SPM_PM_Init_WkUpFrame_Period()``.
+
+The helper ``Sum_Spm_InitRollingBuffer()`` calls ``Sum_Algo_UnsortedDeque_Init()`` to bind the deque to its static backing memory, then pre-loads ``SPM_WUF_NUM_SLOTS`` elments of  type ``Spm_WufSlot_Type``, initialized to zero, Using ``Sum_Algo_Deque_PushBack()``. After the initilization the deque contains exactly ``SPM_WUF_NUM_SLOTS`` empty slots and is ready to accept WUF data without any further resize operations.
+
+The shared tick counter ``Spm_WufSlotTickCounter`` is set to ``SPM_WUF_SLOT_TICKS`` (15) and the last-sender identifier ``Spm_WufLastSenderIp`` is cleared to zero.
+
+.. rubric:: [$Satisfies $SRS_SPM 0046] [$Satisfies $SRS_SPM 0047] [$Satisfies $SRS_SPM 0048]
+
+.. _RollingBufferStore:
+
+.. rubric:: [$DDS_SPM 0660]
+
+**WUF Rolling Buffer — Storing a Received WUF**
+
+``Sum_Spm_WufRollingBuffer_StoreWuf()`` OR-accumulates an incoming WUF into the current write slot (deque back, index ``SPM_WUF_NUM_SLOTS − 1``).
+
+The write slot is retrieved by ``Sum_Algo_Deque_GetAt()`` at the fixed index ``SPM_WUF_NUM_SLOTS − 1``, updated in a local copy, and written back via ``Sum_Algo_Deque_SetAt()``. For each of ``Wuf_A``, ``Wuf_B``, and ``Wuf_C``: if the pointer is not ``NULL_PTR``, each byte is bitwise-OR'd into the corresponding field of the local slot copy. ``Wuf_B`` and ``Wuf_C`` may be ``NULL_PTR`` when dealing with CAN type frame (CAN carries only frame A). The last byte of the sender identifier, which could be the last byte of the IP address or the CAN ID, is stored in ``Spm_WufLastSenderIp`` for later retrieval by ``Sum_Spm_WufRollingBuffer_RetrievesWUFInfoForE0D7()``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0046] [$Satisfies $SRS_SPM 0047] [$Satisfies $SRS_SPM 0048]
+
+.. rubric:: [$DDS_SPM 0661]
+
+**WUF Rolling Buffer — Periodic Slot Rotation**
+
+``Sum_Spm_WufRollingBuffer_CheckAndShiftWufSlot()`` performs the timed window rotation and must be called by the periodic runnable ``RE_SPM_PowerManager_MainFunction``.
+
+The function uses a shared 16-bit tick counter ``Spm_WufSlotTickCounter`` to time each 75 ms slot:
+
+1. If ``Spm_WufSlotTickCounter > 0``, it is decremented by one and the function returns.
+2. When the counter reaches zero, a rotation is triggered: for each active buffer, ``Sum_Algo_Deque_PopFront()`` discards the oldest slot and ``Sum_Algo_Deque_PushBack()`` appends a freshly zeroed slot as the new write slot. After rotation, the counter is reset to ``SPM_WUF_SLOT_TICKS`` (15).
+
+.. rubric:: [$Satisfies $SRS_SPM 0046] [$Satisfies $SRS_SPM 0047] [$Satisfies $SRS_SPM 0048]
+
+.. rubric:: [$DDS_SPM 0662]
+
+**WUF Rolling Buffer — Bit Presence Check Across Live Slots**
+
+``Sum_Spm_WufRollingBuffer_IsBitXInWufYSet()`` checks whether a specific bit is set in any currently live slot across the underlying buffer.
+
+The function takes a bit position within the 64-bit WUF frame (0–63) and a frame selector (``SPM_CHK_WKUPFRM_A``, ``_B``, or ``_C``). The bit position is decomposed into a byte index (``bitPositionX >> 3``) and a bit mask (``1 << (bitPositionX & 0x07)``). The function iterates over all ``SPM_WUF_NUM_SLOTS`` slots in ``Spm_WufBuffer``, accumulating the target byte across all slots by bitwise OR. If the resulting aggregate has the requested bit set, the function returns ``TRUE``; otherwise ``FALSE``. An out-of-range bit position returns ``FALSE`` immediately.
+
+The static helper ``Spm_GetFrameByteFromSlot()`` extracts the correct byte from the appropriate frame field (``WufA``, ``WufB``, or ``WufC``) using a switch statement.
+
+.. rubric:: [$Satisfies $SRS_SPM 0046] [$Satisfies $SRS_SPM 0047] [$Satisfies $SRS_SPM 0048]
+
+.. rubric:: [$DDS_SPM 0663]
+
+**WUF Rolling Buffer — Own Wakeup Bit Check and Sender Identification (DID E0D7)**
+
+``Sum_Spm_WufRollingBuffer_RetrievesWUFInfoForE0D7()`` combines two pieces of information needed for DID 0xE0D7:
+
+1. It calls ``Sum_Spm_WufRollingBuffer_IsBitXInWufYSet()`` with the calibratable own-wakeup bit position and frame type read from ``Rte_CData_Spm_Wakeup_Frame_Info()`` to determine whether the ECU's own wakeup bit is asserted in any live slot.
+2. If the ``Ip`` output pointer is not ``NULL_PTR``, it writes the last-sender identifier (``Spm_WufLastSenderIp``, stored by the most recent ``Sum_Spm_WufRollingBuffer_StoreWuf()`` call) into ``*Ip``.
+
+The function returns ``TRUE`` if the own wakeup bit is set in any live slot, ``FALSE`` otherwise.
+
+.. rubric:: [$Satisfies $SRS_SPM 0046] [$Satisfies $SRS_SPM 0047] [$Satisfies $SRS_SPM 0048]
+  
+Variant Handling and Branding
+==============================
+
+The SPM module supports deployments where the same SPM can be configured with different variants at runtime. Each variant carries its own heartbeat network configuration (VLAN, source IP, destination IP) and its own wakeup frame bit/frame assignment. The variant selection process is called **branding**.
+
+Before branding occurs, the SPM is **unbranded** and must handle all configured variants symmetrically (SPM listen only to the received WUF that match any exist variant). Once a valid variant identity is received from the RTE, the SPM is **branded** and operates exclusively with the active variant's configuration.
+
+.. rubric:: [$DDS_SPM 0670]
+
+**Variant Data Structure Initialization**
+
+``Sum_Spm_VariantManagement_DataStructureInit()`` SHALL be called once during SPM startup. It populates the following per-variant arrays from RTE calibration parameters:
+
+* ``TrgHndlInfo_SpmTrgDvc_PerVariant[i]`` — pointer to the wakeup frame handler info (frame type + bit position) for variant ``i``, populated from ``Rte_CData_SPM_TrgHndlInfo_SpmTrgDvc_SpmTrgDvcVariantHndlng_<i>()``.
+* ``Spm_WkupFrameInfo_PerVariant[i]`` — pointer to the wakeup frame info for variant ``i``, populated from ``Rte_CData_Spm_Wakeup_Frame_Info_SpmVariantCfg_<i>()``.
+* ``Spm_NetworkInfo_Wrap_PerVariant[i][j]`` — network (VLAN/IP) configuration for variant ``i``, network interface ``j``, populated from the corresponding ``Rte_CData_SPM_NetworkInfo_*`` calibration parameter.
+
+After this call all per-variant pointers are valid (non-NULL) and the SPM can safely access any variant's configuration without crashing.
+
+.. rubric:: [$Satisfies $SRS_SPM 0277]
+
+.. rubric:: [$DDS_SPM 0671]
+
+**Branding State**
+
+The branding state is held in the private boolean variable ``SPM_IsBranded`` inside ``Sum_Spm_VariantManagement.c``. Two getter/setter functions provide the only access:
+
+* ``Sum_Spm_GetIsBranded()`` — returns ``TRUE`` if the ECU has been successfully branded, ``FALSE`` otherwise.
+* ``Sum_Spm_SetIsBranded(value)`` — sets the branding flag; called internally by the branding flow once a valid variant is confirmed.
+
+The active variant index is stored in ``Spm_ActiveVariantIdx_u8`` (``extern`` in ``Sum_Spm_VariantManagement.h``):
+
+* ``Sum_Spm_SetVariantId(value)`` — sets the active variant index; called internally by the branding flow.
+
+.. rubric:: [$Satisfies $SRS_SPM 0277]
+
+.. rubric:: [$DDS_SPM 0672]
+
+**Branding Flow**
+
+``Sum_Spm_GetVariantId_DataStructurePopulation_WithVariant()`` SHALL be called periodically until the ECU is branded. It implements the following logic:
+
+1. If ``Sum_Spm_GetIsBranded()`` is already ``TRUE``, the function returns immediately — branding is not idempotent.
+2. Call ``Rte_Call_RP_SPM_GetDeviceVariantInfo_setVariant(&variantInfo_u8)`` to read the variant ID from the RTE.
+3. If the RTE call returns ``RTE_E_SWC_GetDeviceVariantInfo_E_OK`` AND ``variantInfo_u8`` is in the range ``(1, SUM_SPM_NUMBER_OF_VARIANTS]``:
+
+   a. Copy ``Spm_NetworkInfo_Wrap_PerVariant[variantInfo_u8 − 1]`` into ``SPM_NetworkInfo_Wrap`` (the active network config).
+   b. Set ``Spm_ActiveWkupFrameInfo_p = Spm_WkupFrameInfo_PerVariant[variantInfo_u8 − 1]``.
+   c. Update ``Spm_PowMgr_TrgDvc_List[0].SpmTrgDevInfo.trgHndl_p`` if ``TrgHndlInfo_SpmTrgDvc_PerVariant[variantInfo_u8 − 1]`` is non-NULL.
+   d. Call ``Sum_Spm_SetVariantId(variantInfo_u8 − 1)`` to record the 0-based active variant index.
+   e. Call ``Sum_Spm_SetIsBranded(TRUE)`` to mark the ECU as branded.
+
+4. If the RTE call does not return ``RTE_E_SWC_GetDeviceVariantInfo_E_OK``, or the variant ID is out of range, the ECU remains unbranded and the function will be retried on the next call.
+
+.. note::
+
+   The variant ID from the RTE is 1-based (``1 .. SUM_SPM_NUMBER_OF_VARIANTS``). The internal index stored in ``Spm_ActiveVariantIdx_u8`` is 0-based (``0 .. SUM_SPM_NUMBER_OF_VARIANTS − 1``).
+
+.. rubric:: [$Satisfies $SRS_SPM 0277]
+
+.. rubric:: [$DDS_SPM 0673]
+
+**Power Manager Main Function — Variant-Aware Execution**
+
+``Runnable_SPM_PowerManager_MainFunction()`` conditions its full execution path on the branding state:
+
+* **Unbranded path**: ``Spm_ExecuteWakeUpFrameActions(TRUE)`` executes unconditionally (see :ref:`BrandedUnbranded`). The branded block (edge-node wake, device FSM, HB transmission, Tx WUF timing) is **skipped**.
+* **Branded path**: After ``Sum_Spm_GetIsBranded()`` returns ``TRUE``, the full power management logic executes: ``Sum_Spm_WkupEdgeNodes()``, ``Spm_PM_Rx_Polling_Handler()``, ``Spm_TrgDvcFSMManager()``, ``Sum_Spm_WakeUpSequence_Handler()``, ``Spm_DevicePowerState()``, ``Spm_PM_HB_Tx_Handler()``, ``Sum_Spm_WkUpTiming_Handler()``.
+
+In both cases ``Sum_Spm_Shutdown_Delay_Timer_Handler()`` is called in order to evaluate whether the Shutdown Delay Timer needs to be started or just decreased in case it was already started.
+
+.. rubric:: [$Satisfies $SRS_SPM 0277]
+
+.. _BrandedUnbranded:
+
+.. rubric:: [$DDS_SPM 0674]
+
+**Own Wakeup Bit Handling — ``Spm_ExecuteWakeUpFrameActions()``**
+
+``Spm_ExecuteWakeUpFrameActions(boolean advanceTimer)`` in ``Sum_Spm_WakeUp.c`` is the single entry point for own-wakeup-bit evaluation. It adds variant awareness:
+
+* **Unbranded**: Iterates over all ``SUM_SPM_NUMBER_OF_VARIANTS`` entries in ``Spm_WkupFrameInfo_PerVariant[]``, calling ``Sum_Spm_WufRollingBuffer_RetrievesWUFInfoForE0D7()`` for each variant. If any variant's bit is set, ``Spm_OwnWakeUpBit`` is set to ``TRUE`` and the loop exits early. This ensures the SPM does not prematurely vote for shutdown before its variant is known if there is incoming wakeup valid frames.
+* **Branded**: Uses only ``Spm_ActiveWkupFrameInfo_p`` (the active variant's frame info) — a single call to ``Sum_Spm_WufRollingBuffer_RetrievesWUFInfoForE0D7()``.
+
+In both cases ``Spm_E0D7_LastRequesterIdHandler()`` is called with the sender's last byte for DID 0xE0D7 RID 0x26 reporting. When ``advanceTimer`` is ``TRUE`` (called from the PM main function), ``Sum_Spm_WufRollingBuffer_CheckAndShiftWufSlot()`` is also invoked to advance the rolling buffer timer.
+
+The function is called from:
+
+* ``Runnable_SPM_PowerManager_MainFunction()`` — with ``advanceTimer = TRUE`` (advances the rolling buffer timer).
+* ``Spm_ETHWkUpFrame_Rx_Polling_Handler()`` and ``Spm_ETHWkUpFrame_Multicast_Rx_Polling_Handler()`` — with ``advanceTimer = FALSE``.
+
+.. rubric:: [$Satisfies $SRS_SPM 0277]
+
+.. rubric:: [$DDS_SPM 0675]
+
+**WUF Rolling Buffer Store — Variant-Aware Own Bit Detection**
+
+``Sum_Spm_WufRollingBuffer_StoreWuf()`` performs own-bit detection against the correct variant configuration after writing the incoming WUF into the rolling buffer:
+
+* **Branded**: Uses ``Spm_ActiveWkupFrameInfo_p`` for a single bit check via ``Spm_IsWakeUpBitSet()``. If asserted, ``Spm_WufSenderLastByte`` is updated.
+* **Unbranded**: Iterates all ``SUM_SPM_NUMBER_OF_VARIANTS`` entries in ``Spm_WkupFrameInfo_PerVariant[]``. The first variant whose bit is asserted triggers the update of ``Spm_WufSenderLastByte`` and exits the loop early.
+
+This ensures the ``Spm_WufSenderLastByte`` value used for DID 0xE0D7 RID 0x26 is always populated correctly regardless of branding state.
+
+.. rubric:: [$Satisfies $SRS_SPM 0277]
+
+**ECUC Paramdef — Variant-Aware Configuration Containers**
+
+The SPM ECUC parameter definition supports the variant handling feature through the following containers:
+
+* ``SpmVariantCfg`` (1..N under ``SpmPgttEntries``) — one instance per hardware variant. Contains ``SpmVariantName``, ``SpmVariantWkupFrame``, ``SpmVariantWkupBit``, and ``SpmVariantIntermediateDstAddr``.
+* ``SpmVariantHBVLANCfg`` (1..N under ``SpmVariantCfg``) — per-VLAN heartbeat network configuration for a variant (mirrors ``SpmWkngDvc`` network params for the no-variant path).
+* ``SpmTrgDvcVariantHndlng`` (0..N under ``SpmTrgDvc``) — per-variant target device handling entry; links to a ``SpmVariantCfg`` via ``SpmTrgDvcVariantRef`` and contains variant-specific wakeup sequence via a nested ``SpmWkUpSeq``/``SpmWkUpStep`` sub-container.
+
+The no-variant configuration path is represented as a single ``SpmVariantCfg`` entry; confgen detects the variant vs. no-variant case by checking whether the PGTT YAML value is a named mapping (dict) or a flat sequence.
+
+
+Source IP and VLAN Handling
+==============================
+
+SPM needs to manage multiple network interfaces with different source IPs and VLAN configurations. 
+As said above, SPM defines the ``SpmVariantHBVlanCfg`` container to hold the VLAN ID and source IP address for each variant that are populated by confgen based on the PGTT YAML configuration, 'Heartbeat Multicast IP Address Information' section. 
+In the 'Heartbeat Multicast IP Address Information' section, are listed ONLY the VLANs and the corresponding source IP address that SPM needs to use to transmit the heartbeat messages.
+So, for the VLAN not configured in the ``SpmVariantHBVlanCfg``, the SPM retrieve from the TcpIp module, at generation time, the source IP address for use for that VLAN 
+and store them in the ``Spm_NetworkInfo_VLANId_(SpmVLANId)`` structure, that will be stored in the ``Spm_NetworkInfo_Wrap_PerVariant`` array.
+
+.. warning::
+  The SPM retrieves from TcpIp module IF AND ONLY IF there is ONLY ONE SpmVariantCfg configured. 
+  If there are multiple variants configured, this retrieve at configuration time will not be performed. 

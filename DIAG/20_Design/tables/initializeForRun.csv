@@ -1,0 +1,5 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};initializeForRun
+\cellcolor{ETASlightgray}\textbf{Parameters};void
+\cellcolor{ETASlightgray}\textbf{Return};void
+\cellcolor{ETASlightgray}\textbf{Description};Initializes output ports, tester address, variables after permit execution has been received.

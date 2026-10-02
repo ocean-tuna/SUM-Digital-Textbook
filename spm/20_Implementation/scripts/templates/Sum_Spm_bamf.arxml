@@ -1,0 +1,787 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00051.xsd">
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>BuildActionManifests</SHORT-NAME>
+      <ELEMENTS>
+        <BUILD-ACTION-MANIFEST>
+          <SHORT-NAME>Sum_Spm_Manifest</SHORT-NAME>
+          <BUILD-ACTIONS>
+            <BUILD-ACTION>
+              <SHORT-NAME>Sum_Spm_Validate</SHORT-NAME>
+              <CATEGORY>VALIDATOR</CATEGORY>
+              <INVOCATION>
+                <SDGS>
+                  <SDG>
+                    <SD GID="STOP_ON_ERROR">true</SD>
+                  </SDG>
+                </SDGS>
+              </INVOCATION>
+              <INPUT-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">PROCESSOR</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>CONFWF</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Validate</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>oaw</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Spm/EcucModuleDefs/Spm</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+              </INPUT-DATAS>
+              <REQUIRED-ENVIRONMENT-REF DEST="BUILD-ACTION-ENVIRONMENT">/RB_Manifest/com_bosch_configfw_bfwaction_oaw</REQUIRED-ENVIRONMENT-REF>
+            </BUILD-ACTION>
+            <BUILD-ACTION>
+              <SHORT-NAME>Sum_Spm_Generate</SHORT-NAME>
+              <CATEGORY>GENERATOR</CATEGORY>
+              <INVOCATION>
+                <SDGS>
+                  <SDG>
+                    <SD GID="VARIANT">1</SD>
+                    <SD GID="ACTION_ATTRIBUTE_singleExecutable">true</SD>
+                    <SD GID="STOP_ON_ERROR">true</SD>
+                  </SDG>
+                </SDGS>
+              </INVOCATION>
+              <PREDECESSOR-ACTION-REFS>
+                <PREDECESSOR-ACTION-REF DEST="BUILD-ACTION">/BuildActionManifests/Sum_Spm_Manifest/Sum_Spm_Validate</PREDECESSOR-ACTION-REF>
+              </PREDECESSOR-ACTION-REFS>
+              <CREATED-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Cfg_CDD</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>arxml</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_SpmTypes</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Cfg</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Cfg</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_WakeUpHelper</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_PBCfg</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_PBCfg</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_SoftwMgr</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_SoftwMgr</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_PowerProfileStateMachine</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_RequesterLst</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_RequesterLst</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_WakeUp</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_WakeUp</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_SrvcMgrIf</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_MetaData</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_SrvcMgrIf</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_VariantManagement</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_VariantManagement</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_PwrMgr</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_PwrMgr</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Services</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Services</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Diagnostic</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Diagnostic</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_ErrorHandler</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_ErrorHandler</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_PowerOnDevice</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_PowerOnDevice</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_SM_Req_EthIf</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_SM_Req_EthIf</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Request_Queue</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Request_Queue</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_DevicePowerState</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_DevicePowerState</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_HeartBeat_Mgr</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_HeartBeat_Mgr</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Request_Queue</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Request_Queue</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_MetaData</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Cbk</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_MetaData</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Cbk</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Interaction_VehicleEnergyOptimizer</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Interaction_VehicleEnergyOptimizer</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+              </CREATED-DATAS>
+              <INPUT-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">PROCESSOR</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>CONFWF</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>Sum_Spm_Generate</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>oaw</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Spm/EcucModuleDefs/Spm</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+              </INPUT-DATAS>
+              <REQUIRED-ENVIRONMENT-REF DEST="BUILD-ACTION-ENVIRONMENT">/RB_Manifest/com_bosch_configfw_bfwaction_oaw</REQUIRED-ENVIRONMENT-REF>
+            </BUILD-ACTION>
+          </BUILD-ACTIONS>
+        </BUILD-ACTION-MANIFEST>
+      </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>
+

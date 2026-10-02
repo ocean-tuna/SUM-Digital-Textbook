@@ -1,0 +1,32 @@
+4;3;8;3;3;6
+\textbf{DID Name};\textbf{ID};\textbf{Range};\textbf{Access};\textbf{Default Value};\textbf{Description}
+Power Moding State;0xF085;"0x00: OFF
+
+0x01: ACCESSORY
+
+0x02: RUN
+
+0x03: STARTREQUEST
+
+0x04: PROPULSION
+
+0x05: TRANSPORT";Read;0x00: OFF;Value of the current ECU Power Mode.
+ECU Operating State;0xF086;"0x00: Initialization
+
+0x01: Run
+
+0x02: Sleep
+
+0x03: Reset
+
+0x04: Reset to Boot
+
+0x05: Off";Read;0x00: Initialization;Value of the current ECU status.
+Battery Voltage;project specific;3V - 25V;Read;12V;The battery voltage at the ECU connector with a resolution of 1V.
+Wakeup Source Reason;project specific;N/A;Read;N/A;The original wakeup source(s) which caused the current ECU Operating State to become Run (retained only for current Run cycle)
+Active Wakeup Source(s);project specific;N/A;Read;N/A;The current status of all ECU Wakeups
+Vehicle Power Mode Invalidity;0xF095;"0x00: False 
+0x001: True";Read;0x00: False;Value of the current ECU Power Mode Invalidity.
+ECU Wakeup Detection Records;0xF09E;N/A;Read;All 0x00;This DID contains 10 records (100 bytes total\, 10 bytes per record) of the ECU internal wakeup sources.
+Application Shutdown Prohibit Status;0xF089;"0x00: False
+0x01: True";Read;0x00: False; This DID contains the current internal value of the permission for the ECU to shutdown.It indicates whether or not the ECU is allowed to shut down.

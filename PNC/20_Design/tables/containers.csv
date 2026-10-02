@@ -1,0 +1,4 @@
+3;2;7
+Container Name;Multiplicity;Scope/Description
+PNCConfigSet;1..1;This Container shall describe multiple configuration sets of PNC. This container and its sub container exist once per configuration set.
+PNCGeneral;1..1;This container shall define all the general configuration parameter of PNC module.

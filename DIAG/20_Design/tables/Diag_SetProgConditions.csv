@@ -1,0 +1,5 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};Diag_SetProgConditions
+\cellcolor{ETASlightgray}\textbf{Parameters};Dcm_ProgConditionsType (pointer to the structure)
+\cellcolor{ETASlightgray}\textbf{Return};Std_ReturnType (E_OK)
+\cellcolor{ETASlightgray}\textbf{Description};Function to store Tester Address in NvM and to be included in the Dcm callout and update the value of the initialreflashflag to True.

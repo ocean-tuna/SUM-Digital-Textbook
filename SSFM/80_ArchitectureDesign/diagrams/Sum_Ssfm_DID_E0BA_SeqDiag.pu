@@ -1,0 +1,59 @@
+@startuml Sum_Ssfm_DID_E0BA_SeqDiag
+
+control Scheduler as TE
+participant RTE as R
+
+participant Dcm as DCM
+participant RTE as R
+box SUM_SSFM
+    participant Sum_Ssfm_DID_E0BA_Handler as E0BA
+    participant Sum_Ssfm_ContOpStatus_Manager as CONT
+    participant Sum_Ssfm_ProtStatus_Manager as PROT
+    participant NvM as NVM
+end box
+
+par
+    DCM -> E0BA: Requests DID E0BA information (Runnable_SSFM_DID_E0BA)
+    note right: Returns 96-byte buffer with up to 16 message entries\ncontaining Message ID, FOI count, and FPI count
+else
+    alt Signal Protection Failure indicated
+        PROT -> E0BA: Update_Message_Protection(SerialData)
+        note right: Updates FPI counter and manages priority-based sorting
+        E0BA -> E0BA: Check if message exists in deque
+        alt Message exists
+            E0BA -> E0BA: Update existing entry counters
+            E0BA -> E0BA: Reposition entry based on new total count
+        else Message not in list
+            alt Deque has space
+                E0BA -> E0BA: Add new entry to deque
+            else Deque is full
+                E0BA -> E0BA: Compare with lowest priority entry
+                alt New entry has higher priority
+                    E0BA -> E0BA: Replace lowest priority entry
+                else
+                    E0BA -> E0BA: Reject new entry
+                end
+            end
+        end
+        E0BA -> E0BA: Synchronize RAM block with updated deque
+    else Continuous Operation Failure indicated
+        CONT -> E0BA: Update_Message_Protection(SerialData)
+        note right: Updates FOI counter and manages priority-based sorting
+        E0BA -> E0BA: Apply same logic as FPI but for FOI counter
+    end
+end
+
+par
+    note over E0BA: Lifecycle Management
+    E0BA -> NVM: SaveData() during shutdown
+    note right: Persists current state to non-volatile memory
+else
+    NVM -> E0BA: RestoreData() at startup
+    note right: Restores previous state from NvM and rebuilds deque
+else
+    DCM -> E0BA: Clear DTC (UDS 0x14)
+    E0BA -> E0BA: ResetData()
+    note right: Clears all counters and message entries
+end
+
+@enduml

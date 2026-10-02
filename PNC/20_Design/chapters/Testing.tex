@@ -1,0 +1,107 @@
+\chapter{Testing}
+\label{sec:Testing}
+\section{Interface Testing}
+\label{sec:InterfaceTestingSec}
+This section shall describe all ports connected to other RTA-SUMs in detail.
+\\
+\subsubsection{\textit{Port Interface : PNC_ActiveTxPDUEnable}}
+
+\RequirementTag{SDD_PNC}{107}
+\begin{itemize}
+	\item The port PP_Active_TxPDU_Enable_ComMPnc_Propulsion is connected to the SUM_SSC, SUM_SOH, and SUM_SSFM-ERRH. The port will send
+    notification from SUM_PNC that TxPDU of ComMPnc_Propulsion has started or stopped.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+
+\RequirementTag{SDD_PNC}{108}
+\begin{itemize}
+	\item The port PP_Active_TxPDU_Enable_ComMPnc_ShortDurationEvent is connected to the SUM_SSC, SUM_SOH, and SUM_SSFM-ERRH. The port will send
+    notification from SUM_PNC that TxPDU of ComMPnc_ShortDurationEvent has started or stopped.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+\\
+\subsubsection{\textit{Port Interface : PNC_ActiveRxPDUEnable}}
+
+\RequirementTag{SDD_PNC}{109}
+\begin{itemize}
+	\item The port PP_Active_RxPDU_Enable_ComMPnc_Propulsion is connected to the SUM_SSFM-SSM. The port will send
+    notification from SUM_PNC that RxPDU of ComMPnc_Propulsion has started or stopped.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+
+\RequirementTag{SDD_PNC}{110}
+\begin{itemize}
+	\item The port PP_Active_RxPDU_Enable_ComMPnc_ShortDurationEvent is connected to the SUM_SSFM-SSM. The port will send
+    notification from SUM_PNC that RxPDU of ComMPnc_ShortDurationEvent has started or stopped.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+\\
+\\
+\subsubsection{\textit{Port Interface : PN_DTC_Allowed}}
+
+\RequirementTag{SDD_PNC}{111}
+\begin{itemize}
+	\item The port PP_PNC_PN_DTC_Allowed_ComMPnc_Propulsion is connected to the SUM_SSC, SUM_SSFM-ERRH and SUM_SSFM-ERRH. The port will send
+    notification from SUM_PNC that allow or block DTCs for ComMPnc_Propulsion.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+
+\RequirementTag{SDD_PNC}{112}
+\begin{itemize}
+	\item The port PP_PNC_PN_DTC_Allowed_ComMPnc_ShortDurationEvent is connected to the SUM_SSC, SUM_SSFM-ERRH and SUM_SSFM-ERRH. The port will send
+    notification from SUM_PNC that allow or block DTCs for ComMPnc_ShortDurationEvent.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+\\
+\subsubsection{\textit{Port Interface : PNC_ShutdownPermission}}
+
+\RequirementTag{SDD_PNC}{113}
+\begin{itemize}
+	\item The port PP_ShutdownPermission is connected to the SUM_SUSD. The port will request to SUM_SUSD for shutdown permission of partial network.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+\\
+\subsubsection{\textit{Port Interface : SUSD_PermitExecution}}
+\RequirementTag{SDD_PNC}{114}
+\begin{itemize}
+	\item The port RP_PermitExecution is connected to the SUM_SUSD. The port will receive notification from SUM_SUSD whether to shutdown a partial network or not.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+\\
+\subsubsection{\textit{Port Interface : DIAG_DisableNormalComm}}
+
+\RequirementTag{SDD_PNC}{115}
+\begin{itemize}
+	\item The port RP_DIAG_DisableNormalComm_Ch0 is connected to the SUM_DIAG. The port will receive notification from SUM_DIAG about the status
+    of diagnostics enabling or disabling of normal communications for channel 0.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+
+
+
+\RequirementTag{SDD_PNC}{116}
+\begin{itemize}
+	\item The port RP_DIAG_DisableNormalComm_Ch3 is connected to the SUM_DIAG. The port will receive notification from SUM_DIAG about the status
+    of diagnostics enabling or disabling of normal communications for channel 3.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+\\
+\subsubsection{\textit{Port Interface : Sum_C_Disable_Tx}}
+
+\RequirementTag{SDD_PNC}{117}
+\begin{itemize}
+	\item The port RP_PNC_C_Disable_Tx_IP_SrlDat100_Tx_Prtctd_PDU_E2E_Interdomain_PhysicalChannel_ETH_Tx is connected to the SUM_SSFM. The port will receive notification from SUM_SSFM about the status of the IP_SrlDat100_Tx_Prtctd_PDU_E2E_Interdomain_PhysicalChannel_ETH_Tx PDU regarding whether disable PDU or not. If response is PDU disable, BswM will invoke to disable PDU.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+
+\RequirementTag{SDD_PNC}{118}
+\begin{itemize}
+	\item The port RP_PNC_C_Disable_Tx_IP_HstVehPathParms_Prtctd_PDU_Interdomain_PhysicalChannel_ETH_Tx is connected to the SUM_SSFM. The port will receive notification from SUM_SSFM about the status of the IP_HstVehPathParms_Prtctd_PDU_Interdomain_PhysicalChannel_ETH_Txs PDU regarding whether disable PDU or not. If response is PDU disable, BswM will invoke to disable PDU.
+\end{itemize}
+\Satisfies{SRS_PNC 104}
+
+\RequirementTag{SDD_PNC}{119}
+\begin{itemize}
+	\item The port RP_PNC_C_Disable_Tx_IP_HstVehPathParms_Prtctd_PDU_SecOC_Interdomain_PhysicalChannel_ETH_Tx is connected to the SUM_SSFM. The port will receive notification from SUM_SSFM about the status of the IP_HstVehPathParms_Prtctd_PDU_SecOC_Interdomain_PhysicalChannel_ETH_Tx PDU regarding whether disable PDU or not. If response is PDU disable, BswM will invoke to disable PDU.
+\end{itemize}
+\Satisfies{SRS_PNC 104}

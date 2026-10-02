@@ -1,0 +1,260 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_PBCfg.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for Spm Post-Build configuration datas
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+
+/*-----------------------------------------------------------------------------
+ *    Include files
+ *----------------------------------------------------------------------------*/
+
+#include "Sum_Spm_PBCfg.h"
+#include "Sum_Spm_PwrMgr.h"
+
+static void Sum_Spm_SetAsRequester(const uint8 Sum_Spm_IndexInTheConfArray);
+
+/* PRQA S 1532 EOF # The functions are defined here for modularity reason. */
+/* PRQA S 3469 EOF # Macros are used to access PGTT's field. */
+#define BIT_REQUESTED            (1u)
+#define BIT_REQUESTER            (1u << 1u)
+/**
+ * @brief BEGIN: DEFINITION OF SubStruct VARIABLE 'SPM_PrfStsMgr_RAM'
+ *
+ */
+struct SpmPowerProfileStateMachine_RAM_SubStruct SPM_PrfStsMgr_RAM[«spm.spmConfigSet.spmPowPrf.size-»] = {
+«FOREACH spm.spmConfigSet.spmPowPrf.sortBy(e|e.spmSrvcAndInstID * 256 + e.spmProfNumber) AS pp  ITERATOR pos SEPARATOR "\t,\n" -»
+   /* substruct: spmPrfStsMgr_SPM_PrfStsMgr_RAM.powPrf_«pp.shortName»_rw (modeled as:'powPrfStsMgrs.spmPrfStsMgr_SPM_PrfStsMgr') */
+   {
+		/* struct element:'spmPrfStsMgr_SPM_PrfStsMgr_RAM.powPrf_«pp.shortName»_rw.spmPrfStsMgrInstCode' (modeled as:'spmPrfStsMgrInstCode.powPrfStsMgrs.spmPrfStsMgr_SPM_PrfStsMgr') */
+		«pos.counter0»U,
+		/* struct element:'spmPrfStsMgr_SPM_PrfStsMgr_RAM.powPrf_«pp.shortName»_rw.evnt' (modeled as:'evnt.powPrfStsMgrs.spmPrfStsMgr_SPM_PrfStsMgr') */
+		Spm_PrfMgr_evNoRequestActive,
+		/* Spm_RemotePowProf_Activation_Step */
+		0u,
+		/* TrgDvcIp */
+		0U,
+		/* struct element:'spmPrfStsMgr_SPM_PrfStsMgr_RAM.powPrfStsMgrs.CommandSend' (modeled as:'sm.powPrfStsMgrs.spmPrfStsMgr_SPM_PrfStsMgr') */
+		0u,
+		/* struct element:'spmPrfStsMgr_SPM_PrfStsMgr_RAM.powPrfStsMgrs.sm' (modeled as:'sm.powPrfStsMgrs.spmPrfStsMgr_SPM_PrfStsMgr') */
+		0U,
+		/* isStateProfileChanged */
+		FALSE,
+		/* TimeOutVehOff_tickTracker*/
+		0u,
+		/* Rejection */
+		{ -1, FALSE },
+		/* Spm_RemotePowProf_ActDeactRetry_OngoingTrackerInTicks */
+		0u,
+		/* Spm_RemotePowProf_ActDeactRetry_StoredPeriodicityInTicks */
+		0u,
+		/* substruct: spmPrfStsMgr_SPM_PrfStsMgr_RAM.powPrf_«pp.shortName»_rw.reqLst (modeled as:'reqLst.powPrfStsMgrs.spmPrfStsMgr_SPM_PrfStsMgr') */
+		{
+		 /* [$Satisfies $DDS_SPM 0029] */
+         /* struct element:'spmPrfStsMgr_SPM_PrfStsMgr_RAM.powPrf_«pp.shortName»_rw.reqLst.spmReqLst' (modeled as:'spmReqLst.reqLst.powPrfStsMgrs.spmPrfStsMgr_SPM_PrfStsMgr') */
+		 	{
+«REM» We can assume that at least one TrgDvc is present in the PGTT, otherwise the SPM is not needed to be used.«ENDREM»
+«FOREACH 0.upTo(spm.spmConfigSet.spmPgttEntries.spmTrgDvc.size) AS bid -»
+				{ 0U, SPM_NULL_REQ, SPM_NO_FEEDBACK_NEEDED },
+«ENDFOREACH-»
+		 	},
+         /* struct element:'spmPrfStsMgr_SPM_PrfStsMgr_RAM.powPrf_«pp.shortName»_rw.reqLst.size' (modeled as:'last.reqLst.powPrfStsMgrs.spmPrfStsMgr_SPM_PrfStsMgr') */
+         	0U
+      	}
+«LET spm.spmConfigSet.spmPowPrf AS pp-»
+«IF pp.spmComIPduGroupEvnt_Tx.size > 0 || pp.spmComIPduGroupEvnt_Rx.size > 0-»
+		,Spm_Pdu_No_Action
+«ENDIF-»
+«ENDLET-»
+   }
+«ENDFOREACH-»
+};
+
+struct Spm_PowMgr_TrgDvc_Type Spm_PowMgr_TrgDvc_List[] =
+{
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc.sortBy(e | Spm_ComputeIpAddr(e.spmTrgDvcID.first())) AS trgDvc ITERATOR i »
+   {
+	   /* ................................................................... IndexColumnInPgtt = */
+	   0u,
+	   /* ......................................................................... WkUpSeqTypeInfo = */
+	   {0u, 0u, Spm_No_PowerOn_Retry_Ongoing, 0u, 0u, Spm_PowerSeq_None},
+	   /* ...................................................................... MonitoringType = */
+	   /* [$Satisfies $DDS_SPM 0201] *//* [$Satisfies $DDS_SPM 0402] *//* [$Satisfies $DDS_SPM 0207] *//* [$Satisfies $DDS_SPM 0303] *//* [$Satisfies $DDS_SPM 0304] */
+	   {FALSE, 0, SPM_Off, 0u, 0u, 0u},
+	   /* ......................................................................... SpmTrgDvcHndlngType (trgHndl_p,TargetDevicerequestedByRemote) = */
+	   {NULL_PTR,FALSE}
+   },
+«ENDFOREACH»
+};
+
+/******************************************************************************
+ * BEGIN: FUNCTIONS OF COMPONENT
+ ******************************************************************************/
+
+/**
+ * @brief Performs a binary search to find an IP address within the target device list.
+ *
+ * This function searches for a given IP address in the 'Spm_PowMgr_TrgDvc_List' array using a binary search algorithm.
+ * It returns the index of the element containing the target IP address if found, or a value indicating that the IP
+ * address is invalid if not found.
+ *
+ * @param[in] Sum_Spm_IpAddressTarget The target IP address to search for in the list.
+ *
+ * @return The index of the target IP address in the list if found; otherwise, SPM_INVALID.
+ *
+ * @note The function assumes that the 'Spm_PowMgr_TrgDvc_List' array is sorted by IP addresses.
+ * @note 'SPM_INVALID' is a constant that should be defined elsewhere, indicating an invalid index.
+ *
+ * The binary search algorithm repeatedly divides the search interval in half. If the value of the search key is less than
+ * the item in the middle of the interval, it narrows the interval to the lower half. Otherwise, it narrows it to the upper half.
+ * The search process repeats until the target IP address is found or the interval is empty.
+ */
+/* [$Satisfies $DDS_SPM 0018] *//* [$Satisfies $DDS_SPM 0418] */
+sint16 Spm_GetIndexTrgDvcFromIP(const uint32 Sum_Spm_IpAddressTarget)
+{
+    sint16 ret_value = SPM_INVALID;
+	uint8 indexTrgDvc;
+	uint8 indexTrgDvcIPAssociated;
+
+	/** Iterate over all the TrgDvc configured. */
+    for(indexTrgDvc = 0U; indexTrgDvc < SPM_NUM_OF_PG_OUT_EDGE; indexTrgDvc++){
+
+        /** Iterate over all the IP associated to this TrgDvc. */
+        for(indexTrgDvcIPAssociated = 0u; indexTrgDvcIPAssociated < SPM_GET_PGTT_INST_NUMBER_IP_ASSOCIATED(indexTrgDvc); indexTrgDvcIPAssociated++){
+
+           if(SPM_GET_PGTT_INST_TRGDVCIP(indexTrgDvc, indexTrgDvcIPAssociated) == Sum_Spm_IpAddressTarget){
+				ret_value = (sint16)indexTrgDvc;
+				break;
+		   }
+        }
+    }
+
+    return ret_value;
+}
+
+SpmDevicePowerStateCode Spm_GetTrgDvcState(const uint8 Sum_Spm_Index){
+	return Spm_PowMgr_TrgDvc_List[Sum_Spm_Index].MonitoringTypeInfo.StateOfTrgDvc;
+}
+
+uint32 Sum_Spm_GetPreviousHBval(const uint8 Sum_Spm_IndexInTheConfArray){
+	return Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.PreviousHB;
+}
+
+void Sum_Spm_SetPreviousHBval(const uint8 Sum_Spm_IndexInTheConfArray, const uint32 Sum_Spm_HBReceived){
+	Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.PreviousHB = Sum_Spm_HBReceived;
+}
+
+uint32 Sum_Spm_GetPenultimateHBval(const uint8 Sum_Spm_IndexInTheConfArray){
+	return Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.PenultimateHB;
+}
+
+void Sum_Spm_SetPenultimateHBval(const uint8 Sum_Spm_IndexInTheConfArray, const uint32 Sum_Spm_HBReceived){
+	Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.PenultimateHB = Sum_Spm_HBReceived;
+}
+
+void Sum_Spm_SetStateHBRemote(const uint8 Sum_Spm_IndexInTheConfArray, const  boolean WkUpSeqHBState){
+	Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.WkUpSeqHBState = WkUpSeqHBState;
+}
+/* Monitor Device Functionality: for target device REQUESTED or REQUESTER
+ Role: bit 0 for REQUESTED, bit 1 for REQUESTER */
+/* Set the Target device as Requested */
+void Sum_Spm_SetAsRequested(const uint8 Sum_Spm_IndexInTheConfArray){
+	Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.isMonitoringActive |= BIT_REQUESTED; 
+}
+/* Check if the Target device is Requested */
+boolean Sum_Spm_IsRequested(const uint8 Sum_Spm_IndexInTheConfArray){
+	return (Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.isMonitoringActive & BIT_REQUESTED) !=0u;
+}
+/* Reset the Requested role bit */
+void Sum_Spm_ResetAsRequested(const uint8 Sum_Spm_IndexInTheConfArray){
+	Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.isMonitoringActive &= ~BIT_REQUESTED;
+}
+/* Set the Target device as Requester */
+static void Sum_Spm_SetAsRequester(const uint8 Sum_Spm_IndexInTheConfArray){
+	Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.isMonitoringActive |= BIT_REQUESTER;
+}
+/* Check if the Target device is a Requester */
+boolean Sum_Spm_IsRequester(const uint8 Sum_Spm_IndexInTheConfArray){
+	return (Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.isMonitoringActive & BIT_REQUESTER) !=0u;
+}
+/* Reset the Requester role bit */
+void Sum_Spm_ResetAsRequester(const uint8 Sum_Spm_IndexInTheConfArray){
+	Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].MonitoringTypeInfo.isMonitoringActive &= ~BIT_REQUESTER;
+}
+
+/**
+ * @brief Sets the remote device as a requester if it is not already registered.
+ *
+ * This function checks whether the valid remote device is already present as a requester.
+ * If not, it sets the requester bit (1) for the remote device.
+ *
+ * @param[in] SrcIPRequester  The IP address of the remote requester device.
+ */
+void Spm_SetRemoteDeviceAsRequester(const uint32 SrcIPRequester){
+    sint16 indexTargetDvc;
+
+    indexTargetDvc = Spm_GetIndexTrgDvcFromIP(SrcIPRequester);
+
+    /* Check whether the valid remote device is already present as a requester. If not, set the bit 1 to 1. */
+    if(indexTargetDvc != SPM_INVALID){
+        if(Sum_Spm_IsRequester((uint8)indexTargetDvc) == FALSE){
+            /* [$Satisfies $DDS_SPM 0020] */
+            Sum_Spm_SetAsRequester((uint8)indexTargetDvc);
+        }
+    }
+}
+
+/**
+ * @brief Checks if a target device is requested to be powered on.
+ *
+ * This function checks whether the target device at the specified index has been
+ * requested to be in the on state by verifying the requested status bit.
+ *
+ * @param[in] Sum_Spm_IndexInTheConfArray  Index of the target device in the configuration array.
+ *
+ * @return TRUE if the target device is requested to be on; FALSE otherwise.
+ */
+boolean Spm_IsTrgDvcRequestedToBeOn(const uint8 Sum_Spm_IndexInTheConfArray){
+	return ((Sum_Spm_IsRequested(Sum_Spm_IndexInTheConfArray)) || (Spm_PowMgr_TrgDvc_List[Sum_Spm_IndexInTheConfArray].SpmTrgDevInfo.TargetDevicerequestedByRemote == TRUE));
+}
+
+/* ****************************************************************************
+ * END: FUNCTIONS OF COMPONENT
+ ******************************************************************************/
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

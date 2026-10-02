@@ -1,0 +1,68 @@
+\chapter{Calibration Controller}
+\label{CalContr}
+
+This chapter provides guidelines about the usage of the APIs configured in the Calibration Controller.
+
+\section{Initialization}
+Please remember to connect the client-server interface SrvcMgr\_CalibrationController to properly allow the calibration of the services and service groups.
+
+\section{Runnable\_SrvcMgr\_DisableService}
+SUM\_SrvcMgr implements the Runnable\_SrvcMgr\_DisableService that will be called through the C/S interface SrvcMgr\_ServiceCalibrationOff (operation SrvcMgr\_DisableService) 
+by the SWCs to change the state (disable) of services through SD APIs.
+
+This Runnable take as input parameter the ID value of the Service that the user want to disable. 
+
+Please, take into account that ID refer to the SdClientServiceId or SdServerServiceId specified in the container Sd/SdConfig/SdInstance/SdClientService for a Client Service or 
+Sd/SdConfig/SdInstance/SdServerService for a Service Service. The Runnable Runnable\_SrvcMgr\_DisableService understand by itself if the ID received correspond to a Client or Server Service.
+
+This Runnable will change the status of a Service through SD APIs:
+
+\begin{itemize}
+\item Call to Sd\_ServerServiceSetState()/Sd\_ClientServiceSetState();
+\item Call to Sd\_CalibrateServicesOff();
+\end{itemize}
+
+The Runnable\_SrvcMgr\_DisableService return the following value: 
+\begin{itemize}
+\item E\_OK: if the Service is properly disabled.
+\item E\_NOT\_OK: if the Service is NOT properly disabled for the following reason:
+\begin{itemize}
+\item The Service ID is not configured in the SD container; 
+\item One of the SD APIs called return E\_NOT\_OK;
+\end{itemize}
+\end{itemize}
+
+Please, refer to the SD module specification in order to understand the meaning of possible E\_NOT\_OK received by the SD APIs. 
+The user SHALL connect the port PP\_SrvcMgr\_ServiceCalibrationOff to their SWC and configure the call in synchronous way in order to trigger this Runnable properly.
+
+\section{Runnable\_SrvcMgr\_DisableServiceGroup}
+SUM\_SrvcMgr implements the Runnable\_SrvcMgr\_DisableServiceGroup that will be called through the C/S interface SrvcMgr\_ServiceCalibrationOff (operation SrvcMgr\_DisableServiceGroup) 
+by the SWCs to change the state (disable) of services group through SD APIs.
+
+This Runnable takes, as an input parameter, the ID value of the Group Service that the user wants to disable. 
+
+Please, take into account that ID refer to the SdServiceGroupHandleId specified in the container Sd/SdConfig/SdServiceGroup.
+
+This Runnable will change the status of a Group Service through SD APIs:
+
+\begin{itemize}
+\item Call to Sd\_ServiceGroupStop();
+\item Call to Sd\_CalibrateServicesOff();
+\end{itemize}
+
+The Runnable\_SrvcMgr\_DisableServiceGroup return the following value: 
+\begin{itemize}
+\item E\_OK: The Service Group is properly disabled.
+\item E\_NOT\_OK: if the Service Group is NOT properly disabled for the following reason:
+\begin{itemize}
+\item There is no Service Group configured in the SD container; 
+\item The Service Group ID is not configured in the SD container; 
+\item The Service Group does not have at least one service associated; 
+\item The API Sd\_CalibrateServicesOff() returns E\_NOT\_OK;
+\end{itemize}
+\end{itemize}
+
+Please, refer to the SD module specification in order to understand the meaning of possible E\_NOT\_OK received by the SD API.\\
+The user SHALL connect the port PP\_SrvcMgr\_ServiceCalibrationOff to their SWC and configure the call in synchronous way in order to trigger this Runnable properly.\\
+Moreover, the integrator SHOULD follow the normal workflow about the generation: firstly generate the BSW and then the SrvcMgr. This is necessary since the Sd/SdConfig/SdServiceGroup/SdServiceGroupHandleId parameter
+is a forwarded value: the integrator SHALL not put a value there because it is already done during the BSW generation by itself. 

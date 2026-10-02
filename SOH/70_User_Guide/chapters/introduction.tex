@@ -1,0 +1,43 @@
+\chapter{Introduction}
+This document is intended to describe the main steps required for the integration and configuration
+of RTA-SUM SOH module. 
+\ifnum \DocumentGroup=1{
+RTA-SUM SOH is part of the RTA-SUM product.  General guidelines on the common steps and workflow for RTA-SUM integration can be found in RTA-SUM Getting Started Guide.
+}
+\else{
+%Do not add anything related Getting Started Guide.
+}
+\fi
+
+\section{Definitions and Abbreviations}
+\label{sec:Definitions}
+\input{generated/tables/definitions.tex}
+
+\section{Module Overview}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\textwidth]{images/layers}
+	\caption{Layers}
+	\label{fig:Layers}
+\end{figure}
+
+The SUM\_SOH is a software module in the application layer of the standardized architecture of AUTOSAR.
+
+SUM\_SOH implements the following functionalities:
+
+\begin{itemize}
+	\item Reset reliability monitor.
+	\item Memory Status reliability monitor.
+	\item Platform reliability monitor.
+	\item Communication reliability monitor.
+	\item Watchdog Manager reliability monitor.
+	\item Provide monitored events data via DIDs 0xF08F to 0xF093 (DID 0xF094 is implemented by ERRH).
+	\item Clear monitored events logs via RID.
+\end{itemize}
+
+\section{References}
+\input{generated/tables/references.tex}
+
+\section{User Guide Revision History}
+\input{generated/tables/rev_history.tex}

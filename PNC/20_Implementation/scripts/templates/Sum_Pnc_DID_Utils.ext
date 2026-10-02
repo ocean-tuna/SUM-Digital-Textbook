@@ -1,0 +1,59 @@
+import bsw;
+import bsw::PNCModule;
+
+extension templates::mathlib;
+extension org::eclipse::xtend::util::stdlib::elementprops;
+extension org::eclipse::xtend::util::stdlib::io;
+extension org::eclipse::xtend::util::stdlib::counter;
+extension org::eclipse::xtend::util::stdlib::cloning;
+
+
+////////////////////////////// F08B //////////////////////////////
+// Returns True if the DID_F08B is configured in Dcm
+Boolean Pnc_DID_F08B_IsConfigured(PNC cfg):
+    
+    cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.exists(e|e.dcmDspDidIdentifier == 61579) == true // 0xF08B
+;
+
+// Returns the short name of the configured DID_F08B data type in the Dcm
+String Pnc_DID_F08B_Data_ShortName(PNC cfg):
+    if Pnc_DID_F08B_IsConfigured(cfg) then (
+        cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid
+        .select(e|e.dcmDspDidIdentifier == 61579).first() // 0xF08B
+        .dcmDspDidSignal.dcmDspDidDataRef.shortName.first()
+    )
+    else (
+        if cfg.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Sensors.exists(e| e > 0) ||
+           cfg.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Signals.exists(e| e > 0) then (
+            throwError("DID_F08B is not configured in Dcm.")
+        )
+        else (
+            null
+        )
+    )
+;
+
+
+////////////////////////////// F08D //////////////////////////////
+// Returns True if the DID_F08D is configured in Dcm
+Boolean Pnc_DID_F08D_IsConfigured(PNC cfg):
+    cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.exists(e|e.dcmDspDidIdentifier == 61581) == true // 0xF08D
+;
+
+// Returns the short name of the configured DID_F08D data type in the Dcm
+String Pnc_DID_F08D_Data_ShortName(PNC cfg):
+    if Pnc_DID_F08D_IsConfigured(cfg) then (
+        cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid
+        .select(e|e.dcmDspDidIdentifier == 61581).first() // 0xF08D
+        .dcmDspDidSignal.dcmDspDidDataRef.shortName.first()
+    )
+    else (
+        if cfg.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Sensors.exists(e| e > 0) ||
+           cfg.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Signals.exists(e| e > 0) then (
+            throwError("DID_F08D is not configured in Dcm.")
+        )
+        else (
+            null
+        )
+    )
+;

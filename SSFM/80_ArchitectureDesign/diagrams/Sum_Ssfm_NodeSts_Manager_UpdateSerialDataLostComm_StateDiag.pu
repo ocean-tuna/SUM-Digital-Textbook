@@ -1,0 +1,23 @@
+@startuml Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm_StateDiag
+
+state "Sum_Ssfm_Node_MissingMsg_TestEnableConditions" as TestEnable {
+    state "Test Enable Conditions" as TEC
+    TEC : Battery voltage in range
+    TEC : Reset/recovery > 5s
+    TEC : DTCs not disabled
+    TEC : PN/AP active >= 5s
+    TEC : No bus-off (signal-based only)
+}
+
+state Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm{
+    state ECU_NODE_STATUS_NO_MISSINGMSG
+    state ECU_NODE_STATUS_MISSINGMSG
+
+	[*] --> ECU_NODE_STATUS_NO_MISSINGMSG
+	ECU_NODE_STATUS_NO_MISSINGMSG --> ECU_NODE_STATUS_MISSINGMSG: (SIG<X>_SUPERVISION == SUM_SSFM_SigSts_Supervision_Timeout) AND \n (Sum_Ssfm_Is_DisableNormalComm == False) AND \n (Sum_Ssfm_Is_DisablePdu_Rx == False) AND \n (Sum_Ssfm_Errh_Publish_CAN_<n> == SUM_SSFM_EvaluationSts_Passed) AND \n (PN_DTC_Enabled_Flag == Allowed)
+	ECU_NODE_STATUS_MISSINGMSG --> ECU_NODE_STATUS_NO_MISSINGMSG: (SIG<X>_SUPERVISION == SUM_SSFM_SigSts_Supervision_Received) AND \n ((SerialData is service-based) OR (Sum_Ssfm_Is_DisablePdu_Rx == True))
+}
+
+TestEnable --> Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm : Test Enabled (all conditions met)
+
+@enduml 

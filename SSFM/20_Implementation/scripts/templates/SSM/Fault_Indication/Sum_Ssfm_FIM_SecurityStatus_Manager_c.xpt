@@ -1,0 +1,330 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_FIM_SecurityStatus_Manager.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM Fault Indications Manager - Security Status Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+«IF Ssfm_IsAnyAuthenticated(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)»
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA ITERATOR i-»
+«IF Ssfm_IsAuthenticated(SSFM_SERIAL_DATA)-»
+«LET SSFM_SERIAL_DATA.sum_Ssfm_FcI_Debouncer.sum_Ssfm_EventFilter_Ref AS DEB_INSTANCE-»
+	«IF Ssfm_isXofYFilterType(DEB_INSTANCE)-»
+static uint16 Sum_Ssfm_Get_CalibPar_DebX_«SSFM_SERIAL_DATA.shortName»_FcI(void){
+	return Rte_CData_«DEB_INSTANCE.shortName»_X();
+}
+static uint16 Sum_Ssfm_Get_CalibPar_DebY_«SSFM_SERIAL_DATA.shortName»_FcI(void){
+	return Rte_CData_«DEB_INSTANCE.shortName»_Y();
+}
+	«ENDIF-»
+«ENDLET-»
+«ENDIF-»
+«ENDFOREACH-»
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 1531 1 # Based on the architecture design it is decided to keep the object in the corresponding component. */
+Sum_Ssfm_FxI_SerialData Sum_Ssfm_Authenticated_SerialDatas[SSFM_SSM_NUM_OF_AUTHENTICATED_SERIALDATAS] = {
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA ITERATOR i-»
+«IF Ssfm_IsAuthenticated(SSFM_SERIAL_DATA)-»
+	{
+		// FcI variable
+		FALSE,
+		// FcI Port
+		«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == false-»
+		&Rte_Write_PP_SSFM_SerialData_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()»_FcI_FcI_Security,
+		«ELSEIF Ssfm_GetFxISourceVariable(SSFM_SERIAL_DATA) == "FcI"-»
+		&Rte_Write_PP_SSFM_SerialData_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()»_FxI_RxSerialData_FxI,
+		«ELSE-»
+		NULL_PTR,
+		«ENDIF-»
+		// FcFA variable
+		FALSE,
+		// FcFA Port
+		«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == false-»
+		&Rte_Write_PP_SSFM_SerialData_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()»_FcFA_DTC_STATUS_FCFA,
+		«ELSEIF Ssfm_GetFxISourceVariable(SSFM_SERIAL_DATA) == "FcI"-»
+		&Rte_Write_PP_SSFM_SerialData_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()»_FxFA_DTC_STATUS_FXFA,
+		«ELSE-»
+		NULL_PTR,
+		«ENDIF-»
+		// Event Debouncer Ref
+		&(Sum_Ssfm_FIM_Authenticated_Debouncers[«counterInc("authenticated")- 1»]),
+		// Pointer to function to read whether the MAC authentication is enabled or not for this specific secured signal
+		&Rte_Read_RP_SSFM_SSM_SerialData_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()»_MACAuthenticationEnabled_MACAuthEnabled,
+		/* Number of occurrence */
+		0u,
+	},
+«ENDIF-»
+«ENDFOREACH-»
+};
+
+«LET sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo AS ECUs-»
+«LET Ssfm_GetControllerECUInfos(ECUs, false) AS controllers-»
+Sum_Ssfm_Debouncer Sum_Ssfm_FIM_Authenticated_Debouncers[SSFM_SSM_NUM_OF_AUTHENTICATED_SERIALDATAS] = {
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.select(e | e.Ssfm_IsAuthenticated()) AS SERIAL_DATA-»
+«LET SERIAL_DATA.sum_Ssfm_FcI_Debouncer.sum_Ssfm_EventFilter_Ref AS DEB_INSTANCE-»
+	{
+		/* Error filter type */
+		SUM_SSFM_ErrorFilter_«Ssfm_GetFilterType(DEB_INSTANCE)-»,
+		«IF Ssfm_isXofYFilterType(DEB_INSTANCE)-»
+		/* Number of configured X threshold */
+		&Sum_Ssfm_Get_CalibPar_DebX_«SERIAL_DATA.shortName»_FcI,
+		/* Number of configured Y threshold */
+		&Sum_Ssfm_Get_CalibPar_DebY_«SERIAL_DATA.shortName»_FcI,
+		«ELSE-»
+		/* Number of configured X threshold */
+		NULL_PTR,
+		/* Number of configured Y threshold */
+		NULL_PTR,
+		«ENDIF-»
+		/* Callback function */
+		«IF Ssfm_IsTimeBasedFilterType(DEB_INSTANCE)-»
+		&Sum_Ssfm_FIM_Debouncer_MUX,
+		«ELSE-»
+		NULL_PTR,
+		«ENDIF-»
+		/* Counter failed event */
+		0u,
+		/* Number of sample or ms*/
+		0u,
+		/* First failed flag */
+		FALSE,
+		/* Last Evaluation Status */
+		SUM_SSFM_EvaluationSts_Unknown,
+		/* Reference to Authenticated Serial Data */
+		{.FIM = &Sum_Ssfm_SerialDatas[«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.indexOf(SERIAL_DATA)»]}, /* PRQA S 1053 # To use the union type. */
+		/* Owner Type*/
+		SUM_SSFM_DebouncerRefType_FIM_FcI,
+		/* Reference to DemEvent */
+		«IF SERIAL_DATA.Ssfm_IsServiceBased()-»
+		// Resolved in runtime for service based traffic
+		NULL_PTR,
+		«ELSE-»
+			«LET Ssfm_Get_ComBasedSerialData_InvalidDataDemEvents(controllers, SERIAL_DATA) AS DEM_EVENTS-»
+			«IF DEM_EVENTS.size > 1 -»
+		// Resolved in runtime for multiple provider serial data
+		NULL_PTR,
+			«ELSE-»
+		&(Sum_Ssfm_FxI_DemEvents[«Ssfm_Get_AllComBasedSerialData_InvalidDataDemEvents(controllers, sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData).indexOf(DEM_EVENTS.get(0))»]),
+			«ENDIF-»
+			«ENDLET-»
+		«ENDIF-»
+	},
+«ENDLET-»
+«ENDFOREACH-»
+};
+«ENDLET-»
+«ENDLET-»
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+
+static Sum_Ssfm_SerialData* Sum_Ssfm_prv_GetSerialData_GivenSecOCDataID(const uint8* secOCDataId);
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+/**
+ * @brief			The getter function to get the SerialData given its secOCDataId
+ *
+ * @param[in]		const uint8* secOCDataId
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			Sum_Ssfm_SerialData*
+ */
+static Sum_Ssfm_SerialData* Sum_Ssfm_prv_GetSerialData_GivenSecOCDataID(const uint8* secOCDataId){
+
+    /*[$Satisfies $DDS_SSFM 011]*/
+
+    // If no SerialData will be found having secOCdataID equal to the input parameter, the
+    // return value will be equal to NULL_PTR
+	Sum_Ssfm_SerialData* serialData = NULL_PTR;
+	uint32 i;
+	/*PRQA S 2877 2*/ // The number of iterations depends on the configuration
+	// It loops across all the SerialDatas
+	for(i = 0; i < SSFM_SSM_NUM_OF_SERIALDATAS; i++){
+		if(Sum_Ssfm_SerialDatas[i].Authenticated != NULL_PTR){
+		    // If any of the configured SerialDatas has a secOCDataId equal to the input parameter
+			if  ((Sum_Ssfm_SerialDatas[i].secOCDataId[0] == secOCDataId[0]) &&
+				(Sum_Ssfm_SerialDatas[i].secOCDataId[1] == secOCDataId[1]) &&
+				(Sum_Ssfm_SerialDatas[i].secOCDataId[2] == secOCDataId[2]) &&
+				(Sum_Ssfm_SerialDatas[i].secOCDataId[3] == secOCDataId[3]) &&
+				(Sum_Ssfm_SerialDatas[i].secOCDataId[4] == secOCDataId[4])){
+				  // The SerialData has been found and we can return a pointer to it
+				  serialData = &Sum_Ssfm_SerialDatas[i];
+				  break;
+			}
+		}
+	}
+	return serialData;
+}
+
+
+/**
+ * @brief			SSFM function used to set the FcI interface state
+ *
+ * @param[in]       serialData      - Sum_Ssfm_SerialData*:  The SerialData structure to access the SerialData info and RTE functions
+ * @param[in]       security_status - boolean: Value to force for FcI
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			void -
+ */
+FUNC(void, SUM_SSFM_SSM_CODE) Sum_Ssfm_SecStatus_Manager_Set_FcI(Sum_Ssfm_SerialData* serialData, boolean security_status)
+{
+   /*[$Satisfies $DDS_SSFM 010]*/ /*[$Satisfies $DDS_SSFM 012]*/
+   	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+   	if((serialData->Authenticated != NULL_PTR) && (dtcs_are_disabled == FALSE)){
+		//Sets the FcI variable equal to the security status
+		serialData->Authenticated->FxI = security_status;
+«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == false-»
+		//Sets the FcI port equal to security_status
+	  	serialData->Authenticated->FP_Rte_Write_PP_FxI_LocalSWC(security_status);
+«ENDIF-»
+    	/*[$Satisfies $DDS_SSFM 081]*/
+		if (serialData->Authenticated->DebouncerRef != NULL_PTR){
+			Sum_Ssfm_FxI_Debouncing_Handler(serialData, serialData->Authenticated);
+		}
+	}
+}
+
+
+/* PRQA S 1503 9 */ //This function will be called by the RTE
+/**
+ * @brief			SSFM Verification Status Callout function to set the FcI interface state of the corresponding SerialData
+ *
+ * @param[in]		SecOC_VerificationStatusType verificationStatus
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			void -
+ */
+void SSFM_Verification_Status_Callout(SecOC_VerificationStatusType verificationStatus){
+    /*[$Satisfies $DDS_SSFM 010]*/ /*[$Satisfies $DDS_SSFM 011]*/ /*[$Satisfies $DDS_SSFM 021]*/
+
+	Sum_Ssfm_SerialData* serialData;
+	boolean Sum_Ssfm_Mac_Authentication_Enable;
+
+    //If the SUSD permits the execution
+	if(TRUE == Sum_Ssfm_Ssm_GetFuncPermitExecution())
+	{
+	    //Find the configured SerialData that has secOCDataId equal to the one in the input parameter
+	    serialData = Sum_Ssfm_prv_GetSerialData_GivenSecOCDataID(verificationStatus.secOCDataId);
+        //If it exists one configured SerialData that has secOCDataId equal to the one in  the input parameter
+		if(serialData != NULL_PTR)
+		{
+			(void)serialData->Authenticated->FP_AuthenticationEnable(&Sum_Ssfm_Mac_Authentication_Enable);
+
+		    //If a MAC verification failure occurred
+		    if(
+				(verificationStatus.verificationStatus == SECOC_VERIFICATIONFAILURE) ||
+				(verificationStatus.verificationStatus == SECOC_FRESHNESSFAILURE) ||
+				(verificationStatus.verificationStatus == SECOC_AUTHENTICATIONBUILDFAILURE) ||
+				(verificationStatus.verificationStatus == SECOC_VERIFICATIONFAILURE_OVERWRITTEN)||
+			  ((verificationStatus.verificationStatus == SECOC_NO_VERIFICATION) && (Sum_Ssfm_Mac_Authentication_Enable == TRUE))
+				)
+			{
+	      		//Set the FcI and FpI status to true
+	           	Sum_Ssfm_SecStatus_Manager_Set_FcI(serialData, TRUE);
+                Sum_Ssfm_ProtStatus_Manager_Set_FpI(serialData, TRUE);
+                /*[$Satisfies $DDS_SSFM 027]*/
+                Sum_Ssfm_SafetyStatus_Manager_Populate_FsI(serialData);
+				«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == true-»
+				/*[$Satisfies $DDS_SSFM 078]*/
+				// Set the single port FxI
+		    	Sum_Ssfm_SingleFxI_Manager_Set_FxI(serialData);
+				«ENDIF-»
+        		Sum_Ssfm_SigStsAvailability_Manager_CANETH(serialData);
+			}
+			// Note: if we get inside the else-if Sum_Ssfm_Mac_Authentication_Enable is always false, so we don't need to
+			//       explicitly check it
+			else if (verificationStatus.verificationStatus == SECOC_NO_VERIFICATION)
+			{
+				/*[$Satisfies $DDS_SSFM 075]*/
+				//Set the FcI and FpI status to false
+	           	Sum_Ssfm_SecStatus_Manager_Set_FcI(serialData, FALSE);
+                Sum_Ssfm_ProtStatus_Manager_Set_FpI(serialData, FALSE);
+                /*[$Satisfies $DDS_SSFM 027]*/
+                Sum_Ssfm_SafetyStatus_Manager_Populate_FsI(serialData);
+				«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == true-»
+				/*[$Satisfies $DDS_SSFM 078]*/
+				// Set the single port FxI
+		    	Sum_Ssfm_SingleFxI_Manager_Set_FxI(serialData);
+				«ENDIF-»
+        		Sum_Ssfm_SigStsAvailability_Manager_CANETH(serialData);
+
+			}
+			else
+			{
+				/* Nothing to do */
+			}
+		}
+	}
+}
+
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+«ENDIF-»
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

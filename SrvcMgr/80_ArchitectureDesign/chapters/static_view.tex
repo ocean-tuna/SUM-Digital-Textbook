@@ -1,0 +1,262 @@
+\chapter{Building Block View (Static View)}
+\label{chp:staticView}
+
+\section{Overview}
+\label{sec:overview}
+
+\UMLDiagram{generated/diagrams/Sum_SrvcMgr_Overview}{Component Diagram (Overview) of SUM_SrvcMgr}
+
+\textbf{NOTE:} the following reports only the main connections from an high level point of view.
+
+The Software module is able to handle inter-module communications by definition of ports. A specific interface will be implemented on each port,
+in order to manage the logic level.\\
+The intra-module communication among its sub-modules, components, and internal functionalities it is in scope to the implementation.
+
+Please refer to the following definition for the entire parts of the current document:
+
+\begin{itemize}
+    \item \textbf{Controller}: A component that contains all functionalities and routine for producing a specific response to a specific request;
+    \item \textbf{Coordinator}: A component (or better a module/sub-module) that supports the manager in its activity;
+    \item \textbf{Handler}: A component that contains all functionalities and routines that are executed in response to a specific system event;
+    \item \textbf{Manager}: A component that contains all functionalities and routines for actively managing the scenarios. It is the head of the operation.
+    \item \textbf{Monitor}: A component that acts as referee for the access on shared resource; 
+\end{itemize}
+
+\section{Component Description}
+
+\subsection{Initialization}
+\label{subsec:Init}
+The initialization component \textbf{shall} take in charge all the aspects to get the SrvcMgr module (in anyone of its part) operative. Furthermore, the component offers service calibration support, permitting externally to calibrate services off.
+
+\subsection{Execution Manager}
+\label{subsec:ExecManagerStatic}
+
+\RequirementTag{ADS_SrvcMgr}{002}
+\\
+The Execution Manager \textbf{SHALL}:
+
+\begin{enumerate}
+	\item Read the PermitExecution interface updated by SUM_SUSD
+	\item Compute the ExecutionStatus for the other Submodules according to:
+	\begin{itemize}
+	  \item The data read from item 1)
+	  \item A bit-mask that may be either user-defined or equal to 0xFE
+	\end{itemize}
+	\item Update the ShutdownPermission interface according to:
+	\begin{itemize}
+	  \item The data read from item 1)
+	  \item A bit-mask that may be either user-defined or equal to 0xFE
+	  \item The state of requests coming from the SPM
+	  \item The state of the learning session request.
+	\end{itemize}
+\end{enumerate}
+
+{\Satisfies{SRS_SrvcMgr 060} \Satisfies{SRS_SrvcMgr 061} \Satisfies{SRS_SrvcMgr 062} \Satisfies{SRS_SrvcMgr 063}}
+
+Figure~\ref{diagram:generated/diagrams/Sum_SrvcMgr_Execution_Manager} shows the SrvcMgr_Execution_Manager component diagram. 
+\UMLDiagramModified{generated/diagrams/Sum_SrvcMgr_Execution_Manager}{RTA-SUM SrvcMgr Execution Manager}{0.5}
+
+%For further information about run-time aspects of the SSFM please refer to \ref{sec:ExecManagerDynamic}.
+
+\subsection{Learning Session Manager}
+\label{subsec:LrngSessionManagerStatic}
+
+The Learning Session Manager is responsible for implementing the DIDs and RIDs related to the Learning Session handling. The Learning Session Manager \textbf{SHALL}:
+\begin{itemize}
+\item Receive the diagnostic request (DIDs or RIDs) from Dcm through the dedicated port interface.
+\item Execute the runnable related to the service requested by Dcm.
+\begin{itemize}
+\item Call the appropiated SD API for retreiving the information related to the Learning Session according to the RID/DID requested.
+\end{itemize}
+\item Return to Dcm the Output data requested through the specific service.    
+\end{itemize}
+
+
+\subsection{Service Manager}
+\label{subsec:ProjSpecServiceManagerStatic}
+
+The Service Manager is responsible for handling the Service State. The Service Manager \textbf{SHALL}:
+\begin{itemize}
+\item Implement the C/S operation Runnable_SrvcMgr_ActivateServices().
+\item Track if request coming from SPM is ongoing in order to prevent that the Execution Manager votes for shutdown.
+\end{itemize}
+
+\subsection{Calibration Controller}
+\label{subsec:CalibControllerStatic}
+The Calibration Controller is responsible for managing the calibration status of configured services. The Calibration Controller \textbf{SHALL}:
+\begin{itemize}
+\item Implement the APIs SrvcMgr_DisableService and SrvcMgr_DisableServiceGroup that will be called by a user callout to change the state of services through standard SD APIs.    
+\end{itemize}
+
+
+\section{Ports and Interfaces}
+\label{sec:portInterfaces}
+\RequirementTag{ADS_SrvcMgr}{001}\\
+{
+    \input{generated/tables/port_interfaces}
+}
+
+{\Satisfies{SRS_SrvcMgr 060} \Satisfies{SRS_SrvcMgr 061} \Satisfies{SRS_SrvcMgr 062} \Satisfies{SRS_SrvcMgr 063} \Satisfies{SRS_SrvcMgr 044} \Satisfies{SRS_SrvcMgr 045} \Satisfies{SRS_SrvcMgr 043} \Satisfies{SRS_SrvcMgr 046} \Satisfies{SRS_SrvcMgr 027} \Satisfies{SRS_SrvcMgr 050} \Satisfies{SRS_SrvcMgr 072} \Satisfies{SRS_SrvcMgr 077} \Satisfies{SRS_SrvcMgr 078} \Satisfies{SRS_SrvcMgr 079} \Satisfies{SRS_SrvcMgr 080} \Satisfies{SRS_SrvcMgr 081} \Satisfies{SRS_SrvcMgr 082} \Satisfies{SRS_SrvcMgr 034}}
+
+\section{Configuration}
+
+\subsection{Containers}
+\label{sec:Containers}
+The following section describes the RTA-SUM SrvcMgr configuration structure.  
+
+\UMLDiagram{generated/diagrams/Sum_SrvcMgr_Containers}{Configuration containers structure}
+
+\subsection{Configuration Parameters}
+
+\subsubsection{Sum_SrvcMgr_General}
+\label{subsec:ConfigurationParameters}
+\ConfigurationParameterExt{Sum_SrvcMgr_ExecutionManagerPeriodicity}
+{Sum_SrvcMgr_General}
+{SrvcMgr Execution Manager Period: it indicates how often the Service Manager reads the PermitExecution, computes the execution state for the other sub-modules and updates the ShutdownPermission interface. This configuration value shall be in milliseconds.}
+{1..1}
+{ECUC-FLOAT-PARAMDEF}
+{0..65535}
+{100.0}
+
+\RequirementTag{ADS_SrvcMgr}{003}
+\\
+\ConfigurationParameterExt{Sum_SrvcMgr_PermitExecutionMask}
+{Sum_SrvcMgr_General}
+{Permit execution mask for filtering bits and enabling the SrvcMgr sub-module functionalities.}
+{0..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..255}
+{254}
+{\Satisfies{SRS_SrvcMgr 060}} 
+
+
+\ConfigurationParameterExt{Sum_SrvcMgr_GenerateInitRunnable}
+{Sum_SrvcMgr_General}
+{Enable or disable the generation of the Init Runnable.}
+{1..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{0..1}
+{0}
+
+
+\ConfigurationParameterExt{Sum_SrvcMgr_InitFuncPeriodicity}
+{Sum_SrvcMgr_General}
+{Periodicity of the Init Runnable in milliseconds.}
+{0..1}
+{ECUC-FLOAT-PARAM-DEF}
+{1.0..5000.0}
+{1000.0}
+
+
+\subsubsection{Sum_SrvcMgr_ConfigSet}
+
+\RequirementTag{ADS_SrvcMgr}{008}
+\\
+\ConfigurationParameterExt{Sum_SrvcMgr_Did_E0CC_Ref}
+{Sum_SrvcMgr_ConfigSet/Sum_SrvcMgr_DcmReferences}
+{Reference to DID E0CC of Learning Table Status}
+{1..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+{\Satisfies{SRS_SrvcMgr 044}}
+
+\RequirementTag{ADS_SrvcMgr}{014}
+\\
+\ConfigurationParameterExt{Sum_SrvcMgr_Did_E0CD_Ref}
+{Sum_SrvcMgr_ConfigSet/Sum_SrvcMgr_DcmReferences}
+{Reference to DID E0CD to retrieve the list of the required services expected to be learnt but were not found/discovered and tracking buffer of sd missing from ssfm}
+{1..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+{\Satisfies{SRS_SrvcMgr 046} \Satisfies{SRS_SrvcMgr 034}}
+
+\RequirementTag{ADS_SrvcMgr}{015}
+\\
+\ConfigurationParameterExt{Sum_SrvcMgr_Did_E0CE_Ref}
+{Sum_SrvcMgr_ConfigSet/Sum_SrvcMgr_DcmReferences}
+{Reference to DID E0CE to retrieve required subscriptions that were expected to be sent and acknowledged but they were not acknowledged.}
+{1..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+{\Satisfies{SRS_SrvcMgr 046}}
+
+\RequirementTag{ADS_SrvcMgr}{010}
+\\
+\ConfigurationParameterExt{Sum_SrvcMgr_Rid_0612_Ref}
+{Sum_SrvcMgr_ConfigSet/Sum_SrvcMgr_DcmReferences}
+{Reference to RID 0612 to Retrieve Learning Table content}
+{1..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+{\Satisfies{SRS_SrvcMgr 045}}
+
+\RequirementTag{ADS_SrvcMgr}{012}
+\\
+\ConfigurationParameterExt{Sum_SrvcMgr_Rid_0654_Ref}
+{Sum_SrvcMgr_ConfigSet/Sum_SrvcMgr_DcmReferences}
+{Reference to RID 0654 for Triggering Learning Session}
+{1..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+{\Satisfies{SRS_SrvcMgr 043}}
+
+\RequirementTag{ADS_SrvcMgr}{031}
+\\
+\ConfigurationParameterExt{Sum_SrvcMgr_Sig_PropSysActv_Ref}
+{Sum_SrvcMgr_ConfigSet/Sum_SrvcMgr_DcmReferences}
+{Reference to the Propulsion System Active signal for RID 0612 enable condition. RID 0x0612 will only execute when PropSysActv is FALSE.}
+{1..1}
+{ECUC-CHOICE-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+\ConfigurationParameterExt{Sum_SrvcMgr_ServiceBased_PropSysActv_Ref}
+{Sum_SrvcMgr_ConfigSet/Sum_SrvcMgr_DcmReferences}
+{Reference to the service-based PropSysActv implementation data type element for advanced PSA configurations.}
+{0..1}
+{ECUC-FOREIGN-REFERENCE-DEF}
+{N/A}
+{N/A}
+{}
+{\Satisfies{SRS_SrvcMgr 078} \Satisfies{SRS_SrvcMgr 079}}
+
+\RequirementTag{ADS_SrvcMgr}{033}
+\\
+\ConfigurationParameterExt{Sum_SrvcMgr_ServiceBased_DataTypeMappingSet}
+{Sum_SrvcMgr_ConfigSet/Sum_SrvcMgr_DcmReferences}
+{Reference to the DATA-TYPE-MAPPING-SET in the system extract for service-based operations including PropSysActv and Vehicle Speed.}
+{0..*}
+{ECUC-FOREIGN-REFERENCE-DEF}
+{N/A}
+{N/A}
+{}
+{\Satisfies{SRS_SrvcMgr 078} \Satisfies{SRS_SrvcMgr 079} \Satisfies{SRS_SrvcMgr 080} \Satisfies{SRS_SrvcMgr 081}}
+
+
+\RequirementTag{ADS_SrvcMgr}{034}
+\\
+\ConfigurationParameterExt{Sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref}
+{Sum_SrvcMgr_ConfigSet/Sum_SrvcMgr_DcmReferences}
+{Reference to the Com Signal for Vehicle Speed Average Driven. Can be configured as a single signal or as a signal belonging to a group of signals.}
+{1..1}
+{ECUC-CHOICE-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+\ConfigurationParameterExt{Sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref}
+{Sum_SrvcMgr_ConfigSet/Sum_SrvcMgr_DcmReferences}
+{Reference to the IMPLEMENTATION-DATA-TYPE-ELEMENT for service-based Vehicle Speed Average Driven from System Extract.}
+{0..1}
+{ECUC-FOREIGN-REFERENCE-DEF}
+{N/A}
+{N/A}
+{}
+{\Satisfies{SRS_SrvcMgr 080} \Satisfies{SRS_SrvcMgr 081}}
+
+\subsection{Calibration Parameters}
+N/A

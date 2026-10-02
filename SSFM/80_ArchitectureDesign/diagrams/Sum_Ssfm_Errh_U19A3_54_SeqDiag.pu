@@ -1,0 +1,36 @@
+@startuml Sum_Ssfm_Errh_U19A3_54_SeqDiag
+
+participant Dem 
+box SUM_SSFM
+    participant Sum_Ssfm_Errh_U19A3_54_Handler as ERRH_U19A3_54
+end box
+participant Sum_SSC as SSC
+participant Sum_SUSD as SUSD
+
+activate ERRH_U19A3_54
+
+ERRH_U19A3_54 -> ERRH_U19A3_54: Check if calibration parameter is set
+
+alt Calibration parameter is set
+    ERRH_U19A3_54 -> SUSD: Ask for battery voltage range
+
+    SUSD --> ERRH_U19A3_54
+	
+	ERRH_U19A3_54 -> SSC: Ask for IVMAS status
+
+    SSC --> ERRH_U19A3_54
+    alt (No OBD Support and voltage in range and IVMAS status indicates KP supported) or (OBD Support and not under voltage and IVMAS status indicates KP supported)
+		ERRH_U19A3_54 -> SSC: Ask for DTC 19A3_54 status via interface SSC_ERRH_DTC_U19A3_54_Status
+
+		SSC --> ERRH_U19A3_54
+        alt error is Missing Setup/Learn
+		ERRH_U19A3_54 -> Dem: set the U19A3_54 DTC
+		else no error
+		ERRH_U19A3_54 -> Dem: reset the U19A3_54 DTC
+		end		
+    end
+end
+
+deactivate ERRH_U19A3_54
+
+@enduml 

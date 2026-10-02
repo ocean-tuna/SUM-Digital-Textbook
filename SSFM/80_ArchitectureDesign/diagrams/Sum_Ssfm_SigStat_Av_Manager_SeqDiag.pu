@@ -1,0 +1,27 @@
+@startuml Sum_Ssfm_SigStat_Av_Manager_SeqDiag
+
+box SUM_SSFM
+    participant Sum_Ssfm_SigStat_Av_Manager as SIG_AV
+    participant Sum_Ssfm_CANETH_Av_Manager as CANETH_AV
+    participant Sum_Ssfm_NodeSts_Manager as NodeSts
+end box
+
+participant SUM_PNC as PNC
+participant SUM_DIAG as DIAG
+participant SUM_SPM as SPM
+
+
+activate SIG_AV
+
+par
+    PNC -> SIG_AV: Partial Network Status changed
+else
+    DIAG -> SIG_AV: Disable Normal communication changed
+else
+    SPM -> SIG_AV: Service active status changed
+end
+SIG_AV -> CANETH_AV: Ask for updating the signal status availability
+SIG_AV -> NodeSts: Ask for updating the node status
+
+deactivate SIG_AV
+@enduml 

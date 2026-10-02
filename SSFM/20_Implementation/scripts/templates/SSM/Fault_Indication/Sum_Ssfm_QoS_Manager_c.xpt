@@ -1,0 +1,212 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_QoS_Manager.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for QoS Manager of SSFM module
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm_QoS_Manager.h"
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+/* PRQA S 1532 EOF # Here for modularity */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+«IF Ssfm_IsQoSEnabled(sSFM) && Ssfm_AnyQoSConfigured(sSFM)-»
+/* PRQA S 3472 5 # This macro are used to extract the proper bit. */
+#define SUM_SSFM_GET_AVAILABILITY_FROM_QOS(i)		 ((uint8)((i) & 0x03u))
+#define SUM_SSFM_GET_LCFA_FROM_QOS(i)		 	     ((uint8)(((i) >> 2u) & 0x01u))
+#define SUM_SSFM_GET_FSI_FROM_QOS(i)		 	     ((uint8)(((i) >> 3u) & 0x01u))
+#define SUM_SSFM_GET_FSA_FROM_QOS(i)		 	     ((uint8)(((i) >> 4u) & 0x01u))
+#define SUM_SSFM_IS_AVAILABILITY_OK               	 (0x03u)
+«ENDIF-»
+«IF Ssfm_IsQoSEnabled(sSFM) && Ssfm_AnyQoSConfigured(sSFM)-»
+static FUNC(uint8, SUM_SSFM_CODE) Sum_Ssfm_Aggregate_QoS_PDU(const uint8 QoS_PDU, const uint8 QoS_Retrieved); 
+static FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_Qos_AggregateAndSend(const uint8 QoS_PDU, const uint8 QoS_Retrieved, Sum_Ssfm_QoS_WriteFunctionPtr writeFunction);
+static FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_Apply_FxI_Flags(uint8* QoS_PDU, boolean FxI, boolean FxFA);
+«ENDIF-»
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA ITERATOR i-»
+«IF Ssfm_IsQoSEnabled(sSFM) && Ssfm_GetSerialDataHasQoSRef(SSFM_SERIAL_DATA)-»
+static FUNC(uint8, SUM_SSFM_CODE) Sum_Ssfm_Retrieve_QoS_PDU_From_SerialData_«SSFM_SERIAL_DATA.shortName-»(void);
+«ENDIF-»
+«ENDFOREACH-»
+
+«IF Ssfm_IsQoSEnabled(sSFM) && Ssfm_AnyQoSConfigured(sSFM)-»
+/**
+ * @brief			SSFM function used aggregates the QoS PDU with the retrieved QoS
+ *
+ * @param[in]       QoS_PDU		The QoS PDU of the consolidated service
+ * @param[in]       QoS_Retrieved	The retrieved QoS to be aggregated
+ * @param[inout]	
+ * @param[out]		void
+ * @return			uint8			The aggregated QoS PDU
+ */
+static FUNC(uint8, SUM_SSFM_CODE) Sum_Ssfm_Aggregate_QoS_PDU(const uint8 QoS_PDU, const uint8 QoS_Retrieved){
+	uint8 QoS_Aggregated;
+	
+/* PRQA S 3469 20 # This macro are used to extract the proper bit. */
+	if(SUM_SSFM_GET_AVAILABILITY_FROM_QOS(QoS_PDU) == SUM_SSFM_IS_AVAILABILITY_OK){
+		QoS_Aggregated = SUM_SSFM_GET_AVAILABILITY_FROM_QOS(QoS_Retrieved);
+	}else{
+		QoS_Aggregated = SUM_SSFM_GET_AVAILABILITY_FROM_QOS(QoS_PDU);
+	}
+
+	if((SUM_SSFM_GET_LCFA_FROM_QOS(QoS_PDU) == 1u) || (SUM_SSFM_GET_LCFA_FROM_QOS(QoS_Retrieved) == 1u)){
+		QoS_Aggregated |= ( 1u << 2u );
+	}
+
+	if((SUM_SSFM_GET_FSI_FROM_QOS(QoS_PDU) == 1u) || (SUM_SSFM_GET_FSI_FROM_QOS(QoS_Retrieved) == 1u)){
+		QoS_Aggregated |= ( 1u << 3u );
+	}
+
+	if((SUM_SSFM_GET_FSA_FROM_QOS(QoS_PDU) == 1u) || (SUM_SSFM_GET_FSA_FROM_QOS(QoS_Retrieved) == 1u)){
+		QoS_Aggregated |= ( 1u << 4u );
+	}
+
+	return QoS_Aggregated; 
+}
+
+/**
+ * @brief			SSFM function used aggregates the QoS PDU with the retrieved QoS and sends it using the provided write function
+ *
+ * @param[in]       QoS_PDU		The QoS PDU of the consolidated service
+ * @param[in]       QoS_Retrieved	The retrieved QoS to be aggregated
+ * @param[in]       writeFunction  The write function pointer to send the aggregated QoS
+ * @return			void
+ */
+static FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_Qos_AggregateAndSend(const uint8 QoS_PDU, const uint8 QoS_Retrieved, Sum_Ssfm_QoS_WriteFunctionPtr writeFunction){
+	uint8 QoS_Aggregated = Sum_Ssfm_Aggregate_QoS_PDU(QoS_PDU, QoS_Retrieved);
+	(void)writeFunction(QoS_Aggregated);
+
+}
+static FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_Apply_FxI_Flags(uint8* QoS_PDU, boolean FxI, boolean FxFA){
+    if(FxI == TRUE){
+        *QoS_PDU |= (1u << 3u);
+    }
+    if(FxFA == TRUE){
+        *QoS_PDU |= (1u << 4u);
+    }
+}
+«ENDIF-»
+
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA ITERATOR i-»
+«LET counterInc("serial_data_counter") - 1 AS SerialDataNumber-»
+«IF Ssfm_IsQoSEnabled(sSFM) && Ssfm_GetSerialDataHasQoSRef(SSFM_SERIAL_DATA)-»
+/**
+ * @brief			SSFM function used manages the QoS indication of the consolidated service «SSFM_SERIAL_DATA.shortName-» and its referenced QoS
+ *
+ * @param[in]       void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			void
+ */
+/*[$Satisfies $DDS_SSFM 363]*/
+FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_QoS_Manager_UpdateOnReceivedConsolidatedService_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()-»(void){
+	// read the whole structure from rte
+	«Ssfm_GetImplementationDataTypeName(SSFM_SERIAL_DATA.sum_Ssfm_QoS_Ref.first())» service_payload;
+	Rte_TransformerError transformerError;
+	uint8 QoS_PDU;
+
+	(void)Rte_Read_RP_SSFM_QoS_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()-»_SSFM_QoS_PayloadRx(&service_payload, &transformerError);
+
+	// populate the uint8 QoS_PDU for the ServiceItself by retrieving the bits from Availability, LcFa, FsI and FsFa and write the port
+	QoS_PDU = Sum_Ssfm_Retrieve_QoS_PDU_From_SerialData_«SSFM_SERIAL_DATA.shortName-»();
+	(void)Rte_Write_PP_SSFM_QoS_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()-»_SSFM_QoS_Indication(QoS_PDU);	
+	
+	// iterate on each QoS configured, aggregate the data and write the P-Port
+	«FOREACH SSFM_SERIAL_DATA.sum_Ssfm_QoS_Ref AS qosRef-»
+	Sum_Ssfm_Qos_AggregateAndSend(QoS_PDU, 
+								  service_payload.«Ssfm_GetImplementationDataTypeElementName(qosRef)», 
+								  &Rte_Write_PP_SSFM_QoS_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()-»_«Ssfm_GetImplementationDataTypeElementName(qosRef)-»_SSFM_QoS_Indication); 
+	«ENDFOREACH-»
+}
+
+/**
+ * @brief			SSFM function used retrieves the QoS PDU from the Serial Data «SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()-» based on the previously computed metrics
+ *
+ * @param[in]       void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			uint8			The QoS PDU value
+ */
+static FUNC(uint8, SUM_SSFM_CODE) Sum_Ssfm_Retrieve_QoS_PDU_From_SerialData_«SSFM_SERIAL_DATA.shortName-»(void){
+	uint8 QoS_PDU;
+	boolean LcFa; 
+
+	/* Availability */
+	QoS_PDU = (uint8)Sum_Ssfm_SerialDatas[«SerialDataNumber»].MsgInfoGrp->SigSts;
+
+	/* LcFA */
+«IF Ssfm_IsSerialDataLcFA(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo, SSFM_SERIAL_DATA)-»
+	LcFa = Sum_Ssfm_IsSerialDataInLossOfComm(&Sum_Ssfm_SerialDatas[«SerialDataNumber»]); 
+	if(LcFa == TRUE){
+		QoS_PDU |= ( 1u << 2u );
+	}
+«ELSE-»
+	/* No LcFA - bit remains 0 */
+«ENDIF-»
+
+	/* FsI*/
+«IF Ssfm_IsSafety(SSFM_SERIAL_DATA)-»
+	if(SUM_SSFM_FxI_Source_FsI == Sum_Ssfm_SerialDatas[«SerialDataNumber»].FxI_Source){
+		Sum_Ssfm_Apply_FxI_Flags(&QoS_PDU, 
+								 Sum_Ssfm_SerialDatas[«SerialDataNumber»].Safety->FxI, 
+								 Sum_Ssfm_SerialDatas[«SerialDataNumber»].Safety->FxFA);
+	}
+«ELSE-» 
+	/* No safety FsI/FsFA - bits remain 0 */
+«ENDIF-» 
+
+	return QoS_PDU; 
+	
+}
+«ENDIF-»
+«ENDLET-»
+«ENDFOREACH-»
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

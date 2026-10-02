@@ -1,0 +1,72 @@
+\chapter{Introduction and Goals}
+
+This document intends to describe the architecture design of the SUM\_SSFM module.
+
+\section{Introduction}
+This section lists some of the driving forces that software architects must consider in their decisions. In particular, we will first present the purpose of the module, and then we will describe the purpose of the document.
+
+\subsection{Module Purpose}
+
+This document refers to a set of standard software compositions which are named GM Standardized Utility Modules (SUM).
+Use of the SUM modules allows for the standardized specification of behavioral requirements and expectations concerning the interface to the software infrastructure (BSW Services).
+Hence, we can completely abstract functional software from the software infrastructure.
+We can use SUMs to communicate a set of standardized implementations of the interactions between SW-C and BSW.
+
+The Standard Utility Module Signal Status and Fault Monitor (SUM\_SSFM) is a software component located in the Application Layer of the standardized architecture of AUTOSAR.
+
+\textbf{SUM\_SSFM} functionality is composed of two logic units:
+\begin{itemize}
+	\item \textbf{Signal Status Monitoring logic}: This logic is handling the monitoring of the serial data signal status to detect various types of faults such as loss of communication, safety protection errors and security verification errors. This logic unit is referred to as Signal Status Monitor (SSM) throughout the rest of this specification. SSM is not a separate Software component but a logic unit inside the SUM\_SSFM software component.
+	\item \textbf{Fault Reporting logic}: This logic is mainly handling the maturation and filtering of the faults detected by the SSM logic and reporting the faults to the AUTOSAR Dem module. It is also responsible for other error handling functionalities such as BSW production error events aggregation and Precondition Check for Control DTC settings for instance. This logic is referred to as Error Handler (ERRH) throughout the rest of this specification. ERRH is not a separate Software component but a logic unit inside the SUM\_SSFM software component.
+\end{itemize}
+
+\textbf{SSM} implements the following functionalities:
+\begin{itemize}
+	\item Consolidate ECU internal conditions to determine signal status for use by functional software.
+	\item Use Security verification status notification from AUTOSAR SecOC module via a Sender/Receiver Interface to notify applications on the security authentication status of the authenticated PDUs.
+	\item Use initialization and startup conditions to define signal status before serial communication is active/reception of signals.
+	\item Integrate relevant status monitor signals of the received signal to calculate status information
+	\item Aggregate signal supervision status from a source to determine Node Loss conditions.
+	\item Disable the transmission of PDUs for variant handling.
+	\item Map the AUTOSAR E2E transformer checking status during the checking of safety signals received within a protected SerialData and provide a consistent interface to functional software.
+\end{itemize}
+
+\textbf{ERRH} implements the following functionalities:
+\begin{itemize}
+	\item Aggregation of BSW production error events from Dem
+	\item Aggregation of SUM error events from each SUM
+	\item Aggregation of deadline monitoring events from SSM for signals which are relevant to setting of node loss U-code DTC(s)
+	\item Aggregation of DTC list from Dem
+	\item Precondition Check for Control DTC Setting request from DCM based on Channel and Tester information.
+	\item Precondition Check for Clear Diagnostic request from DCM for OBD/Non-OBD ECUs.
+\end{itemize}
+
+\subsection{Document Purpose}
+
+This document introduces the key ideas of the architecture of SUM\_SSFM.
+Its intended audience comprises System Architects, Product Architects, Developers and Testers who need a rough understanding of the concepts of the product.
+The document describes the product and its functionality on the component level, the interaction and communication between those components and the integration of ETAS wide shared-components.
+The document does not explain the design of the components in detail.
+
+\section{Goals of the Architecture}
+
+The main goals of the architecture are:
+
+\begin{enumerate}
+\item \textbf{Configurability}: The module has to be designed with the highest possible level of configurability, to be easy to adapt it in the future to changes on the standard or even in some project requirements.
+\item \textbf{Maintainability}: The architecture of the component shall be clearly defined and easy to understand, to guarantee the maximum possible level of maintainability.
+\item \textbf{Performance}: The component shall be designed to maximize run-time execution speed as well as minimize memory consumption.
+\item \textbf{Correctness of Implementation}: The Detailed Design shall follow the requirements listed in the Architecture document (SDV-8002).
+\end{enumerate}
+
+\section{Stakeholders}
+
+Stakeholders for SUM\_SSFM module are GM, Bosch, Systems engineers, Software architect, QA personnel.
+
+\section{Definitions, Acronyms and Abbreviations}
+
+\input{generated/tables/definitions.tex}
+
+\section{Referenced Documents}
+
+\input{generated/tables/references.tex}

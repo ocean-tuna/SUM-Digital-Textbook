@@ -1,0 +1,17 @@
+@startuml Sum_Ssfm_FaultIndication_DataManager_SeqDiag
+
+participant RTE as R
+participant DEM as DEM
+box SUM_SSFM
+    participant Sum_Ssfm_FaultIndication_DataManager as FIM
+end box
+
+
+activate FIM
+
+DEM -> FIM: Event Status changed
+FIM -> RTE: Set/Reset related FxFAs using Demultiplexing
+
+deactivate FIM
+
+@enduml 

@@ -1,0 +1,8 @@
+5;5;4;14
+\textbf{Version};\textbf{Author};\textbf{Date};\textbf{Description of Changes}
+6.1.1;SUM Development Team (ETAS/ERS-Tn);04/07/2022;Initial version of Architecture design applied for Technical Debt Reduction
+8.0.1_Pr1;SUM Development Team (ETAS/ERS-Tn);10/09/2024;Initial version of the Architecture design document for RTA-SUM SSFM 8.0.1 for SDV 2.0. \\ Updated Section ~\ref{sec:Environment}.
+8.0.1_Pr2;SUM Development Team (ETAS/ERS-Tn);24/10/2024;Second version of the Architecture design document for RTA-SUM SSFM 8.0.1 for SDV 2.0. \\ Updated Sections ~\ref{sec:PortInterfaces} and ~\ref{subsec:ShutdownSequence}.
+8.0.1_Pr3;SUM Development Team (ETAS/ERS-Tn);25/11/2024;Third version of the Architecture design document for RTA-SUM SSFM 8.0.1 for SDV 2.0. \\Updated sections related to the DID 0xF129: ~\ref{subsec:RunTotVehicleTimeRead},  ~\ref{subsec:RunTotVehicleTimeCheckRead} and ~\ref{sec:refparams}.
+8.0.1_Pr4;SUM Development Team (ETAS/ERS-Tn);10/12/2024;Fourth version of the Architecture design document for RTA-SUM SSFM 8.0.1 for SDV 2.0. \\Added initialization runnable and its configuration: ~\ref{subsec:ConfigurationContainers}, ~\ref{sec:Runnables} and ~\ref{subsec:RunnableTCSInit} \\ Updated section ~\ref{subsec:tcsInit}.
+8.0.1_Pr5;SUM Development Team (ETAS/ERS-Tn);10/11/2025;Fifth version of the Architecture design document for RTA-SUM SSFM 8.0.1 for SDV 2.0.\\ Updated section ~\ref{sec:Environment}.

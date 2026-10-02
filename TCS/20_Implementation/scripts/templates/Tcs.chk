@@ -1,0 +1,108 @@
+import bsw;
+import bsw::TcsModule;
+
+extension templates::mathlib;
+extension templates::TCS_Utils;
+extension org::eclipse::xtend::util::stdlib::io;
+
+// TCS Validations
+context TcsGeneral ERROR "TCS: MasterClockPolling period is not greater than 0." :
+	(this.masterClockPollingPeriodicity > 0)
+;
+
+context TcsGeneral ERROR "TCS: TimeManagement period is not greater than 0." :
+	(this.timeManagementPeriodicity > 0)
+;
+
+context TcsGeneral ERROR "TCS: SumTCSGlobalTimePrecision must be equal to or a multiple of TimeManagement period." :
+	(this.sumTCSGlobalTimePrecision > 0) && (this.sumTCSGlobalTimePrecision >= this.timeManagementPeriodicity)
+;
+
+context TcsGeneral ERROR "TCS: Permit execution mask is empty." :
+	(this.permitExecutionMask != null)
+;
+
+context TcsGeneral ERROR "TCS: DcmDspDidSignal for  DID F129 Total Vehicle Time Value is not defined" :
+	(this.dID_F129_TotalVehicleTimeValue_Reference != null && this.dID_F129_TotalVehicleTimeValue_Reference.dcmDspDidSignal != null && this.dID_F129_TotalVehicleTimeValue_Reference.dcmDspDidSignal.first() != null)
+;
+
+context TcsGeneral
+	ERROR "TCS: The reference to the DEM Timestamp is not defined" :
+	(this.tcsDemTimestampRef != null)
+;
+
+context TcsGeneral ERROR "TCS: TCSInitValueNvmRef is a mandatory parameter!" : 
+	(this.tCSInitValueNvmRef != null)
+;
+
+context TcsGeneral
+	if(this.tcsGenerateInitRunnable == true)
+    ERROR "Parameter tcsInitFuncPeriodicity shall be configured if tcsGenerateInitRunnable is set to TRUE!" :
+    (this.tcsInitFuncPeriodicity != null)
+;
+
+context TcsGeneral ERROR "TCS: SumTCSGlobalTimePrecision must be a multiple of 100ms and be greater than 0." :
+	(
+		(RemainderOf(this.sumTCSGlobalTimePrecision, 100) == 0) && 
+		(this.sumTCSGlobalTimePrecision != 0) 
+	)
+;
+
+/* Validation: TimeSyncMessage signal reference is mandatory */
+context TcsGeneral
+	ERROR "Parameter TCS_TimeSyncMessageSignalRef is mandatory!" :
+	(this.tCS_TimeSyncMessageSignalRef != null)
+;
+
+/* Validation: ComGroupSignal cannot be used for service-based communication with TimeSyncMessage
+ * Service-based communication requires ComSignal (not ComGroupSignal) */
+context TcsGeneral
+	if(this.tCS_TimeSyncMessageSignalRef != null &&
+	   this.tCS_ServiceBased_TimeSyncMessage_Ref != null &&
+	   this.tCS_TimeSyncMessageSignalRef.metaType.toString().contains("ComGroupSignal"))
+	ERROR "Parameter TCS_TimeSyncMessageSignalRef: ComGroupSignal cannot be used for service-based communication. Service-based communication requires a ComSignal (not ComGroupSignal). Please reference a ComSignal or remove TCS_ServiceBased_TimeSyncMessage_Ref.":
+	false
+;
+
+/* Validation: TCS_ServiceBased_TimeSyncMessage_Ref must NOT be configured when signal type is UINT64
+ * UINT64 indicates signal-based communication; service-based reference is not applicable */
+context TcsGeneral
+	if(this.tCS_TimeSyncMessageSignalRef != null &&
+	   this.tCS_TimeSyncMessageSignalRef.comSignalType == "UINT64")
+	ERROR "Parameter TCS_ServiceBased_TimeSyncMessage_Ref must NOT be configured when TCS_TimeSyncMessageSignalRef has comSignalType UINT64 (signal-based). Remove TCS_ServiceBased_TimeSyncMessage_Ref or change the signal to UINT8_N for service-based communication.":
+	(this.tCS_ServiceBased_TimeSyncMessage_Ref == null)
+;
+
+/* Validation: TimeSyncMessage signal must use UINT64 type when not service-based
+ * Standard signal type for signal-based communication (ComSignal or ComGroupSignal without service-based reference) */
+context TcsGeneral
+	if(this.tCS_TimeSyncMessageSignalRef != null &&
+	   this.tCS_ServiceBased_TimeSyncMessage_Ref == null)
+	ERROR "Parameter TCS_TimeSyncMessageSignalRef: Invalid ComSignalType for signal-based communication. Expected UINT64 (for ComSignal or ComGroupSignal), but got '" +
+	      this.tCS_TimeSyncMessageSignalRef.comSignalType + "'. If you want to use UINT8_N, configure TCS_ServiceBased_TimeSyncMessage_Ref with a ComSignal reference for service-based communication.":
+	(this.tCS_TimeSyncMessageSignalRef.comSignalType == "UINT64")
+;
+
+/* Validation: TimeSyncMessage signal must use UINT8_N type when service-based
+ * Service-based communication requires variable-length array type for proper data serialization */
+context TcsGeneral
+	if(this.tCS_TimeSyncMessageSignalRef != null &&
+	   this.tCS_ServiceBased_TimeSyncMessage_Ref != null &&
+	   !this.tCS_TimeSyncMessageSignalRef.metaType.toString().contains("ComGroupSignal"))
+	ERROR "Parameter TCS_TimeSyncMessageSignalRef: Invalid ComSignalType for service-based TimeSyncMessage signal. Expected UINT8_N, but got '" +
+	      this.tCS_TimeSyncMessageSignalRef.comSignalType + "'.":
+	(this.tCS_TimeSyncMessageSignalRef.comSignalType == "UINT8_N")
+;
+
+/* Validation: When service-based TimeSyncMessage is configured, data type mapping set must also be configured
+ * Service-based communication requires proper data type transformation mappings */
+context TcsGeneral
+	if(this.tCS_TimeSyncMessageSignalRef != null && this.tCS_ServiceBased_TimeSyncMessage_Ref != null)
+	ERROR "Parameter TCS_ServiceBased_TimeSyncMessage_DataTypeMappingSet must be configured when TCS_ServiceBased_TimeSyncMessage_Ref is set." :
+	(this.tCS_ServiceBased_TimeSyncMessage_DataTypeMappingSet != null)
+;
+
+/* NOTE: TCS_ServiceBased_TimeSyncMessage_Ref must point to an IMPLEMENTATION-DATA-TYPE-ELEMENT
+ * with CATEGORY ARRAY (byte array). This cannot be validated by the generator because
+ * ECUC-FOREIGN-REFERENCE-DEF does not expose the target element's properties in the Xpand model.
+ * Misconfiguration will cause incorrect runtime behavior. See User Guide for details. */

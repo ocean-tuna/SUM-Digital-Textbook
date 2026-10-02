@@ -1,0 +1,32 @@
+@startuml Sum_Ssfm_DTC_Error_Filter_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DTC_Error_Filter"
+	
+**Interfaces Legend**
+	//II152 //: ERRH_ExecutionStatus
+	//II180 //: Undebounced Error
+	//II181 //: Debounced Error
+
+endlegend
+
+note top of EC
+It is responsible for implementing the different types of filters that are used to filter the various errors processed by the SSFM-ERRH.
+end note
+
+component [SSFM::Sum_Ssfm_DTC_Error_Filter as EC{
+
+	[Sum_Ssfm_DTC_Error_Filter]  as E
+}
+   
+   II152 -> E
+   II180 -> E
+   E -> II181
+
+
+
+
+
+@enduml

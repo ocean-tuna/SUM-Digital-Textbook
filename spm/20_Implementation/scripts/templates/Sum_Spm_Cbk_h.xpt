@@ -1,0 +1,88 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Cbk.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for Spm Callback
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+# ifndef 	SUM_SPM_CBK_H_
+# define	SUM_SPM_CBK_H_
+
+# include "Cdd_Cdd_Up_Cbk.h"
+
+/*
+ * ==========================================================================================================
+ *   BEGIN: RX Indication
+ * ==========================================================================================================
+ */
+
+extern void
+	Spm_RxIndication
+(
+	PduIdType 			RxPduId,
+	const PduInfoType* 	PduInfoPtr
+);
+
+/*
+ * ==========================================================================================================
+ *   END: RX Indication
+ * ==========================================================================================================
+ */
+
+/*
+ * ==========================================================================================================
+ *   BEGIN: Tx Confirmation
+ * ==========================================================================================================
+ */
+
+extern void
+	Spm_TxConfirmation
+(
+	PduIdType 		TxPduId,
+	Std_ReturnType result
+);
+
+
+/*
+ * ==========================================================================================================
+ *   END: TX Confirmation
+ * ==========================================================================================================
+ */
+
+# endif /* SUM_SPM_CBK_H_ */
+
+/* EOF */
+
+«ENDFILE -»
+«ENDDEFINE -»

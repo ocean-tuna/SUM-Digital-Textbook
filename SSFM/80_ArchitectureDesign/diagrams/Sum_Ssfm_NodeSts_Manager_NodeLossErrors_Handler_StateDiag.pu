@@ -1,0 +1,12 @@
+@startuml Sum_Ssfm_NodeSts_Manager_NodeLossErrors_Handler_StateDiag
+
+state Sum_Ssfm_Process_SSM_NodeLossErrors_Handler{
+    state SUM_SSFM_EcuNodeState_Normal
+    state SUM_SSFM_EcuNodeState_LostComm
+
+	[*] --> SUM_SSFM_EcuNodeState_Normal
+	SUM_SSFM_EcuNodeState_Normal --> SUM_SSFM_EcuNodeState_LostComm: (TempLossOfComm == ECU_NODE_STATUS_MISSINGMSG)
+	SUM_SSFM_EcuNodeState_LostComm --> SUM_SSFM_EcuNodeState_Normal: (TempLossOfComm == ECU_NODE_STATUS_NO_MISSINGMSG)        
+}
+
+@enduml 

@@ -1,0 +1,189 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_SrvcMgrIf.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for SPM Service Manager interfacing
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+/*-----------------------------------------------------------------------------
+ *    Include files
+ *----------------------------------------------------------------------------*/
+
+#include "Sum_Spm_SrvcMgrIf.h"
+
+/* PRQA S 1532 EOF # Following function are defined here for modularity reason */
+
+/**
+ * @brief
+ *
+ */
+struct Spm_SrvcMgrIf_RAM_SubStruct Spm_SrvcMgrIf_RAM  = {
+   /* struct element:'spmPrfStsMgr_SpmSrvcMgrIf_RAM.spmSrvcLstToSnd' (modeled as:'spmSrvcLstToSnd.spmPrfStsMgr_SpmSrvcMgrIf') */
+   {«FOREACH spm.spmConfigSet.spmPowPrf AS pp SEPARATOR ", "»0U«ENDFOREACH»},
+   /* struct element:'spmPrfStsMgr_SpmSrvcMgrIf_RAM.spmSrvLstToPublish_len' (modeled as:'spmSrvLstToPublish_len.spmPrfStsMgr_SpmSrvcMgrIf') */
+   0U,
+   /* struct element:'spmPrfStsMgr_SpmSrvcMgrIf_RAM.isChanged' (modeled as:'isChanged.spmPrfStsMgr_SpmSrvcMgrIf') */
+   FALSE,
+   /* substruct: spmPrfStsMgr_SpmSrvcMgrIf_RAM.spmSrvLst (modeled as:'spmSrvLst.spmPrfStsMgr_SpmSrvcMgrIf') */
+   {
+«FOREACH spm.spmConfigSet.spmPowPrf.sortBy(e|e.spmSrvcAndInstID * 256 + e.spmProfNumber) AS pp ITERATOR pos SEPARATOR "\t,\n" -»
+      {
+         /* struct element:'spmPrfStsMgr_SpmSrvcMgrIf_RAM.spmSrvLst[«pos.counter0»].pp_sID' (modeled as:'pp_sID.spmSrvLst.spmPrfStsMgr_SpmSrvcMgrIf') */
+         «pp.spmSrvcAndInstID / 65536»U,
+         /* struct element:'spmPrfStsMgr_SpmSrvcMgrIf_RAM.spmSrvLst[«pos.counter0»].is_active' (modeled as:'is_active.spmSrvLst.spmPrfStsMgr_SpmSrvcMgrIf') */
+         FALSE
+      }
+«ENDFOREACH -»
+	}
+}; // populate in configuration
+/*
+ * END: DEFINITION OF SubStruct VARIABLE Spm_SrvcMgrIf_RAM
+ */
+
+#define spmSrvcLstToSnd_VAL (Spm_SrvcMgrIf_RAM.spmSrvcLstToSnd)
+#define spmSrvLst_VAL (Spm_SrvcMgrIf_RAM.spmSrvLst)
+#define spmSrvLstToPublish_len_VAL (Spm_SrvcMgrIf_RAM.spmSrvLstToPublish_len)
+#define isChanged_VAL (Spm_SrvcMgrIf_RAM.isChanged)
+
+static void Spm_SrvcMgrIfBuildSrvcLstToPublish (void);
+
+/******************************************************************************
+ * BEGIN: FUNCTIONS OF COMPONENT
+ ******************************************************************************/
+
+/**
+ * @brief Builds the list of services to be published for service manager interface.
+ *
+ * This function builds the list of active services and their service IDs to be included in the service manager interface communication.
+ *
+ * 1. **Iterates through service list:**
+ *    - Iterates through each service in the `spmSrvLst_VAL` array using an index loop (`idx`).
+ * 2. **Checks service status:**
+ *    - For each service, checks if the `is_active` flag is set.
+      - If the service is active:
+        - Copies the service ID (`pp_sID`) from the service list to the `spmSrvcLstToSnd_VAL` array at the current position (`tuint16_curr_len_`).
+        - Increments the `tuint16_curr_len_` variable to track the number of added services.
+ * 3. **Updates output variables:**
+ *    - Sets the `spmSrvLstToPublish_len_VAL` variable to the final length of the built service list (`tuint16_curr_len_`).
+    - Sets the `isChanged_VAL` variable to `FALSE` indicating no change in the service list since the last publication.
+ */
+static void Spm_SrvcMgrIfBuildSrvcLstToPublish (void) 
+{
+/* user defined local variables */
+   uint8 idx;
+   uint16 tuint16_curr_len_ = 0U;
+
+
+   for (idx = 0U; idx < SPM_SRVCS_LST_SIZE; idx++)
+   	{
+
+      if (spmSrvLst_VAL[idx].is_active)
+      {
+         spmSrvcLstToSnd_VAL[tuint16_curr_len_] = spmSrvLst_VAL[idx].pp_sID;
+         tuint16_curr_len_++;
+      } /* end if */
+
+   	} /* end for */
+
+   spmSrvLstToPublish_len_VAL = tuint16_curr_len_;
+   isChanged_VAL = FALSE;
+
+}
+
+
+
+/**
+ * @brief Updates the active status of a service in the service list.
+ *
+ * This function updates the `is_active` flag of a specified service in the `spmSrvLst_VAL` array based on the provided index and new status.
+ *
+ * 1. **Checks index validity:**
+ *    - Checks if the provided index (`idx`) is within the valid range (less than `SPM_SRVCS_LST_SIZE`) to avoid accessing out-of-bounds memory.
+ * 2. **Updates service status (if changed):**
+ *    - Compares the current `is_active` flag of the service at the given index with the new status (`isActive`).
+      - If they differ:
+        - Sets the `isChanged_VAL` flag to `TRUE` to indicate a change in the service list for triggering further actions.
+        - Updates the `is_active` flag of the service with the new status (`isActive`).
+ */
+void Spm_SrvcMgrIfUpdateSrvcStatus (
+    const uint16  idx,
+    const boolean isActive
+   )
+{
+
+   if (idx < SPM_SRVCS_LST_SIZE)
+   {
+
+      if( spmSrvLst_VAL[idx].is_active != isActive )
+      {
+         isChanged_VAL = TRUE;
+      }
+
+      spmSrvLst_VAL[idx].is_active = isActive;
+   } /* end if */
+
+}
+
+/**
+ * @brief The function handles communication with the service manager.
+ *  At first, it checks whether the status has changed for each service by checking the isChanged flag.
+ *  If there is a change, it updates the list of active services to be published and then communicates this list using the appropriate API.
+*/
+void Spm_SrvcMgrIf_HandleSrvcMgrComm(void){
+
+   uint16 idx;
+   SPM_ServiceActivationStatusNotifType lstOfSrvc_loc_; /* local buffer declaration for safety */
+   boolean dtAlloweCode_loc_[SPM_SRVCS_LST_SIZE];
+
+   /* Update the list of services, which status has changed, to be published */
+   Spm_SrvcMgrIfBuildSrvcLstToPublish(); 
+
+   /* Populate the local buffer with the updated service list info */
+   lstOfSrvc_loc_.ServiceIDList = (uint16 *)(&(Spm_SrvcMgrIf_RAM.spmSrvcLstToSnd[0U])); /* Assign the First item of the updated service list */
+   lstOfSrvc_loc_.ListLength = Spm_SrvcMgrIf_RAM.spmSrvLstToPublish_len; /* Assing the current list length */
+
+   /* Set true to each service associated slot to allow the DTC allowed setting */
+   for(idx = 0u; idx < Spm_SrvcMgrIf_RAM.spmSrvLstToPublish_len; idx++){
+      dtAlloweCode_loc_[idx] = TRUE;
+   }
+   lstOfSrvc_loc_.DTCAllowedList = (boolean *)(&(dtAlloweCode_loc_[0U]));
+
+   /* [$Satisfies $DDS_SPM 0417] *//* Publish the list of active services to SrvcMgr */
+   (void)Rte_Write_PP_SPM_SrvcMgr_Notif_StatusNotification( &lstOfSrvc_loc_ ); 
+     
+}
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

@@ -1,0 +1,39 @@
+@startuml Sum_Ssfm_Errh_U19A6_54_SeqDiag
+
+participant Dem 
+box SUM_SSFM
+    participant Sum_Ssfm_Errh_U19A6_54_Handler as ERRH_U19A6_54
+end box
+participant Sum_SrvcMgr as SrvcMgr
+participant Sum_SUSD as SUSD
+participant Sum_DIAG as DIAG
+
+activate ERRH_U19A6_54
+
+ERRH_U19A6_54 -> ERRH_U19A6_54: Check if calibration parameter is set
+
+alt Calibration parameter is set
+    ERRH_U19A6_54 -> SUSD: Ask for battery voltage range
+    SUSD --> ERRH_U19A6_54
+	
+    alt (No OBD Support and voltage in range) or (OBD Support and not under voltage)
+
+        ERRH_U19A6_54 -> DIAG: Ask for MEC
+        DIAG --> ERRH_U19A6_54
+
+        alt MEC == 0
+            ERRH_U19A6_54 -> SrvcMgr: Ask for DTC 19A6 54 status
+            SrvcMgr --> ERRH_U19A6_54
+
+            alt error is Missing Setup/Learn
+                ERRH_U19A6_54 -> Dem: set the U19A6_54 DTC
+            else no error
+                ERRH_U19A6_54 -> Dem: reset the U19A6_54 DTC
+            end
+        end		
+    end
+end
+
+deactivate ERRH_U19A6_54
+
+@enduml 

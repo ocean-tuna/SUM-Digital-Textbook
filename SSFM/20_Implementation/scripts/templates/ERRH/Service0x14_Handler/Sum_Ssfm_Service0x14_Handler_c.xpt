@@ -1,0 +1,281 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Service0x14_Handler.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM ERRH Service 0x14 Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+static void Sum_Ssfm_Errh_Reset_Internal_Statuses(void);
+«IF (Ssfm_IsSUSDErrors_Configured(sSFM.sum_Ssfm_ConfigSet))-»
+«IF ((Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) || (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet))) -»
+static void Sum_Ssfm_Errh_Notification_SUSD(void);
+«ENDIF-»
+«ENDIF-»
+static void Sum_Ssfm_Errh_ClearDiagnosticRequest_Confirmation(Dcm_ConfirmationStatusType ConfirmationStatus);
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+
+ *********************************************************************************************************************************************************
+ */
+
+/**
+ *  @brief Variable for the Service 0x14 request status of SSFM-ERRH
+ *  @private
+ **/
+static boolean Sum_Ssfm_Errh_Service14Requested = FALSE;
+
+/* PRQA S 1532 ++ # It's will be called from the DTCTriggered module*/
+/**
+ * @brief           SSFM/ERRH function to get the status of Service 0x14 requested.
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          boolean
+ **/
+ /*PRQA S 1503 1*/ /* it will be used in future development */
+FUNC(boolean, SUM_SSFM_ERRH_CODE) Sum_Ssfm_Errh_GetService14RequestStatus(void)
+{
+	return Sum_Ssfm_Errh_Service14Requested;
+}
+
+/**
+ * @brief           SSFM/ERRH function to reset Loss of Comm internal variable statuses
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_Reset_LossOfComm_Internal_Statuses(void)
+{
+	uint16 index;
+	for (index = 0u; index < (SSFM_NUM_OF_SIGNALBASED_CONTROLLERS + SSFM_NUM_OF_SERVICEBASED_TARGETDEVICES); index++)
+	{
+		Sum_Ssfm_NodeLoss_Debouncers[index].DebouncerOwner.ECUInfo->LossOfComm = FALSE;
+		Sum_Ssfm_NodeLoss_Debouncers[index].DebouncerOwner.ECUInfo->TempLossOfComm = FALSE;
+		Sum_Ssfm_NodeLoss_Debouncers[index].DebouncerOwner.ECUInfo->FaultTimerElapsed = 0u;
+	}
+	for(index = 0u; index < SSFM_SSM_NUM_OF_SERIALDATAS; index++){
+		if(Sum_Ssfm_SerialDatas[index].LostCommInfo != NULL_PTR){
+			Sum_Ssfm_SerialDatas[index].LostCommInfo->Rte_Write_LcFA(FALSE);
+		}
+	}
+}
+/**
+ * @brief           SSFM/ERRH function to reset all the internal variable statuses
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_Reset_Internal_Statuses(void)
+{
+	/*[$Satisfies $DDS_SSFM 110]*/
+	uint16 feature_index, index;
+	/* Reset all the internal variables */
+«IF (Ssfm_IsSUSDErrors_Configured(sSFM.sum_Ssfm_ConfigSet))-»
+«IF ((Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) || (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet))) -»
+«IF (Ssfm_NumOfRunCrankDebouncers(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) > 1)-»
+	for (index = 0u; index < SSFM_ERRH_NUM_OF_CFG_ERROR_SUSD; index++)
+	{
+		Sum_Ssfm_RunCrank_Debouncers[index].DebouncerOwner.RunCrank->debouncing_result = SUM_SSFM_EvaluationSts_Unknown;
+	}
+«ELSE-»
+		Sum_Ssfm_RunCrank_Debouncers[0].DebouncerOwner.RunCrank->debouncing_result = SUM_SSFM_EvaluationSts_Unknown;
+«ENDIF-»
+«ENDIF-»
+«ENDIF-»
+	Sum_Ssfm_Errh_Reset_LossOfComm_Internal_Statuses();
+«REM»
+	Since the logic for Authenticated/ContOp/Protected/Safety serial data is the same, to prevent repeating the same code
+	in the xpt file, the following FOREACH is used. The DEB_LIST will represent one of the four above mentioned features.
+«ENDREM»
+«FOREACH {
+	"Authenticated",
+	"ContOp",
+	"Protected",
+	"Safety"
+	} AS DEB_LIST ITERATOR i-»
+«IF Ssfm_IsAnyACPS(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData, DEB_LIST)-»
+	for (index = 0u; index < SSFM_SSM_NUM_OF_«DEB_LIST.toUpperCase()»_SERIALDATAS; index++){
+		Sum_Ssfm_FIM_«DEB_LIST»_Debouncers[index].DebouncerOwner.FIM->«DEB_LIST»->FxFA = FALSE;
+		Sum_Ssfm_FIM_«DEB_LIST»_Debouncers[index].DebouncerOwner.FIM->«DEB_LIST»->FP_Rte_Write_PP_FxFA_LocalSWC(FALSE);
+	}
+«ENDIF-»
+«ENDFOREACH-»
+
+	for (feature_index = 0u; feature_index < SSFM_DEBOUNCING_FEATURES; feature_index++){
+		for (index = 0u; index < Sum_Ssfm_Debouncer_Sizes[feature_index]; index++){
+			Sum_Ssfm_Debouncer_Lists[feature_index][index].Y = 0u;
+			Sum_Ssfm_Debouncer_Lists[feature_index][index].X = 0u;
+			Sum_Ssfm_Debouncer_Lists[feature_index][index].LastEvalStatus = SUM_SSFM_EvaluationSts_Unknown;
+		}
+	}
+
+	Sum_Ssfm_DID_E0B8_ResetData();
+	Sum_Ssfm_DID_E0BA_ResetData();
+	/*[$Satisfies $DDS_SSFM 132]*/
+	Sum_Ssfm_ClearDIDE0B9_Info();
+«IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))-»
+	/*[$Satisfies $DDS_SSFM 213]*/
+	Sum_Ssfm_Clear_KeySlot_Authentication_Failure_Timers();
+«ENDIF-»
+}
+
+«IF (Ssfm_IsSUSDErrors_Configured(sSFM.sum_Ssfm_ConfigSet))-»
+«IF ((Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) || (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet))) -»
+/**
+ * @brief           SSFM/ERRH function to send notification to SUSD
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_Notification_SUSD(void)
+{
+	/*[$Satisfies $DDS_SSFM 111]*/
+«IF (Ssfm_NumOfRunCrankDebouncers(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) > 1)-»
+	uint8 index;
+	for (index = 0; index < SSFM_ERRH_NUM_OF_CFG_ERROR_SUSD; index++)
+	{
+		Sum_Ssfm_Errh_RunCrankInputStuckFault[index].Rte_Write_SSFM_SUSD_FA_StatusRequest(FALSE);
+	}
+«ELSE-»
+	Sum_Ssfm_Errh_RunCrankInputStuckFault[0].Rte_Write_SSFM_SUSD_FA_StatusRequest(FALSE);
+«ENDIF-»
+}
+«ENDIF-»
+«ENDIF-»
+
+/**
+ * @brief           SSFM/ERRH function to handle clear diagnostic request of ServiceRequest confirmation
+ *
+ * @param[in]       ConfirmationStatus - Dcm_ConfirmationStatusType*: confirmation of a successful transmission or a transmission error of a diagnostic service.
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_ClearDiagnosticRequest_Confirmation(Dcm_ConfirmationStatusType ConfirmationStatus)
+{
+	/*[$Satisfies $DDS_SSFM 113]*/
+	if (ConfirmationStatus == DCM_RES_POS_OK)
+	{
+		/* Clear application related DTC flags */
+		Sum_Ssfm_Errh_Reset_Internal_Statuses();
+«IF (Ssfm_IsSUSDErrors_Configured(sSFM.sum_Ssfm_ConfigSet))-»
+«IF ((Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) || (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet))) -»
+		/* SSFM ERRH shall provide a notification back to SUSD */
+		Sum_Ssfm_Errh_Notification_SUSD();
+«ENDIF-»
+«ENDIF-»
+		/* Notify other components that the clear diagnostic request has been approved */
+		(void) Rte_Write_SUM_SSFM_PP_SSFM_ClearDiagReq_SSFMClearDiagReq(SUM_SSFM_ClearDiagReq_Approved);
+		«IF Sum_Ssfm_Errh_U19A6_87_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+		/* Handle DTC D9A687 */
+		Sum_Ssfm_U19A6_87_Update(FALSE);
+		«ENDIF-»
+		Sum_Ssfm_Errh_Service14Requested = TRUE;
+	}
+	else
+	{
+		/* Notify other components that the clear diagnostic request has been Rejected */
+		(void) Rte_Write_SUM_SSFM_PP_SSFM_ClearDiagReq_SSFMClearDiagReq(SUM_SSFM_ClearDiagReq_Rejected);
+		Sum_Ssfm_Errh_Service14Requested = FALSE;
+	}
+}
+
+/**
+ * @brief           Runnable function for SUM SSFM to handle the ServiceRequest upon a ClearDiagnosticInformation confirmation
+ *
+ * @param[in]       ConfirmationStatus - Dcm_ConfirmationStatusType*: confirmation of a successful transmission or a transmission error of a diagnostic service.
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          E_OK
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE */
+FUNC(Std_ReturnType, SUM_SSFM_CODE) Runnable_SSFM_ServiceRequest_Confirmation(VAR(uint8, AUTOMATIC) SID,
+                                                                         VAR(uint8, AUTOMATIC) ReqType,
+                                                                         VAR(uint16, AUTOMATIC) ConnectionId,
+                                                                         VAR(Dcm_ConfirmationStatusType, AUTOMATIC) ConfirmationStatus,
+                                                                         VAR(Dcm_ProtocolType, AUTOMATIC) ProtocolType,
+                                                                         VAR(uint16, AUTOMATIC) TesterSourceAddress)
+{
+	/*[$Satisfies $DDS_SSFM 115]*/
+	/* These parameters are the inputs from DCM which are not used in this part of code */
+	SUM_PARAM_UNUSED(ConnectionId);
+	SUM_PARAM_UNUSED(ReqType);
+	SUM_PARAM_UNUSED(ProtocolType);
+	SUM_PARAM_UNUSED(TesterSourceAddress);
+
+	switch (SID)
+	{
+		case SSFM_ERRH_DCM_CLEARDIAGNOSTICREQUEST:
+			Sum_Ssfm_Errh_ClearDiagnosticRequest_Confirmation(ConfirmationStatus);
+			break;
+
+		default:
+			/* do Nothing */
+		break;
+	}
+	return E_OK;
+}
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

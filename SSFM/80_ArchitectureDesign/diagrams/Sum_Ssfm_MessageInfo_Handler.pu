@@ -1,0 +1,76 @@
+@startuml Sum_Ssfm_MessageInfo_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_MessageInfo_Handler"
+
+**Interfaces Legend**
+	//pi301 //: SUM_C_Disable_Tx_<n> to SUM_PNC and SUM_SSC
+	//pi302 //: SUM_BswM_DisablePdu
+	//II303 //: Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive()
+	//II304 //: Sum_Ssfm_Is_DisableNormalComm()
+	//pi305 //: RE_CbkRxAck_<SerialData_Name>
+	//pi306 //: Rte_COMCbkTOut_<SerialData_Name>
+	//II307 //: Sum_Ssfm_Is_SecOC_VerificationSts_Failure()
+	//II308 //: Sum_Ssfm_Is_DisablePdu_Rx()
+	//II309 //: FcI (variable from Sum_Ssfm_Authenticated)
+	//CI01 :// Sum_Ssfm_C_SsmDisable_<Tx/Rx>_PDU_<Pduname> 
+	//ri303 //: PNC_ActiveRxPDUEnable<n> from SUM_PNC
+	//ri304 //: DIAG_DisableNormalComm<channel> from SUM_DIAG
+	//ri305 //: PN_DTC_Allowed<n> from SUM_PNC
+
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+
+	interface pi301
+	interface pi302
+	interface II303
+	interface II304
+	interface ri303
+	interface ri304
+	interface ri305
+	interface pi305
+	interface pi306
+	interface II307
+	interface II308
+	interface CI01
+
+component [Sum_Ssfm_MessageInfo_Handler] as E{
+	portout ppi301
+    portout ppi302
+	portout ppi305
+    portout ppi306
+
+	portin pri303
+    portin pri304
+	portin pri305
+	
+	
+} 
+
+
+    ppi301 --down0 pi301
+	ppi302 --down0 pi302	
+
+	pri303 --up-( ri303
+	pri304 --up-( ri304
+	pri305 --up-( ri305
+
+	ppi305 --down0 pi305
+	ppi306 --down0 pi306
+
+	E --left0 II308
+	E --left0 II307
+	E --left0 II303
+	E --left0 II304	
+	E --left-( II309
+	E --left-( CI01
+
+@enduml

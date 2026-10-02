@@ -1,0 +1,60 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DID_E0B9_Handler.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM DID E0B9 Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_DID_E0B9_HANDLER_H
+#define SUM_SSFM_DID_E0B9_HANDLER_H
+
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0B9_Update_Message_Av(const Sum_Ssfm_SerialData *serial_data);
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_RestoreMessageAvDidE0B9(void); 
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_SaveDIDE0B9_Data(void); 
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_ClearDIDE0B9_Info(void);
+
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

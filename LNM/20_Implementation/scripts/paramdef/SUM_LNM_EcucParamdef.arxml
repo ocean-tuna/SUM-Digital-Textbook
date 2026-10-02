@@ -1,0 +1,1404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 autosar_4-0-3.xsd">
+    <AR-PACKAGES>
+      <AR-PACKAGE>
+        <SHORT-NAME>ASW_SUM_LNM</SHORT-NAME>
+        <ELEMENTS>
+          <!-- Module Definition: LNM -->
+          <ECUC-MODULE-DEF UUID="ECUC:a2cd582b-3dfc-4ed4-a2e2-2689961a7bd6">
+            <SHORT-NAME>LNM</SHORT-NAME>
+            <DESC>
+              <L-2 L="EN">Configuration of the LNM (Lin Network Manager) module.</L-2>
+            </DESC>
+            <ADMIN-DATA>
+              <DOC-REVISIONS>
+                <DOC-REVISION>
+                  <REVISION-LABEL>4.2.2</REVISION-LABEL>
+                  <ISSUED-BY>AUTOSAR</ISSUED-BY>
+                  <DATE>2010-12-03</DATE>
+                </DOC-REVISION>
+              </DOC-REVISIONS>
+            </ADMIN-DATA>
+            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+            <REFINED-MODULE-DEF-REF DEST="ECUC-MODULE-DEF">/AUTOSAR/EcucDefs/LNM</REFINED-MODULE-DEF-REF>
+            <SUPPORTED-CONFIG-VARIANTS>
+              <SUPPORTED-CONFIG-VARIANT>VARIANT-POST-BUILD</SUPPORTED-CONFIG-VARIANT>
+            </SUPPORTED-CONFIG-VARIANTS>
+            <CONTAINERS>
+              <!-- Container Definition: LNM_General -->
+              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                <SHORT-NAME>LNM_General</SHORT-NAME>
+                <DESC>
+                  <L-2 L="EN">General configuration parameters of SUM_LNM.</L-2>
+                </DESC>
+                <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                <PARAMETERS>
+                  <!-- PARAMETER DEFINITION: LNM_MainFunction_Period -->
+                  <ECUC-FLOAT-PARAM-DEF UUID="ECUC:0d223c34-88b4-4953-b63d-178406689302">
+                    <SHORT-NAME>LNM_MainFunction_Period</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Time in sec, for the periodicity of the MainFunction runnable</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>GM_ECUC</ORIGIN>
+                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                    <DEFAULT-VALUE>0.1</DEFAULT-VALUE>
+                    <MAX>0.2</MAX>
+                    <MIN>0.001</MIN>
+                  </ECUC-FLOAT-PARAM-DEF>
+				  <!-- PARAMETER DEFINITION: LNM_NetworkStatus_Period  -->
+                  <ECUC-FLOAT-PARAM-DEF UUID="ECUC:0d223c34-88b4-4953-b63d-178406689302">
+                    <SHORT-NAME>LNM_NetworkStatus_Period</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Time in sec, for the periodicity of the NetworkStatus</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>GM_ECUC</ORIGIN>
+                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                    <DEFAULT-VALUE>0.1</DEFAULT-VALUE>
+                    <MAX>0.2</MAX>
+                    <MIN>0.001</MIN>
+                  </ECUC-FLOAT-PARAM-DEF>
+				  <!-- PARAMETER DEFINITION: LNM_ScheduleManagement_Period  -->
+                  <ECUC-FLOAT-PARAM-DEF UUID="ECUC:0d223c34-88b4-4953-b63d-178406689302">
+                    <SHORT-NAME>LNM_ScheduleManagement_Period</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Time in sec, for the periodicity of the ScheduleManagement</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>GM_ECUC</ORIGIN>
+                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                    <DEFAULT-VALUE>0.1</DEFAULT-VALUE>
+                    <MAX>0.2</MAX>
+                    <MIN>0.001</MIN>
+                  </ECUC-FLOAT-PARAM-DEF>
+	              <!-- PARAMETER DEFINITION: LNM_NetworkFaultManager_Period  -->
+                  <ECUC-FLOAT-PARAM-DEF UUID="ECUC:0d223c34-88b4-4953-b63d-178406689302">
+                    <SHORT-NAME>LNM_NetworkFaultManager_Period</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Time in sec, for the periodicity of the NetworkFaultManager</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>GM_ECUC</ORIGIN>
+                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                    <DEFAULT-VALUE>0.1</DEFAULT-VALUE>
+                    <MAX>0.2</MAX>
+                    <MIN>0.001</MIN>
+                  </ECUC-FLOAT-PARAM-DEF>
+				  <!-- PARAMETER DEFINITION: LNM_PermitExecution_Mask -->
+				  <ECUC-INTEGER-PARAM-DEF>
+                    <SHORT-NAME>LNM_PermitExecution_Mask</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Mask that is checked by SUM_LNM to execute its functions</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>GM_ECUC</ORIGIN>
+                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                    <DEFAULT-VALUE>254</DEFAULT-VALUE>
+                  </ECUC-INTEGER-PARAM-DEF>
+				  <!-- LNM_TWuDelay_Commander -->
+				  <ECUC-INTEGER-PARAM-DEF>
+                    <SHORT-NAME>LNM_TWuDelay_Commander</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Delay in millisecond before schedule activation when wakeup has been requested by the Commander</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+		  	        <DEFAULT-VALUE>100</DEFAULT-VALUE>
+                    <MAX>200</MAX>
+                    <MIN>0</MIN>
+                  </ECUC-INTEGER-PARAM-DEF>
+				  <!-- LNM_TWuDelay_Responder -->
+				  <ECUC-INTEGER-PARAM-DEF>
+                    <SHORT-NAME>LNM_TWuDelay_Responder</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Delay in millisecond before schedule activation when wakeup has been requested by the Responder</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+		  	        <DEFAULT-VALUE>100</DEFAULT-VALUE>
+                    <MAX>200</MAX>
+                    <MIN>0</MIN>
+                  </ECUC-INTEGER-PARAM-DEF>
+				  <!-- LNM_WupTxRetries_Commander -->
+			      <ECUC-INTEGER-PARAM-DEF>
+                    <SHORT-NAME>LNM_WupTxRetries_Commander</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Init value of calibration parameter. Number of retries before notification of Loss of Communication with Bus, when transitioning from NO COMM to FULL COMM</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+					<DEFAULT-VALUE>10</DEFAULT-VALUE>
+                    <MAX>255</MAX>
+                    <MIN>0</MIN>
+                  </ECUC-INTEGER-PARAM-DEF>
+                  <!-- PARAMETER DEFINITION: CyberFill_Supported -->
+                  <ECUC-BOOLEAN-PARAM-DEF>
+                    <SHORT-NAME>CyberFill_Supported</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Enable the CyberFill value support</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>GM_ECUC</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                   </ECUC-BOOLEAN-PARAM-DEF>
+				  <!-- PARAMETER DEFINITION: LNM_CyberFill Value  -->
+		          <ECUC-INTEGER-PARAM-DEF>
+                    <SHORT-NAME>LNM_CyberFillValue</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">CyberFill value provided by SUM_LNM at initialization time</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>GM_ECUC</ORIGIN>
+                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                    <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                  </ECUC-INTEGER-PARAM-DEF>
+                  <!-- PARAMETER DEFINITION: LnmGenerateInitRunnable -->
+                  <ECUC-BOOLEAN-PARAM-DEF>
+                    <SHORT-NAME>LnmGenerateInitRunnable</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">The configuration parameter is used to allow the generation of a periodic runnable to run function Runnable_Lnm_Init one time.
+                       If TRUE the Lnm should generate the periodic runnable to execute init() function one time otherwise, the init() function is called by a BswM action list during startup.</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>GM_ECUC</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                   </ECUC-BOOLEAN-PARAM-DEF>
+                   <!-- PARAMETER DEFINITION: LnmInitFuncPeriodicity -->
+                  <ECUC-FLOAT-PARAM-DEF>
+                    <SHORT-NAME>LnmInitFuncPeriodicity</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Specifies time in milisecond, for the periodicity of the runnable RE_Lnm_Init. Float values are supported. This parameter is required when LnmGenerateInitRunnable is set to TRUE.</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>GM_ECUC</ORIGIN>
+                    <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                    <DEFAULT-VALUE>1000.0</DEFAULT-VALUE>
+                    <MAX>5000.0</MAX>
+                    <MIN>1.0</MIN>
+                  </ECUC-FLOAT-PARAM-DEF>
+				  <!-- PARAMETER DEFINITION: Sum_Lnm_ConfGen_Enabled -->
+				  <!-- Satisfies: [$SDD_LNM 510] -->
+                  <ECUC-BOOLEAN-PARAM-DEF>
+                    <SHORT-NAME>Sum_Lnm_ConfGen_Enabled</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">If false it's enabling the generation of Sum_Lnm_SWCD.arxml, if true the ConfGen will generate that file.</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>GM_ECUC</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                   </ECUC-BOOLEAN-PARAM-DEF>
+				  <!-- PARAMETER DEFINITION: Sum_Lnm_ScheduleChannelUserFuncs_Enabled -->
+                  <ECUC-BOOLEAN-PARAM-DEF>
+                    <SHORT-NAME>Sum_Lnm_ScheduleChannelUserFuncs_Enabled</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Enable the use of user functions for changing the Schedule Table and Channel State for the LIN network.</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>GM_ECUC</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                   </ECUC-BOOLEAN-PARAM-DEF>
+				  <!-- PARAMETER DEFINITION: lNM_C_DTC_LostCommWithLinResp_Enabled -->
+                  <ECUC-BOOLEAN-PARAM-DEF>
+                    <SHORT-NAME>lNM_C_DTC_LostCommWithLinResp_Enabled</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Initial value for the calibration parameter controlling whether to enable the Lost Communication with LIN Responder Device DTC. Setting this parameter to true will let LNM aggregate the DTC.</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>GM_ECUC</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                   </ECUC-BOOLEAN-PARAM-DEF>
+				</PARAMETERS>
+				<REFERENCES>
+		  	      <ECUC-REFERENCE-DEF>
+                    <SHORT-NAME>LNM_DID_F1BE_Reference</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Reference to the Dcm service for DID F1BE</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <IMPLEMENTATION-CONFIG-CLASSES>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                        <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                      </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    </IMPLEMENTATION-CONFIG-CLASSES>
+                    <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+                  </ECUC-REFERENCE-DEF>
+				</REFERENCES>
+              </ECUC-PARAM-CONF-CONTAINER-DEF>
+			  <!-- Container Definition: LNM_Arbitration -->
+              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                <SHORT-NAME>LNM_Arbitration</SHORT-NAME>
+                <DESC>
+                  <L-2 L="EN">Configuration for LNM arbitration</L-2>
+                </DESC>
+                <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+				<SUB-CONTAINERS>
+				  <!-- LNM_Inputs -->
+                  <ECUC-PARAM-CONF-CONTAINER-DEF>
+				    <SHORT-NAME>LNM_Inputs</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Configuration of LNM inputs</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+			        <SUB-CONTAINERS>
+				      <!-- LNM_ScheduleSignal -->
+                      <ECUC-PARAM-CONF-CONTAINER-DEF>
+				        <SHORT-NAME>LNM_ScheduleSignal</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">Configuration of LNM schedule signal</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                        <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+						<PARAMETERS>
+                          <!-- LNM_ScheduleSignalSource -->
+                          <ECUC-ENUMERATION-PARAM-DEF>
+                          <SHORT-NAME>LNM_ScheduleSignalSource</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Source definition of the schedule signal</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <IMPLEMENTATION-CONFIG-CLASSES>
+                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                              <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                              <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          </IMPLEMENTATION-CONFIG-CLASSES>
+                          <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                          <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                          <DEFAULT-VALUE>SWC</DEFAULT-VALUE>
+                          <LITERALS>
+                            <ECUC-ENUMERATION-LITERAL-DEF>
+                              <SHORT-NAME>SWC</SHORT-NAME>
+                              <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                            </ECUC-ENUMERATION-LITERAL-DEF>
+	                        <ECUC-ENUMERATION-LITERAL-DEF>
+                              <SHORT-NAME>Com</SHORT-NAME>
+                              <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                            </ECUC-ENUMERATION-LITERAL-DEF>
+	                        <ECUC-ENUMERATION-LITERAL-DEF>
+                              <SHORT-NAME>VPM</SHORT-NAME>
+                              <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                            </ECUC-ENUMERATION-LITERAL-DEF>
+                          </LITERALS>
+                          </ECUC-ENUMERATION-PARAM-DEF>
+						  <!-- LNM_ScheduleSignalType -->
+                          <ECUC-ENUMERATION-PARAM-DEF>
+                          <SHORT-NAME>LNM_ScheduleSignalType</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Definition of the schedule signal type</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <IMPLEMENTATION-CONFIG-CLASSES>
+                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                              <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                              <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          </IMPLEMENTATION-CONFIG-CLASSES>
+                          <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                          <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                          <DEFAULT-VALUE>uint8</DEFAULT-VALUE>
+                          <LITERALS>
+						    <ECUC-ENUMERATION-LITERAL-DEF>
+                              <SHORT-NAME>boolean</SHORT-NAME>
+                              <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                            </ECUC-ENUMERATION-LITERAL-DEF>
+                            <ECUC-ENUMERATION-LITERAL-DEF>
+                              <SHORT-NAME>uint8</SHORT-NAME>
+                              <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                            </ECUC-ENUMERATION-LITERAL-DEF>
+	                        <ECUC-ENUMERATION-LITERAL-DEF>
+                              <SHORT-NAME>uint16</SHORT-NAME>
+                              <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                            </ECUC-ENUMERATION-LITERAL-DEF>
+                          </LITERALS>
+                          </ECUC-ENUMERATION-PARAM-DEF>
+						</PARAMETERS>
+				      </ECUC-PARAM-CONF-CONTAINER-DEF>
+				    </SUB-CONTAINERS>
+				  </ECUC-PARAM-CONF-CONTAINER-DEF>
+			      <!-- LNM_Conditions -->
+                  <ECUC-PARAM-CONF-CONTAINER-DEF>
+				    <SHORT-NAME>LNM_Conditions</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Configuration of LNM conditions</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+					  <SUB-CONTAINERS>
+				        <!-- LNM_Condition -->
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+				          <SHORT-NAME>LNM_Condition</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Configuration of LNM project specific conditions</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                          <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+						  <PARAMETERS>
+						    <!-- LNM_CompareOperator -->
+                            <ECUC-ENUMERATION-PARAM-DEF>
+                            <SHORT-NAME>LNM_CompareOperator</SHORT-NAME>
+                            <DESC>
+                              <L-2 L="EN">Definition of the compare operation</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+                            <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                            <DEFAULT-VALUE>==</DEFAULT-VALUE>
+                            <LITERALS>
+                              <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>==</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+	                          <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>!=</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+							  <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>&lt;</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+						      <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>&gt;</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+							  <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>&lt;=</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+						      <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>&gt;=</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+                            </LITERALS>
+                            </ECUC-ENUMERATION-PARAM-DEF>
+				            <!-- LNM_CompareValue -->
+	         			    <ECUC-INTEGER-PARAM-DEF>
+                              <SHORT-NAME>LNM_CompareValue</SHORT-NAME>
+                                <DESC>
+                                  <L-2 L="EN">Definition of the value that is compared with the input</L-2>
+                                </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+						      <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                              <MAX>65535</MAX>
+                              <MIN>0</MIN>
+                            </ECUC-INTEGER-PARAM-DEF>
+                             <!-- LNM_CompareVPMValue -->
+                            <ECUC-ENUMERATION-PARAM-DEF>
+                            <SHORT-NAME>LNM_CompareVPMValue</SHORT-NAME>
+                            <DESC>
+                              <L-2 L="EN">Definition of the compare operation for VPM</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+                            <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                            <LITERALS>
+                              <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>OFF</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+                              <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>ACCESSORY</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+                              <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>RUN</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+                              <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>STARTREQUEST</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+	                          <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>PROPULSION</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+                              <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>TRANSPORT</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+                            </LITERALS>
+                            </ECUC-ENUMERATION-PARAM-DEF>
+						  </PARAMETERS>
+						  <REFERENCES>
+						    <!--LNM_InputRef -->
+						    <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>LNM_InputRef</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to the input that must be compared</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Arbitration/LNM_Inputs/LNM_ScheduleSignal</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+						  </REFERENCES>
+				        </ECUC-PARAM-CONF-CONTAINER-DEF>
+				     </SUB-CONTAINERS>
+			      </ECUC-PARAM-CONF-CONTAINER-DEF>
+			      <!-- LNM_Rules -->
+                  <ECUC-PARAM-CONF-CONTAINER-DEF>
+				    <SHORT-NAME>LNM_Rules</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">Configuration of LNM rules</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+				    <SUB-CONTAINERS>
+			          <!-- LNM_Rule -->
+                      <ECUC-PARAM-CONF-CONTAINER-DEF>
+		                <SHORT-NAME>LNM_Rule</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">Configuration of LNM project specific rules</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                        <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+						<PARAMETERS>
+					      <!-- LNM_LogicOperator -->
+                          <ECUC-ENUMERATION-PARAM-DEF>
+                            <SHORT-NAME>LNM_LogicOperator</SHORT-NAME>
+                            <DESC>
+                              <L-2 L="EN">Definition of the logic operator that relates the conditions</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+                            <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                            <DEFAULT-VALUE>&amp;</DEFAULT-VALUE>
+                            <LITERALS>
+                              <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>&amp;</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+	                          <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>|</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+                            </LITERALS>
+                          </ECUC-ENUMERATION-PARAM-DEF>
+						</PARAMETERS>
+						<REFERENCES>
+				          <!--LNM_ConditionRef -->
+				          <ECUC-CHOICE-REFERENCE-DEF>
+                            <SHORT-NAME>LNM_ConditionRef</SHORT-NAME>
+                            <DESC>
+                              <L-2 L="EN">Reference to the conditions or rules used to compone complex logic functions</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+                            <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+							<DESTINATION-REFS>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Arbitration/LNM_Conditions/LNM_Condition</DESTINATION-REF>
+							  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Arbitration/LNM_Rules/LNM_Rule</DESTINATION-REF>
+                            </DESTINATION-REFS>
+						  </ECUC-CHOICE-REFERENCE-DEF>
+		        		</REFERENCES>
+				      </ECUC-PARAM-CONF-CONTAINER-DEF>
+				    </SUB-CONTAINERS>
+                  </ECUC-PARAM-CONF-CONTAINER-DEF>
+				</SUB-CONTAINERS>
+              </ECUC-PARAM-CONF-CONTAINER-DEF>
+			  <!-- Container Definition: LNM_Networks -->
+              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                <SHORT-NAME>LNM_Networks</SHORT-NAME>
+                <DESC>
+                  <L-2 L="EN">Configuration of the system LIN Networks</L-2>
+                </DESC>
+                <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                <SUB-CONTAINERS>
+	              <!-- LNM_Network -->
+                  <ECUC-PARAM-CONF-CONTAINER-DEF>
+	                <SHORT-NAME>LNMNetwork</SHORT-NAME>
+                    <DESC>
+                      <L-2 L="EN">LNM network configuration</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                    <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                    <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+					<SUB-CONTAINERS>
+				      <!-- LNM_Responder -->
+					  <ECUC-PARAM-CONF-CONTAINER-DEF>
+	                    <SHORT-NAME>LNM_Responders</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">Configuration of Responders associated to the network</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                        <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                        <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+	             	    <PARAMETERS>
+					      <!-- LNM_MSCL_ByteIndex -->
+                          <ECUC-ENUMERATION-PARAM-DEF>
+                            <SHORT-NAME>LNM_MSCL_ByteIndex</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Configuration of the byte of the MSCL related to the selected Responder</L-2>
+                              </DESC>
+                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+                            <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                            <DEFAULT-VALUE>MSCL_BYTE_1</DEFAULT-VALUE>
+                            <LITERALS>
+                              <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>MSCL_BYTE_1</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+	                          <ECUC-ENUMERATION-LITERAL-DEF>
+                                <SHORT-NAME>MSCL_BYTE_2</SHORT-NAME>
+                                <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                              </ECUC-ENUMERATION-LITERAL-DEF>
+                            </LITERALS>
+                          </ECUC-ENUMERATION-PARAM-DEF>
+						  <!-- LNM_MSCL_BitIndex -->
+					      <ECUC-INTEGER-PARAM-DEF>
+                            <SHORT-NAME>LNM_MSCL_BitIndex</SHORT-NAME>
+                            <DESC>
+                              <L-2 L="EN">Configuration of the bit index of the MSCL related to the selected Responder. It can range from 0 to 7.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+                            <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+				            <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                            <MAX>7</MAX>
+                            <MIN>0</MIN>
+                          </ECUC-INTEGER-PARAM-DEF>
+						  <!-- LNM_C_ResponderPresent_InitValue  -->
+                          <ECUC-BOOLEAN-PARAM-DEF>
+                            <SHORT-NAME>LNM_C_ResponderPresent_InitValue</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">If MSCL via Calibration is configured, this parameter indicates the initial value of the calibration parameter</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>GM_ECUC</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                          </ECUC-BOOLEAN-PARAM-DEF>
+				          <!-- LNM_LossOfComm_withDevice_Timer -->
+					      <ECUC-INTEGER-PARAM-DEF>
+                            <SHORT-NAME>LNM_LossOfComm_withDevice_Timer</SHORT-NAME>
+                            <DESC>
+                              <L-2 L="EN">Configuration of the timer for ERRH debouncing of Loss of Communication with Device.</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+                            <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+				            <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                            <MAX>65535</MAX>
+                            <MIN>0</MIN>
+                          </ECUC-INTEGER-PARAM-DEF>
+			              <!-- LNM_Internal_Electronic_Failure_Supported  -->
+                          <ECUC-BOOLEAN-PARAM-DEF>
+                            <SHORT-NAME>LNM_Internal_Electronic_Failure_Supported</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Select if the selected Responder supports the Internal Electronic Failure DTC</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>GM_ECUC</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                          </ECUC-BOOLEAN-PARAM-DEF>
+						  <!-- LNM_IEF_APINFO2_Supported  -->
+                          <ECUC-BOOLEAN-PARAM-DEF>
+                            <SHORT-NAME>LNM_IEF_APINFO2_Supported</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">If Internal Electronic Failure DTC is supported, select if APINFO2 (Reset Status) to detect fault condition is supported</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>GM_ECUC</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                          </ECUC-BOOLEAN-PARAM-DEF>
+			              <!-- LNM_IEF_Reset_Threshold -->
+					      <ECUC-INTEGER-PARAM-DEF>
+                            <SHORT-NAME>LNM_IEF_Reset_Threshold</SHORT-NAME>
+                            <DESC>
+                              <L-2 L="EN">If APINFO2 is supported to set Internal Electronic Failure DTC, set the threshold of reset notification that are accepted before setting the DTC</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+                            <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+				            <DEFAULT-VALUE>3</DEFAULT-VALUE>
+                            <MAX>255</MAX>
+                            <MIN>1</MIN>
+                          </ECUC-INTEGER-PARAM-DEF>
+						  <!-- LNM_IEF_APINFO4_Supported  -->
+                          <ECUC-BOOLEAN-PARAM-DEF>
+                            <SHORT-NAME>LNM_IEF_APINFO4_Supported</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">If Internal Electronic Failure DTC is supported, select if APINFO4 (Application Status) to detect fault condition is supported</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>GM_ECUC</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                          </ECUC-BOOLEAN-PARAM-DEF>
+						  <!-- LNM_Responder_Device_Not_Configured_Supported  -->
+                          <ECUC-BOOLEAN-PARAM-DEF>
+                            <SHORT-NAME>LNM_Responder_Device_Not_Configured_Supported</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Select if the current Responder supports the LIN Responder Device Not Configured DTC. It requires APINFO3 signal support </L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>GM_ECUC</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                          </ECUC-BOOLEAN-PARAM-DEF>
+			              <!-- LNM_Config_Retries -->
+					      <ECUC-INTEGER-PARAM-DEF>
+                            <SHORT-NAME>LNM_Config_Retries</SHORT-NAME>
+                            <DESC>
+                              <L-2 L="EN">Number of retries for configuration of the Responder before Responder Device Not Configured is set</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <IMPLEMENTATION-CONFIG-CLASSES>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                              </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            </IMPLEMENTATION-CONFIG-CLASSES>
+                            <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                            <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+				            <DEFAULT-VALUE>3</DEFAULT-VALUE>
+                            <MAX>7</MAX>
+                            <MIN>0</MIN>
+                          </ECUC-INTEGER-PARAM-DEF>
+		         	    </PARAMETERS>
+  				      </ECUC-PARAM-CONF-CONTAINER-DEF>
+					  <!-- LNM_ScheduleManagement -->
+					  <ECUC-PARAM-CONF-CONTAINER-DEF>
+	                    <SHORT-NAME>LNM_ScheduleManagement</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">LNM network configuration</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                        <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                        <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+						<SUB-CONTAINERS>
+						  <!-- LNM_ScheduleStates -->
+					      <ECUC-PARAM-CONF-CONTAINER-DEF>
+	                        <SHORT-NAME>LNM_ScheduleStates</SHORT-NAME>
+                            <DESC>
+                              <L-2 L="EN">Configuration of schedule states of the specific network</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                            <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+							<SUB-CONTAINERS>
+						      <!-- LNM_ScheduleState -->
+					          <ECUC-PARAM-CONF-CONTAINER-DEF>
+	                            <SHORT-NAME>LNM_ScheduleState</SHORT-NAME>
+                                <DESC>
+                                  <L-2 L="EN">Configuration of schedule state of the specific network</L-2>
+                                </DESC>
+                                <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                                <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+							    <REFERENCES>
+				                  <!--LNM_ScheduleRef -->
+				                  <ECUC-CHOICE-REFERENCE-DEF>
+                                    <SHORT-NAME>LNM_ScheduleRef</SHORT-NAME>
+                                      <DESC>
+                                        <L-2 L="EN">Reference to the LinSM schedule associated to the state</L-2>
+                                      </DESC>
+                                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                      <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      </IMPLEMENTATION-CONFIG-CLASSES>
+                                      <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+									  <DESTINATION-REFS>
+                                        <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_LinSM/EcucModuleDefs/LinSM/LinSMChannel/LinSMSchedule</DESTINATION-REF>
+									    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_LinSM/EcucModuleDefs/LinSM/LinSMConfigSet/LinSMChannel/LinSMSchedule</DESTINATION-REF>
+						              </DESTINATION-REFS>
+								  </ECUC-CHOICE-REFERENCE-DEF>
+		        		        </REFERENCES>
+							  </ECUC-PARAM-CONF-CONTAINER-DEF>
+						      <!-- LNM_StartState -->
+					          <ECUC-PARAM-CONF-CONTAINER-DEF>
+	                            <SHORT-NAME>LNM_StartState</SHORT-NAME>
+                                <DESC>
+                                  <L-2 L="EN">Configuration of schedule start state</L-2>
+                                </DESC>
+                                <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                                <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+							  </ECUC-PARAM-CONF-CONTAINER-DEF>
+							  <!-- LNM_SleepState -->
+					          <ECUC-PARAM-CONF-CONTAINER-DEF>
+	                            <SHORT-NAME>LNM_SleepState</SHORT-NAME>
+                                <DESC>
+                                  <L-2 L="EN">Configuration of schedule sleep state</L-2>
+                                </DESC>
+                                <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                                <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+							  </ECUC-PARAM-CONF-CONTAINER-DEF>
+							</SUB-CONTAINERS>
+						  </ECUC-PARAM-CONF-CONTAINER-DEF>
+			               <!-- LNM_ScheduleTransitions -->
+					      <ECUC-PARAM-CONF-CONTAINER-DEF>
+	                        <SHORT-NAME>LNM_ScheduleTransitions</SHORT-NAME>
+                            <DESC>
+                              <L-2 L="EN">Configuration of schedule transitions of the specific network</L-2>
+                            </DESC>
+                            <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                            <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+							<SUB-CONTAINERS>
+						      <!-- LNM_ScheduleTransition -->
+					          <ECUC-PARAM-CONF-CONTAINER-DEF>
+	                            <SHORT-NAME>LNM_ScheduleTransition</SHORT-NAME>
+                                <DESC>
+                                  <L-2 L="EN">Configuration of schedule transition of the specific network</L-2>
+                                </DESC>
+                                <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                                <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+								<REFERENCES>
+								  <!--LNM_StartStateRef -->
+				                  <ECUC-CHOICE-REFERENCE-DEF>
+                                    <SHORT-NAME>LNM_StartStateRef</SHORT-NAME>
+                                      <DESC>
+                                        <L-2 L="EN">Reference to the starting state of the transition</L-2>
+                                      </DESC>
+                                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                      <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      </IMPLEMENTATION-CONFIG-CLASSES>
+                                      <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+							          <DESTINATION-REFS>
+                                        <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Networks/LNMNetwork/LNM_ScheduleManagement/LNM_ScheduleStates/LNM_ScheduleState</DESTINATION-REF>
+										<DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Networks/LNMNetwork/LNM_ScheduleManagement/LNM_ScheduleStates/LNM_StartState</DESTINATION-REF>
+										<DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Networks/LNMNetwork/LNM_ScheduleManagement/LNM_ScheduleStates/LNM_SleepState</DESTINATION-REF>
+                                      </DESTINATION-REFS>
+						          </ECUC-CHOICE-REFERENCE-DEF>
+								  <!--LNM_EndStateRef -->
+				                  <ECUC-CHOICE-REFERENCE-DEF>
+                                    <SHORT-NAME>LNM_EndStateRef</SHORT-NAME>
+                                      <DESC>
+                                        <L-2 L="EN">Reference to the end state of the transition</L-2>
+                                      </DESC>
+                                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                      <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      </IMPLEMENTATION-CONFIG-CLASSES>
+                                      <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+							          <DESTINATION-REFS>
+                                        <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Networks/LNMNetwork/LNM_ScheduleManagement/LNM_ScheduleStates/LNM_ScheduleState</DESTINATION-REF>
+										<DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Networks/LNMNetwork/LNM_ScheduleManagement/LNM_ScheduleStates/LNM_StartState</DESTINATION-REF>
+										<DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Networks/LNMNetwork/LNM_ScheduleManagement/LNM_ScheduleStates/LNM_SleepState</DESTINATION-REF>
+                                      </DESTINATION-REFS>
+						          </ECUC-CHOICE-REFERENCE-DEF>
+								  <!--LNM_TransitionRuleRef -->
+				                  <ECUC-REFERENCE-DEF>
+                                    <SHORT-NAME>LNM_TransitionRuleRef</SHORT-NAME>
+                                      <DESC>
+                                        <L-2 L="EN">Reference the rule used to activate the state transition</L-2>
+                                      </DESC>
+                                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                      <IMPLEMENTATION-CONFIG-CLASSES>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      </IMPLEMENTATION-CONFIG-CLASSES>
+                                      <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                                      <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Arbitration/LNM_Rules/LNM_Rule</DESTINATION-REF>
+						          </ECUC-REFERENCE-DEF>
+		        		        </REFERENCES>
+							  </ECUC-PARAM-CONF-CONTAINER-DEF>
+							</SUB-CONTAINERS>
+						  </ECUC-PARAM-CONF-CONTAINER-DEF>
+						</SUB-CONTAINERS>
+	         	      </ECUC-PARAM-CONF-CONTAINER-DEF>
+					</SUB-CONTAINERS>
+					<PARAMETERS>
+	                  <!-- LNM_Network_ID -->
+					  <ECUC-INTEGER-PARAM-DEF>
+                        <SHORT-NAME>LNM_Network_ID</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">Network ID that ranges from 1 to 16. Needed for F1BE DID</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                        <IMPLEMENTATION-CONFIG-CLASSES>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        </IMPLEMENTATION-CONFIG-CLASSES>
+                        <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                        <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+						<DEFAULT-VALUE>1</DEFAULT-VALUE>
+                        <MAX>16</MAX>
+                        <MIN>1</MIN>
+                      </ECUC-INTEGER-PARAM-DEF>
+					  <!-- LNM_MSCL_Strategy -->
+                      <ECUC-ENUMERATION-PARAM-DEF>
+                        <SHORT-NAME>LNM_MSCL_Strategy</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">Define the strategy used by the ECU for the MSCL. MSCL via Calibration or Evaluation. For more information please refer to the user guide.</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                        <IMPLEMENTATION-CONFIG-CLASSES>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        </IMPLEMENTATION-CONFIG-CLASSES>
+                        <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                        <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                        <DEFAULT-VALUE>Calibration</DEFAULT-VALUE>
+                        <LITERALS>
+                          <ECUC-ENUMERATION-LITERAL-DEF>
+                            <SHORT-NAME>Calibration</SHORT-NAME>
+                            <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                          </ECUC-ENUMERATION-LITERAL-DEF>
+	                      <ECUC-ENUMERATION-LITERAL-DEF>
+                            <SHORT-NAME>Evaluation</SHORT-NAME>
+                            <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                          </ECUC-ENUMERATION-LITERAL-DEF>
+                        </LITERALS>
+                      </ECUC-ENUMERATION-PARAM-DEF>
+                      <!-- LNM_ChannelEnable_InitValue -->
+                      <ECUC-BOOLEAN-PARAM-DEF>
+                        <SHORT-NAME>LNM_ChannelEnable_InitValue</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">Init value for the calibration parameter that enables the execution of the MSCL</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                        <IMPLEMENTATION-CONFIG-CLASSES>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        </IMPLEMENTATION-CONFIG-CLASSES>
+                        <ORIGIN>GM_ECUC</ORIGIN>
+                        <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                        <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                      </ECUC-BOOLEAN-PARAM-DEF>
+					  <!-- LNM_ActivationSignalType -->
+                      <ECUC-ENUMERATION-PARAM-DEF>
+                        <SHORT-NAME>LNM_ActivationSignalType</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">Source definition of the activation signal</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                        <IMPLEMENTATION-CONFIG-CLASSES>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        </IMPLEMENTATION-CONFIG-CLASSES>
+                        <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                        <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                        <DEFAULT-VALUE>SWC</DEFAULT-VALUE>
+                        <LITERALS>
+                          <ECUC-ENUMERATION-LITERAL-DEF>
+                            <SHORT-NAME>SWC</SHORT-NAME>
+                            <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                          </ECUC-ENUMERATION-LITERAL-DEF>
+	                      <ECUC-ENUMERATION-LITERAL-DEF>
+                            <SHORT-NAME>Com</SHORT-NAME>
+                            <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                          </ECUC-ENUMERATION-LITERAL-DEF>
+	                      <ECUC-ENUMERATION-LITERAL-DEF>
+                            <SHORT-NAME>Rule</SHORT-NAME>
+                            <ORIGIN>ETAS:v1.0.0:2015-05-04</ORIGIN>
+                          </ECUC-ENUMERATION-LITERAL-DEF>
+                        </LITERALS>
+                      </ECUC-ENUMERATION-PARAM-DEF>
+					  <!-- LNM_ActivationMask -->
+					  <ECUC-INTEGER-PARAM-DEF>
+                        <SHORT-NAME>LNM_ActivationMask</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">Activation bit mask to select relevant bits for channel activation</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                        <IMPLEMENTATION-CONFIG-CLASSES>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        </IMPLEMENTATION-CONFIG-CLASSES>
+                        <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                        <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                        <MAX>255</MAX>
+                        <MIN>0</MIN>
+                      </ECUC-INTEGER-PARAM-DEF>
+			          <!-- LNM_DeactivationMask -->
+					  <ECUC-INTEGER-PARAM-DEF>
+                        <SHORT-NAME>LNM_DeactivationMask</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">Deactivation bit mask to select relevant bits for channel deactivation</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                        <IMPLEMENTATION-CONFIG-CLASSES>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        </IMPLEMENTATION-CONFIG-CLASSES>
+                        <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                        <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                        <MAX>255</MAX>
+                        <MIN>0</MIN>
+                      </ECUC-INTEGER-PARAM-DEF>
+                      <!-- LNM_C_DTC_LINBusOff  -->
+                      <ECUC-BOOLEAN-PARAM-DEF>
+                        <SHORT-NAME>LNM_C_DTC_LINBusOff</SHORT-NAME>
+                        <DESC>
+                          <L-2 L="EN">Parameter that enables the DTC for LIN Bus off.</L-2>
+                        </DESC>
+                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                        <IMPLEMENTATION-CONFIG-CLASSES>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                            <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                          </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        </IMPLEMENTATION-CONFIG-CLASSES>
+                        <ORIGIN>GM_ECUC</ORIGIN>
+                        <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                        <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                      </ECUC-BOOLEAN-PARAM-DEF>
+					  <!-- LNM_C_PreSleepDelay  -->
+					  <ECUC-INTEGER-PARAM-DEF>
+                      <SHORT-NAME>LNM_C_PreSleepDelay</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">Calibration parameter for Time in ms, indicates the delay from the instance the schedule switching criteria is satisfied to transition from a RUN_ONCE or a RUN_CONTINUOUS FULL_COMM state to a NO_COMM state, until the transition to the NULL schedule occurs when the SLEEP command is issued.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>25</DEFAULT-VALUE>
+                      <MAX>4000</MAX>
+                      <MIN>0</MIN>
+                    </ECUC-INTEGER-PARAM-DEF>
+					</PARAMETERS>
+					<REFERENCES>
+					  <ECUC-REFERENCE-DEF>
+					  <SHORT-NAME>Sum_LNM_LinSMNetworkId_ref</SHORT-NAME>
+                      <DESC>
+                      <L-2 L="EN">Reference to the unique LIN network index</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                        <IMPLEMENTATION-CONFIG-CLASSES>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                      <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_LinSM/EcucModuleDefs/LinSM/LinSMConfigSet/LinSMChannel</DESTINATION-REF>
+					</ECUC-REFERENCE-DEF>
+					  <ECUC-REFERENCE-DEF>
+					  <SHORT-NAME>Sum_LNM_Rule_ref</SHORT-NAME>
+                      <DESC>
+                      <L-2 L="EN">Reference to the activation rule</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                        <IMPLEMENTATION-CONFIG-CLASSES>
+                          <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.1.0:2015-07-15</ORIGIN>
+                      <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Arbitration/LNM_Rules/LNM_Rule</DESTINATION-REF>
+					</ECUC-REFERENCE-DEF>
+					</REFERENCES>
+		  		  </ECUC-PARAM-CONF-CONTAINER-DEF>
+			  	</SUB-CONTAINERS>
+              </ECUC-PARAM-CONF-CONTAINER-DEF>
+            </CONTAINERS>
+          </ECUC-MODULE-DEF>
+        </ELEMENTS>
+      </AR-PACKAGE>
+    </AR-PACKAGES>
+</AUTOSAR>

@@ -1,0 +1,63 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_SM_Req_EthIf.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for defining the interfaces between CanIf and Spm
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef _SUM_SPM_SM_REQ_ETHIF_H_
+#define _SUM_SPM_SM_REQ_ETHIF_H_
+
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_RequesterLst.h"
+#include "Sum_Spm_PowerProfileStateMachine.h"
+#include "Sum_Spm_PBCfg.h"
+
+
+typedef enum CommandParserType{
+   CMD_STATUS_REQUEST = 0x00u,
+   CMD_STATUS_POWPROF,
+   CMD_IS_SENT
+}CommandParser; 
+
+void Spm_SoftwMgr_PopulateSMFrame(void);
+void Spm_ReadIncoming_SM_Message(void);
+void Spm_SoftwMgr_AppendFeedback(const uint8 indexPowProf, SPM_dt_Prv *sm_frame, const uint8 reqStatus, const uint32 swId, const uint8 profileNumber);
+boolean Spm_SoftwMgr_CheckPowProfIndexPresentInSMFrame(const uint8 powProfIndex, SPM_dt_Prv * sm_frame, const uint8 errorCode);
+
+#endif /* END MULTIPLE INCLUSION GUARD */
+
+/* EOF */
+
+«ENDFILE»
+«ENDDEFINE»

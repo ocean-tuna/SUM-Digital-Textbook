@@ -1,0 +1,57 @@
+@startuml
+
+    skinparam rectangle {
+        BackgroundColor LightGray
+        BorderColor Black
+    }
+
+    rectangle "Sum_Spm_RequestQueue" as q {
+        Sum_Spm_RequestQueue : Activate_Profile_1, Deactivate_Profile_2
+    }
+
+    rectangle "Profile_1 Requester's list" as req1 {
+        RequesterList1 : Reqeuster_192168110
+    }
+
+    rectangle "Profile_2 Requester's list" as req2 {
+        RequesterList2 : Reqeuster_192168112
+    }
+
+    rectangle "Profile_3 Requester's list" as req3 {
+        RequesterList3 : Reqeuster_192168113
+    }
+
+    rectangle "<b>Spm_prv_prfReqDispatcher()<b> \n \n Enqueue request for the profile and its dependencies" as disp {
+    }
+
+    rectangle "<b>Spm_DequeueReqActionHandler()<b> \n \n Dequeue all the requests and populate the \n corresponding Power Profile Requester's List" as dequeue {
+    }
+
+    package "C/S SPM_ActivateProfile()/ \n SPM_DeactivateProfile()" {
+        note as rr
+            A local SWC call this C/S to send a request.
+        end note
+        "Local Request" -down-> "Check Condition\nLocal Request" 
+        "Check Condition\nLocal Request" -down-> disp 
+    }
+
+    package "Spm_ReadIncoming_SM_Message()" {
+        
+        note as r
+            This function periodically 
+            check if there is any incoming
+            SM frame with requests.
+        end note
+
+        "Remote Request" -down-> "Check Condition\nRemote Request" 
+        "Check Condition\nRemote Request" -down-> disp 
+    }
+
+    disp -right-> Sum_Spm_RequestQueue : Enqueue Request
+    Sum_Spm_RequestQueue -right-> dequeue: Dequeue Request
+
+    dequeue -up-> req1 : Write if Profile_1 is requested
+    dequeue -down-> req2 : Write if Profile_2 is requested
+    dequeue -right-> req3 : Write if Profile_3 is requested
+
+    @enduml

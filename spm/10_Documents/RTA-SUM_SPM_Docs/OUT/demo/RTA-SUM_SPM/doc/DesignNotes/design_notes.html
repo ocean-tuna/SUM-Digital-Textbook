@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RTA-SUM SPM Design Notes &mdash; RTA-SUM SPM 8.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/assets/jsonview.bundle.css?v=f6ef2277" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/common.css?v=bd9ab754" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/layouts.css?v=448c382f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/modern.css?v=ffa536d2" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/styles.css?v=6c8eb985" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=e1f95d0e" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=87b6a113"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/assets/jsonview.bundle.js?v=18cd53c5"></script>
+        <script src="../../_static/assets/jsonview_loader.js?v=f7ff7e7d"></script>
+        <script src="../../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+        <script src="../../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+        <script src="../../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=f783d6a5"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="RTA-SUM SPM Release Notes" href="../ReleaseNotes/release_notes.html" />
+    <link rel="prev" title="Detailed Requirements Paramdef" href="25_Detailed_Req_Paramdef.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(to right, #164293, #89037A)" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            RTA-SUM SPM
+              <img src="../../_static/ETAS_Logo_White.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Software Requirements Specification:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Requirements/10_Requirements.html">RTA-SUM SPM Software Requirements Specification Document</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Detailed Requirements Paramdef:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="25_Detailed_Req_Paramdef.html">Detailed Requirements Paramdef</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Design Document:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RTA-SUM SPM Design Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#system-view">System View</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#network-topology">Network topology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spm-to-spm-communication">SPM to SPM communication</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spm-susd-interaction">SPM-SUSD Interaction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#shutdown-permission-management">Shutdown Permission Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#did-0xe0d7">DID 0xE0D7</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#spm-servicemanager-interaction">SPM-ServiceManager interaction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spm-serviceactivationstatusnotification">SPM_ServiceActivationStatusNotification</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#srvcmgr-spm-activateservices">SrvcMgr_SPM_ActivateServices</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#helper-function">Helper Function</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#spm-internal-design">SPM Internal Design</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#spm-class-diagram">SPM Class Diagram</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spm-initialization-phase">SPM Initialization Phase</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#activation-deactivation-of-a-profile">Activation/Deactivation of a Profile</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#request-handling">Request Handling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#local-request-handling">Local Request Handling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#get-activation-permission-of-power-profile">Get Activation Permission of Power Profile</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#get-power-profile-state-as-a-local-swc">Get Power Profile State as a Local SWC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#power-profile-dependencies-type">Power Profile dependencies type</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fsm-of-a-local-power-profile">FSM of a Local Power Profile</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fsm-of-a-remote-power-profile">FSM of a Remote Power Profile</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pdu-group-handling">PDU Group Handling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#service-discovery-learning-indication-management-logic">Service discovery learning indication management logic</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#spm-activation-profile-error-handling">SPM Activation Profile Error Handling</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#loss-of-communication-with-a-requester-sm">Loss Of Communication with a Requester SM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#activation-deactivation-error-handling">Activation/Deactivation Error Handling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#low-voltage-priority-level-handling">Low Voltage priority level Handling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vehiclepowermode-handling">VehiclePowerMode Handling</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#heartbeat-management">HeartBeat Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#power-graph-traversal-table">Power Graph Traversal Table</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#powerondevice-poweroffdevice-and-wakeup-sequence">PowerOnDevice/PowerOffDevice and WakeUp Sequence</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#powerondevice-retry">PowerOnDevice Retry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#devicepowerstatus-management">DevicePowerStatus management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tc10-pulsation">TC10 pulsation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#wakeup-frame">WakeUp Frame</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#how-intermediate-node-manages-wakeup-frame">How Intermediate Node manages Wakeup Frame</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#wake-up-of-an-managed-edge-node-when-spm-is-configured-as-intermediate-node">Wake-up of an managed edge Node when SPM is configured as intermediate node</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#how-edge-and-intermediate-nodes-manage-wakeup-frame">How Edge and Intermediate Nodes manage Wakeup Frame</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#loss-of-node">Loss Of Node</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spm-getdtcidentifier">SPM_GetDTCIdentifier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#diagnostic-did">Diagnostic DID</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#did-0xe0dd">DID 0xE0DD</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#did-e0de-did-e0df">DID E0DE/DID E0DF</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM Release Notes:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../ReleaseNotes/release_notes.html">RTA-SUM SPM Release Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM User Guide:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../UserGuide/user_guide.html">RTA-SUM SPM User Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(to right, #164293, #89037A)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">RTA-SUM SPM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">RTA-SUM SPM Design Notes</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/doc/DesignNotes/design_notes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <a class="reference internal image-reference" href="../../_images/logo.png"><img alt="Company Logo" class="align-right" src="../../_images/logo.png" style="width: 200px;" /></a>
+<section id="rta-sum-spm-design-notes">
+<h1>RTA-SUM SPM Design Notes<a class="headerlink" href="#rta-sum-spm-design-notes" title="Link to this heading"></a></h1>
+<section id="system-view">
+<h2>System View<a class="headerlink" href="#system-view" title="Link to this heading"></a></h2>
+<section id="network-topology">
+<h3>Network topology<a class="headerlink" href="#network-topology" title="Link to this heading"></a></h3>
+<p>RTA-SUM SPM is a Complex Device Driver in the standardized AUTOSAR. RTA-SUM SPM main task is to manage the request for activating/deactivating specific software services.</p>
+<p>SPM can receive Activation/Deactivation request for software services in two ways:</p>
+<div class="line-block">
+<div class="line">- <strong>Locally</strong>: from a local software entity</div>
+<div class="line">- <strong>Remotelly</strong>: from a remote node in the communication network by Ethernet frame</div>
+</div>
+<p>At the same time, SPM can handle the activation/deactivation of:</p>
+<div class="line-block">
+<div class="line">- an own (local) software Service</div>
+<div class="line">- a remote software Service. In this case the current SPM just acts as the requester or a request gateway</div>
+</div>
+<p>For the remote request, SPM uses the <strong>SM frame</strong> that is defined as follow:</p>
+<p class="rubric">[$DDS_SPM 0007]</p>
+<p>Every SMFrame message:</p>
+<ul class="simple">
+<li><p>have both message types in ascending Msg Type Order (PROFILE_REQUEST, REQ_STATUS_PROF_STATE).</p></li>
+<li><p>Specify an Entry Length of zero if there is no information to convey for a message type.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0010]</p>
+<p>The Payload associated with <code class="docutils literal notranslate"><span class="pre">SMFrame.PROFILE_REQUEST</span></code> represents the activation/deaction request done by the SM to a remote SM.
+<code class="docutils literal notranslate"><span class="pre">PROFILE_REQUEST</span></code> uses the following fields:</p>
+<p class="rubric">[$DDS_SPM 0001]</p>
+<ul class="simple">
+<li><p>Msg Type = 00 (1 byte)</p></li>
+<li><p>Entry Length (2 byte value counting the number of remaining bytes in this Msg Type)</p></li>
+<li><p>Activation Profile IDs (5 bytes each: 4 bytes ServiceID + 1 byte profile number) Repeating with Request Status and Profile State</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0006]</p>
+<p class="rubric">[$DDS_SPM 0002]</p>
+<p>Request enumeration (1 byte each) repeating with Activation Profile IDs
+* Request enumeration SHALL be given by the table in:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Value</p></th>
+<th class="head"><p>Literal</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0x00</p></td>
+<td><p>Empty</p></td>
+<td><p>Not used - avoiding putting a real action request as the default value</p></td>
+</tr>
+<tr class="row-odd"><td><p>0x01</p></td>
+<td><p>ACTIVATE</p></td>
+<td><p>Request to activate a profile</p></td>
+</tr>
+<tr class="row-even"><td><p>0x02</p></td>
+<td><p>DEACTIVATE</p></td>
+<td><p>Request to deactivate a profile</p></td>
+</tr>
+<tr class="row-odd"><td><p>0x03…0xFF</p></td>
+<td><p>Reserved for future</p></td>
+<td><p>Potential future literals can include ENABLE, DISABLE</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">[$Satisfies $SRS_SPM 0006]</p>
+<p>The Payload associated with <code class="docutils literal notranslate"><span class="pre">SMFrame.REQ_STATUS_PROF_STATE</span></code> represents the status of the requests received from a remote SM.
+<code class="docutils literal notranslate"><span class="pre">REQ_STATUS_PROF_STATE</span></code> uses the following fields:</p>
+<p class="rubric">[$DDS_SPM 0003]</p>
+<ul class="simple">
+<li><p>Msg Type = 01 (1 byte)</p></li>
+<li><p>Entry Length (2 byte value counting the number of remaining bytes in this Msg Type)</p></li>
+<li><p>Activation Profile IDs (5 bytes each: 4 bytes ServiceID + 1 byte profile number) Repeating with Request Status and Profile State</p></li>
+<li><p>Request Status Value (1 byte) Repeating with Profile IDs and Profile State</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0007]</p>
+<p class="rubric">[$DDS_SPM 0004]</p>
+<ul class="simple">
+<li><p>The request status field SHALL be populated with the enumerations provided in the Table</p></li>
+</ul>
+<p>Actually, the following Literals are implemented w.r.t. the full table reported by the <code class="docutils literal notranslate"><span class="pre">$SRS_SPM</span> <span class="pre">0007</span></code>:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Value</p></th>
+<th class="head"><p>Literal</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0x01</p></td>
+<td><p>OK_ACTIVATION</p></td>
+<td><p>Set to this value when an activation request is accepted. The requester is added to the requester list.</p></td>
+</tr>
+<tr class="row-odd"><td><p>0x02</p></td>
+<td><p>OK_DEACTIVATION</p></td>
+<td><p>Set to this value when a deactivation request is accepted. The requester is removed from the requester list.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">[$Satisfies $SRS_SPM 0007]</p>
+<p class="rubric">[$DDS_SPM 0005]</p>
+<p>Profile State Value (1 byte) Repeating with Profile IDs and Request Status</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0008]</p>
+<p class="rubric">[$DDS_SPM 0006]</p>
+<p>The Profile State field uses the enumeration provided:
+.. list-table:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="o">-</span> <span class="n">Value</span>
+  <span class="o">-</span> <span class="n">Literal</span>
+  <span class="o">-</span> <span class="n">Description</span>
+<span class="o">*</span> <span class="o">-</span> <span class="mh">0x00</span>
+  <span class="o">-</span> <span class="n">INACTIVE</span>
+  <span class="o">-</span> <span class="n">Set</span> <span class="n">to</span> <span class="n">this</span> <span class="n">value</span> <span class="n">when</span> <span class="n">the</span> <span class="n">profile</span> <span class="ow">is</span> <span class="n">valid</span> <span class="ow">and</span> <span class="ow">is</span> <span class="n">currently</span> <span class="ow">in</span> <span class="n">an</span> <span class="n">inactive</span> <span class="n">state</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="mh">0x01</span>
+  <span class="o">-</span> <span class="n">ACTIVATING</span>
+  <span class="o">-</span> <span class="n">Set</span> <span class="n">to</span> <span class="n">this</span> <span class="n">value</span> <span class="n">when</span> <span class="n">the</span> <span class="n">profile</span> <span class="ow">is</span> <span class="n">valid</span> <span class="ow">and</span> <span class="ow">is</span> <span class="n">currently</span> <span class="ow">in</span> <span class="n">an</span> <span class="n">activating</span> <span class="n">state</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="mh">0x02</span>
+  <span class="o">-</span> <span class="n">ACTIVATED</span>
+  <span class="o">-</span> <span class="n">Set</span> <span class="n">to</span> <span class="n">this</span> <span class="n">value</span> <span class="n">when</span> <span class="n">the</span> <span class="n">profile</span> <span class="ow">is</span> <span class="n">valid</span> <span class="ow">and</span> <span class="ow">is</span> <span class="n">currently</span> <span class="ow">in</span> <span class="n">an</span> <span class="n">activated</span> <span class="n">state</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="mh">0x03</span>
+  <span class="o">-</span> <span class="n">DEACTIVATED</span>
+  <span class="o">-</span> <span class="n">Set</span> <span class="n">to</span> <span class="n">this</span> <span class="n">value</span> <span class="n">when</span> <span class="n">the</span> <span class="n">profile</span> <span class="ow">is</span> <span class="n">valid</span> <span class="ow">and</span> <span class="ow">is</span> <span class="n">currently</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">deactivating</span> <span class="n">state</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="mh">0x04</span><span class="o">..</span><span class="mf">.0</span><span class="n">xFE</span>
+  <span class="o">-</span> <span class="n">Reserved</span>
+  <span class="o">-</span> <span class="n">Reserved</span> <span class="k">for</span> <span class="n">future</span> <span class="n">state</span> <span class="n">expansion</span><span class="o">.</span>
+<span class="o">*</span> <span class="o">-</span> <span class="mh">0xFF</span>
+  <span class="o">-</span> <span class="n">UNKNOWN</span>
+  <span class="o">-</span> <span class="n">Set</span> <span class="n">to</span> <span class="n">this</span> <span class="n">value</span> <span class="n">when</span> <span class="n">the</span> <span class="n">profile</span> <span class="n">requested</span> <span class="ow">is</span> <span class="n">unknown</span> <span class="n">to</span> <span class="n">the</span> <span class="n">SM</span> <span class="ow">or</span> <span class="n">when</span> <span class="n">the</span> <span class="n">profile</span> <span class="n">requester</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">have</span> <span class="n">permission</span> <span class="n">to</span> <span class="n">request</span> <span class="n">the</span> <span class="n">profile</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>Please, take into account that the UNKNOWN literal is unimplemented.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0009]</p>
+<p class="rubric">[$DDS_SPM 0009]</p>
+<p>The network communication implementation for <code class="docutils literal notranslate"><span class="pre">RequestStatusProfileState</span></code> is implemented using the <code class="docutils literal notranslate"><span class="pre">REQ_STATUS_PROFILE_STATE</span></code> message
+where the request status is captured by the <code class="docutils literal notranslate"><span class="pre">Request</span> <span class="pre">Status</span></code> field and the profile state is captured by the <code class="docutils literal notranslate"><span class="pre">Profile</span> <span class="pre">State</span></code> field.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0085]</p>
+<p>The SM Send/Receive Mechanism is done by:</p>
+<p class="rubric">[$DDS_SPM 0048]</p>
+<p>The SM frame SHALL be sent through the <code class="docutils literal notranslate"><span class="pre">(VLAN)_SwMgrInfoTx_Evt</span></code> where VLAN is the VLAN which the TrgDvc belongs to.
+This operation is handled by the <code class="docutils literal notranslate"><span class="pre">Spm_HandleVLANCommunication()</span></code> SPM’s API that will call the right PPort.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0164] [$Satisfies $SRS_SPM 0076]</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>An SPM can directly activate/deactivate only its own (local) software Services. For the remote one it just appears as the
+activation/deactivation requester.</p>
+</div>
+<p>The remote communication between nodes to activate/deactivate entities always involves the ECUs’ own SPM instances as agents.</p>
+<p>So that, the activation/deactivation task gets itself in a recursive algorithm, in which the same routine is called until the among
+the several instance of the SPM in the network nodes. In other words, the Activation/Deactivation of a software service appears like a graph navigation to
+find the network node that hosts the software service and so the related SPM instance that is able to activate/deactivate it.</p>
+<p>An example is provided in the following figure:</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/spmGraph.png"><img alt="Graph of the network graph" src="../../_images/spmGraph.png" style="width: 640.0px; height: 360.0px;" /></a>
+</figure>
+</section>
+<section id="spm-to-spm-communication">
+<h3>SPM to SPM communication<a class="headerlink" href="#spm-to-spm-communication" title="Link to this heading"></a></h3>
+<p>Each Requester SPM waits for a response from the requested one. This response shall inform the request about two possible effects of a SPM request:</p>
+<ol class="arabic simple">
+<li><p>Request has ben accepted: Provided an ACK value to the requesters</p></li>
+<li><p>Request is on-going: The requester SPM’s next one is going down in the graph navigation to find who SPM is the manager of the requested service</p></li>
+</ol>
+<p>In the last case, the requested SPM instance replies to its requester with a numeric code (this is the ProfileStatusValue).</p>
+<p>A SPM instance:</p>
+<div class="line-block">
+<div class="line">- Sends request and receives status information to lower-node in the network graph  (as Requester)</div>
+<div class="line">- Provides status information about a request to its “higher-node” in the network graph and forwards the request to the its lower-nodes (as Requested).</div>
+</div>
+<p>Overall, a SM frame is sent by the Software Manager if occours one of the following conditions:</p>
+<div class="line-block">
+<div class="line">- Software Manager will populate and send the REQ_STATUS_PROF_STATE side of a SM frame if a remote PROFILE_REQUEST is received properly by a remote Target Device.</div>
+<div class="line">- Software Manager will populate and send the REQ_STATUS_PROF_STATE side of a SM frame if a Power Profile requested previously by a remote Target Device changes it state.</div>
+<div class="line">- Software Manager will populate and send the PROFILE_REQUEST side of a SM frame if it needs to activate a remote Power Profile (i.e. a Power Profile located on a remote Target Device).</div>
+</div>
+<p>The SM frame is sent over the VLAN network to which the TrgDvc belongs. Please, take into account that the VLANId corresponds to the second MSB  of the trgdvc IP ( I.e. for TrgDvcIP 192.11.1.4 the
+VLANId is 11).
+So, consequently, an SPM will receive SM frame over each VLANId configured.</p>
+</section>
+<section id="spm-susd-interaction">
+<h3>SPM-SUSD Interaction<a class="headerlink" href="#spm-susd-interaction" title="Link to this heading"></a></h3>
+<section id="shutdown-permission-management">
+<span id="spm-susd-shutdown"></span><h4>Shutdown Permission Management<a class="headerlink" href="#shutdown-permission-management" title="Link to this heading"></a></h4>
+<p>The SPM receives the PermitExecution value from the SUSD. This value is used to determine if the SPM can start its functions.</p>
+<p>The SPM send the ShutdownPermission to the SUSD with the following logic:</p>
+<p class="rubric">[$DDS_SPM 0530]</p>
+<div class="line-block">
+<div class="line">- SPM sets the value of the interface <code class="docutils literal notranslate"><span class="pre">SPM_ShutdownPermission</span></code> to 0xFFu to vote for shutdown if all the following conditions are met:</div>
+</div>
+<ul class="simple">
+<li><p>HB Shutdown Delay since the last burst HeartBeat sent has elapsed.</p></li>
+<li><p>Own wakeup bit is not set.</p></li>
+<li><p>NO local profiles are requested.</p></li>
+<li><p>SpmStayAwakeTimer has elapsed.</p></li>
+<li><p>NO managed target devices are requested by remote via wake-up frames.</p></li>
+</ul>
+<div class="line-block">
+<div class="line">- SPM sets the value of the interface <code class="docutils literal notranslate"><span class="pre">SPM_ShutdownPermission</span></code> to 0xFEu (Shutdown Ready) when conditions are met:</div>
+</div>
+<ul class="simple">
+<li><p>Final shutdown heartbeats have been sent.</p></li>
+</ul>
+<div class="line-block">
+<div class="line">- Otherwise, if at least one local profile is requested, SPM sets the value of the interface <code class="docutils literal notranslate"><span class="pre">SPM_ShutdownPermission</span></code> to the actual rolling counter.</div>
+</div>
+<p><strong>NOTE</strong>: The SpmStayAwakeTimer is set to the configured value when a target device for a local profile is in Fault or Reboot state.
+The SPM instance will remain active for the configured period and only once the timer has expired it can transition to the PrepareToShutdown state, if the other conditions are met.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0032][$Satisfies $SRS_SPM 0058][$Satisfies $SRS_SPM 0059][$Satisfies $SRS_SPM 0137][$Satisfies $SRS_SPM 0138][$Satisfies $SRS_SPM 0157][$Satisfies $SRS_SPM 0164][$Satisfies $SRS_SPM 0054][$Satisfies $SRS_SPM 0252][$Satisfies $SRS_SPM 0253] [$Satisfies $SRS_SPM 0259]</p>
+<p class="plantuml">
+<object data="../../_images/plantuml-40f580cd6389086e6f401f8abfb15befe2ebd41f.svg" type="image/svg+xml" style="width:1325px;height:703px;background:#FFFFFF;"></object></p>
+<p class="rubric">[$DDS_SPM 0414]</p>
+<p>SUM_SPM implements a port, <code class="docutils literal notranslate"><span class="pre">PermitExecution</span></code>, which can receive notification from
+SUM_SUSD to execute its functions or prepare for shutdown.</p>
+<p>SUM_SPM may use the configuration <code class="docutils literal notranslate"><span class="pre">SPM_PermitExecution_Mask</span></code> in its logic to allow configuration of which
+PermitExecution bits are considered to trigger a start of its functions.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0112]</p>
+<p class="rubric">[$DDS_SPM 0415]</p>
+<p>SPM starts execution of its functions when the Wakeup(s) Active bit in the <code class="docutils literal notranslate"><span class="pre">SUSD_SPM_PermitExecution</span></code> interface is TRUE.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0113]</p>
+<p class="rubric">[$DDS_SPM 0416]</p>
+<p>When the ECU Reset bit in the <code class="docutils literal notranslate"><span class="pre">PermitExecution</span></code> bit is FALSE, then SUM_SPM sets its <code class="docutils literal notranslate"><span class="pre">ShutdownPermission</span></code> to Enable to support ECU reprogramming.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0114]</p>
+<p class="rubric">[$DDS_SPM 0650]</p>
+<p><strong>Target Off Bit Detection (Shutdown Target)</strong></p>
+<p>The function <code class="docutils literal notranslate"><span class="pre">Sum_Spm_CheckHBCounterShallBeSentFullScale()</span></code> checks the Shutdown Target bit (bit 1) of <code class="docutils literal notranslate"><span class="pre">PermitExecution</span></code>
+to determine when the last heartbeat shall be sent out. The detection mechanism:</p>
+<ul class="simple">
+<li><p>Checks if the Shutdown Target bit (bit 1) is 0 (shutdown requested).</p></li>
+<li><p>Sets <code class="docutils literal notranslate"><span class="pre">Spm_HBCounterShallBeSentFullScale</span></code> to TRUE when the bit is 0.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0259]</p>
+<p class="rubric">[$DDS_SPM 0651]</p>
+<p><strong>Final Heartbeat Status Management</strong></p>
+<p>The final heartbeat transmission status is managed via a global variable (<code class="docutils literal notranslate"><span class="pre">Spm_FinalHeartbeatSent</span></code>) with getter/setter functions:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Sum_Spm_IsFinalHeartbeatSent()</span></code>: Returns TRUE if the final shutdown heartbeat has been sent.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Sum_Spm_Set_FinalHeartbeatSent(sent)</span></code>: Sets the final heartbeat sent status.</p></li>
+</ul>
+<p>In PrepareToShutdown state:</p>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">Sum_Spm_IsFinalHeartbeatSent()</span></code> returns TRUE, SPM writes 0xFE to <code class="docutils literal notranslate"><span class="pre">ShutdownPermission</span></code> signaling SUSD can proceed with shutdown.</p></li>
+<li><p>The flag is set to TRUE after the final shutdown heartbeat with full-scale counter (0xFF) is transmitted.</p></li>
+<li><p>The flag is reset to FALSE when transitioning back to Running state to prepare for the next shutdown cycle.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0259]</p>
+<p class="rubric">[$DDS_SPM 0652]</p>
+<p><strong>Request Handling in PrepareToShutdown State</strong></p>
+<p>Once SPM enters PrepareToShutdown state, it rejects all activation/deactivation requests and checks the shutdown target bit:</p>
+<ul class="simple">
+<li><p><strong>Remote requests</strong>: Ignored since the request queue is not parsed in this state.</p></li>
+<li><p><strong>Local requests</strong>: The SPM checks the current state and returns <code class="docutils literal notranslate"><span class="pre">E_NOT_OK</span></code> if not in Running state, preventing local profile activation/deactivation during shutdown preparation.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0259]</p>
+</section>
+<section id="did-0xe0d7">
+<h4>DID 0xE0D7<a class="headerlink" href="#did-0xe0d7" title="Link to this heading"></a></h4>
+<p class="rubric">[$DDS_SPM 0600]</p>
+<p>The SPM calls the <cite>SUSD_SPM_UpdateRecord</cite> interface function to update the diagnostic record in the SUSD module related to the DID 0xE0D7.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0221]</p>
+<p class="rubric">[$DDS_SPM 0601]</p>
+<p>For RID 0x02, the SPM shall communicate to SUSD whether at least one remote request is present.
+In particular, the SPM checks if there is at least one power profile activated exclusively by a remote ECU,
+which means that no local SWC has requested the activation of that same profile
+(i.e. <code class="docutils literal notranslate"><span class="pre">requesterIP</span> <span class="pre">!=</span> <span class="pre">0</span></code> for all active requesters of that profile).</p>
+<p>In this scenario (at least one such profile exists), SUSD expects to receive 0x02 flagged TRUE (based on SUM’s design).</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0221]</p>
+<p class="rubric">[$DDS_SPM 0602]</p>
+<p>When no power profile is activated exclusively by a remote ECU, because every
+profile either has no active request or has at least one local SWC requester
+(<code class="docutils literal notranslate"><span class="pre">requesterIP</span> <span class="pre">==</span> <span class="pre">0</span></code>) that takes priority, no remote request is considered
+present.</p>
+<p>In this scenario, SUSD expects to receive 0x02 flagged FALSE (based on SUM’s
+design).</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0221]</p>
+<p class="rubric">[$DDS_SPM 0603]</p>
+<p>Requirement tell us that SPM SHALL comunicate 0x20 when ‘An activation profile has been locally activated’:
+this means that at least one power profile has an active request originated by a local SWC (i.e. <code class="docutils literal notranslate"><span class="pre">requesterIP</span> <span class="pre">==</span> <span class="pre">0</span></code>), regardless of whether the profile itself is hosted locally or on a remote ECU.</p>
+<p>A request is considered <strong>local</strong> when the <code class="docutils literal notranslate"><span class="pre">requesterIP</span></code> field of the requester entry is zero, indicating the request was issued by a SWC on the same ECU via the <code class="docutils literal notranslate"><span class="pre">SPM_ActivateProfile</span></code> C/S interface.</p>
+<p>SUSD expect to receive 0x20 flagged TRUE in this scenario (by SUM’s design).</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0221]</p>
+<p class="rubric">[$DDS_SPM 0604]</p>
+<p>Requirement tell us that SPM SHALL comunicate 0x20 when ‘An activation profile has been locally activated’:
+this means that if SPM detects that no profile has an active local requester (<code class="docutils literal notranslate"><span class="pre">requesterIP</span> <span class="pre">==</span> <span class="pre">0</span></code>), it sends 0x20 flagged FALSE (by SUM’s design).</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0221]</p>
+<p class="rubric">[$DDS_SPM 0610]</p>
+<p><strong>RID 0X26</strong> when a Wake-up frame is received with a valid wake up bit. It should be noted that, when the Spm instance acts as an intermediate node, it can receive both Can and Ethernet Wake-up frames.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0221]</p>
+<p class="rubric">[$DDS_SPM 0605]</p>
+<p>In order to prevent multiple NOT needed calls to C/S interface (i.e. periodic calls to <cite>SUSD_SPM_UpdateRecord</cite> to set the 0x20 flagged TRUE), SPM will just call the interface once.
+Then, SPM will call the interface just once to set the 0x20 flagged FALSE when it detects that no profile has an active local requester.
+After that, SPM will not call the interface anymore until it detects that a local requester is present again and so on.</p>
+<p>This is valid for both flag, 0x20 and 0x2, with disconnected logic (i.e. 0x20 does not influence the 0x2 and vice versa).</p>
+<p>It will be SUSD job handle the DID’s FSM.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0221]</p>
+<p class="rubric">[$DDS_SPM 0606]</p>
+<p>So, to summarise, the SPM SHALL communicate, to the SUSD module, the following information regarding the 0xE0D7 :</p>
+<div class="line-block">
+<div class="line">- RID 0x02 with a valid RxID; the RxWR and RxLAR fields are not needed by the SDV-6001 requirement.</div>
+<div class="line">- RID 0x20 with a valid RxID; the RxWR and RxLAR fields are not needed by the SDV-6001 requirement.</div>
+<div class="line">- RID  0x26 with a valid RxID; the RxWR field shall be set to the last byte of the CAN ID or IP Address of the Wake-up frame.</div>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0221]</p>
+<p class="rubric">[$DDS_SPM 0609]</p>
+<p>In addition, the SPM SHALL provide C/S interface <cite>SPM_SUSD_ActivityRecordCmd</cite> to receive commands from the SUSD to update 0xE0DE and 0xE0DF records:</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/activityrecordcmd.jpg"><img alt="SPM_SUSD_ActivityRecordCmd operation signature" src="../../_images/activityrecordcmd.jpg" style="width: 505.0px; height: 148.5px;" /></a>
+</figure>
+<p>An additional “StopUpdate” command (0x03) has been added to match the non-active states of 0xE0D7 state machine.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0224]</p>
+</section>
+</section>
+<section id="spm-servicemanager-interaction">
+<h3>SPM-ServiceManager interaction<a class="headerlink" href="#spm-servicemanager-interaction" title="Link to this heading"></a></h3>
+<section id="spm-serviceactivationstatusnotification">
+<h4>SPM_ServiceActivationStatusNotification<a class="headerlink" href="#spm-serviceactivationstatusnotification" title="Link to this heading"></a></h4>
+<p class="rubric">[$DDS_SPM 0417]</p>
+<p>SUM SPM provides a sender-receiver interface <code class="docutils literal notranslate"><span class="pre">SPM_ServiceActivationStatusNotification</span></code>
+as described below to provide indication to other SUMs (SSFM, SSC ..etc.) about the activated service list and
+if setting a DTC is allowed based on DTC suppression Timer as defined in SDV-8002. SUM SSFM uses that to
+determine services to start monitoring and when to inhibit setting of DTCs (Loss of Function, invalid data, etc.).
+<code class="docutils literal notranslate"><span class="pre">SPM_ServiceActivationStatusNotification_Ifc</span></code> interface dataElement definition:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">SPM_ServiceActivationStatusNotification_Ifc</span><span class="p">.</span><span class="n">DataElement</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Uint16</span><span class="o">*</span><span class="w"> </span><span class="n">serviceIdList</span><span class="p">,</span><span class="w"> </span><span class="c1">// List of Services Activated</span>
+<span class="w">    </span><span class="kt">bool</span><span class="o">*</span><span class="w"> </span><span class="n">dtcAllowedList</span><span class="p">,</span><span class="w"> </span><span class="c1">// List of DTC Allowed Boolean</span>
+<span class="w">    </span><span class="n">uint16</span><span class="w"> </span><span class="n">listLength</span><span class="w"> </span><span class="c1">// Length of the 2 output lists</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>NOTE</strong>: The list will maintain the up-to-date active services list at any point in time and should not change in the case of losing the Heartbeat of a remote device with a profile that the local SPM has activated (i.e. Loss of Node DTC should not affect this interface so that the Loss of Function can occur)</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0126] [$Satisfies $SRS_SPM 0179]</p>
+</section>
+<section id="srvcmgr-spm-activateservices">
+<h4>SrvcMgr_SPM_ActivateServices<a class="headerlink" href="#srvcmgr-spm-activateservices" title="Link to this heading"></a></h4>
+<p>In <a class="reference internal" href="#generalactdeact"><span class="std std-ref">Activation/Deactivation of a Profile</span></a> section it is described how this interface is handled.</p>
+</section>
+</section>
+<section id="helper-function">
+<h3>Helper Function<a class="headerlink" href="#helper-function" title="Link to this heading"></a></h3>
+<p class="rubric">[$DDS_SPM 0141]</p>
+<p>SPM calls the HelperFunction defined in <code class="docutils literal notranslate"><span class="pre">*spm.spmGeneral.spmNameOfWakeUpHelperFunction*</span></code> paramdef’s field.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0096][$Satisfies $SRS_SPM 0101][$Satisfies $SRS_SPM 0102][$Satisfies $SRS_SPM 0183][$Satisfies $SRS_SPM 0202]</p>
+<p class="rubric">[$DDS_SPM 0412]</p>
+<p>When SPM calls the HelperFunction, it passes as input parameter a pointer to an array (of size 64 bits) that holds the wakeup bits needed (asserted + received if present) of the Frame A.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0097]</p>
+<p class="rubric">[$DDS_SPM 0114]</p>
+<p>The bitfield to the Wakeup Helper follows the bit definitions specific for the Wakeup Frame in SDV-2017.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0098]</p>
+<p class="rubric">[$DDS_SPM 0115]</p>
+<p>SPM sends the same bitfield to the Wakeup Helper Function as sent to the Wakeup Frame (in the same software execution cycle).</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0121]</p>
+</section>
+</section>
+<section id="spm-internal-design">
+<h2>SPM Internal Design<a class="headerlink" href="#spm-internal-design" title="Link to this heading"></a></h2>
+<section id="spm-class-diagram">
+<h3>SPM Class Diagram<a class="headerlink" href="#spm-class-diagram" title="Link to this heading"></a></h3>
+<p>The idea of the SPM internal design is to implement all the SPM functionalities as a single module. This means a real differentiation between Software Manager and Power Manager
+does not appear in the software design.</p>
+<p class="rubric">[$DDS_SPM 0404]</p>
+<p>The periodic runnable <code class="docutils literal notranslate"><span class="pre">Runnable_SPM_PowerManager_MainFunction()</span></code> is the only entity responsible for implementing the Power Manager.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0094]</p>
+<p class="rubric">[$DDS_SPM 0403]</p>
+<p>The periodic runnable <code class="docutils literal notranslate"><span class="pre">SPM_SoftMgr_MainFunction()</span></code> is the only entity responsible for all of the swEntities on that ECU.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0057] [$Satisfies $SRS_SPM 0094] [$Satisfies $SRS_SPM 0055]</p>
+<p>Assuming all the components of the SPM inner architecture as Objects, the design appears as follows:</p>
+</section>
+<section id="spm-initialization-phase">
+<h3>SPM Initialization Phase<a class="headerlink" href="#spm-initialization-phase" title="Link to this heading"></a></h3>
+<p>At startup, SPM shall initialize all the data structures needed by the SPM:</p>
+<ul class="simple">
+<li><p>It retrieves each power profile location from SD.</p></li>
+<li><p>It retrieves information regarding the PGTT entries.</p></li>
+</ul>
+<p>There are 2 ways of initialization thanks to the <em>SpmGenerateInitRunnable</em> parameter that runs SPM_Init only once during startup:</p>
+<p>When parameter <em>SpmGenerateInitRunnable</em> is True:</p>
+<ul class="simple">
+<li><p>The SPM_Init runnable shall call the SPM_Init function periodically, as defined by the <em>SpmInitFuncPeriodicity</em> parameter.</p></li>
+</ul>
+<p>When parameter <em>SpmGenerateInitRunnable</em> is False:</p>
+<ul class="simple">
+<li><p>The SPM_Init function is added to the BswM init action list and executed by BswM.</p></li>
+</ul>
+</section>
+<section id="activation-deactivation-of-a-profile">
+<span id="generalactdeact"></span><h3>Activation/Deactivation of a Profile<a class="headerlink" href="#activation-deactivation-of-a-profile" title="Link to this heading"></a></h3>
+<p>A Profile can be local (located on the same ECU of current SPM instance) or remote (located on a remote ECU with respect to the SPM instance).
+SPM can handle request coming both from local requester (a intra-ECU SWC) or remote one (inter-ECU).</p>
+<p>The owner of the Power Profile will set the state of it. This means that is responsability of the
+SPM located on the same ECU of the Profile to activate/deactivate it. Moreover, if the requester is Remote, SPM will provide a feedback
+about the request by SM frame.  If the requester is local, no feedback is provided to the SWC.</p>
+<p class="rubric">[$DDS_SPM 0647]</p>
+<p>The SPM needs to provide a feedback to the EACH valid request received by SM frame, even if the requester has already requested the same action before.
+The process is triggered by the API <code class="docutils literal notranslate"><span class="pre">Spm_AppendRequesterInReqList()</span></code>.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0256]</p>
+<p class="rubric">[$DDS_SPM 0054]</p>
+<p>The requesting SPM SHALL send SM frame periodically until the activate/deactivate request is correctly acknowledged by the remote (requested) SM. The periodicity of the activate/deactivate request SHALL be calibratable,
+with the default value as the Spm/SpmGeneral/SpmActDeactRetryPeriodicity parameter (default value of 1000ms).</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0089] [$Satisfies $SRS_SPM 0169] [$Satisfies $SRS_SPM 0078]</p>
+<section id="request-handling">
+<span id="spm-reqpath"></span><h4>Request Handling<a class="headerlink" href="#request-handling" title="Link to this heading"></a></h4>
+<p>SPM can receive:</p>
+<div class="line-block">
+<div class="line">- local request to activate/deactivate a Profile by C/S CS_SPM_ProfileRequest on the SPM_ActivateProfile()/SPM_DeactivateProfile() operation.</div>
+<div class="line">- remote request to activate a Profile by SM frame. Spm_ReadIncoming_SM_Message() will dequeue item from the Rte queue wherer are stored the SM frame received and handle it.</div>
+</div>
+<p class="rubric">[$DDS_SPM 0012]</p>
+<p>SM activates swEntity it manages based on a local request or remote request.
+SM has the capabilities to automatically activate swEntity’s dependencies.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0060]</p>
+<p class="rubric">[$DDS_SPM 0018]</p>
+<p>The SM validates a remote request by:</p>
+<div class="line-block">
+<div class="line">- <code class="docutils literal notranslate"><span class="pre">SUM_SPM_prv_GetIpAddressBinarySearchLocal()</span></code> API validates the IP host received</div>
+<div class="line">-  <code class="docutils literal notranslate"><span class="pre">Spm_GetPowProfIndexFromSwIDProfNumber()</span></code> API validates the power profile ID received</div>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0077]</p>
+<p class="rubric">[$DDS_SPM 0025]</p>
+<p>The SPM checks if the activation request is valid by checking if the profile is known to the SPM thanks to the <code class="docutils literal notranslate"><span class="pre">Spm_GetPowProfIndexFromSwIDProfNumber()</span></code> (for remote activation) and <code class="docutils literal notranslate"><span class="pre">Spm_GetPowProfIndexFromAppID()</span></code> (for local activation) APIs.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0062]</p>
+<p class="rubric">[$DDS_SPM 0047]</p>
+<p>The SrcPM_ID of the SM frame shall match with the SpmSrcIp that match the SpmVLANId to which the TrgDvc that will receive the SM frame belongs to.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0164]</p>
+<p>If the the profile is known:</p>
+<div class="line-block">
+<div class="line">- Check if the Power Profile can be activated based on:</div>
+</div>
+<blockquote>
+<div><div class="line-block">
+<div class="line">- value of the <em>SpmPowprf/SpmLocActivationAllowed</em> parameter (valid only for local request).</div>
+<div class="line">- Vehicle Power Mode value received from SUSD.</div>
+<div class="line">- LowVoltageBattery Priority received from Energy Optimizer.</div>
+<div class="line">- Learning Session status is set as PENDING or not.</div>
+</div>
+</div></blockquote>
+<div class="line-block">
+<div class="line">- In case of a local request, the request is checked against any other under process request to prevent conflicting requests. For instance, if the same ApplicationInterfaceID is in process of deactivation, the activation request will be discarded.</div>
+<div class="line">- In case of a remote request, the SM frame is checked against any conflicting request by calling Spm_prv_SM_RemoteActDeactRequestDispatch(). If the same Power Profile ID exists on a single frame for both activation and deactivation, all the requests for that Power Profile are discarded and a REJECTED_REQUEST_INVALID feedback is provided.</div>
+<div class="line">- Spm_prv_prfReqDispatcher() is called. Its responsability is to enqueue the Power Profile ID received and (recursively) all its dependencies.</div>
+<div class="line">- Spm_DequeueReqActionHandler() is called periodically by the main in order to dequeue all the item in the interal queue and call the Spm_DequeueReqActionHandler() or Spm_RequesterList_DeactivationRequestHandler() in order to populate the requester list associated to each Power Profile. Furthermore, feedback only needs to be set for the required root Power Profile in order to send it through the SM frame.</div>
+</div>
+<p class="rubric">[$DDS_SPM 0014]</p>
+<p>The SM tracks the requesters of each profile managed by using the <code class="docutils literal notranslate"><span class="pre">SpmPowerProfileStateMachine_RAM_SubStruct.SpmRequesterList_RAM_SubStruct</span></code> struct:</p>
+<div class="line-block">
+<div class="line">- when an activation request for a profile is received, <code class="docutils literal notranslate"><span class="pre">Spm_RequesterList_ActivationRequestHandler()</span></code> API adds the requester to the list setting the proper type of request in the <code class="docutils literal notranslate"><span class="pre">ReqType</span></code> field.</div>
+<div class="line">- when a deactivation is received from the same requester, <code class="docutils literal notranslate"><span class="pre">Spm_RequesterList_DeactivationRequestHandler()</span></code> API changes the <code class="docutils literal notranslate"><span class="pre">ReqType</span></code> variable associated with the profile to <code class="docutils literal notranslate"><span class="pre">Spm_REQ_DEACTIVATION</span></code>.</div>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0065]</p>
+<p class="rubric">[$DDS_SPM 0032]</p>
+<p>When a valid DeactivateProfile request is received the requester’s flag <code class="docutils literal notranslate"><span class="pre">ReqType</span></code> in the requester list is changed to <code class="docutils literal notranslate"><span class="pre">Spm_REQ_DEACTIVATION</span></code> by the <code class="docutils literal notranslate"><span class="pre">Spm_RequesterList_DeactivationRequestHandler()</span></code> API.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0071] [$Satisfies $SRS_SPM 0068] [$Satisfies $SRS_SPM 0068]</p>
+<p class="rubric">[$DDS_SPM 0036]</p>
+<p><code class="docutils literal notranslate"><span class="pre">Spm_RequesterList_DeactivationRequestHandler()</span></code> API changes the request type of the requester IP from the Power Profile’s requester list to <code class="docutils literal notranslate"><span class="pre">Spm_REQ_DEACTIVATION</span></code>. If the requester has not previously requested an activation, it is not present in the list of the requester. So, no actions are performed.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0086]</p>
+<p class="rubric">[$DDS_SPM 0033]</p>
+<p>When a remote requester is removed from the list of requesters for a profile (i.e. request a deactivation), the SM will provide feedback by <code class="docutils literal notranslate"><span class="pre">SMFrame.REQ_STATUS_PROF_STATE</span></code>.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0145]</p>
+<div class="line-block">
+<div class="line">- Spm_LocalPowerProfile_FSM()/Spm_RemotePowerProfile_FSM() are called periodically in order to take action w.r.t. the Power Profile state and the request stored in the Power Profile’s request list ( <a class="reference internal" href="#fsm-loc"><span class="std std-ref">FSM of a Local Power Profile</span></a> / <a class="reference internal" href="#fsm-rem"><span class="std std-ref">FSM of a Remote Power Profile</span></a> )</div>
+</div>
+<p>The following are a set of requirements that describe how the SPM handles the activation/deactivation requests:</p>
+<p class="rubric">[$DDS_SPM 0015]</p>
+<p>When a new valid ActivateProfile request is received and the state of the profile is <strong>Inactive</strong>:</p>
+<ul class="simple">
+<li><p>The requester IP address is added to the requester list by <code class="docutils literal notranslate"><span class="pre">Spm_RequesterList_ActivationRequestHandler()</span></code> API setting the proper type of request in the <code class="docutils literal notranslate"><span class="pre">ReqType</span></code> field.</p></li>
+<li><p>When <code class="docutils literal notranslate"><span class="pre">Spm_LocalPowerProfile_FSM()</span></code> detects that there is a requester with <code class="docutils literal notranslate"><span class="pre">ACTIVATED/ACTIVATED_CONSUMED</span></code> flag and the state of the profile is <em>Inactive</em> it triggers the change of the state to <strong>Activating</strong></p></li>
+<li><p>When <code class="docutils literal notranslate"><span class="pre">Spm_RemotePowerProfile_FSM()</span></code> detects that there is a requester with <code class="docutils literal notranslate"><span class="pre">ACTIVATED/ACTIVATED_CONSUMED</span></code> flag, an activation request is sent to the remote provider of the service (if it was not previously sent)</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0066][$Satisfies $SRS_SPM 0077]</p>
+<p class="rubric">[$DDS_SPM 0016]</p>
+<p>When a valid ActivateProfile request is received and the state of the profile is <strong>Activating</strong>:</p>
+<ul class="simple">
+<li><p>The requester IP address is added to the requester list by <code class="docutils literal notranslate"><span class="pre">Spm_RequesterList_ActivationRequestHandler()</span></code> API (if it is not already present).</p></li>
+<li><p>The activation process continues</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0069] [$Satisfies $SRS_SPM 0077] [$Satisfies $SRS_SPM 0090]</p>
+<p class="rubric">[$DDS_SPM 0017]</p>
+<p>When a valid ActivateProfile request is received and the state of the profile is <strong>Deactivating</strong>:</p>
+<ul class="simple">
+<li><p>The requester IP address is added to the requester list by <code class="docutils literal notranslate"><span class="pre">Spm_RequesterList_ActivationRequestHandler()</span></code> API.</p></li>
+<li><p>When <code class="docutils literal notranslate"><span class="pre">Spm_LocalPowerProfile_FSM()</span></code> detects that there is a requester and the state of the profile is <em>Deactivating</em> it triggers the change of the state to <strong>Activating</strong></p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0073]</p>
+<p class="plantuml">
+<object data="../../_images/plantuml-6a64cae02a571364b84d98989aaac62abc9c9d24.svg" type="image/svg+xml" style="width:1764px;height:625px;background:#FFFFFF;"></object></p>
+<p class="rubric">[$DDS_SPM 0029]</p>
+<p>Power Profile requesters are stored inside the <code class="docutils literal notranslate"><span class="pre">SpmPowerProfileStateMachine_RAM_SubStruct.SpmRequesterList_RAM_SubStruct</span></code> struct that
+is not stored in the Non Volatile Memory. So, at each re-start the SM does not know the previous requesters.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0088]</p>
+</section>
+<section id="local-request-handling">
+<h4>Local Request Handling<a class="headerlink" href="#local-request-handling" title="Link to this heading"></a></h4>
+<p>Local Request of activation/deactivation of a PowerProfile are done by a SWC calling the C/S operations SPM_ActivateProfile(uint16 ApplicationInterfaceID)/SPM_DeactivateProfile(uint16 ApplicationInterfaceID).
+PowerProfile’s ApplicationInterfaceID is the one configured in the <em>SpmPowprf/SpmApplIntID</em> paramter.
+The SPM will start the activation/deactivation process if the parameter <em>SpmPowprf/SpmLocActivationAllowed</em> is set to <em>true</em>.</p>
+<p class="rubric">[$DDS_SPM 0024]</p>
+<p>The SPM provides an API <code class="docutils literal notranslate"><span class="pre">SPM_ActivateProfile()</span></code> to allow local SWCs to activate profiles. The return value SHALL be <code class="docutils literal notranslate"><span class="pre">E_NOT_OK</span></code> if the profile is unknown for the SPM or there is an ongoing deactivation request for the same profile.
+<code class="docutils literal notranslate"><span class="pre">SPM_ActivateProfile</span></code> operation signature:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">Std_ReturnType</span><span class="w"> </span><span class="n">SPM_ActivateProfile</span><span class="w"> </span><span class="p">(</span>
+<span class="w">     </span><span class="n">uint16</span><span class="w"> </span><span class="n">ApplicationInterfaceID</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>This API is an Operation of the C/S <code class="docutils literal notranslate"><span class="pre">CS_SPM_ProfileRequest</span></code> interface.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0128][$Satisfies $SRS_SPM 0075]</p>
+<p class="rubric">[$DDS_SPM 0034]</p>
+<p>Local Power Profile deactivation request to an SM is done using the <code class="docutils literal notranslate"><span class="pre">SPM_DeactivateProfile()</span></code> method.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0084]</p>
+<p class="rubric">[$DDS_SPM 0031]</p>
+<p>The SPM provides an API <code class="docutils literal notranslate"><span class="pre">SPM_DeactivateProfile</span></code> to allow local SWCs to deactivate profiles.
+The return value SHALL be <code class="docutils literal notranslate"><span class="pre">E_NOT_OK</span></code> if the profile is unknown for the SPM or there is an ongoing activation request for the same profile. <code class="docutils literal notranslate"><span class="pre">SPM_DeactivateProfile</span></code> operation
+signature:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">Std_ReturnType</span><span class="w"> </span><span class="n">SPM_DeactivateProfile</span><span class="w"> </span><span class="p">(</span>
+<span class="w">     </span><span class="n">uint16</span><span class="w"> </span><span class="n">ApplicationInterfaceID</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>This API is an Operation of the C/S <code class="docutils literal notranslate"><span class="pre">CS_SPM_ProfileRequest</span></code> interface.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0129]</p>
+<p class="rubric">[$DDS_SPM 0540]</p>
+<p><code class="docutils literal notranslate"><span class="pre">SPM_ActivateProfile()</span></code> and <code class="docutils literal notranslate"><span class="pre">SPM_DeactivateProfile()</span></code> use a set of inter-runnable variables to check for conflicting local requests. The variables are as follows:</p>
+<ul class="simple">
+<li><p>Spm_LastDeactReqID: The ApplicationInterfaceID of the latest deactivation request.</p></li>
+<li><p>Spm_LastDeactReqFlag: A flag indicating the latest deactivation process is still ongoing or not.</p></li>
+<li><p>Spm_LastActReqID: The ApplicationInterfaceID of the latest activation request.</p></li>
+<li><p>Spm_LastActReqFlag: A flag indicating the latest activation process is still ongoing or not.</p></li>
+</ul>
+<p>Whenever an activation request is received, the <code class="docutils literal notranslate"><span class="pre">SPM_ActivateProfile()</span></code> checks if a deactivation request for the same ApplicationInterfaceID is under process or not.
+If there is such request under process, the activation request is discarded and the runnable returns <code class="docutils literal notranslate"><span class="pre">E_NOT_OK</span></code>.</p>
+<p>Likewise, whenever a deactivation request is received, the <code class="docutils literal notranslate"><span class="pre">SPM_DeactivateProfile()</span></code> checks if an activation request for the same ApplicationInterfaceID is under process or not.
+If there is such request under process, the deactivation request is discarded and the runnable returns <code class="docutils literal notranslate"><span class="pre">E_NOT_OK</span></code>.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0091]</p>
+<p class="rubric">[$DDS_SPM 0043]</p>
+<p>So, when a DeactivateProfile request is received and the power profile is in the <strong>Inactive state</strong>, no action is done since the <code class="docutils literal notranslate"><span class="pre">Spm_RequesterList_DeactivationRequestHandler()</span></code> API will have no impact.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0067]</p>
+</section>
+<section id="get-activation-permission-of-power-profile">
+<h4>Get Activation Permission of Power Profile<a class="headerlink" href="#get-activation-permission-of-power-profile" title="Link to this heading"></a></h4>
+<p>Any SWC may query the activation permission for a given power profile using the C/S operation SPM_GetProfileActivationPermission by providing the ApplicationInterfaceID.
+If the ApplicationInterfaceID is not found, the operation returns E_NOT_OK as the error value.</p>
+<p class="rubric">[$DDS_SPM 0542]</p>
+<p>The SPM provides an API <code class="docutils literal notranslate"><span class="pre">SPM_GetProfileActivationPermission</span></code> to allow local SWCs to get the activation permission for a power profile.
+The return value SHALL be <code class="docutils literal notranslate"><span class="pre">E_NOT_OK</span></code> and the permission <code class="docutils literal notranslate"><span class="pre">FALSE</span></code> if the profile is unknown for the SPM. <code class="docutils literal notranslate"><span class="pre">SPM_GetProfileActivationPermission</span></code> operation signature:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">Std_ReturnType</span><span class="w"> </span><span class="n">SPM_GetProfileActivationPermission</span><span class="w"> </span><span class="p">(</span>
+<span class="w">     </span><span class="n">uint16</span><span class="w"> </span><span class="n">ApplicationInterfaceID</span><span class="p">,</span>
+<span class="w">     </span><span class="n">boolean</span><span class="w"> </span><span class="o">*</span><span class="n">PermissionStatus</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>This API is an Operation of the C/S <code class="docutils literal notranslate"><span class="pre">CS_SPM_ProfileActivationPermission</span></code> interface.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0243]</p>
+</section>
+<section id="get-power-profile-state-as-a-local-swc">
+<h4>Get Power Profile State as a Local SWC<a class="headerlink" href="#get-power-profile-state-as-a-local-swc" title="Link to this heading"></a></h4>
+<p>Local SWC may query the current state of a given power profile using the C/S operation SPM_GetProfileState by providing the ApplicationInterfaceID.
+If the ApplicationInterfaceID is not found, the operation returns E_NOT_OK as the error value.</p>
+<p class="rubric">[$DDS_SPM 0541]</p>
+<p>The SPM provides an API <code class="docutils literal notranslate"><span class="pre">SPM_GetProfileState</span></code> to allow local SWCs to get the current state of a power profile.
+The return value SHALL be <code class="docutils literal notranslate"><span class="pre">E_NOT_OK</span></code> if the profile is unknown for the SPM. <code class="docutils literal notranslate"><span class="pre">SPM_GetProfileState</span></code> operation
+signature:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">Std_ReturnType</span><span class="w"> </span><span class="n">SPM_GetProfileState</span><span class="w"> </span><span class="p">(</span>
+<span class="w">     </span><span class="n">uint16</span><span class="w"> </span><span class="n">ApplicationInterfaceID</span><span class="p">,</span>
+<span class="w">     </span><span class="n">uint8</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ProfileState</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>This API is an Operation of the C/S <code class="docutils literal notranslate"><span class="pre">CS_SPM_RequestStatusProfileState</span></code> interface.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0076]</p>
+</section>
+<section id="power-profile-dependencies-type">
+<h4>Power Profile dependencies type<a class="headerlink" href="#power-profile-dependencies-type" title="Link to this heading"></a></h4>
+<p>Each dependencies can have one of the following type:</p>
+<div class="line-block">
+<div class="line">- ACTIVATED: the dependency Profile SHALL be activated (i.e. call SrvcMgr);</div>
+<div class="line">- CONSUMED: the PDU associated to the Profile SHALL be activated;</div>
+<div class="line">- ACTIVATED &amp;&amp; CONSUMED: the dependency Profile SHALL be activated (i.e. call SrvcMgr_ActivateServices) AND the PDU associated to the Profile SHALL be activated;</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Power Profile received in the request will be by default handled as ACTIVATED &amp;&amp; CONSUMED. The dependency type is meaningfull only for
+the dependencies and it is a configurable parameter.</p>
+</div>
+<p>In the following a set of requirements that describe how the SPM handles the dependencies of a Power Profile:</p>
+<p class="rubric">[$DDS_SPM 0026]</p>
+<p>SUM SPM SHALL do the following when attempting to activate an activation profile: if the profile has remote dependencies with <code class="docutils literal notranslate"><span class="pre">ACTIVATED/ACTIVATED_CONSUMED</span></code> dependency type, the SPM sends a remote ACTIVATE command.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0124] [$Satisfies $SRS_SPM 0079]</p>
+<p class="rubric">[$DDS_SPM 0030]</p>
+<p>If there are no requesters with <code class="docutils literal notranslate"><span class="pre">ACTIVATED/ACTIVATED_CONSUMED</span></code> reqDependencyType for a Power Profile that is <em>Activated</em> or <em>Activating</em>, the <code class="docutils literal notranslate"><span class="pre">Spm_LocalPowerProfile_FSM()</span></code>/<code class="docutils literal notranslate"><span class="pre">Spm_RemotePowerProfile_FSM()</span></code> API will trigger the deactivation process for that Power Profile.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0061] [$Satisfies $SRS_SPM 0071] [$Satisfies $SRS_SPM 0068] [$Satisfies $SRS_SPM 0148]</p>
+<p class="rubric">[$DDS_SPM 0042]</p>
+<p>If the profile requested has a dependency type CONSUMED, SPM enables the corresponding PDU-Group for that service by <code class="docutils literal notranslate"><span class="pre">Spm_SwitchNetworkPdu()</span></code> API.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0125] [$Satisfies $SRS_SPM 0087]</p>
+</section>
+<section id="fsm-of-a-local-power-profile">
+<span id="fsm-loc"></span><h4>FSM of a Local Power Profile<a class="headerlink" href="#fsm-of-a-local-power-profile" title="Link to this heading"></a></h4>
+<p>A profile is defined as local as per <em>Spm/SpmConfigSet/SpmPowPrf/SpmProfileIsLocal</em>.</p>
+<p>The SPM will execute periodically a FSM over a Power Profile in order to handle it. This is done by Spm_LocalPowerProfile_FSM().</p>
+<p>The following is a set of requirements that describe how the SPM handles the state of local profiles:</p>
+<p class="rubric">[$DDS_SPM 0044]</p>
+<p>When the profile-owning software entity itself is activated transition to <strong>Activated</strong>.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0070]</p>
+<p class="rubric">[$DDS_SPM 0045]</p>
+<p>A profile SHALL transition into the <strong>Activated</strong> state as soon as the swEntity associated with the profile and its network communication are both activated.
+The activation of dependencies can continue in this activated state.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0080] [$Satisfies $SRS_SPM 0190]</p>
+<p class="rubric">[$DDS_SPM 0046]</p>
+<p>When the software entity owning the profile has been deactivated AND all the dependencies in the profile have
+been successfully requested to be deactivated, transition to <strong>Inactive</strong>.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0072]</p>
+<p>Spm_RetrieveDependencyTypeFromRequesterList() is called in order to understand the type of request present in the Power Profile’s requester list.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These Power Profile’s lists are populated as described in the <a class="reference internal" href="#spm-reqpath"><span class="std std-ref">Request Handling</span></a> charts.</p>
+</div>
+<p>The following scenatio can occours:</p>
+<div class="line-block">
+<div class="line">- Spm_NO_REQ_PRESENT: there are NO ACTIVATED/ACTIVATE_CONSUMED request;</div>
+<div class="line">- Spm_ONLY_CONSUMED_REQ_PRESENT: there are only CONSUMED request;</div>
+<div class="line">- Spm_ONLY_ACTIVATED_REQ_PRESENT: there are only ACTIVATED request;</div>
+<div class="line">- Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT: there are both ACTIVATED/CONSUMED request;</div>
+</div>
+<p>If the state of the Profile is Inactive (or Activating) and there are request Spm_ONLY_ACTIVATED_REQ_PRESENT or Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT, the SrvcMgr_ActivateServices is called.</p>
+<p class="rubric">[$DDS_SPM 0027]</p>
+<ul class="simple">
+<li><p>For the profile dependencies that are local, SPM uses the SUM SrvcMgr client server operation <code class="docutils literal notranslate"><span class="pre">SrvcMgr_ActivateServices</span></code> to activate the profile.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0124] [$Satisfies $SRS_SPM 0079]</p>
+<p>The following scenario can occours:</p>
+<div class="line-block">
+<div class="line">- If the operation is successfull, the state of the Profile become Activated.</div>
+<div class="line">- If the operataion is NOT successfull, the state of the Profile became Activating.</div>
+</div>
+<p>If the state of the is Activated (or Deactivating) and there are NO request Spm_ONLY_ACTIVATED_REQ_PRESENT or Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT and the service is not used by other profiles, the SrvcMgr_ActivateServices is called.</p>
+<p class="rubric">[$DDS_SPM 0041]</p>
+<ul class="simple">
+<li><p>For the profile dependencies that are local, SPM uses the SUM SrvcMgr client-server operation <code class="docutils literal notranslate"><span class="pre">SrvcMgr_ActivateServices</span></code> defined in <code class="docutils literal notranslate"><span class="pre">SDV_8201</span></code> to deactivate the profile dependencies.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0125] [$Satisfies $SRS_SPM 0087]</p>
+<p>The following scenario can occours:</p>
+<div class="line-block">
+<div class="line">- If the operation is successfull, the state of the Profile become Inactive.</div>
+<div class="line">- If the operataion is NOT successfull, the state of the Profile became Deactivating.</div>
+</div>
+<p class="rubric">[$DDS_SPM 0010]</p>
+<p>When the state of a local profile changes, the boolean variable <code class="docutils literal notranslate"><span class="pre">isStateProfileChanged</span></code> (associated to that profile) is set to TRUE in order to let the <code class="docutils literal notranslate"><span class="pre">API</span> <span class="pre">Spm_SoftwMgr_PopulateSMFrame()</span></code> know that an SM frame with the updated state of the profile is needed to be sent for each remote requester of the profile.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0074][$Satisfies $SRS_SPM 0077]</p>
+<p>Moreover, if there are request Spm_ONLY_CONSUMED_REQ_PRESENT or Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT the PDUs associated to the service are enabled.
+Otherwise, the PDUs are disabled.</p>
+</section>
+<section id="fsm-of-a-remote-power-profile">
+<span id="fsm-rem"></span><h4>FSM of a Remote Power Profile<a class="headerlink" href="#fsm-of-a-remote-power-profile" title="Link to this heading"></a></h4>
+<p>A profile is defined as remote as per <em>Spm/SpmConfigSet/SpmPowPrf/SpmProfileIsLocal</em>.</p>
+<p class="rubric">[$DDS_SPM 0011]</p>
+<p>The SM knows the location of a software entity hosted on a remote host by exploiting the <code class="docutils literal notranslate"><span class="pre">Sd_GetNodeAddress()</span></code> API. If <code class="docutils literal notranslate"><span class="pre">SchM_CData_Sd_SdEnableExtendedLearningTableFormat</span></code> is TRUE, SPM will get the SD configuration for the specific service before calling the API. Otherwise, SPM will call it with default values for InstanceId, MajorVersion.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0056]</p>
+<p>The address of the Profile’s provider needs to match to at least one IP defined in the <em>Spm/spmConfigSet/SpmPgttEntries/SpmTrgDvc/SpmTrgDvcID</em> list.</p>
+<p>The SPM (SPM_0) will act as requester of an activation to another SPM (SPM_1) of the service.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>SPM_0 and SPM_1 has no real meaning. Is just for explanation purpose.</p>
+</div>
+<p>In this scenario, the SPM (SPM_0) that receive the request from a SWC (local request) or remote (another SPM) is just responsible to send
+a command to the remote ECU (SPM_1) in order to activate/deactivate the profile w.r.t. the request present in the Power Profile’s requester list.</p>
+<p>The SPM will execute periodically a FSM over a Power Profile in order to handle it. This is done by Spm_RemotePowerProfile_FSM().
+Spm_RetrieveDependencyTypeFromRequesterList() is called in order to understand the type of request present in the Power Profile’s requester list.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These Power Profile’s lists are populated as described in the <a class="reference internal" href="#spm-reqpath"><span class="std std-ref">Request Handling</span></a> charts.</p>
+</div>
+<p>The following scenatio can occours:</p>
+<div class="line-block">
+<div class="line">- Spm_NO_REQ_PRESENT: there are NO ACTIVATED/ACTIVATE_CONSUMED request;</div>
+<div class="line">- Spm_ONLY_CONSUMED_REQ_PRESENT: there are only CONSUMED request;</div>
+<div class="line">- Spm_ONLY_ACTIVATED_REQ_PRESENT: there are only ACTIVATED request;</div>
+<div class="line">- Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT: there are both ACTIVATED/CONSUMED request;</div>
+</div>
+<p>If request’s type is Spm_ONLY_ACTIVATED_REQ_PRESENT or Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT and the activation request is not already sent the following operation occours:</p>
+<div class="line-block">
+<div class="line">- The state of the ECU where is located the Profile is retrieved thank the DevicePowerState IRV:</div>
+<div class="line">- If the remote ECU is Off, PowerOnDevice() is called in order to be sure to turn ON the remote ECU and the device is set as Requested;</div>
+<div class="line">- If the remote ECU is On:</div>
+</div>
+<blockquote>
+<div><div class="line-block">
+<div class="line">- a command to activate the profile is set to the flag CommandSend in order to let Spm_SoftwMgr_PopulateSMFrame() API know that a remote request SHALL be sent;</div>
+<div class="line">- SrvcMgr_ActivateServices is called;</div>
+</div>
+</div></blockquote>
+<div class="line-block">
+<div class="line">- If the remote ECU is ShutdownPending a command to activate the profile is set to the flag CommandSend in order to let Spm_SoftwMgr_PopulateSMFrame() API know that a remote request SHALL be sent; the return value of the SrvcMgr_ActivateServices then is checked and the notification to SUMs will be sent through SPM_ServiceActivationStatusNotification_Ifc.</div>
+</div>
+<p class="rubric">[$DDS_SPM 0531]</p>
+<p>The SM frame SHALL be resent its ActivateProfile request when SPM receives the status of a remote node that has profiles requested from this SM as Pending Shutdown while that profile is still
+required.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0134]</p>
+<p>If request’s type is Spm_ONLY_CONSUMED_REQ_PRESENT or Spm_NO_REQ_PRESENT and the deactivation request is not already sent the following scenario occours:</p>
+<p class="rubric">[$DDS_SPM 0040]</p>
+<div class="line-block">
+<div class="line">- a command to deactivate the profile is set to the flag CommandSend in order to let Spm_SoftwMgr_PopulateSMFrame() API know that a remote DEACTIVATE request SHALL be sent;</div>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0125] [$Satisfies $SRS_SPM 0087]</p>
+<div class="line-block">
+<div class="line">- Check if other profiles are using the service.
+- If not other profile is using the service, SrvcMgr_ActivateServices is called; the return value of the SrvcMgr_ActivateServices then is checked and the notification to SUMs will be sent through SPM_ServiceActivationStatusNotification_Ifc.</div>
+</div>
+<p>Moreover, if there are request Spm_ONLY_CONSUMED_REQ_PRESENT or Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT and the PDUs associated to the service are disabled then they are enabled.</p>
+<p>If there are no requests and no other profile is using the PDU Groups and the PDUs associated to the service are enabled then they are disabled.</p>
+<p>If the remote host goes into the Faulted/Reboot state, the PM must keep retrying to wake it up. After the host becomes active, he SM SHALL reissue all previously requested profiles to the host.</p>
+</section>
+<section id="pdu-group-handling">
+<h4>PDU Group Handling<a class="headerlink" href="#pdu-group-handling" title="Link to this heading"></a></h4>
+<p>Each Power Profile could have one or more PDU groups (Tx and Rx) associated which behaviour is handled by the SPM.
+When a Power Profile is activated, the PDU groups associated to it should be enabled; if the Power Profile is inactive, PDU groups should be disabled.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Actually, there is a reference in the SPM’s ParamDef spm/spmConfigSet/spmConfiguredPowPrf/spmSrvcPduGroupTxRef and spm/spmConfigSet/spmConfiguredPowPrf/spmSrvcPduGroupRxRef containers.</p>
+</div>
+<p>The Enable/Disable feature is achieved thanks to the <code class="code docutils literal notranslate"><span class="pre">BswMPduGroupSwitch</span></code> BswM action: it calls the ComM in order to enable or disable a PDU group.
+So, for each PDU group, a Mode Request port is needed w.r.t. the BswM and relative creation of a MODE-SWITCH-INTERFACE.</p>
+<p>SPM calls <code class="code docutils literal notranslate"><span class="pre">Rte_switch()</span></code> functions (one for each PDU group) that are stored as function pointer in the arrays
+<code class="code docutils literal notranslate"><span class="pre">Spm_Rte_SwitchPduGroup_&lt;&lt;NameOfPowProfAssociated&gt;&gt;_tx_refs[]</span></code> or <code class="code docutils literal notranslate"><span class="pre">Spm_Rte_SwitchPduGroup_&lt;&lt;NameOfPowProfAssociated&gt;&gt;_rx_refs[]</span></code> at the end of a Power Profile (De)Activation process.</p>
+<p class="rubric">[$DDS_SPM 0028]</p>
+<ul>
+<li><p>For every profile dependency in Step 2:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>If the dependency type is CONSUMED and the corresponding PDU-Group for that service is disabled, SPM enables the corresponding PDU-Group for that service by <code class="docutils literal notranslate"><span class="pre">Spm_SwitchNetworkPdu()</span></code> API.</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0124] [$Satisfies $SRS_SPM 0079]</p>
+<p>Overall, the behavior is :</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>PowProf Request</p></th>
+<th class="head"><p>PDU status</p></th>
+<th class="head"><p>Result of procedure</p></th>
+<th class="head"><p>PDU Group’s Action</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Activation</p></td>
+<td><p>Init or Off</p></td>
+<td><p>OK</p></td>
+<td><p>Enable PDU group</p></td>
+</tr>
+<tr class="row-odd"><td><p>Activation</p></td>
+<td><p>Init or off</p></td>
+<td><p>NOT_OK</p></td>
+<td><p>No action</p></td>
+</tr>
+<tr class="row-even"><td><p>Deactivation</p></td>
+<td><p>On and not used by other profiles</p></td>
+<td><p>OK</p></td>
+<td><p>Disable PDU group</p></td>
+</tr>
+<tr class="row-odd"><td><p>Deactivation</p></td>
+<td><p>On and not used by other profiles</p></td>
+<td><p>NOT_OK</p></td>
+<td><p>No action</p></td>
+</tr>
+<tr class="row-even"><td><p>Activation</p></td>
+<td><p>On</p></td>
+<td><p>OK</p></td>
+<td><p>No Action</p></td>
+</tr>
+<tr class="row-odd"><td><p>Activation</p></td>
+<td><p>On</p></td>
+<td><p>NOT_OK</p></td>
+<td><p>No Action</p></td>
+</tr>
+<tr class="row-even"><td><p>Deactivation</p></td>
+<td><p>Off</p></td>
+<td><p>OK</p></td>
+<td><p>No Action</p></td>
+</tr>
+<tr class="row-odd"><td><p>Deactivation</p></td>
+<td><p>Off</p></td>
+<td><p>NOT_OK</p></td>
+<td><p>No Action</p></td>
+</tr>
+<tr class="row-even"><td><p>Deactivation</p></td>
+<td><p>On and used by other profiles</p></td>
+<td><p>OK</p></td>
+<td><p>No Action</p></td>
+</tr>
+<tr class="row-odd"><td><p>Deactivation</p></td>
+<td><p>On and used by other profiles</p></td>
+<td><p>NOT_OK</p></td>
+<td><p>No Action</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">[$DDS_SPM 0056]</p>
+<p>PDU Groups state are stored inside the <code class="docutils literal notranslate"><span class="pre">SpmPowerProfileStateMachine_RAM_SubStruct.PduStatus</span></code>. This is done to check
+the state before enabling/disabling PDU groups to avoid repetitive enabling/disabling requests.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0125]</p>
+</section>
+<section id="service-discovery-learning-indication-management-logic">
+<h4>Service discovery learning indication management logic<a class="headerlink" href="#service-discovery-learning-indication-management-logic" title="Link to this heading"></a></h4>
+<p>In order to reduce the traffic over the ETH network when a new learning session is being run, SPM deactivates all active profiles and rejects new activations.</p>
+<p class="rubric">[$DDS_SPM 0653]</p>
+<p>SPM offers a C/S SPM_SDLearningStatusIndication on the Runnable_SPM_SdLearningStatusIndication operation through which SrvcManager notifies the status of the Learning Session.</p>
+<p>When <em>SPM_SDLearningStatus</em> transitions to:</p>
+<ul class="simple">
+<li><p><em>SUM_LRNG_PENDING</em>, SPM shall deactivate all active profiles and notify requesters with <em>Spm_REJECTED_PROFILE_BLOCKED</em> reason;</p></li>
+<li><p><em>SUM_LRNG_FAILED</em> from <em>SUM_LRNG_PENDING</em>, SPM shall query SD for Nodes IP address by calling Sd_GetNodeAddress in order to refresh the IP list and reset PowerProfiles internal flags;</p></li>
+<li><p><em>SUM_LRNG_SUCCESSFUL</em> from <em>SUM_LRNG_PENDING</em>, SPM shall query SD for Nodes IP address by calling Sd_GetNodeAddress in order to refresh the IP list;</p></li>
+<li><p><em>SUM_LRNG_NOT_STARTED from *SUM_LRNG_PENDING</em>, SPM shall query SD for Nodes IP address by calling Sd_GetNodeAddress in order to refresh the IP list (this should ideally not be a valid scenario).</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0260][$Satisfies $SRS_SPM 0262][$Satisfies $SRS_SPM 0263][$Satisfies $SRS_SPM 0264][$Satisfies $SRS_SPM 0265]</p>
+<p class="rubric">[$DDS_SPM 0654]</p>
+<p>SPM retains the current Learning Session status by setting the IRV <em>Rte_Irv_SPM_Spm_Learning_Status</em>.</p>
+<p>This variable is accessible from other runnables and is used to check whether the current status is <em>SUM_LRNG_PENDING</em>. In case <em>Rte_Irv_SPM_Spm_Learning_Status == SUM_LRNG_PENDING</em>,
+new local and remote activation requests will be denied. Remote activation requesters will be reported <em>Spm_REJECTED_PROFILE_BLOCKED</em> reason.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0263][$Satisfies $SRS_SPM 0261]</p>
+</section>
+</section>
+<section id="spm-activation-profile-error-handling">
+<h3>SPM Activation Profile Error Handling<a class="headerlink" href="#spm-activation-profile-error-handling" title="Link to this heading"></a></h3>
+<p>SPM SHALL monitor the target device status for each targets that are:</p>
+<ul class="simple">
+<li><p>Requesters for SPM own power profiles, i.e. the profiles that are activated by remote power profiles as dependencies</p></li>
+<li><p>Requested for SPM own power profiles, i.e. the profiles that requests the activation of remote profiles as dependencies</p></li>
+</ul>
+<section id="loss-of-communication-with-a-requester-sm">
+<h4>Loss Of Communication with a Requester SM<a class="headerlink" href="#loss-of-communication-with-a-requester-sm" title="Link to this heading"></a></h4>
+<p class="rubric">[$DDS_SPM 0532]</p>
+<p>SPM SHALL handle possible errors in communication with requesting (remote) SM by the periodic call of handling function <cite>Spm_LoC_wRequester_Handler()</cite> from Software Manager Main Function.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0092]</p>
+<p class="rubric">[$DDS_SPM 0533]</p>
+<p>SPM error handling function <cite>Spm_LoC_wRequester_Handler()</cite> identifies the IP address/es of requesting SMs thanks to a scan of the requester lists for each SPM local profiles.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0092]</p>
+<p class="rubric">[$DDS_SPM 0534]</p>
+<p>WHEN a requesting SM appears in the list of the SPM profile requesters, the function <cite>Spm_LoC_wRequester_Handler()</cite> performs the following actions:</p>
+<ul class="simple">
+<li><p>For each specific power profile requester, it verifies that the remote requester does not have any requests or deactivation requests in progress by checking the <cite>spmReqItm::ReqType</cite> field.</p>
+<ul>
+<li><p>IF the <cite>spmReqItm::ReqType</cite> field is set to SPM_NULL_REQ or SPM_REQ_DEACTIVATION no actions is taken for that requester.</p></li>
+<li><p>OTHERWISE, it checks the requester’s Power State by using <cite>Spm_DevicePowerStateParser</cite> function.</p></li>
+</ul>
+</li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0092]</p>
+<p class="rubric">[$DDS_SPM 0535]</p>
+<p>The error handling function <cite>Spm_LoC_wRequester_Handler()</cite> retrieves the Power State of all target devices by the Inter-runnable variable
+<cite>Rte_Irv_SPM_Spm_DevicePowerState</cite>. It also obtains the Power State of the desired target device using the <cite>Spm_DevicePowerStateParser()</cite> function,
+which uses the field <cite>spmReqItm::requesterIP</cite> as a filter.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0092]</p>
+<p class="rubric">[$DDS_SPM 0536]</p>
+<p>WHEN  the error handling function <cite>Spm_LoC_wRequester_Handler()</cite> detects that an active requesting SM (Power Profile activation request is on-going or kept it up)
+is <cite>SPM_Faulted</cite> or <cite>SPM_Reboot</cite> power state THEN <cite>Spm_LoC_wRequester_Handler()</cite> :</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>uses the <cite>Spm_AppendFeedbackErrorItemToList()</cite> function to add the error to the next outgoing SM frame with the following information:</dt><dd><ul>
+<li><p>Profile identifier</p></li>
+<li><p>Target IP</p></li>
+<li><p>Error code based on the requester’s power state. If SPM_Faulted, the error code is <cite>Spm_REJECTED_LOSS_OF_HEARTBEAT</cite>, otherwise it is <cite>Spm_REJECTED_RESET_DETECTED</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>sets <cite>spmReqItm::ReqType</cite> field to <cite>SPM_NULL_REQ</cite> for the specific power profile requester,</p></li>
+<li><p>sets the <cite>SpmStayAwakeTimer</cite> timer to the configured value if the Profile is local.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0092] [$Satisfies $SRS_SPM 0251] [$Satisfies $SRS_SPM 0252]</p>
+<p class="rubric">[$DDS_SPM 0537]</p>
+<p>IN CASE the requesting SM IP address is not present in the pre-configured/calibrated table of Power Graph for the current SPM node THEN
+the error handling function <cite>Spm_LoC_wRequester_Handler()</cite> does not take any action on out-coming SM message but it removes the item from local profile
+requester list setting the field <cite>spmReqItm::REqType</cite> to SPM_NULL_REQ.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0092]</p>
+</section>
+<section id="activation-deactivation-error-handling">
+<h4>Activation/Deactivation Error Handling<a class="headerlink" href="#activation-deactivation-error-handling" title="Link to this heading"></a></h4>
+<p>Profile Activation Behavior on SM Restart</p>
+<p class="rubric">[$DDS_SPM 0538]</p>
+<p>Upon restarting, SM shall perform a cleanup of all previously activated profiles to ensure that any software entities activated before the restart are not left in an undefined or unmanageable state. Profiles that are not designated as default activations on SM startup shall be deactivated. This approach ensures a clean system state and requires all profile requesters to reinitiate activation requests with the SM after the restart.</p>
+<p>Additionally, the SM shall not automatically resend profile activation requests to other SMs that were made prior to the restart. Such requests will only be sent if the activation criteria are re-evaluated and met after the restart. This ensures that all activations are based on the current system state and prevents unintended or stale activations.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0219]</p>
+<p class="rubric">[$DDS_SPM 0539]</p>
+<p>When SPM reads an SM Frame, before calling <cite>Spm_Handler_prfReqDispatcherForActivationFromRemote()</cite> or <cite>Spm_prv_prfReqDispatcher()</cite> for activation/deactivation, it checks for any conflicting request. A conflicting request happens when in a single SM Frame, there are 2 or more requests for the power profile under check with different request types.
+For instance, if there are 2 requests for a power profile one asking for activation and the other asking for deactivation, in this SM Frame a conflict happened.
+SPM discards all such requests and for that power profile adds an error with the following information:</p>
+<ul class="simple">
+<li><p>Profile identifier</p></li>
+<li><p>Target IP</p></li>
+<li><p>Error code REJECT_REQUEST_INVALID</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0091]</p>
+<p class="rubric">[$DDS_SPM 0055]</p>
+<p>If a restart condition has been detected, then the SM SHALL re-request all profiles that it previously requested to that host.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0171]</p>
+</section>
+<section id="low-voltage-priority-level-handling">
+<h4>Low Voltage priority level Handling<a class="headerlink" href="#low-voltage-priority-level-handling" title="Link to this heading"></a></h4>
+<p>Each Power Profile configured has two LowVoltagePriority: <em>LowVoltagePriority_VEH_OFF</em> and <em>LowVoltagePriority_VEH_ON</em>. When a request to activate a local profile is received, the SPM will check the value of the <em>LowVoltagePriority_VEH_ON</em> if the Power Mode is Vehicle On or the <em>LowVoltagePriority_VEH_OFF</em> if the Power Mode is Vehicle Off w.r.t. the last value received from the Energy Optimizer.</p>
+<p class="rubric">[$DDS_SPM 0057]</p>
+<p>The SPM module calls the <code class="docutils literal notranslate"><span class="pre">Spm_ReadLowVoltagePriorityStatus()</span></code> API to read and save the Low Voltage Priority level value.
+This value can only be obtained from the low voltage energy optimizer after confirming its availability from the SSFM module
+via the SignalAvailability port interface. If the data is available, the SPM module receives it and notifies the NvM that the content of the RAM mirror block have changed, so that it can be stored in the Nvm during shutdown; otherwise, no action is taken.</p>
+<p>It should be noted that during the SPM module startup phase, since the NvMSelectBlockForReadAll parameter is set to TRUE, the last Low Voltage Battery Priority level value saved in Nvm is retrieved, if available.
+Furthermore, during the shutdown phase, the value present in the RAM mirror block will be saved in the NvM,  as the NvMSelectBlockForWriteAll parameter is set to TRUE.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0258][$Satisfies $SRS_SPM 0242]</p>
+<p class="rubric">[$DDS_SPM 0035]</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority()</span></code> API allows to check whether a profile activation request can be handled based on the the Low Voltage Battery Priority level value.</p>
+<div class="line-block">
+<div class="line">- If the value has been received from the energy optimizer, the SPM checks the Vehicle Power Mode and compares the saved Low Voltage Priority value with the one configured for a specific profile.</div>
+</div>
+<blockquote>
+<div><div class="line-block">
+<div class="line">- If the saved value is smaller than the one configured for the profile, the API returns FALSE, indicating that the activation request is refused OR the profile SHALL be deactivated;</div>
+<div class="line">- If the saved value is greater than or equal to the one configured for the profile, the API returns TRUE, indicating that the activation request can be handled;</div>
+</div>
+</div></blockquote>
+<div class="line-block">
+<div class="line">- If the value has not been received from the energy optimizer and was never stored in the previous power cycle in the NvM, the API returns TRUE, indicating that the activation request can be handled.</div>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0194]</p>
+<p class="rubric">[$DDS_SPM 0050]</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority()</span></code> API considers that the activation request from the remote device can not be handled, the REJECTED_LACK_OF_POWER tag will be set
+in the feedback <code class="docutils literal notranslate"><span class="pre">SMFrame.REQ_STATUS_PROF_STATE</span></code>.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0194]</p>
+<p class="rubric">[$DDS_SPM 0037]</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority()</span></code> API considers that the activation request coming from local can not be handled, the request is rejected.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0194]</p>
+<p class="rubric">[$DDS_SPM 0038]</p>
+<p>The API <code class="docutils literal notranslate"><span class="pre">Spm_ErrorHandler_LowVoltageBattery()</span></code> periodically check if profiles can remain Active/Activating w.r.t. the LowVoltageBattery Priority.
+If it detects that a profile does not satisfies anymore the conditions, the <code class="docutils literal notranslate"><span class="pre">Spm_SendDeactivationRequestForEachRequester()</span></code> API will send deactivation request for each its requester
+in order to automatically deactivate the profile.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0203]</p>
+<p class="rubric">[$DDS_SPM 0648]</p>
+<p>When the SPM receives REJECTED_LACK_OF_POWER as a response to a previous activation request, the SPM trigger the activation of the profile
+with the Application Interface ID: LVOptmzerChk by calling the function <code class="docutils literal notranslate"><span class="pre">Spm_LowVoltLVOptmzerChkApplicationInterfaceID_TriggerActivation()</span></code>.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0257]</p>
+<p class="rubric">[$DDS_SPM 0649]</p>
+<p>The function <code class="docutils literal notranslate"><span class="pre">Spm_LowVoltLVOptmzerChkApplicationInterfaceID_PeriodicCheck()</span></code> is called periodically in order to check if the profile with Application Interface ID: LVOptmzerChk needs to be deactivated or not.
+If the profile was previously activated by <code class="docutils literal notranslate"><span class="pre">Spm_LowVoltLVOptmzerChkApplicationInterfaceID_TriggerActivation()</span></code>, this function needs to deactivate the profile if one of the two conditions
+is satisfied:</p>
+<div class="line-block">
+<div class="line">- 5 seconds have passed from the activation;</div>
+<div class="line">- SSFM notifies the SPM by SignalAvailability port interface that the value of the Low Voltage Battery Priority level is available;</div>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0257]</p>
+</section>
+<section id="vehiclepowermode-handling">
+<h4>VehiclePowerMode Handling<a class="headerlink" href="#vehiclepowermode-handling" title="Link to this heading"></a></h4>
+<p class="rubric">[$DDS_SPM 0051]</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">SpmProfActivationTimeOutVehOff</span></code> is 0, it means that the profile cannot be activated in off power mode.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0197] [$Satisfies $SRS_SPM 0151]</p>
+<p class="rubric">[$DDS_SPM 0052]</p>
+<p><code class="docutils literal notranslate"><span class="pre">Spm_ErrorHandler_VehOff</span></code> API handles <code class="docutils literal notranslate"><span class="pre">SpmProfActivationTimeOutVehOff</span></code> according to the Vehicle Power Mode.
+If the VehPowMode is OFF, the Power Profile with SpmProfActivationTimeOutVehOff equal to zero is deactivated. If the timeout configured is greater then zero, it is decreased till it reach the zero.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0165]</p>
+<p>In case the Power Mode is Vehicle Off, then a power profile can stay activated only for a specific amount of time. This amount of time is defined as <em>SpmProfActivationTimeOutVehOff</em>.</p>
+<p>This timer can be configured for each power profile. The timer starts as soon as the SPM takes care about the activation of a Power Profile and when it expires, the Power Profile shall start the deactivation procedure.</p>
+<p>If a profile has the <em>SpmProfActivationTimeOutVehOff</em> parameter set to 0u, when a request to activate it is received and the Power Mode is Vehicle Off, the request is discarded with the REJECTED_LACK_OF_PERMISSION
+set in the SM frame as feedback.</p>
+<p class="rubric">[$DDS_SPM 0053]</p>
+<p>If a remote requester ask for an activation of a profile that can not be handled for the current VehPowMode, the REJECTED_LACK_OF_PERMISSION tag will be set in the feedback <code class="docutils literal notranslate"><span class="pre">SMFrame.REQ_STATUS_PROF_STATE</span></code>.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0151]</p>
+</section>
+</section>
+<section id="heartbeat-management">
+<h3>HeartBeat Management<a class="headerlink" href="#heartbeat-management" title="Link to this heading"></a></h3>
+<p>HeartBeat (SOME/IP frame) is used in order to convey the status of the controller (i.e. the flag Permit Execution received from SUSD).</p>
+<p class="rubric">[$DDS_SPM 0302]</p>
+<p>PM publishes a periodic heartbeat on the <code class="docutils literal notranslate"><span class="pre">sftpwrmgr_heartbeat_Gen</span></code> interface to inform remote hosts that the host where the PM resides is available for communication.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0049]</p>
+<p class="rubric">[$DDS_SPM 0305]</p>
+<p>The first Heartbeat sent by the PM has a value of zero. PM starts sending heartbeat as soon as the SPM software is enabled for running by system conditions.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0050]</p>
+<p class="rubric">[$DDS_SPM 0306]</p>
+<p>After the initial transmission of a zero <code class="docutils literal notranslate"><span class="pre">HeartbeatCounter</span></code> value, the PM increments the <code class="docutils literal notranslate"><span class="pre">HeartbeatCounter</span></code> by one with each subsequent transmission of the message.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0051]</p>
+<p class="rubric">[$DDS_SPM 0307]</p>
+<p>PM transmits the Heartbeat message with a <code class="docutils literal notranslate"><span class="pre">HeartbeatCounter</span></code> value of 2^32-1 whenever the SUSD de-asserts the bit in the Permit Execution value.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0053]</p>
+<p>The above functionalities are achieved by the Spm_PM_HB_Tx_Handler() function (that is called by the periodic Runnable_SPM_PowerManager_MainFunction()):</p>
+<div class="line-block">
+<div class="line">- it check the Permit Execution received from SUSD by calling Sum_Spm_GetHBCounterShallBeSentFullScale();</div>
+<div class="line">- it calls the Spm_HandlerHBTxTimer() function that handle the periodic transmission of the HB (initial burst phase and next steady state phase);</div>
+<div class="line">- SPM_Send_PMFrame() function attach the metadata to the buffer before calling the Rte_Send function.</div>
+</div>
+<p>The HeartBeat is sent in Multicast on all the IP defined in the <em>Spm/spmConfigSet/SpmPgttEntries/SpmWkngDvc/SpmDstIp</em>.</p>
+<p>Each remote target device can have multiple IP associated to it (defined in the <em>Spm/spmConfigSet/SpmPgttEntries/SpmTrgDvc/SpmTrgDvcID</em> list).
+So, each frame received with SrcIP belonging to the list of <em>SpmTrgDvcIP</em> will contribute to determining the status of the remote controller.</p>
+<p>The HeartBeat frame message is defined as follows:</p>
+<p class="rubric">[$DDS_SPM 0301]</p>
+<p>The Custom Header of PM messages is sent with the ID 0xFFFE 7FFE.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0011]</p>
+<p class="rubric">[$DDS_SPM 0300]</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">SrcPM_ID</span></code> is the 4 bytes of the Src IP address.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0004]</p>
+<p class="rubric">[$DDS_SPM 0304]</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">HeartbeatCounter</span></code> is an incremental counter of the type uint32 where it will count from 0 to 2^32-1.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0012]</p>
+<p class="rubric">[$DDS_SPM 0309]</p>
+<p>Heartbeat message has a uint16 field <code class="docutils literal notranslate"><span class="pre">NumberProfileActive</span></code> that represents the number of NOT INACTIVE power profiles.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0215] [$Satisfies $SRS_SPM 0217]</p>
+<p class="rubric">[$DDS_SPM 0310]</p>
+<p>SM provides the <code class="docutils literal notranslate"><span class="pre">Spm_GetNotInactiveProfNumberForHB()</span></code> API that returns the number of NOT INACTIVE power profiles.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0218]</p>
+<p class="rubric">[$DDS_SPM 0308]</p>
+<p>PM broadcasts the Heartbeat message at a calibratable periodic rate for the first 3 counts (default 5ms) and a separate calibratable periodic rate for all subsequent counts (default 1 second).</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0052]</p>
+<p class="rubric">[$DDS_SPM 0639]</p>
+<p>PM prevents shutdown until a calibratable period of time after the last burst Heartbeat has been sent (default 2s).</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0054]</p>
+<p class="rubric">[$DDS_SPM 0641]</p>
+<p>PM prevents shutdown as long as calibratable own wakeup bit is set in the received wakeup frame.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0054]</p>
+<p class="rubric">[$DDS_SPM 0402]</p>
+<p>PM stores HeartBeat value in the <code class="docutils literal notranslate"><span class="pre">Spm_PowMgr_TrgDvc_Type.MonitoringType</span></code> struct that is not stored in the Non Volatile Memory. So, at each re-start the PM does not know the previous HeartBeat’s value.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0054]</p>
+<p class="rubric">[$DDS_SPM 0312]</p>
+<p>To send the HeartBeat the PPorts <code class="docutils literal notranslate"><span class="pre">(VLAN)_PwrMgrHeartbeatTx_Evt</span></code> is used to forward the HB on each necessary network.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0172]</p>
+<p class="rubric">[$DDS_SPM 0405]</p>
+<p>Before the transmission of a HeartBeat, SM frame and ETH WakeUp frame, the <code class="docutils literal notranslate"><span class="pre">SPM_softpowr_tx_metadata()</span></code> API is called in order to retrieve Metadata needed.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0115]</p>
+</section>
+<section id="power-graph-traversal-table">
+<h3>Power Graph Traversal Table<a class="headerlink" href="#power-graph-traversal-table" title="Link to this heading"></a></h3>
+<p>The Power Graph Traversal Table (PGTT) is a node-graph relationship where each hardware components component is represented up as a node and the ability of
+one hardware component to control the power of another hardware component is shown as an edge. This power graph is utilized by power managers running on various
+nodes of the graph to determine how to activate another node when that node is required for the activation of an activation profile.
+The PGTT is defined in the <em>Spm/spmConfigSet</em> paramdef’s container.</p>
+<p>It contains the following subcontainer (more detailled in the User Guide):</p>
+<div class="line-block">
+<div class="line">- SpmTrgDvc: contains information of all the reachable ECUs in the network</div>
+<div class="line">- SpmWkngDvc: contains HeartBeat’s network information and associate SpmTrgDvc with SpmWkUpSeq</div>
+<div class="line">- SpmWkUpSeq: contains information related to sequences needed to turn on remote ECUs.</div>
+</div>
+<p class="rubric">[$DDS_SPM 0418]</p>
+<p>Each Target Device can have multiple IP address associated.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0164][$Satisfies $SRS_SPM 0017]</p>
+<p class="rubric">[$DDS_SPM 0129]</p>
+<p>The Target Device Field is a 4 byte value representing the IP address of the device to be woken up.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0017]</p>
+<p>The PM:</p>
+<p class="rubric">[$DDS_SPM 0127]</p>
+<ul class="simple">
+<li><p>treats the Waking Device field as a 4 byte value representing the PM IP Address.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0016]</p>
+<p class="rubric">[$DDS_SPM 0131]</p>
+<ul class="simple">
+<li><p>treats the Wakeup Sequence field as a 1 byte value representing the order of wakeup command execution.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0018]</p>
+<p class="rubric">[$DDS_SPM 0132]</p>
+<ul class="simple">
+<li><p>treats the Wakeup Command as a 1 byte value representing an enumeration of wakeup commands.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0019]</p>
+<p class="rubric">[$DDS_SPM 0133]</p>
+<p>SPM will sends/stops sending the command corresponding to the enumerated value found in the Wakeup Command field during the wakeup sequence.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0019]</p>
+<p class="rubric">[$DDS_SPM 0134]</p>
+<p>The PM treats the Wakeup Step Delay Field as a 2 byte value representing a time delay in milliseconds before proceeding to the next step in the PowerOnDevice Sequence.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0020]</p>
+<p class="rubric">[$DDS_SPM 0128]</p>
+<ul class="simple">
+<li><p>executes wakeup commands from PGTT entries that have its own IP Address represented in the Waking Device field.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0016]</p>
+</section>
+<section id="powerondevice-poweroffdevice-and-wakeup-sequence">
+<span id="pod"></span><h3>PowerOnDevice/PowerOffDevice and WakeUp Sequence<a class="headerlink" href="#powerondevice-poweroffdevice-and-wakeup-sequence" title="Link to this heading"></a></h3>
+<p>The PowerOnDevice and PowerOffDevice are the two main operations that the PM can execute in order to turn ON/OFF a remote target device.
+The SPM understand if a remote target device needs to be turned ON/OFF by checking if it is requested or not (i.e. a target device is labelled as requested if at least one of its profiles is requested).</p>
+<p>A <em>WakeUp sequence</em> is composed of <em>WakeUp step</em> that shall be executed sequentially in order to turn ON the remote target device.
+If the target device needs to be turned OFF, the command of the <em>WakeUp step</em> are de-asserted one by one.</p>
+<p>See <a class="reference internal" href="../UserGuide/user_guide.html#wkupstep"><span class="std std-ref">SpmWkUpSteq</span></a> to more details about the <em>WakeUp Step</em></p>
+<p>The <em>PowerOnDevice()</em> is triggered by SM when a remote target device SHALL be turn ON.</p>
+<p class="rubric">[$DDS_SPM 0039]</p>
+<p><code class="docutils literal notranslate"><span class="pre">Spm_SoftwMgr_PowerOffDevice_Handler()</span></code> requests <code class="docutils literal notranslate"><span class="pre">PowerOffDevice</span></code> to its local PM to turn OFF a remote host.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0087]</p>
+<p class="rubric">[$DDS_SPM 0400]</p>
+<p>PM stores <code class="docutils literal notranslate"><span class="pre">PowerOnDevice</span></code> request in the <code class="docutils literal notranslate"><span class="pre">Spm_PowMgr_TrgDvc_Type.MonitoringType</span></code> struct that is not stored in the Non Volatile Memory. So, at each re-start the PM does not know the previous request.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0054]</p>
+<p>Please, take into account that these action will be invoked ONLY for the requested target device.</p>
+<p class="rubric">[$DDS_SPM 0130]</p>
+<p>The WakeUp Sequence is performed on targets whose Target Device field matches the device specified in the <code class="docutils literal notranslate"><span class="pre">PowerOnDevice</span></code>  and <code class="docutils literal notranslate"><span class="pre">PowerOffDevice</span></code> requests.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0017]</p>
+<p class="rubric">[$DDS_SPM 0135]</p>
+<p>SPM sends the commands identified by the proper PGTT Waking and Target Device fields in the order of the Wakeup Sequence field, beginning with the value of 1 when needed.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0026] [$Satisfies $SRS_SPM 0167]</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Sum_Spm_WakeUpSequence_Handler()</span></code> is called periodically by the PM main function in order to check if there are wake up sequence to be executed and to execute them.</p>
+<p>The function <code class="docutils literal notranslate"><span class="pre">Sum_Spm_OngoingSequence_Handler()</span></code> prevent that an ongoing wake up sequence is interrupted by another one. This means that
+if a wake up sequence is already ongoing for a target device, no other wake up sequence can be started for the same target device.</p>
+<p>The function <code class="docutils literal notranslate"><span class="pre">Sum_Spm_InitiateSequence_Handler()</span></code> is called if there are NO wake up sequence ongoing.
+It checks if there is a wake up sequence to be executed. If there is, it trigger the state machine of the wake up sequence execution.</p>
+<p class="rubric">[$DDS_SPM 0113]</p>
+<p>If the wake up Command Type in the wake up sequnce is 0x02 (Send Ethernet Wakeup Frame A) a bit in position Command Value is set in the Frame A.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0021]</p>
+<p class="rubric">[$DDS_SPM 0148]</p>
+<p>If the wake up Command Type in the wake up sequnce is 0x03 (Send Ethernet Wakeup Frame B) a bit in position Command Value is set in the Frame B.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0021]</p>
+<p class="rubric">[$DDS_SPM 0644]</p>
+<p>If the wake up Command Type in the wake up sequnce is 0x04 (Send Ethernet Wakeup Frame C) a bit in position Command Value is set in the Frame C.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0021]</p>
+<p class="rubric">[$DDS_SPM 0144]</p>
+<p>If the wake up Command Type in the wake up sequnce is 0x05 (Send CAN Wakeup Frame A) a bit in position Command Value is set in the Frame A.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0021]</p>
+<p class="rubric">[$DDS_SPM 0145]</p>
+<p>If the wake up Command Type in the wake up sequnce is 0x06 (Send CAN Wakeup Frame B) a bit in position Command Value is set in the Frame B.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0021]</p>
+<p class="rubric">[$DDS_SPM 0645]</p>
+<p>If the wake up Command Type in the wake up sequnce is 0x07 (Send CAN Wakeup Frame C) a bit in position Command Value is set in the Frame C.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0021]</p>
+<p class="rubric">[$DDS_SPM 0146]</p>
+<p>If the wake up Command Type in the wake up sequnce is 0x08 (Perform GPIO Wakeup) a bit in position Command Value is set in the buffer that will be passed to the Wakeup Helper Function.
+The enumeration of the Wakeup Command Value is a value in the range [0x00 - 0x63] that corresponds to a specific bit set. (e.g. Enum = $03 then Wakeup Frame is sent with bit position $03 set)</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0021]</p>
+<p>It will execute the action defined in the <em>WakeUp Step</em> as follow:</p>
+<p>call to <em>Sum_Spm_PowerOnSeq_AdvanceStep()</em> API that will:</p>
+<p class="rubric">[$DDS_SPM 0138]</p>
+<ul class="simple">
+<li><p>combines consecutive Wakeup Frame steps into the same transmission when the Wakeup Step Delay Field has a value of zero. e.g. Step 1 is Wakeup Frame with bit 8 set and Step 2 is Wakeup Frame with bit 6 set, the result is one transmission with both bits 6 and 8 set.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0026] [$Satisfies $SRS_SPM 0167]</p>
+<ul class="simple">
+<li><p>call to <em>Sum_Spm_WakeUpCmdDispatcher()</em> API that will:</p></li>
+</ul>
+<p class="rubric">[$DDS_SPM 0147]</p>
+<ul class="simple">
+<li><p>If the wake up Command Type in the wake up sequnce is <em>SEND_TC10_SWTCH_1</em> or <em>SEND_TC10_SWTCH_2</em>, the TC10 is sent over the network associated with the Ethernet Switch in the EthSM configuration.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0021]</p>
+<ul class="simple">
+<li><p>append bit in the proper buffer otherwise;</p></li>
+</ul>
+<p class="rubric">[$DDS_SPM 0136]</p>
+<ol class="arabic simple">
+<li><p>waits for the Wakeup Step Delay period of time before processing the next Wakeup Command in the Sequence.</p></li>
+</ol>
+<p class="rubric">[$Satisfies $SRS_SPM 0026] [$Satisfies $SRS_SPM 0167]</p>
+<p class="rubric">[$DDS_SPM 0137]</p>
+<ol class="arabic simple">
+<li><p>processes all of the <em>WakeUp step</em> for the given Target Device</p></li>
+</ol>
+<p class="rubric">[$Satisfies $SRS_SPM 0026] [$Satisfies $SRS_SPM 0167]</p>
+<p>When the <em>Sum_Spm_InitiateSequence_Handler()</em> API detects that a <em>PowerOffDevice()</em> request (i.e. the target device is NOT requested), it will perform the WakeUp sequence contrarywise as follow:</p>
+<ol class="arabic">
+<li><p>call to <em>Sum_Spm_WakeUpCmdDispatcher()</em> API that will:</p>
+<blockquote>
+<div><div class="line-block">
+<div class="line">- perform NO action if the command is <em>SEND_TC10_SWTCH_1</em> or <em>SEND_TC10_SWTCH_2</em>;</div>
+<div class="line">- remove bit from proper buffer otherwise;</div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+<p class="rubric">[$DDS_SPM 0139]</p>
+<ol class="arabic simple">
+<li><p>wait that the delay timer between steps is elapsed</p></li>
+</ol>
+<p class="rubric">[$Satisfies $SRS_SPM 0033]</p>
+<p>Additional information about  <code class="docutils literal notranslate"><span class="pre">PowerOnDevice</span></code> and <code class="docutils literal notranslate"><span class="pre">PowerOffDevice</span></code>:</p>
+<p class="rubric">[$DDS_SPM 0116]</p>
+<p>PM only honors <code class="docutils literal notranslate"><span class="pre">PowerOnDevice</span></code> commands from its corresponding SM.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0025]</p>
+<p class="rubric">[$DDS_SPM 0118]</p>
+<p>PM provides a <code class="docutils literal notranslate"><span class="pre">PowerOffDevice()</span></code> API to allow its local SM to request powering off devices that the PM had previously powered on.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0029]</p>
+<p class="rubric">[$DDS_SPM 0119]</p>
+<p>PM only honors <code class="docutils literal notranslate"><span class="pre">PowerOffDevice</span></code> commands from its corresponding SM.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0030]</p>
+<p class="rubric">[$DDS_SPM 0124]</p>
+<p>SM makes the <code class="docutils literal notranslate"><span class="pre">PowerOnDevice</span></code> request to the PM even if the requested host is already awake.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0083]</p>
+<p class="rubric">[$DDS_SPM 0126]</p>
+<p>SM requests wakeup of an IP address through its local PM using the <code class="docutils literal notranslate"><span class="pre">PowerOnDevice</span></code> request, specifying the IP address in the request.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0082][$Satisfies $SRS_SPM 0199]</p>
+<section id="powerondevice-retry">
+<span id="pod-retry"></span><h4>PowerOnDevice Retry<a class="headerlink" href="#powerondevice-retry" title="Link to this heading"></a></h4>
+<p>If a remote Target Device is in Faulted or Shutdown Pending state and there are profiles requested to be activated provided by it, the SPM needs to retry to PowerOn the remote Target Device by first executing the
+PowerOff WakeUp sequence and then the PowerOn WakeUp sequence.</p>
+<p>If it is in Faulted or Shutdown Pending state and there are NO profiles requested to be activated, the SPM will not execute the PowerOnDevice retry procedure.
+Once the PowerOnDevice retry procedure is started, it will be executed at a calibratable periodic rate SpmTrgDvcPowerOnDeviceRetryPeriodicity (default 10s).
+The PowerOnDevice retry procedure will stop when the Target Device is recovered (i.e. the Target Device state is On) or when there are no more profiles requested to be activated provided by the Target Device.</p>
+<p>The complete transitions are described in the following FSM.</p>
+<p>Once the Target Device reaches the Faulted/ShutdownPending state while its profiles are requested, the following FSM start:</p>
+<p class="plantuml">
+<object data="../../_images/plantuml-3cd2435140b18c4749894e7b8a41c09d139a303c.svg" type="image/svg+xml" style="width:523px;height:703px;background:#FFFFFF;"></object></p>
+<p class="rubric">[$DDS_SPM 0151]</p>
+<p>The complete PowerOnDevice retry consist in:</p>
+<div class="line-block">
+<div class="line">- Perform the PowerOff sequence;</div>
+<div class="line">- Wait for SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence (default 1s);</div>
+<div class="line">- Perform the PowerOn sequence;</div>
+</div>
+<p>This behavior is handled by the <code class="docutils literal notranslate"><span class="pre">Sum_Spm_PowerOnDeviceRetryHandler()</span></code> API.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0142]</p>
+<p class="rubric">[$DDS_SPM 0150]</p>
+<p>The PowerOnDevice retry is performed at calibratable rate SpmTrgDvcPowerOnDeviceRetryPeriodicity (default 10s) if the requested TrgDvc is in Faulted or ShutdownPending state.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0160]</p>
+</section>
+<section id="devicepowerstatus-management">
+<h4>DevicePowerStatus management<a class="headerlink" href="#devicepowerstatus-management" title="Link to this heading"></a></h4>
+<p>The following are the state of a generic Target Device.
+The transition between the state are done in the code as per ‘DevicePowerState transition diagram’ of SDV-2017.</p>
+<p class="rubric">[$DDS_SPM 0208]</p>
+<p><strong>Faulted</strong> when any of the following are true:</p>
+<ul class="simple">
+<li><p>the local device has been activated but is still Off (timeouts and hysteresis to be specified in the Domain-specific Specs).</p></li>
+<li><p>the PM Heartbeat of a remote device is not received within the DTC Timeout length of time (defined in the PGTT) after sending the initial wakeup request (from Initializing state).</p></li>
+<li><p>the PM Heartbeat of a remote device is not received within the DTC Timeout length of time (defined in the PGTT) after an initial Heartbeat reception (from On, Pending_Shutdown, or Reboot states), and the device is still being monitored (IsRequested or IsRequester).</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0037]</p>
+<p class="rubric">[$DDS_SPM 0209]</p>
+<p><strong>Reboot</strong> when any of the following are true:</p>
+<ul class="simple">
+<li><p>the local device has just been restarted and is not yet fully functional.</p></li>
+<li><p>the PM has determined that a remote device has reset based on receiving a HeartbeatCounter value that is less than the penultimate HeartBeat value received. This can occur from the On, Pending_Shutdown, or Faulted states.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0038]</p>
+<p class="rubric">[$DDS_SPM 0210]</p>
+<p><strong>Pending_Shutdown</strong> when any of the following are true:</p>
+<ul class="simple">
+<li><p>the local device is On but is in the process of shutting down.</p></li>
+<li><p>the PM Heartbeat of a remote device is received with a HeartbeatCounter value in the shutdown pending range (&gt;= 2^32-256, i.e. &gt;= 0xFFFFFF00). This can occur from any monitored state (Off, Initializing, On, Reboot, or Faulted).</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0039]</p>
+<p class="rubric">[$DDS_SPM 0211]</p>
+<p><strong>Off</strong> when any of the following are true:</p>
+<ul class="simple">
+<li><p>the local device is Off.</p></li>
+<li><p>the DTC Timeout has elapsed and the device is no longer being monitored (neither IsRequested nor IsRequester). This applies when transitioning from the On, Pending_Shutdown, or Reboot states.</p></li>
+<li><p>the device is no longer being monitored (neither IsRequested nor IsRequester) while in the Faulted state.</p></li>
+<li><p>the device is no longer marked as a Requester while in the Initializing state.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0040]</p>
+<p class="rubric">[$DDS_SPM 0212]</p>
+<p><strong>On</strong>  when any of the following are true:</p>
+<ul class="simple">
+<li><p>the local device is operating normally and is not in any of the other states.</p></li>
+<li><p>the PM Heartbeat of a remote device has been received with a normal value (not in the Power Down range) while in the Off or Initializing states.</p></li>
+<li><p>the PM Heartbeat of a remote device has been received with a correctly increasing value (greater than the penultimate HeartBeat value) while in the Reboot or Faulted states.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0041]</p>
+<p class="rubric">[$DDS_SPM 0213]</p>
+<p><strong>Initializing</strong> from the time that the device is marked as Requested or as a Requester (IsRequested or IsRequester) while in the Off state, and until it reaches any of the other states.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0042]</p>
+<p>The api <code class="code docutils literal notranslate"><span class="pre">SPM_DevicePowerState()</span></code> is a <em>Stateful</em> API.</p>
+<p>The API SHALL tracks:</p>
+<div class="line-block">
+<div class="line">- The status of the current device</div>
+<div class="line">- The status of each Target Device defined in the PGTT</div>
+</div>
+<p>The status of the current device is managed by the SPM itself. It reflect the status of the FSM of the SPM_SoftMgr_MainFunction() API.</p>
+<p>The values are defined as per <a class="reference internal" href="#spm-susd-shutdown"><span class="std std-ref">Shutdown Permission Management</span></a> section.</p>
+<p>The following is the FSM of the Target Device as per ‘DevicePowerState transition diagram’ of SDV-2017.</p>
+<p class="plantuml">
+<object data="../../_images/plantuml-b842ef6b21bf943a046f77ae115ef37ced7e9efb.svg" type="image/svg+xml" style="width:2064px;height:942px;background:#FFFFFF;"></object></p>
+<p>For the <code class="docutils literal notranslate"><span class="pre">Requester</span></code> Target Device, the SPM will just track the HB value received from the remote host without performing any action in Powering On and Powering Off the remote host.</p>
+<p>In the following are described the main HB’s value transitions supported from a logic perspective.</p>
+<p>Process of turning ON a remote Target Device:</p>
+<p class="plantuml">
+<object data="../../_images/plantuml-e869e8092871c57de56f2ef118bbac8f0c14f428.svg" type="image/svg+xml" style="width:541px;height:321px;background:#FFFFFF;"></object></p>
+<p>Process of detecting FAULTED a remote Target Device after it was ON:</p>
+<p class="plantuml">
+<object data="../../_images/plantuml-7028cead859bb156ec3437de87dbae32686e48d7.svg" type="image/svg+xml" style="width:368px;height:274px;background:#FFFFFF;"></object></p>
+<p>Process of detecting FAULTED a remote Target Device after the wakeup sequence:</p>
+<p class="plantuml">
+<object data="../../_images/plantuml-2e3bca89152272c66f6314261b0b100a498af4ca.svg" type="image/svg+xml" style="width:389px;height:274px;background:#FFFFFF;"></object></p>
+<p>Process of turning OFF a remote Target Device (both valid):</p>
+<p class="plantuml">
+<object data="../../_images/plantuml-a1dc386932df232170a50d1a53a36419c6a44204.svg" type="image/svg+xml" style="width:368px;height:274px;background:#FFFFFF;"></object></p>
+<p class="plantuml">
+<object data="../../_images/plantuml-cd1dc373c7dfcb9d8729bf8a08ca9dda6bdf0986.svg" type="image/svg+xml" style="width:602px;height:337px;background:#FFFFFF;"></object></p>
+<p>Monitoring of Remote Hosts:</p>
+<p class="rubric">[$DDS_SPM 0303]</p>
+<p><code class="docutils literal notranslate"><span class="pre">Spm_TrgDvcFSMManager()</span></code> API monitors heartbeat deadlines for each host and each Heartbeat value received is stored in <code class="docutils literal notranslate"><span class="pre">Spm_PowMgr_TrgDvc_Type.MonitoringType</span></code>.</p>
+<p>The Spm_PM_Rx_Polling_Handler() function processes the HeartBeat for all configured Target Devices and updates their MonitoringType struct accordingly:</p>
+<ul class="simple">
+<li><p>WkUpSeqHBState - boolean flag set to TRUE when a HB is received</p></li>
+<li><p>PreviousHB - last HB value received</p></li>
+<li><p>PenultimateHB - penultimate HB value received</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0116]</p>
+<p class="rubric">[$DDS_SPM 0313]</p>
+<p>When processing a received HeartbeatCounter value, <code class="docutils literal notranslate"><span class="pre">Spm_TrgDvcFSMManager()</span></code> treats any value
+in the range [0xFFFFFF00 .. 0xFFFFFFFF] as a shutdown pending indication. The check used is:
+<code class="docutils literal notranslate"><span class="pre">Sum_Spm_GetPreviousHBval(i)</span> <span class="pre">&gt;</span> <span class="pre">(0xFFFFFFFFu</span> <span class="pre">-</span> <span class="pre">256u)</span></code>.
+This covers the primary power-off value 0xFFFFFFFF (see $SRS_SPM 0053), the secondary (0xFFFFFFFE)
+and tertiary (0xFFFFFFFD) Linux SoC values (see $SRS_SPM 0267), and any value &gt;= 0xFFFFFF00 (see $SRS_SPM 0266).</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0266] [$Satisfies $SRS_SPM 0267]</p>
+<p class="rubric">[$DDS_SPM 0204]</p>
+<p>PM can track the status of a remote host and inform the SM by the <code class="docutils literal notranslate"><span class="pre">Spm_DevicePowerState</span></code> IRV.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0034] [$Satisfies $SRS_SPM 0035]</p>
+<p class="rubric">[$DDS_SPM 0205]</p>
+<p>In the SPM module, the role of each Target Device with which it interacts is monitored based on the following actions:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>If a request to activate a local power profile is received, the Target Device is marked as <code class="docutils literal notranslate"><span class="pre">Requester</span></code> by using the Sum_Spm_SetAsRequester() function;</p></li>
+<li><p>If a remote power profile is requested by the SM instance, the Target Device is marked as <code class="docutils literal notranslate"><span class="pre">Requested</span></code> by using the Sum_Spm_SetAsRequested() function.</p></li>
+</ul>
+</div></blockquote>
+<p>It should be noted that a Target device can assume both roles simultaneously if the Target device requests and manages power profiles.</p>
+<p>Once a target device is no longer requested, it can be turned off and the bit associated with the Requested role is reset by the Sum_Spm_ResetAsRequested() function.
+For the requester side, the Spm_SoftwMgr_Requester_Handler() function checks whether the requester has at least one active request in order to maintain it
+as a requester, otherwise it resets the bit associated with the Requester role by using the Sum_Spm_ResetAsRequester() function.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0034] [$Satisfies $SRS_SPM 0035]</p>
+<p class="rubric">[$DDS_SPM 0206]</p>
+<p>PM publishes the <code class="docutils literal notranslate"><span class="pre">Spm_DevicePowerState</span></code> IRV to reflect the status of any of the following of EACH Target Device defined in the PGTT.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0036]</p>
+<p class="rubric">[$DDS_SPM 0207]</p>
+<p>PM stores the state of remote hosts inside <code class="docutils literal notranslate"><span class="pre">Spm_PowMgr_TrgDvc_Type.MonitoringType</span></code> struct.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0043]</p>
+<p class="rubric">[$DDS_SPM 0020]</p>
+<p>When a remote activation request is received, SM sets the Target device, meaning host that has sent the request, as the requester
+by calling Sum_Spm_SetAsRequester() function.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0077]</p>
+</section>
+<section id="tc10-pulsation">
+<h4>TC10 pulsation<a class="headerlink" href="#tc10-pulsation" title="Link to this heading"></a></h4>
+<p>The TC10 pulse shall be sent (done by EthSM_RequestComMode()) when during the parsing of the <em>WakeUp Sequence</em> the commands <em>SEND_TC10_SWTCH_1</em> or <em>SEND_TC10_SWTCH_2</em> are found.</p>
+<p>More specifically,</p>
+<p class="rubric">[$DDS_SPM 0101]</p>
+<p>SPM calls the <code class="docutils literal notranslate"><span class="pre">EthSM_RequestComMode(id,</span> <span class="pre">COMM_FULL_COMMUNICATION_WITH_WAKEUP_REQUEST)</span></code> API to send the TC10 Wakeups.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0095] [$Satisfies $SRS_SPM 0127][$Satisfies $SRS_SPM 0192]</p>
+<p>Please, take into account that the ‘Network Handle id’ is retrieved by SPM by searching associated EthSMNetwork in the EthSM.</p>
+<p class="rubric">[$DDS_SPM 0149]</p>
+<p>The TC10 is sent only if EthSMNetwork associated with the Ethernet Switch is found in the EthSM configuration.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0021][$Satisfies $SRS_SPM 0192]</p>
+</section>
+<section id="wakeup-frame">
+<h4>WakeUp Frame<a class="headerlink" href="#wakeup-frame" title="Link to this heading"></a></h4>
+<p>The message contains information about which remote targets need to be in wake-up state for satisfying SPM requests.</p>
+<p class="rubric">[$DDS_SPM 0105]</p>
+<p>The sender of the wakeup frame asserts hosts that need to be awakened by setting the bit corresponding to the desired hosts to 1 and all other hosts to 0.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0013]</p>
+<p class="rubric">[$DDS_SPM 0107]</p>
+<p>The PM de-asserts wakeup for a host that it had previously asserted by setting the bit corresponding to the host to 0.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0013]</p>
+<p class="rubric">[$DDS_SPM 0140]</p>
+<p>When powering down a device, the PM: sends a message with zero values where 1’s are required for wakeup.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0033]</p>
+<p class="rubric">[$DDS_SPM 0100]</p>
+<p>SPM transmits and receives the Wakeup Frames using the AUTOSAR stack on:</p>
+<ul class="simple">
+<li><p>Ethernet (acting as upper layer of the RTE since the ETH WUF is SOME/IP).</p></li>
+<li><p>CAN if the device is connected to the Wakeup CAN Network.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0118]</p>
+<p class="rubric">[$DDS_SPM 0103]</p>
+<p>Once the PM starts transmitting the wakeup command to activate a Target Device, it sends at a calibratable periodic rate (default 1 second) as well as within 5ms of any change in value.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0045]</p>
+<p class="rubric">[$DDS_SPM 0109]</p>
+<p>When sending the Wakeup Frame, the PM keeps track of all the bits that it has set in the protocol-specific buffers:</p>
+<ul class="simple">
+<li><p><strong>ETH protocol</strong>: <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_A_ETH_TxPersistent[]</span></code>, <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_B_ETH_TxPersistent[]</span></code> and <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_C_ETH_TxPersistent[]</span></code></p></li>
+<li><p><strong>CAN protocol</strong>: <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_A_CAN_TxPersistent[]</span></code>, <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_B_CAN_TxPersistent[]</span></code> and <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_C_CAN_TxPersistent[]</span></code></p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0046]</p>
+<p class="rubric">[$DDS_SPM 0117]</p>
+<p>PM is also responsible for keeping the Target Device awake as long as the SM is still functional and has not made a <code class="docutils literal notranslate"><span class="pre">PowerOffDevice</span></code> request for that same Target Device.
+This is done since all the WakeUp bits are stored in the respective protocol-specific buffers mentioned above.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0028] [$Satisfies $SRS_SPM 0031]</p>
+<p class="rubric">[$DDS_SPM 0106]</p>
+<p>PM always asserts the wakeup for the requested host even if the host is already awake.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0027]</p>
+<p class="rubric">[$DDS_SPM 0311]</p>
+<dl class="simple">
+<dt>SUM_SPM implements function <code class="docutils literal notranslate"><span class="pre">Sum_Spm_WkUpTiming_Handler()</span></code> to handle the transmition of wakup frame which calls the following functions:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Sum_Spm_StoreWkUpFrameBuffer()</span></code> to store the wakeup frame buffer data to avoid losing the data before it is transmitted. This function ensures that the wakeup frame data is stored in designated buffers for subsequent handling and transmission.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Sum_Spm_WkUpFrameBuffer_Handler()</span></code> to handle the time periodic transmission for wakeup frame buffer . This function ensures that the wakeup frame data is transmitted in a burst periodic fashion for a calibrated amount of time at a specific time interval.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Sum_Spm_IsNoDevicesActivated</span> <span class="pre">as()</span></code> to check if no devices are activated before clearing the buffer to transmit an all-zero wakeup frame. This function ensures that the buffer is only cleared if no devices are activated.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">[$Satisfies $SRS_SPM 0045]</p>
+</section>
+<section id="how-intermediate-node-manages-wakeup-frame">
+<h4>How Intermediate Node manages Wakeup Frame<a class="headerlink" href="#how-intermediate-node-manages-wakeup-frame" title="Link to this heading"></a></h4>
+<p>If the SPM is deployed in a CHM (intermediate node) it will:</p>
+<ul class="simple">
+<li><p>Send periodically WUF over CAN to other intermediate nodes (exploiting <em>CanIf_Transmit()</em> API)</p></li>
+<li><p>Send ETH WUF to target edge nodes when ETH WUF commands (SEND_ETH_WKUP_FRM_A, SEND_ETH_WKUP_FRM_B, or SEND_ETH_WKUP_FRM_C) are present in the wakeup sequence for target devices</p></li>
+<li><p>Receive WUF over CAN from other intermediate nodes (by the callback <em>Spm_RxIndication()</em> API)</p></li>
+<li><p>Receive WUF over ETH (done inside <em>Spm_ETHWkUpFrame_Rx_Polling_Handler()</em> API). Done in polling. The frame can be received over the VLANs configured in SpmVLANId.</p></li>
+</ul>
+<p class="rubric">[$DDS_SPM 0108]</p>
+<p>When transmitting the Wakeup Frame, SPM sets the bits by applying <strong>OR</strong> logic to the following:</p>
+<ul class="simple">
+<li><p>the bits required based on internal requests from the Power Graph Traversal Table</p></li>
+<li><p>the bits received from any incoming Wakeup Frame (either CAN or Ethernet) that has been received since the last time SPM transmitted the Wakeup Frame. The output frame is reset by <code class="docutils literal notranslate"><span class="pre">Spm_TxConfirmation()</span></code> API.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0120]</p>
+<p class="rubric">[$DDS_SPM 0111]</p>
+<p>A PM that has both an Ethernet and Wakeup CAN connection, performs the following for Wakeup Frame messages received on Unicast Ethernet:</p>
+<ul class="simple">
+<li><p>processes the information received in the Ethernet Wakeup Frame messages in <code class="docutils literal notranslate"><span class="pre">Spm_ETHWkUpFrame_Rx_Polling_Handler()</span></code> API.</p></li>
+<li><p>the buffer sent by <code class="docutils literal notranslate"><span class="pre">CanIf_Transmit()</span></code> API is the union of the <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_X_CAN_TxPersistent[]</span></code> (where X is the frame identifier: A, B, or C) buffer and the information received on Ethernet.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0048][$Satisfies $SRS_SPM 0144][$Satisfies $SRS_SPM 0164]</p>
+<p class="rubric">[$DDS_SPM 0233]</p>
+<p>A PM that has both an Ethernet and Wakeup CAN connection, performs the following for Wakeup Frame messages received on Multicast Ethernet:</p>
+<ul class="simple">
+<li><p>processes the information received in the Ethernet Wakeup Frame messages in <code class="docutils literal notranslate"><span class="pre">Spm_ETHWkUpFrame_Multicast_Rx_Polling_Handler()</span></code> API for its own dependencies.</p></li>
+<li><p>call <code class="docutils literal notranslate"><span class="pre">Spm_ETHWakeUpFrameActions()</span></code> API in order to understand if the received Multicast WUF contains its own wakeup bit.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0048]</p>
+<p class="rubric">[$DDS_SPM 0112]</p>
+<p>A PM that has both an Ethernet and Wakeup CAN connection, SHALL perform the following for Wakeup Frame messages received on CAN:</p>
+<ul class="simple">
+<li><p>processes the information received in the CAN Wakeup Frame messages in <code class="docutils literal notranslate"><span class="pre">Spm_RxIndication()</span></code> API.</p></li>
+<li><p>the buffer sent on the interface <code class="docutils literal notranslate"><span class="pre">(VLAN)_PwrMgrWakeupTx_Evt</span></code> is the union of the ETH-specific buffers: <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_A_ETH_TxPersistent[]</span></code>, <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_B_ETH_TxPersistent[]</span></code> and <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_C_ETH_TxPersistent[]</span></code>.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0048][$Satisfies $SRS_SPM 0144][$Satisfies $SRS_SPM 0164][$Satisfies $SRS_SPM 0254][$Satisfies $SRS_SPM 0255]</p>
+<p class="rubric">[$DDS_SPM 0401]</p>
+<ul>
+<li><p>PM stores the wakeup assertion to local or remote devices in protocol-specific buffers that are not stored in the Non Volatile Memory:</p>
+<ul class="simple">
+<li><p><strong>CAN WUF</strong>: <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_A_CAN_TxPersistent[]</span></code>, <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_B_CAN_TxPersistent[]</span></code> and <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_C_CAN_TxPersistent[]</span></code></p></li>
+<li><p><strong>ETH WUF</strong>: <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_A_ETH_TxPersistent[]</span></code>, <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_B_ETH_TxPersistent[]</span></code> and <code class="docutils literal notranslate"><span class="pre">Spm_Local_WkUpFrame_C_ETH_TxPersistent[]</span></code></p></li>
+</ul>
+<p>So, at each re-start the PM does not know the previous asserted wakeup bit.</p>
+</li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0054][$Satisfies $SRS_SPM 0254][$Satisfies $SRS_SPM 0255]</p>
+</section>
+<section id="wake-up-of-an-managed-edge-node-when-spm-is-configured-as-intermediate-node">
+<h4>Wake-up of an managed edge Node when SPM is configured as intermediate node<a class="headerlink" href="#wake-up-of-an-managed-edge-node-when-spm-is-configured-as-intermediate-node" title="Link to this heading"></a></h4>
+<p class="rubric">[$DDS_SPM 0524]</p>
+<p>FOR Spm ECU node that is configured as a Intermediate node, WHEN the Spm receives the indication about in-coming CAN/ETH wake-up frame THEN Spm calls function <cite>Sum_Spm_WkupEdgeNode</cite>.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0018][$Satisfies $SRS_SPM 0132]</p>
+<p class="rubric">[$DDS_SPM 0520]</p>
+<p>For each Target device in SPM configuration, function <cite>Sum_Spm_WkupEdgeNode</cite> checks if SPM directly handles the edge nodes that are mapped in the asserted bits of CAN/ETH wake-up frames, by a No-NULL trgHndl_p pointer value.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0018]</p>
+<p class="rubric">[$DDS_SPM 0521]</p>
+<p>IF the record trgHndl_p (reference type) in struct Spm_PowMgr_TrgDvc_List exists for a specific list item, checks if the respective bit in the <cite>Sum_Spm_WkUpFrameBuffer_Handler()</cite> to handle the time periodic transmission for wakeup frame buffer . This function ensures that the wakeup frame data is transmitted in a burst periodic fashion for a calibrated amount of time at a specific time interval.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0018]</p>
+<p class="rubric">[$DDS_SPM 0523]</p>
+<p>For each target device in <cite>Spm_PowMgr_TrgDvc_List</cite>, IF:</p>
+<ul class="simple">
+<li><p>current item contains information in record trgHndl_p AND</p></li>
+<li><p>the respective bit in the configured CAN/ETH wake-up frame is asserted,</p></li>
+</ul>
+<p><cite>TargetDevicerequestedByRemote</cite> is set to TRUE/FALSE for the target device in order to keep track of the fact that the wake-up sequence has been triggered by a remote host or not</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0018]</p>
+<p class="rubric">[$DDS_SPM 0527]</p>
+<p>SINCE the record <em>trgHndl_p</em> refers to a calibration parameter, function <cite>Sum_Spm_WkupEdgeNode</cite> needs to implement a default state to avoid any kind of operation, WHEN
+the referred record value of _SpmTrgWkupFrm_ is greater than 2.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0018]</p>
+</section>
+<section id="how-edge-and-intermediate-nodes-manage-wakeup-frame">
+<h4>How Edge and Intermediate Nodes manage Wakeup Frame<a class="headerlink" href="#how-edge-and-intermediate-nodes-manage-wakeup-frame" title="Link to this heading"></a></h4>
+<p class="rubric">[$DDS_SPM 0110]</p>
+<p>Both Edge and Intermediate nodes can now send Ethernet Wakeup Frames periodically using protocol-specific buffers.</p>
+<p>The behavior differs based on node type:</p>
+<ul class="simple">
+<li><p><strong>Edge Nodes</strong>: Send ETH WUF Unicast to intermediate nodes (using ETH buffers)</p></li>
+<li><p><strong>Intermediate Nodes</strong>: Can send both ETH WUF Unicast to target edge nodes (using ETH buffers) AND CAN WUF (using CAN buffers)</p></li>
+</ul>
+<p>The WUF burst phase is initiated for both CAN and ETH unicast transmission when the node is configured as intermediate.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0047]</p>
+<p class="rubric">[$DDS_SPM 0142]</p>
+<p>The ETH WUF frame SHALL be sent through the <code class="docutils literal notranslate"><span class="pre">(VLAN)_PwrMgrWakeupTx_Evt</span></code> where VLAN is the VLAN which the SpmIntermediateDstAddrs belongs including in its payload all the devices that needs to be awaken in the entire path.
+This operation is handled by the <code class="docutils literal notranslate"><span class="pre">Spm_HandleVLANCommunication()</span></code> SPM’s API that will call the right PPort.</p>
+<p>For Ethernet wakeup frames from non-managing nodes, the frames are unicasted to each IP address specified in the device’s PGTT’s Wakeup Command Destination IP Addresses field (accessible via <code class="docutils literal notranslate"><span class="pre">SPM_GET_PGTT_INTERMEDIATE_DST_IP</span></code> and <code class="docutils literal notranslate"><span class="pre">SPM_GET_PGTT_INTERMEDIATE_DST_IP_SIZE</span></code> macros). If no IP address is specified in the PGTT, then the ethernet WUF transmission is not required.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0164] [$Satisfies $SRS_SPM 0133] [$Satisfies $SRS_SPM 0150] [$Satisfies $SRS_SPM 0174]</p>
+<p class="rubric">[$DDS_SPM 0143]</p>
+<p>The SrcPMId of the ETH WUF will correspond to the SpmSrcIp that match the SpmVLANId to which the SpmIntermediateDstAddrs belongs to.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0164]</p>
+<p class="rubric">[$DDS_SPM 0234]</p>
+<p>A PM that has only Ethernet and NOT CAN connection, performs the following for Wakeup Frame messages received on Multicast Ethernet:</p>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">Spm_ETHWkUpFrame_Multicast_Rx_Polling_Handler()</span></code> API calls <code class="docutils literal notranslate"><span class="pre">Spm_ETHWakeUpFrameActions()</span></code> API in order to understand if the received Multicast WUF contains its own wakeup bit.</p></li>
+</ul>
+<p class="rubric">[$Satisfies $SRS_SPM 0048]</p>
+<p>The frame is sent over the VLAN whose address is obtained from the configured parameter list SpmIntermediateDstAddrs.
+Please, remember that the second MSB octet of the previous IP corresponds to the VLAN. I.e. the SpmIntermediateDstAddrs 192.10.1.4 belongs to the VLANId 10.</p>
+<p>It will just append its own bit on the ETH WUF and send it to its own intermediate node.</p>
+</section>
+</section>
+<section id="loss-of-node">
+<h3>Loss Of Node<a class="headerlink" href="#loss-of-node" title="Link to this heading"></a></h3>
+<p class="rubric">[$DDS_SPM 0200]</p>
+<p>PM treats the Loss of Node DTC Field as a 2 byte value representing the base of the DTC to be set if the corresponding Target Device cannot be reached.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0022]</p>
+<p class="rubric">[$DDS_SPM 0201]</p>
+<p>PM treats the DTC Timeout as a 2 byte value representing the length of time in milliseconds to delay before the PM sets a Loss of Node DTC as defined in the DevicePowerState Functionality Section.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0023]</p>
+<p class="rubric">[$DDS_SPM 0202]</p>
+<p>For setting a Loss of Node DTC, the PM calls the <code class="docutils literal notranslate"><span class="pre">Sum_Spm_WriteLossofNode()</span></code> API that:</p>
+<div class="line-block">
+<div class="line">- retrieves the DTC Base ID that are labeled as <em>Faulted</em> by <code class="docutils literal notranslate"><span class="pre">Spm_TrgDvcFSMManager()</span></code> API.</div>
+<div class="line">- calls the <code class="docutils literal notranslate"><span class="pre">Rte_Write</span></code> for the <code class="docutils literal notranslate"><span class="pre">SPM_LossOfNodeIndication</span></code> in order to inform the SSFM about the loss of a Node.</div>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0044][$Satisfies $SRS_SPM 0204]</p>
+<p class="rubric">[$DDS_SPM 0203]</p>
+<p>SUM SPM provides a sender-receiver interface <code class="docutils literal notranslate"><span class="pre">SPM_LossOfNodeIndication</span></code> as described below to provide Loss of Node Indication on-change to SUM SSFM that in turn sets/clears a Loss Of Node DTC.
+The on-change behavior means that the interface publishes only the node DTC/status that has changed since the last time the interface was published.</p>
+<p>dataElement associated with the <code class="docutils literal notranslate"><span class="pre">SPM_LossOfNodeIndication</span></code> interface:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="n">nodeStatus</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">LOST</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x00</span><span class="p">,</span>
+<span class="w">    </span><span class="n">RECOVERED</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mh">0x01</span>
+<span class="p">}</span>
+
+<span class="n">SPM_LossOfNodeIndication</span><span class="p">.</span><span class="n">DataElement</span><span class="p">{</span>
+<span class="w">    </span><span class="n">uint16</span><span class="o">*</span><span class="w"> </span><span class="n">nodeDtcCodeValue</span><span class="p">,</span><span class="w"> </span><span class="c1">// 2 bytes DTC Code Value</span>
+<span class="w">    </span><span class="n">uint8</span><span class="o">*</span><span class="w"> </span><span class="n">nodeStatus</span><span class="p">,</span><span class="w"> </span><span class="c1">// LOST: Node is lost, RECOVERED: Node is not lost</span>
+<span class="w">    </span><span class="n">uint16</span><span class="w"> </span><span class="n">nodeListLength</span><span class="w"> </span><span class="c1">// Node List length</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0103] [$Satisfies $SRS_SPM 0204]</p>
+</section>
+<section id="spm-getdtcidentifier">
+<h3>SPM_GetDTCIdentifier<a class="headerlink" href="#spm-getdtcidentifier" title="Link to this heading"></a></h3>
+<p class="rubric">[$DDS_SPM 0413]</p>
+<p>SUM SPM provides a client-server operation <code class="docutils literal notranslate"><span class="pre">SPM_GetDTCIdentifier</span></code> as described below to enable SUM SSFM to obtain the DTC identifier (2-bytes DTC code value) associated with an IP address in the Power Graph. This value will be used to facilitate the proper Loss Of Node, Loss of Function, and Invalid Data DTC setting.
+<code class="docutils literal notranslate"><span class="pre">SPM_GetDTCIdentifier</span></code> operation signature:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="n">SPM_GetDTCIdentifier</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="n">uint32</span><span class="w"> </span><span class="n">ipAddress</span><span class="p">,</span>
+<span class="w">        </span><span class="n">uint16</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">dtcCodeValue</span>
+<span class="w">     </span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This API is an Operation of the C/S <code class="docutils literal notranslate"><span class="pre">SPM_GetDTCIdentifier</span></code> interface.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0104]</p>
+</section>
+<section id="diagnostic-did">
+<h3>Diagnostic DID<a class="headerlink" href="#diagnostic-did" title="Link to this heading"></a></h3>
+<section id="did-0xe0dd">
+<h4>DID 0xE0DD<a class="headerlink" href="#did-0xe0dd" title="Link to this heading"></a></h4>
+<p class="rubric">[$DDS_SPM 0625]</p>
+<p>SPM provides PPort <code class="docutils literal notranslate"><span class="pre">PP_SPM_DCM_DID_E0DD_ActivationProfileActivationStatus</span></code> to allow the retrieve of the DID 0xE0DD, which contains information relating to the status of the active profiles in the ECU.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0226]</p>
+<p class="rubric">[$DDS_SPM 0626]</p>
+<p>The DID is satisfied with the following two functions:</p>
+<div class="line-block">
+<div class="line">- <code class="docutils literal notranslate"><span class="pre">Runnable_SPM_DID_E0DD_ActivationProfileActivationStatus</span></code></div>
+</div>
+<p><strong>Purpose</strong></p>
+<blockquote>
+<div><p>Main diagnostic function that populates a 64-byte buffer with power profile activation status.
+The bitmap index is a unique position value, associated with each profile (mandatory for the local profiles) in <code class="docutils literal notranslate"><span class="pre">SpmProfBitMapIndex</span></code> (valid range [0-511]), used to provide information on the active status of profiles via the DID 0xE0DD.</p>
+</div></blockquote>
+<p><strong>Logic</strong></p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Initialize 64-byte buffer to all zeros</p></li>
+<li><p>Loop through all configured power profiles</p></li>
+<li><dl class="simple">
+<dt>For each profile: if  the state is not SPM_Inactive AND bitmap index is valid,</dt><dd><p>set the corresponding bit to 1 using <code class="docutils literal notranslate"><span class="pre">Spm_DID_E0DD_SetBitToOne()</span></code></p>
+</dd>
+</dl>
+</li>
+<li><p>Return E_OK</p></li>
+</ol>
+</div></blockquote>
+<div class="line-block">
+<div class="line">- <code class="docutils literal notranslate"><span class="pre">Spm_DID_E0DD_SetBitToOne</span></code></div>
+</div>
+<p><strong>Purpose</strong></p>
+<blockquote>
+<div><p>Utility function to set a specific bit to 1 in the byte array.
+The position is the bitmap index configured for that particular profile.</p>
+</div></blockquote>
+<p><strong>Logic</strong></p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Validate position &lt; 512 (the valid range is [0-511])</p></li>
+<li><p>Calculate byte position: <code class="docutils literal notranslate"><span class="pre">position</span> <span class="pre">/</span> <span class="pre">8</span></code></p></li>
+<li><p>Calculate bit position: <code class="docutils literal notranslate"><span class="pre">7</span> <span class="pre">-</span> <span class="pre">(position</span> <span class="pre">%</span> <span class="pre">8)</span></code> (MSB-first ordering)</p></li>
+<li><p>Set bit: <code class="docutils literal notranslate"><span class="pre">Data[bytePosition]</span> <span class="pre">|=</span> <span class="pre">1</span> <span class="pre">&lt;&lt;</span> <span class="pre">bitPosition</span></code></p></li>
+</ol>
+</div></blockquote>
+<p><strong>Bit Ordering Example</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Position 0: Byte 0, Bit 7 (MSB)</p></li>
+<li><p>Position 7: Byte 0, Bit 0 (LSB)</p></li>
+<li><p>Position 8: Byte 1, Bit 7 (MSB)</p></li>
+</ul>
+</div></blockquote>
+<p class="rubric">[$Satisfies $SRS_SPM 0225]</p>
+<p>The generation of the code is done if a DcmDspDid is referenced in <code class="docutils literal notranslate"><span class="pre">spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref</span></code> parameter.</p>
+<p>Please, take into account that Confgen will populate the <code class="docutils literal notranslate"><span class="pre">SpmProfBitMapIndex</span></code> parameter field if the profile is local.
+So, if the profile is remote, the <code class="docutils literal notranslate"><span class="pre">SpmProfBitMapIndex</span></code> will be NOT automatically populated.</p>
+</section>
+<section id="did-e0de-did-e0df">
+<h4>DID E0DE/DID E0DF<a class="headerlink" href="#did-e0de-did-e0df" title="Link to this heading"></a></h4>
+<p>In the following, a summary of the behaviour that these DID shall have.</p>
+<p>Please, take into account that both DIDs needs update record for the <em>current</em> PowerOff session OR the <em>previous</em> PowerOff session.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For PowerOFF session we refer when the PowerMode is different from Propulsion.</p>
+</div>
+<p><strong>Data Structures</strong></p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="p">{</span>
+<span class="w">    </span><span class="n">uint32</span><span class="w"> </span><span class="n">ActivityTimerInTick</span><span class="p">;</span><span class="w">  </span><span class="cm">/* Cumulative amount of ticks that the profile was active. */</span>
+<span class="w">    </span><span class="n">uint8</span><span class="w"> </span><span class="n">ActivationCount</span><span class="p">;</span><span class="w">       </span><span class="cm">/* Number of times the profile was directly locally activated. */</span>
+<span class="p">}</span><span class="n">SpmDiagActivityTiming</span><span class="p">;</span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="p">{</span>
+<span class="w">    </span><span class="n">uint16</span><span class="w"> </span><span class="n">ServiceId</span><span class="p">;</span>
+<span class="w">    </span><span class="n">uint8</span><span class="w"> </span><span class="n">ProfNumber</span><span class="p">;</span>
+<span class="w">    </span><span class="n">uint8</span><span class="w"> </span><span class="n">LastByteIPRequester</span><span class="p">;</span>
+<span class="w">    </span><span class="n">SpmDiagActivityTiming</span><span class="w"> </span><span class="n">ActualPowerOffRecords</span><span class="p">;</span>
+<span class="p">}</span><span class="n">SpmDiagActivatedProfileStruct</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The data are stored in the following queues:</p>
+<div class="line-block">
+<div class="line">- <code class="docutils literal notranslate"><span class="pre">Sum_Spm_DID_E0DE_Queue</span></code>: queue that holds 5 items of <code class="docutils literal notranslate"><span class="pre">SpmDiagActivatedProfileStruct</span></code> type. Needed for profiles <strong>locally</strong> activated;</div>
+<div class="line">- <code class="docutils literal notranslate"><span class="pre">Sum_Spm_DID_E0DF_Queue</span></code>: queue that holds 5 items of <code class="docutils literal notranslate"><span class="pre">SpmDiagActivatedProfileStruct</span></code> type. Needed for profiles <strong>remotely</strong> activated;</div>
+</div>
+<p class="rubric">[$DDS_SPM 0629]</p>
+<p>So, each time SPM receive a <strong>local</strong> activation request:</p>
+<blockquote>
+<div><p class="plantuml">
+<object data="../../_images/plantuml-62580db445194292b29298d1197ff19b436c0774.svg" type="image/svg+xml" style="width:2360px;height:865px;background:#FFFFFF;"></object></p>
+</div></blockquote>
+<p>The entry point of the above flow is the <code class="docutils literal notranslate"><span class="pre">Spm_HandleLocalActivationRequest()</span> <span class="pre">API</span></code>.</p>
+<p>Please, take into account that the above checks are needed before the call of <code class="docutils literal notranslate"><span class="pre">Spm_prv_prfReqDispatcher()</span> <span class="pre">API</span></code> BUT after the validation of the activation request.</p>
+<p>If the profile requested is already in E0DF queue, it will be removed and its data regarding ActivityTimerInTick (both actual and previous PowerOff session)
+will be updated in the E0DE queue as new Item.
+If the profile requested is NOT in E0DF queue:</p>
+<div class="line-block">
+<div class="line">- if it is already in E0DE queue:</div>
+</div>
+<blockquote>
+<div><div class="line-block">
+<div class="line">- its status is Inactive, its ActivationCount will be incremented by 1 and the item will be re-enqueued at the first available slot;</div>
+<div class="line">- its status is Active, no action is done;</div>
+</div>
+</div></blockquote>
+<div class="line-block">
+<div class="line">- if it is NOT in E0DE queue, a new item will be created and enqueued at the first available slot of the E0DE queue.</div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Note that a profile can be both locally activated AND remotely at the same time. But as long as there is a local activation criterion, the profile is still considered directly locally activated.</p>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0229]</p>
+<p class="rubric">[$DDS_SPM 0630]</p>
+<p>So, each time SPM receives a <strong>remote</strong> activation request:</p>
+<blockquote>
+<div><p class="plantuml">
+<object data="../../_images/plantuml-af54ea9a0b2e544bf8fd2af07aebc50454065fbc.svg" type="image/svg+xml" style="width:1995px;height:656px;background:#FFFFFF;"></object></p>
+</div></blockquote>
+<p>The entry point of the above flow is the <code class="docutils literal notranslate"><span class="pre">Spm_HandleRemoteActivationRequest()</span> <span class="pre">API</span></code>.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0230]</p>
+<p class="rubric">[$DDS_SPM 0631]</p>
+<div class="line-block">
+<div class="line">- Use <code class="code docutils literal notranslate"><span class="pre">PPort</span> <span class="pre">PP_SPM_Dcm_DataDidE0DE</span></code> to the DCM in order to exploit the SPM DID E0DE functionality.</div>
+<div class="line">- Use <code class="code docutils literal notranslate"><span class="pre">PPort</span> <span class="pre">PP_SPM_Dcm_DataDidE0DF</span></code> to the DCM in order to exploit the SPM DID E0DF functionality.</div>
+</div>
+<p>These ports enable the DCM to access diagnostic data identifiers:</p>
+<div class="line-block">
+<div class="line">- <strong>DID E0DE (Locally Activated Activation Profile Off Power Mode Activity Records)</strong>: Contains information about profiles that were directly activated by local software components during PowerOff sessions, including activity timers and activation counts.</div>
+</div>
+<div class="line-block">
+<div class="line">- <strong>DID E0DF (Remotely Activated Activation Profile Off Power Mode Activity Records)</strong>: Contains information about profiles that were activated by remote requests during PowerOff sessions, including the IP requester information, activity timers, and activation counts.</div>
+</div>
+<p>Both ports are implemented through their respective runnable functions:</p>
+<div class="line-block">
+<div class="line">- <code class="docutils literal notranslate"><span class="pre">Runnable_Spm_DID0xE0DE()</span></code> for serializing E0DE data</div>
+<div class="line">- <code class="docutils literal notranslate"><span class="pre">Runnable_Spm_DID0xE0DF()</span></code> for serializing E0DF data</div>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]</p>
+<p class="rubric">[$DDS_SPM 0632]</p>
+<p><strong>Activation Count</strong></p>
+<p>The Activation Count is increased by one when the profile requested is already in the proper queue and its state is Inactive.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]</p>
+<p class="rubric">[$DDS_SPM 0633]</p>
+<p><strong>Activity Timer</strong></p>
+<p>To update the ActivityTimerInTick field, SPM will use the <code class="docutils literal notranslate"><span class="pre">Sum_Spm_UpdateActivityTimer()</span></code> API that is called periodically by the <code class="docutils literal notranslate"><span class="pre">SPM_SoftMgr_MainFunction()</span></code> API.
+Basically, it will increase of 1 the ActivityTimerInTick field of the ActualPowerOffRecords field of the queue item which profile is in Active state AND if the E0D7 state AND VehPowerMode are satisfied.</p>
+<p>In order to do that, the <code class="docutils literal notranslate"><span class="pre">Sum_Spm_UpdateActivityTimer()</span></code> checks the conditions with the <code class="docutils literal notranslate"><span class="pre">Spm_IsQueueUpdateAllowed()</span></code>. If the conditions are satisfied,
+the function <code class="docutils literal notranslate"><span class="pre">Spm_IncrementActivityTimerAtPositionIfProfileIsActive()</span></code>
+are called for each item in the E0DE and E0DF queues respectively.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]</p>
+<p class="rubric">[$DDS_SPM 0634]</p>
+<p><strong>Power Off Session Handling</strong></p>
+<p>To handle the <em>current</em> and <em>previous</em> PowerOff session, the SPM will use the <code class="docutils literal notranslate"><span class="pre">Spm_VehPowModeHandlerForDiagnosticDID()</span></code> that it is called when the Vehicle Power Mode interface
+is read properly. The above API will:</p>
+<div class="line-block">
+<div class="line">- update the flag VehPowModeConditionSatisfiedForDID accordingly to the current Vehicle Power Mode;</div>
+<div class="line">- call the  <code class="docutils literal notranslate"><span class="pre">Spm_ClearQueueDID_E0DE_E0DF()</span></code> in order to clean up the E0DE and E0DF content if a new PowerOff session is started;</div>
+</div>
+<p class="rubric">[$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]</p>
+<p><strong>DID and NvM population</strong></p>
+<p>In order to populate the DID and write in NvM:</p>
+<div class="line-block">
+<div class="line">- the Activity Timer field will be populated with the ActivityTimerInTick fields from the current PowerOff sessions and converted in Seconds (since the variable is in ticks).</div>
+<div class="line">- the Activation Count field will be populated with the sum of the ActivationCount fields from the current and previous PowerOff sessions.</div>
+</div>
+<p>The write in NvM needs to be done when the Runnable SPM_ActivityRecordsCmd receives as command SUM_ARC_NvMStore.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Remember to store the byte in Big Endian!</p>
+</div>
+<p>When the Runnable SPM_ActivityRecordCmd receives the SUM_ARC_Reset command, the function Spm_ClearQueueDID_E0DE_E0DF() is called to clear the DID queues. After clearing, the operation automatically proceeds to save the cleared state to NvM to ensure data consistency and prevent stale data from persisting across power cycles.</p>
+<p class="rubric">[$DDS_SPM 0637]</p>
+<p><strong>DID 0xE0DE and 0xE0DF Data Serialization</strong></p>
+<p>To serialize the DID 0xE0DE (Locally Activated Activation Profile Off Power Mode Activity Records) and DID 0xE0DF (Remotely Activated Activation Profile Off Power Mode Activity Records) data, SPM uses the <code class="docutils literal notranslate"><span class="pre">Runnable_Spm_DID0xE0DE()</span></code> and <code class="docutils literal notranslate"><span class="pre">Runnable_Spm_DID0xE0DF()</span></code> functions respectively.</p>
+<p>Both functions follow a similar serialization pattern:</p>
+<div class="line-block">
+<div class="line">- Service ID (2 bytes): Serialized in big-endian format using bit shifting operations</div>
+<div class="line">- Profile Number (1 byte): Direct assignment from the queue item</div>
+<div class="line">- Last Byte IP Requester (1 byte): Only for E0DF, represents the last byte of the IP address of the remote requester</div>
+<div class="line">- Activity Timer (3 bytes): Converted from ticks to seconds using the formula <code class="docutils literal notranslate"><span class="pre">(ActivityTimerInTick</span> <span class="pre">*</span> <span class="pre">SPM_SM_PERIODICITY_MS)</span> <span class="pre">/</span> <span class="pre">1000U</span></code>, then split into three bytes (MSB to LSB) in big-endian format</div>
+<div class="line">- Activation Count (1 byte): Direct assignment from the ActualPowerOffRecords</div>
+</div>
+<p>The serialization process iterates through the maximum queue size (SPM_DID_E0DE_E0DF_QUEUE_SIZE_L) and only processes valid queue items returned by <code class="docutils literal notranslate"><span class="pre">Sum_Algo_Deque_GetAt()</span></code>. Each field is serialized sequentially into the output buffer using a position counter (serialOpId_pos_u8) that advances based on the field size.</p>
+<p>The data buffer is initialized with zeros before population to ensure unused positions contain valid data.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]</p>
+<p class="rubric">[$DDS_SPM 0638]</p>
+<p><strong>DID Condition Check Read Functions</strong></p>
+<p>The condition check read functions <code class="docutils literal notranslate"><span class="pre">Runnable_Spm_DID0xE0DE_CheckRead()</span></code> and <code class="docutils literal notranslate"><span class="pre">Runnable_Spm_DID0xE0DF_CheckRead()</span></code> provide error handling for the diagnostic data identifier read operations. Both functions currently return DCM_POS_RESP indicating successful condition checks, allowing the main DID read operations to proceed.</p>
+<p class="rubric">[$Satisfies $SRS_SPM 0229] [$Satisfies $SRS_SPM 0230]</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="25_Detailed_Req_Paramdef.html" class="btn btn-neutral float-left" title="Detailed Requirements Paramdef" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../ReleaseNotes/release_notes.html" class="btn btn-neutral float-right" title="RTA-SUM SPM Release Notes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, ETAS GmbH.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

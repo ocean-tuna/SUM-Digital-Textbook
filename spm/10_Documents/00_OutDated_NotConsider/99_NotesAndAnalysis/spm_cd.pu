@@ -1,0 +1,88 @@
+@startuml spm_cd
+
+skinparam linetype ortho
+
+'skinparam linetype polyline
+
+class SpmController {
+    + SpmFSM_CurrState: SpmStateType
+    + SpmDrv_isInitialized: Bool
+
+    + Spm_MainFunction(): Void
+    + Spm_Init(): Void
+    + Spm_ControllerGetSpmState(): 
+}
+
+class SpmIntegration {
+    + Spm_LocalActCriteria_cbk(): Void
+}
+
+class SpmMsgHandler {
+    + Spm_MsgTxConfirmation_cbk(): Void
+    + Spm_MsgRxIndication_cbk(): Void
+    + Spm_WuFTxConfirmation(): Void
+    + Spm_WuFRxIndication(): Void
+}
+
+class SpmMsgTx {
+    + Spm_SendSpmMsg(): Void
+    + Spm_SendHbMsg(): Void
+    + Spm_SendWuF(): Void
+}
+
+class SpmHeartBeat {
+    - SpmHbCntr: UInt8
+    - InCommunication: Bool
+
+    + Spm_InitLocHeartBeatCntr(): Void
+    + Spm_SendHeartbeat(): Void
+    + Spm_InitSpmHbCntr(): Void
+    + Spm_SetInCommunication(UInt8): Void
+    - Spm_ManageSpmHbCntr(): Void
+}
+
+class SpmPowerProfile {
+    + profileId: UInt32
+    + isRepresentative: Bool
+    + isLocallyRequested: Bool
+    + isRemotellyRequested: Bool
+    + profileDepSpmPPListOfIndexes: SpmPPList
+    
+    + Spm_InitPowPrf(): Void
+    + Spm_ManagePowPrf(): Void
+}
+
+class SpmPPList {
+    len: UInt32
+    Items: SpmPPList<UInt32>
+}
+
+class SpmSwService {
+    + swServId: UInt16
+    + status: MonitorType
+}
+
+class SpmRemoteHst {
+    + hostId: UInt16
+    + status: MonitorType
+}
+
+entity RE_Spm_MainFunction
+
+entity RE_Spm_HeartBeatMgr
+
+RE_Spm_MainFunction .r.> SpmController: Runnable_Spm_MainFunction()
+RE_Spm_HeartBeatMgr .r.> SpmHeartBeat: Runnable_Spm_HeartBeatMgr()
+SpmIntegration "1"-d-"1" SpmController: < reads from
+SpmMsgHandler "1"-d-"1" SpmController: < Receives from
+SpmController "1"-r-"1..*" SpmPowerProfile: Controls >
+SpmController .d.> SpmHeartBeat: Spm_InitLocHeartBeatCntr()
+SpmHeartBeat .u.> SpmController: Spm_ControllerGetSpmState()
+SpmPPList "1"-d-"0..1" SpmPowerProfile: < contains
+SpmPPList "1"-d-"*" SpmPowerProfile: Refers to >
+SpmPowerProfile "1" o-d- "1..*" SpmSwService: is Activated by
+SpmRemoteHst "1" -u-o "1..*" SpmPowerProfile: is Reached by
+SpmMsgTx "0..*"-u-"1" SpmPowerProfile: < Sends msg by 
+SpmMsgTx -u- SpmHeartBeat: < Send HB by
+
+@enduml

@@ -1,0 +1,66 @@
+@startuml remoteECURemoteAct
+
+skinparam ParticipanrPadding 20
+skinparam BoxPadding 20
+
+participant "Remote ECU"
+participant BswM
+participant SUM_PNC
+participant SWCs
+participant SUM_SSFM
+participant SUM_SUSD
+participant SUM_DIAG
+
+autonumber
+BswM -> SUM_PNC: SUM_PNC Init
+activate SUM_PNC
+deactivate SUM_PNC
+
+"Remote ECU" -> SUM_PNC: PNC_NM_Frame_Indication
+note right: NM frame with PN bit cleared\n(SUM_PNC_Criteria_NM_Act_Remote = FALSE)\nDM timer stops refreshing
+activate SUM_PNC
+deactivate SUM_PNC
+
+note over SUM_PNC: PN deactivation occurs when DM timer\nexpires (SUM_PN_DM_Timer), not immediately.\nSteps below show deactivation after DM expiry.
+
+SUM_PNC -> SUM_PNC: PNC MainFunction
+activate SUM_PNC
+
+SUM_DIAG -> SUM_PNC: DIAG_DisableNormalComm
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> BswM: PNC_BswM_CurrentPNCModeReq
+activate BswM
+deactivate BswM
+
+BswM -> SUM_PNC: PNC_BswM_CurrentPNCModeUser
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> BswM: PNC_BswMPduSwitchRxReq
+activate BswM
+deactivate BswM
+
+SUM_PNC -> SUM_SSFM: PNC_ActiveRxPDUEnable
+activate SUM_SSFM
+deactivate SUM_SSFM
+
+BswM -> SUM_PNC: PNC_BswM_CurrentPNCModeUser
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> BswM: PNC_BswMPduGroupSwitchTxReq
+activate BswM
+deactivate BswM
+
+SUM_PNC -> SWCs: PNC_ActiveTxPDUEnable
+activate SWCs
+deactivate SWCs
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_SUSD: Shutdown_permission_SUSD
+SUM_PNC -> SUM_SUSD: SUSD_PNC_UpdateRecord (SUM_PNC_NM_WR)
+activate SUM_SUSD
+deactivate SUM_SUSD
+@enduml

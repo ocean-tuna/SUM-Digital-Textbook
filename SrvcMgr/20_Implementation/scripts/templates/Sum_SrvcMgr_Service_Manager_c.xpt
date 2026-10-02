@@ -1,0 +1,299 @@
+«IMPORT bsw»
+«IMPORT bsw::SrvcMgrModule»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SrvcMgr FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SrvcMgr FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_SrvcMgr_Service_Manager.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SrvcMgr
+ * Date        : Apr 20, 2026
+ * Revision    : 8.0.1_Pr16
+ * Description : Source file for SrvcMgr Learning Session Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SrvcMgr Top Level Library */
+#include "Sum_SrvcMgr_Prv.h"
+
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+ /*PRQA S 1503 EOF */ //This function will be used in future development OR called directly by integrator. 
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+/**
+ *  @brief Variable for track the request for Activate/Disable request from SPM.
+ *  If the value is TRUE, a request is ongoing. False otherwise. 
+ *  @private
+ */
+static boolean Sum_SrvcMgr_ActivateServiceReq = FALSE;
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_HandlerServiceCommand(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray,
+                                                                      CONST(boolean, AUTOMATIC) Sum_SrvcMgr_prv_activationStatusList,
+                                                                      P2VAR(CommandStatusType, AUTOMATIC, RTE_APPL_DATA) Sum_SrvcMgr_prv_commandStatusInstance);
+                                                                      
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_HandlerConsumedEventGroup(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray,
+                                                                          P2VAR(CommandStatusType, AUTOMATIC, RTE_APPL_DATA) Sum_SrvcMgr_prv_commandStatusInstance);
+
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_SetActivateServiceReq(CONST(boolean, AUTOMATIC) Sum_SrvcMgr_prv_IsRequestOnGoing); 
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_HandleServiceActivation(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray,
+                                                                        CONST(boolean, AUTOMATIC) Sum_SrvcMgr_prv_activationStatusList,
+                                                                        P2VAR(CommandStatusType, AUTOMATIC, RTE_APPL_DATA) Sum_SrvcMgr_prv_commandStatusInstance);
+                                                                          
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+#define SUM_SrvcMgr_START_SEC_CODE
+#include "SUM_SrvcMgr_MemMap.h"
+
+/**
+ * @brief Set the state off ALL client services as REQUESTED and server services as AVAILABLE.
+ *        Also triggers consumed event groups for client services
+ *
+ * @return void;
+ */
+/* PRQA S 1532 1 # The function is defined here for modularity reason. */
+FUNC(void, SUM_SrvcMgr_CODE) Sum_Srvcmgr_SetClientSrvcRequestedRemoteSrvcAvailable(void){
+    uint16 SrvcIndexInTheConfArray;
+    CommandStatusType commandStatusInstance;
+    Sum_SrvcMgr_CalibrationState statusCalibration;
+
+    /* Loop all configured services and force activation/request */
+    for(SrvcIndexInTheConfArray = 0; SrvcIndexInTheConfArray < SUM_SRVCMGR_NUMBER_OF_SRVC_CONFIGURED; SrvcIndexInTheConfArray++){
+        statusCalibration = Sum_SrvcMgr_pub_GetSrvcCalibrationState(SrvcIndexInTheConfArray);
+        if(statusCalibration == SUM_SrvcMgr_CalibrationON){
+            /* commandStatusInstance is not used. Passed to the function to keep the signature consistent. */
+            /* Force activation (TRUE): client->REQUESTED, server->AVAILABLE */
+            Sum_SrvcMgr_HandleServiceActivation(SrvcIndexInTheConfArray, TRUE, &commandStatusInstance);
+        }
+    }
+}
+
+/**
+ * @brief Handles the activation/deactivation of a service, checking whether the service belongs to a group of services;
+ *         otherwise, it may be a client or server service.
+ *
+ * @param[in] Sum_SrvcMgr_prv_SrvcIndexInTheConfArray: Index of the service in the configuration array;
+ * @param[in] Sum_SrvcMgr_prv_activationStatusList: Activation status list to be applied;
+ * @param[in] Sum_SrvcMgr_prv_commandStatusInstance: Pointer to the command status instance;
+ * @return void;
+ */
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_HandleServiceActivation(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray,
+                                                                        CONST(boolean, AUTOMATIC) Sum_SrvcMgr_prv_activationStatusList,
+                                                                        P2VAR(CommandStatusType, AUTOMATIC, RTE_APPL_DATA) Sum_SrvcMgr_prv_commandStatusInstance)
+{
+	Std_ReturnType srvGrpResult;
+
+	srvGrpResult = Sum_SrvcMgr_ConfigureServiceGroupActivation(Sum_SrvcMgr_prv_SrvcIndexInTheConfArray, Sum_SrvcMgr_prv_activationStatusList);
+
+	if(srvGrpResult == E_OK)
+	{
+		if(Sum_SrvcMgr_pub_IsClientSrvc(Sum_SrvcMgr_prv_SrvcIndexInTheConfArray) == TRUE){
+			*Sum_SrvcMgr_prv_commandStatusInstance = E_OK_REMOTE_ENABLED;
+		}else{
+			*Sum_SrvcMgr_prv_commandStatusInstance = E_OK_LOCAL_ENABLED;
+		}
+	}
+	else
+	{
+		Sum_SrvcMgr_HandlerServiceCommand(Sum_SrvcMgr_prv_SrvcIndexInTheConfArray, Sum_SrvcMgr_prv_activationStatusList, Sum_SrvcMgr_prv_commandStatusInstance);
+	}
+}
+/**
+ * @brief Getter function of the flag Sum_SrvcMgr_ActivateServiceReq.
+ * 
+ * @return boolean:
+ *         - TRUE: a request coming from SPM is ongoing; 
+ *         - FALSE: otherwise; 
+ */
+/* PRQA S 1532 1 # Defined here since the scope of the variable Sum_SrvcMgr_ActivateServiceReq is only in this translation unit */
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetActivateServiceReq(void){
+    return Sum_SrvcMgr_ActivateServiceReq; 
+}
+
+/**
+ * @brief Setter function of the flag Sum_SrvcMgr_ActivateServiceReq.
+ * @param[in] Sum_SrvcMgr_prv_IsRequestOnGoing: state of the request coming from the SPM. TRUE if is ongoing, FALSE otherwise; 
+ *
+ * @return void;
+ */
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_SetActivateServiceReq(CONST(boolean, AUTOMATIC) Sum_SrvcMgr_prv_IsRequestOnGoing){
+    Sum_SrvcMgr_ActivateServiceReq = Sum_SrvcMgr_prv_IsRequestOnGoing;
+}
+
+/**
+ * @brief For each SdConsumedEventGroup associated to the actual Client Service, Sum_SrvcMgr_HandlerConsumedEventGroup
+ * will call the Sd API Sd_ConsumedEventGroupSetState() in order to set the proper state of the SdConsumedEventGroup.
+ * Only needed if the Client Service is requested.
+ * 
+ * @param[in] Sum_SrvcMgr_prv_SrvcIndexInTheConfArray: Index of the Client Service in the configuration buffer; 
+ * @param[inout] Sum_SrvcMgr_prv_commandStatusInstance: Save the operation's result in this pointer that will be retrived to the SPM;
+ *
+ * @return void;
+ */
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_HandlerConsumedEventGroup(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray,
+                                                                          P2VAR(CommandStatusType, AUTOMATIC, RTE_APPL_DATA) Sum_SrvcMgr_prv_commandStatusInstance)
+{
+    const SrvcMgr_SrvcClientSdConsumedEventGroupInfoType *SrvcMgr_prv_SrvcClientSdConsumedEventGroupInfo =  Sum_SrvcMgr_pub_GetSrvcClientSdConsumedEventGroupInfo(Sum_SrvcMgr_prv_SrvcIndexInTheConfArray); 
+    Std_ReturnType ret = E_OK; 
+    uint16 i; 
+    for(i = 0; ((i < SrvcMgr_prv_SrvcClientSdConsumedEventGroupInfo -> SrvcMgr_NumberOfSdConsumedEventGroup) && (ret == E_OK)); i++){
+        ret = Sd_ConsumedEventGroupSetState(SrvcMgr_prv_SrvcClientSdConsumedEventGroupInfo -> SrvcMgr_ListOfSdConsumedEventGroup[i], SD_CONSUMED_EVENTGROUP_REQUESTED); 
+        if(ret == E_NOT_OK){
+            *Sum_SrvcMgr_prv_commandStatusInstance = E_GENERAL_ERROR;
+        }
+    }
+}
+
+/**
+ * @brief Handler of the SD APIs Sd_ClientServiceSetState()/Sd_ServerServiceSetState(). If the Service is client and is requested, 
+ * the function Sum_SrvcMgr_HandlerConsumedEventGroup() will be called in order to manage the SdConsumedEventGroup.
+ * 
+ * @param[in] Sum_SrvcMgr_prv_SrvcIndexInTheConfArray: Index of the Service in the configuration buffer; 
+ * @param[in] Sum_SrvcMgr_prv_activationStatusList: Command received from the SPM for this Service ID;
+ * @param[inout] Sum_SrvcMgr_prv_commandStatusInstance: Save the operation's result in this pointer that will be retrived to the SPM;
+ * 
+ * @return void;
+ */
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_HandlerServiceCommand(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray,
+                                                                      CONST(boolean, AUTOMATIC) Sum_SrvcMgr_prv_activationStatusList,
+                                                                      P2VAR(CommandStatusType, AUTOMATIC, RTE_APPL_DATA) Sum_SrvcMgr_prv_commandStatusInstance)
+{
+    uint16 Sum_SrvcMgr_prv_ServiceHandleId;
+    
+    /*Get the HandleId associated to the ServiceID from SD configuration.*/
+    Sum_SrvcMgr_prv_ServiceHandleId = Sum_SrvcMgr_prv_GetSrvcHandleId(Sum_SrvcMgr_prv_SrvcIndexInTheConfArray);
+    
+    /* Distinguish Client vs Server service behavior */
+    if(Sum_SrvcMgr_pub_IsClientSrvc(Sum_SrvcMgr_prv_SrvcIndexInTheConfArray) == TRUE){
+        Sd_ClientServiceSetStateType SrvcMgr_ClientSetState; 
+        
+        /* Client: Map activation flag to SD client state. */
+        if(Sum_SrvcMgr_prv_activationStatusList == TRUE){
+            SrvcMgr_ClientSetState = SD_CLIENT_SERVICE_REQUESTED; 
+        }else{
+            SrvcMgr_ClientSetState = SD_CLIENT_SERVICE_RELEASED; 
+        }
+        
+        /* Apply state via SD API; translate result to command status. */
+        if(Sd_ClientServiceSetState(Sum_SrvcMgr_prv_ServiceHandleId, SrvcMgr_ClientSetState) == E_OK){
+            *Sum_SrvcMgr_prv_commandStatusInstance = E_OK_REMOTE_ENABLED; 
+        }else{
+            *Sum_SrvcMgr_prv_commandStatusInstance = E_GENERAL_ERROR; 
+        }
+
+        /* If successfully REQUESTED and service has consumed event groups, propagate request */
+        /* Workaround that will be removed in the future. */
+        if((SrvcMgr_ClientSetState == SD_CLIENT_SERVICE_REQUESTED) && (Sum_SrvcMgr_pub_HasServiceConsumedEventGroup(Sum_SrvcMgr_prv_SrvcIndexInTheConfArray) == TRUE) && (*Sum_SrvcMgr_prv_commandStatusInstance == E_OK_REMOTE_ENABLED)){
+            Sum_SrvcMgr_HandlerConsumedEventGroup(Sum_SrvcMgr_prv_SrvcIndexInTheConfArray, Sum_SrvcMgr_prv_commandStatusInstance);
+        }
+
+    }else{
+        Sd_ServerServiceSetStateType SrvcMgr_ServerSetState;
+
+        /* Server: Map activation flag to SD server state. */
+        if(Sum_SrvcMgr_prv_activationStatusList == TRUE){
+            SrvcMgr_ServerSetState = SD_SERVER_SERVICE_AVAILABLE; 
+        }else{
+            SrvcMgr_ServerSetState = SD_SERVER_SERVICE_DOWN; 
+        }
+
+        /* Apply state via SD API; translate result to command status. */
+        if(Sd_ServerServiceSetState(Sum_SrvcMgr_prv_ServiceHandleId, SrvcMgr_ServerSetState) == E_OK){
+            *Sum_SrvcMgr_prv_commandStatusInstance = E_OK_LOCAL_ENABLED; 
+        }else{
+            *Sum_SrvcMgr_prv_commandStatusInstance = E_GENERAL_ERROR; 
+        }
+    }
+}
+
+/**
+ * @brief API SrvcMgr_ActivateServices(). For every member of the serviceIdList, this function will perform 
+ * the operation asked in the activationCommandList. The result of the operation will be retrieved to the SPM
+ * by the commandStatusList buffer.
+ * 
+ * @param[in] serviceIdList: Pointer to the buffer that contains the Service ID list; 
+ * @param[in] activationCommandList: Pointer to the buffer that contains the operation that shall be performed over the Services;
+ * @param[in] listLength: Length of the three buffers;
+ * @param[inout] commandStatusList: Pointer to the buffer that will contains the operation's results. Populated by SrvcMgr;
+ * 
+ * @return void;
+ */
+/*[$Satisfies $DDS_SrvcMgr 014]*/
+/*PRQA S 3673 2 # The following pointer are used as constant internally. */ 
+FUNC(void, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_ActivateServices(P2CONST(uint16, AUTOMATIC, RTE_APPL_DATA) serviceIdList,
+                                                               P2CONST(boolean, AUTOMATIC, RTE_APPL_DATA) activationCommandList,
+                                                               VAR(uint16, AUTOMATIC) listLength,
+                                                               P2VAR(CommandStatusType, AUTOMATIC, RTE_APPL_DATA) commandStatusList)
+{
+    uint16 i; 
+    uint16 indexSrvcInTheConfigurationArray = 0; 
+    Sum_SrvcMgr_CalibrationState statusCalibration; 
+
+    /* This is needed in order to track if a request from the SPM is ongoing. This is necessary in order to 
+    prevent that the Execution Manager votes for the shutdown when a request is ongoing. */
+    /*[$Satisfies $DDS_SrvcMgr 015]*/
+    Sum_SrvcMgr_pub_SetActivateServiceReq(TRUE); 
+    
+    for(i = 0; i < listLength; i++){
+		 /*binary search algorithm to search if a ID is configured in the SD container */
+        if(Sum_SrvcMgr_pub_isIdConfigured(serviceIdList[i], SUM_SrvcMgr_SearchService, &indexSrvcInTheConfigurationArray) == E_OK){
+            statusCalibration = Sum_SrvcMgr_pub_GetSrvcCalibrationState(indexSrvcInTheConfigurationArray);
+            if(statusCalibration == SUM_SrvcMgr_CalibrationON)
+			{
+				/* [SWS_Sd_00746]/[$Satisfies $DDS_SrvcMgr 014]: service group vs non-group handled by common helper */
+                Sum_SrvcMgr_HandleServiceActivation(indexSrvcInTheConfigurationArray, activationCommandList[i], &commandStatusList[i]);
+                            }else{
+                commandStatusList[i] = E_DISABLED;
+            }
+        }else{
+            commandStatusList[i] = E_GENERAL_ERROR;
+        }
+    }
+    /*[$Satisfies $DDS_SrvcMgr 015]*/
+    Sum_SrvcMgr_pub_SetActivateServiceReq(FALSE); 
+}
+
+#define SUM_SrvcMgr_STOP_SEC_CODE
+#include "SUM_SrvcMgr_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

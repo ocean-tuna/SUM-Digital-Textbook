@@ -1,0 +1,48 @@
+@startuml Sum_Ssfm_DTCU19A3_57_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DTCU19A3_57_Handler"
+
+**Interfaces Legend**
+   //II152 //: ERRH_ExecutionStatus
+   //ri119 //: SSC_ERRH_DTC_U19A3_57_Status
+   //II150 //: BatteryVoltage
+   //II193 //: Debounced Error
+   //II157 //: DisableDTCs
+   //II194 //: Undebounced Error
+   //pi134 //: DTC_U19A3_57_SetEventStatus
+   //II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)        
+endlegend
+
+note top of EC
+It is responsible for asking the DEM to set/clear the DTC U19A3 57 with FTB equal 57. 
+The only needed check regards the battery voltage. The DTC U19A3 57 is not mentioned in the GB8002. 
+However, after discussion with GM, we decided to implement it as a design choice. 
+The SSFM-ERRH is only involved because it reads the notification from the SSC and it asks the DEM to set/clear the DTC accordingly.
+end note
+
+component [SSFM::Sum_Ssfm_DTCU19A3_57_Handler] as EC{
+	portin ri119
+	portout pi134
+
+	[Sum_Ssfm_DTCU19A3_57_Handler]  as E
+}
+   interface II150
+   interface II157
+   interface II193
+   interface II194
+   interface II152
+   interface II184
+
+  II152 ->E
+  ri119 -> E
+  II150 -> E
+  II157 -> E
+  II193 -> E
+  E -> II194 
+  E -> pi134
+  II184 -> E
+
+@enduml

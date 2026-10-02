@@ -1,0 +1,56 @@
+@startuml actRemoteECUawake
+skinparam ParticipanrPadding 20
+skinparam BoxPadding 20
+
+participant "Remote ECU"
+participant BswM
+
+participant SUM_PNC
+participant SWCs
+participant SUM_SSFM
+participant SUM_SUSD
+
+BswM -> SUM_PNC: 1. SUM PNC Init
+activate SUM_PNC
+deactivate SUM_PNC
+
+"Remote ECU" -> SUM_PNC: 2. PNC_NM_Frame_Indication
+note right: NM frame with PN bit active\nSUM_PNC_Criteria_NM_Act_Remote = TRUE
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_PNC: 3. PNC MainFunction
+note left: Remote path: PNC_ENABLE_CHECK -> PNC_TX_ENABLE\n(skips PNC_MONITOR_ACTIVATION / PNC_ACK_ACTIVATION)
+activate SUM_PNC
+
+SUM_PNC -> BswM: 4. PNC_BswMPduGroupSwitchRxReq
+activate BswM
+deactivate BswM
+
+SUM_PNC -> SUM_SSFM: 5. PNC_ActiveRxPDUEnable
+activate SUM_SSFM
+deactivate SUM_SSFM
+
+BswM -> SUM_PNC: 6. PNC_BswM_CurrentPNCModeUser
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> BswM: 7. PNC_BswMPduGroupSwitchTxReq
+activate BswM
+deactivate BswM
+
+BswM -> SUM_PNC: 8. PNC_BswM_CurrentPNCModeUser
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> SWCs: 9. PNC_ActiveTxPDUEnable
+activate SWCs
+deactivate SWCs
+
+deactivate SUM_PNC
+SUM_PNC -> SUM_SUSD: 10. Shutdown_permission_SUSD
+SUM_PNC -> SUM_SUSD: 11. SUSD_PNC_UpdateRecord (SUM_PNC_NM_WR)
+activate SUM_SUSD
+deactivate SUM_SUSD
+
+@enduml

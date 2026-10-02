@@ -1,0 +1,29 @@
+@startuml Sum_Ssfm_DID_E0BA
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DID_E0BA"
+
+**Interfaces Legend**
+   //ri141 //: DCM DataServices
+   
+endlegend
+
+note top of EC
+DID E0BA Handler is responsible to update the internal structure of information needed by DID E0BA and provide
+signal status information about Signal Protection Calculation failures in the requested format whenever asked by DCM.
+The handler manages up to 16 message entries with FPI (Failed Protection Indication) and FOI (Failed Continuous 
+Operation Indication) counters using automatic priority-based sorting.
+end note
+
+component [SSFM::Sum_Ssfm_DID_E0BA] as EC{
+	portin ri141
+	[Sum_Ssfm_DID_E0BA]  as E
+}
+
+  ri141 -> E
+
+
+
+@enduml

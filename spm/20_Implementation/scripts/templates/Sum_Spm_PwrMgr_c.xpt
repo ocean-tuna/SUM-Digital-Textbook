@@ -1,0 +1,919 @@
+
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_PwrMgr.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header file for Sum_Spm_PwrMgr
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+/* PRQA S 1503 EOF # Usage of function in a complete integrated project due to project specific conditions */
+/* PRQA S 3214 EOF # Memory Mapping for security reason */
+/* PRQA S 5087 EOF # Memory Mapping for security reason */
+/* PRQA S 1532 EOF # Defined here for modularity reason. */
+/* PRQA S 3472 EOF # Following macro are used for sake of clarity to access fields of the PGTT.  */
+/* PRQA S 3469 EOF # Following macro are called to access fields of the PGTT. */
+
+#include "Sum_Spm_PwrMgr.h"
+#include "Sum_Spm_WakeUp.h"
+#include "Sum_Spm_PBCfg.h"
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_DevicePowerState.h"
+#include "Sum_Spm_SoftwMgr.h"
+#include "Sum_Spm_WufRollingBuffer.h"
+#include "Sum_Spm_VariantManagement.h"
+
+/*
+ *------------------------------------------------------------------------------------------------------------------------------------------------
+ * Private Macros
+ *------------------------------------------------------------------------------------------------------------------------------------------------
+ */
+#define SPM_SHUTDOWN_DELAY_MS                          (Rte_CData_Spm_HB_Shutdown_Delay_ms())
+#define SPM_SHUTDOWN_DELAY_TICK                                (SPM_SHUTDOWN_DELAY_MS / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS)
+
+static volatile boolean Sum_Spm_Shutdown_Delay_Expired;
+static void Spm_TrgDvcFSMManager(void);
+static boolean Sum_Spm_PowerOffSeq_AdvanceStep(const uint8 TrgDvcIndex);
+static boolean Sum_Spm_PowerOnSeq_AdvanceStep(const uint8 i);
+static void Sum_Spm_PowerOff_Handler(const uint8 TrgDvcIndex);
+static void Sum_Spm_PowerOn_Handler(const uint8 TrgDvcIndex);
+static void Sum_Spm_PowerOff_Retry_Ongoing_Handler(const uint8 TrgDvcIndex);
+static void Sum_Spm_WaitTime_Retry_Ongoing_Handler(const uint8 TrgDvcIndex);
+static void Sum_Spm_PowerOn_Retry_Ongoing_Handler(const uint8 TrgDvcIndex);
+static void Sum_Spm_PowerOn_Retry_Completed_Handler(const uint8 TrgDvcIndex);
+static boolean Spm_GetTrgDvcPowerOnDeviceRetryOngoing(const uint8 TrgDvcIndex);
+/* Handler for possible target device states */
+static void Spm_OffStateHandler(const uint8 i);
+static void Spm_InitializingStateHandler(const uint8 i);
+static void Spm_OnStateHandler(const uint8 i);
+static void Spm_ShutdownPendingStateHandler(const uint8 i);
+static void Spm_RebootStateHandler(const uint8 i);
+static void Spm_FaultedStateHandler(const uint8 i);
+static void Sum_Spm_Shutdown_Delay_Timer_Handler(void);
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief This function checks if any PowerOnDevice retry is ongoing.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ *
+ * @note The function assumes the existence of a communication mechanism with the State Manager via RTE
+ *       inter-runnable variables (IRVs).
+ *
+ */
+/* This function now is called only in this module and this trigger a MISRA Advisory. */
+static boolean Spm_GetTrgDvcPowerOnDeviceRetryOngoing(const uint8 TrgDvcIndex){
+	boolean ret = TRUE;
+
+	if(POWER_ON_DEVICE_RETRY_STEP(TrgDvcIndex) == Spm_No_PowerOn_Retry_Ongoing){
+		ret = FALSE;
+	}
+	return ret;
+}
+
+
+/**
+ * @brief This function handles the PowerOff sequence of the PowerOnDevice
+ * retry.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ *
+ */
+static void Sum_Spm_PowerOff_Retry_Ongoing_Handler(const uint8 TrgDvcIndex){
+
+	boolean WkUpSequenceFinished; 
+
+	WkUpSequenceFinished = Sum_Spm_PowerOffSeq_AdvanceStep(TrgDvcIndex); 
+
+	if(TRUE == WkUpSequenceFinished){
+		POWER_ON_DEVICE_RETRY_STEP(TrgDvcIndex) = Spm_WaitTime_Retry_Ongoing;
+	}else{
+		STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) = (STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) > 0u) ? (STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) - 1u) : 0u;
+	}
+}
+
+/**
+ * @brief This function handles the waiting time between the PowerOff and PowerOn
+ * of the PowerOnDevice retry procedure.
+ *
+ * Once the wait timer expires, the function advances the retry state machine from
+ * wait-time phase to PowerOn retry phase.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ *
+ */
+static void Sum_Spm_WaitTime_Retry_Ongoing_Handler(const uint8 TrgDvcIndex){
+	
+	if(POWER_ON_DEVICE_RETRY_WAIT_TIME_TRACKER(TrgDvcIndex) > 0u)
+	{
+		POWER_ON_DEVICE_RETRY_WAIT_TIME_TRACKER(TrgDvcIndex)--;
+	}
+	
+	if(POWER_ON_DEVICE_RETRY_WAIT_TIME_TRACKER(TrgDvcIndex) == 0u){
+		POWER_ON_DEVICE_RETRY_STEP(TrgDvcIndex) = Spm_PowerOn_Retry_Ongoing;
+	}
+}
+
+/**
+ * @brief This function handles the PowerOn WakeUp sequence of the PowerOnDevice retry.
+ *
+ * If the WakeUp sequence is finished, the HB SHALL be monitored.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ *
+ */
+static void Sum_Spm_PowerOn_Retry_Ongoing_Handler(const uint8 TrgDvcIndex){
+	boolean WkUpSequenceFinished; 
+
+	WkUpSequenceFinished = Sum_Spm_PowerOnSeq_AdvanceStep(TrgDvcIndex); 
+
+	if(TRUE == WkUpSequenceFinished){
+		POWER_ON_DEVICE_RETRY_STEP(TrgDvcIndex) = Spm_WaitTime_ToRestart;
+	}else{
+		STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) = (STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) > 0u) ? (STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) - 1u) : 0u;
+	}
+}
+
+
+
+/**
+ * @brief Executes one cycle of the PowerOnDevice retry state machine.
+ *
+ * This function manages retry phases (PowerOff, wait-time, PowerOn, periodic restart wait),
+ * initializes retry timing when needed, and dispatches the corresponding retry sub-handler.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ *
+ */
+/* [$Satisfies $DDS_SPM 0151] */
+static void Sum_Spm_PowerOnDeviceRetryHandler(const uint8 TrgDvcIndex){
+
+	POWER_ON_DEVICE_RETRY_PERIODICITY_TRACKER(TrgDvcIndex) = (POWER_ON_DEVICE_RETRY_PERIODICITY_TRACKER(TrgDvcIndex) == 0u) ? 0u : (POWER_ON_DEVICE_RETRY_PERIODICITY_TRACKER(TrgDvcIndex) - 1u);
+
+	switch(POWER_ON_DEVICE_RETRY_STEP(TrgDvcIndex)){
+
+		case Spm_No_PowerOn_Retry_Ongoing:
+			POWER_ON_DEVICE_RETRY_STEP(TrgDvcIndex) = Spm_PowerOff_Retry_Ongoing;
+			POWER_ON_DEVICE_RETRY_WAIT_TIME_TRACKER(TrgDvcIndex) = (uint16)(SPM_GET_PGTT_INST_POWERONDEVICERETRY_WAITTIME( TrgDvcIndex ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS);
+			POWER_ON_DEVICE_RETRY_PERIODICITY_TRACKER(TrgDvcIndex) = (uint16)(SPM_GET_PGTT_INST_POWERONDEVICERETRY_PERIODICITY( TrgDvcIndex ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS);
+
+		/* PRQA S 2003 1 # 'Break' is not used in Spm_No_PowerOn_Retry_Ongoing state since it just reset the necessary flag. */
+		case Spm_PowerOff_Retry_Ongoing:
+			Sum_Spm_PowerOff_Retry_Ongoing_Handler(TrgDvcIndex);
+			break;
+
+		case Spm_WaitTime_Retry_Ongoing:
+			Sum_Spm_WaitTime_Retry_Ongoing_Handler(TrgDvcIndex);
+			break;
+
+		case Spm_PowerOn_Retry_Ongoing:
+			Sum_Spm_PowerOn_Retry_Ongoing_Handler(TrgDvcIndex);
+			break;
+
+		/* [$Satisfies $DDS_SPM 0150] */
+		case Spm_WaitTime_ToRestart:
+			if(POWER_ON_DEVICE_RETRY_PERIODICITY_TRACKER(TrgDvcIndex) == 0u){
+				POWER_ON_DEVICE_RETRY_STEP(TrgDvcIndex) = Spm_No_PowerOn_Retry_Ongoing;
+			}
+			break;
+
+		default:
+			/* Empty since NO action shall be performed. */
+			break;
+	}
+}
+
+/**
+ * @brief Advances one step of the PowerOff sequence.
+ *
+ * This function handles the Step Delay timer and, if elapsed, it calls the Sum_Spm_WakeUpCmdDispatcher() that remove
+ * the commands from the wakeup buffer. If all the command are removed, it reload the DTC Timeout Tracker.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ *
+ */
+static boolean Sum_Spm_PowerOffSeq_AdvanceStep(
+		const uint8 TrgDvcIndex
+	) {
+
+	boolean ret;
+
+	if (FALSE == ARE_ALL_CMD_REMOVED(TrgDvcIndex)){
+	
+		/* The function Sum_Spm_WakeUpCmdDispatcher() needs to be called if the Step Delay timer is elapsed or
+		*  if this is the first step to be removed (i.e. if the actual index in the step is equal to the size of
+		* the wake up sequence)
+		*/
+		if ((STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) == 0u) ||
+			(INDEX_STEP_TRGDVC(TrgDvcIndex) == SPM_GET_PGTT_INST_WKUPCOM_PTH_SIZE(TrgDvcIndex))
+		) {
+			uint8 trg_dvc_idx_u8;
+			uint8 trg_wkstp_idx_u8;
+			INDEX_STEP_TRGDVC(TrgDvcIndex) -= 1U;
+
+			/* [$Satisfies $DDS_SPM 0131] */
+			/* [$Satisfies $DDS_SPM 0139] */
+
+			Sum_Spm_WakeUpCmdDispatcher(
+				SPM_GET_PGTT_INST_WKUPCOM_TYPE(INDEX_COLUMN_TRGDVC(TrgDvcIndex), INDEX_STEP_TRGDVC(TrgDvcIndex)),
+				SPM_GET_PGTT_INST_WKUPCOM_ITH(INDEX_COLUMN_TRGDVC(TrgDvcIndex), INDEX_STEP_TRGDVC(TrgDvcIndex)),
+				SPM_GET_PGTT_INST_NUMBER_IP_ASSOCIATED(TrgDvcIndex),
+				SPM_GET_PGTT_INST_TRGDVC_IPLIST(TrgDvcIndex),
+				FALSE
+			);
+
+			if (INDEX_STEP_TRGDVC(TrgDvcIndex) > 0U) {
+				trg_wkstp_idx_u8 = INDEX_STEP_TRGDVC(TrgDvcIndex) - 1U;
+				trg_dvc_idx_u8 = INDEX_COLUMN_TRGDVC(TrgDvcIndex);
+
+				/* Point 1. Take the delay from the power graph */
+				STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) = SPM_GET_PGTT_INST_WKUPDLY_ITH(trg_dvc_idx_u8, trg_wkstp_idx_u8);
+				/* point 2. Convert the delay in number of ticks */
+				STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) /= SUM_SPM_PERIOD_PM_MAINFUNCTION_MS;
+			} else {
+				/* No delay for the last step */
+				STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) = 0U;
+			} /* endif */
+		} /* endif */
+	}
+
+	ret = ( TRUE == ARE_ALL_CMD_REMOVED(TrgDvcIndex) ) ? TRUE : FALSE;
+
+	return ret;
+}
+
+/**
+ * @brief Advances the Power-On wakeup sequence for a specific device.
+ *
+ * This static function iterates through the wakeup commands associated with a device at power-on.
+ * It processes each command with a wakeup delay of zero until it encounters a command with a non-zero
+ * delay or reaches the end of the command path. The function uses a local buffer to handle the commands
+ * and updates the step index for the device. If a command with a non-zero delay is found, the function
+ * calculates the step delay and stores it in the step delay tracker for later processing.
+ *
+ * @param[in] i The index of the device for which commands are being parsed. This index is used to
+ *              calculate row, column, and step indices for accessing the wakeup command and delay
+ *              information.
+ *
+ * @note The function is designed to be called within the context of a power management main function
+ *       and assumes that the command and delay information is stored in a predefined structure.
+ *       The function also assumes a fixed period for the power management main function, defined by
+ *       SUM_SPM_PERIOD_PM_MAINFUNCTION_MS.
+ *
+ */
+/* [$Satisfies $DDS_SPM 0130] */
+/* PRQA S 1532 1 # Following macro are used to access data structure */
+static boolean Sum_Spm_PowerOnSeq_AdvanceStep(const uint8 i){
+
+	boolean ret;
+
+	/* [$Satisfies $DDS_SPM 0137] */
+	if(FALSE == IS_LAST_COMMAND_SENT(INDEX_COLUMN_TRGDVC(i))){
+
+		/* [$Satisfies $DDS_SPM 0136] */
+		if((STEPDLY_TRACKER_TRGDVC(i) == 0u) || (INDEX_STEP_TRGDVC(i) == 0u)){
+
+			/* [$Satisfies $DDS_SPM 0135] *//* [$Satisfies $DDS_SPM 0138] */
+			while( (INDEX_STEP_TRGDVC(i) < SPM_GET_PGTT_INST_WKUPCOM_PTH_SIZE(  INDEX_COLUMN_TRGDVC(i))) && (SPM_GET_PGTT_INST_WKUPDLY_ITH(  INDEX_COLUMN_TRGDVC(i), INDEX_STEP_TRGDVC(i)) == 0u)){
+				/* [$Satisfies $DDS_SPM 0131] *//* [$Satisfies $DDS_SPM 0132] */
+				Sum_Spm_WakeUpCmdDispatcher( SPM_GET_PGTT_INST_WKUPCOM_TYPE(INDEX_COLUMN_TRGDVC(i), INDEX_STEP_TRGDVC(i)),
+											SPM_GET_PGTT_INST_WKUPCOM_ITH(INDEX_COLUMN_TRGDVC(i), INDEX_STEP_TRGDVC(i)),
+											SPM_GET_PGTT_INST_NUMBER_IP_ASSOCIATED(i),
+											SPM_GET_PGTT_INST_TRGDVC_IPLIST(i),
+											TRUE);
+				INDEX_STEP_TRGDVC(i)++;
+			}
+
+			if(INDEX_STEP_TRGDVC(i) <  SPM_GET_PGTT_INST_WKUPCOM_PTH_SIZE(  INDEX_COLUMN_TRGDVC(i))){
+				/* [$Satisfies $DDS_SPM 0131] *//* [$Satisfies $DDS_SPM 0132] */
+				Sum_Spm_WakeUpCmdDispatcher( SPM_GET_PGTT_INST_WKUPCOM_TYPE(INDEX_COLUMN_TRGDVC(i), INDEX_STEP_TRGDVC(i)),
+											SPM_GET_PGTT_INST_WKUPCOM_ITH(INDEX_COLUMN_TRGDVC(i), INDEX_STEP_TRGDVC(i)),
+											SPM_GET_PGTT_INST_NUMBER_IP_ASSOCIATED(i),
+											SPM_GET_PGTT_INST_TRGDVC_IPLIST(i),
+											TRUE);
+				/* [$Satisfies $DDS_SPM 0134] */
+				STEPDLY_TRACKER_TRGDVC(i) = SPM_GET_PGTT_INST_WKUPDLY_ITH(  INDEX_COLUMN_TRGDVC(i), INDEX_STEP_TRGDVC(i)) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS;
+				INDEX_STEP_TRGDVC(i)++;
+			}
+		}
+	}
+
+	ret = ( TRUE == IS_LAST_COMMAND_SENT(INDEX_COLUMN_TRGDVC(i)) ) ? TRUE : FALSE;
+
+	return ret;
+}
+
+/**
+ * @brief This function handle the general PowerOff sequence.
+ *
+ * If the WkUp sequence finished (i.e. all command are removed), the SPM start to monitor the HB.
+ * Otherwise, the function decrease the StepDelay Tracker and execute, if needed, the removal of the next step.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ *
+ */
+static void Sum_Spm_PowerOff_Handler(const uint8 TrgDvcIndex){
+	boolean WkUpSequenceFinished; 
+
+	POWER_SEQ_STATE_TRGDVC(TrgDvcIndex) = Spm_PowerSeq_PowerOff;
+
+	/* if the function return FALSE, means that there are other command to remove */
+	WkUpSequenceFinished = Sum_Spm_PowerOffSeq_AdvanceStep(TrgDvcIndex); 
+
+	if(FALSE == WkUpSequenceFinished){
+		STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) = (STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) > 0u) ? (STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) - 1u) : 0u;
+	}else{
+		POWER_SEQ_STATE_TRGDVC(TrgDvcIndex) = Spm_PowerSeq_None;
+	}
+}
+
+/**
+ * @brief Handles the general PowerOn sequence for a TrgDvc.
+ *
+ * The function advances the wake-up command path for PowerOn and, while the sequence is
+ * still ongoing, decrements the step-delay tracker. When completed, it clears the power
+ * sequence state.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ *
+ */
+static void Sum_Spm_PowerOn_Handler(const uint8 TrgDvcIndex){
+	boolean WkUpSequenceFinished; 
+
+	POWER_SEQ_STATE_TRGDVC(TrgDvcIndex) = Spm_PowerSeq_PowerOn;
+	/* if the function return FALSE, means that there are other command to append */
+	WkUpSequenceFinished = Sum_Spm_PowerOnSeq_AdvanceStep(TrgDvcIndex);
+
+	if(FALSE == WkUpSequenceFinished){
+		STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) = (STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) > 0u) ? (STEPDLY_TRACKER_TRGDVC(TrgDvcIndex) - 1u) : 0u;
+	}else{
+		POWER_SEQ_STATE_TRGDVC(TrgDvcIndex) = Spm_PowerSeq_None;
+	}
+}
+
+/**
+ * @brief Handles ongoing power sequences for a specific TrgDvc.
+ *
+ * This function processes ongoing PowerOnDevice retry, PowerOn, or PowerOff sequences.
+ * It continues advancing the sequence if one is already in progress.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ * @return TRUE if an ongoing sequence was handled, FALSE if no sequence is ongoing.
+ */
+static boolean Sum_Spm_OngoingSequence_Handler(const uint8 TrgDvcIndex){
+    boolean WkUpSequenceOngoing = TRUE;
+
+    if(TRUE == Spm_GetTrgDvcPowerOnDeviceRetryOngoing(TrgDvcIndex)){
+        Sum_Spm_PowerOnDeviceRetryHandler(TrgDvcIndex);
+    }else if(POWER_SEQ_STATE_TRGDVC(TrgDvcIndex) == Spm_PowerSeq_PowerOn){
+        Sum_Spm_PowerOn_Handler(TrgDvcIndex);
+    }else if(POWER_SEQ_STATE_TRGDVC(TrgDvcIndex) == Spm_PowerSeq_PowerOff){
+        Sum_Spm_PowerOff_Handler(TrgDvcIndex);
+    }else{
+        WkUpSequenceOngoing = FALSE;
+    }
+
+    return WkUpSequenceOngoing;
+}
+
+/**
+ * @brief Initiates a new power sequence based on device request state.
+ *
+ * This function determines whether to start a PowerOn or PowerOff sequence
+ * based on whether the device is requested to be ON and its current state.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ */
+static void Sum_Spm_InitiateSequence_Handler(const uint8 TrgDvcIndex){
+
+	boolean isTrgDvcRequestedToBeOn = Spm_IsTrgDvcRequestedToBeOn(TrgDvcIndex); 
+
+    if(TRUE == isTrgDvcRequestedToBeOn){
+        if((STATE_TRGDVC(TrgDvcIndex) == SPM_ShutdownPending) || (STATE_TRGDVC(TrgDvcIndex) == SPM_Faulted)){
+            Sum_Spm_PowerOnDeviceRetryHandler(TrgDvcIndex);
+		/* if IS_LAST_COMMAND_SENT is TRUE, this means that the last step has been sent */
+        }else if(FALSE == IS_LAST_COMMAND_SENT(TrgDvcIndex)){
+            Sum_Spm_PowerOn_Handler(TrgDvcIndex);
+        }else{
+            /* All PowerOn commands already sent, no action needed. */
+        }
+    }else{
+		/* if ARE_ALL_CMD_REMOVED is TRUE, this means that all commands have been removed */
+		if(FALSE == ARE_ALL_CMD_REMOVED(TrgDvcIndex)){
+        	Sum_Spm_PowerOff_Handler(TrgDvcIndex);
+		}
+    }
+}
+
+/**
+ * @brief Main handler for wake-up sequences across all TrgDvc devices.
+ *
+ * This function iterates through all target devices and manages their power sequences.
+ * It first checks if any ongoing sequence needs to be continued. If no sequence is ongoing,
+ * it decides whether to initiate a new PowerOn or PowerOff sequence.
+ */
+static void Sum_Spm_WakeUpSequence_Handler(void){
+    
+    uint8 i; 
+	boolean WkUpSequenceOngoing; 
+
+    for(i = 0u; i < SPM_NUM_OF_PG_OUT_EDGE; i++){
+        /* the following IF is needed to understand if the TrgDvc has a wakeup sequence configured.*/
+        if(SPM_GET_PGTT_INST_WKUPCOM_PTH_SIZE(i) != 0u){
+
+			/* check and execute any ongoing wkup sequence. */
+			WkUpSequenceOngoing = Sum_Spm_OngoingSequence_Handler(i); 
+
+            /* If there are NO wkup sequence ongoing, check and eventually initiate the wkup sequence.*/
+            if(FALSE == WkUpSequenceOngoing){
+                Sum_Spm_InitiateSequence_Handler(i);
+            }
+        }
+    }
+}
+
+/**
+ * @brief Manages the Finite State Machine (FSM) for target devices in the power management system.
+ *
+ * This function iterates through the list of target devices and updates their state based on
+ * the current conditions, such as power on/off requests and heartbeat (HB) signals. It handles
+ * state transitions for each device, including moving devices to an initializing state when a power
+ * on request is received, to an on state when initialization is complete, and to a faulted state if
+ * a device does not respond within a specified timeout period.
+ *
+ * @note This function should be called periodically to ensure timely updates to the state of each target device.
+ * The function processes each device according to its current state and transitions to the next appropriate state
+ * based on the conditions encountered.
+ */
+/* [$Satisfies $DDS_SPM 0303] *//* [$Satisfies $DDS_SPM 0130] *//* [$Satisfies $DDS_SPM 0131] */
+/* [$Satisfies $DDS_SPM 0134] *//* [$Satisfies $DDS_SPM 0135] *//* [$Satisfies $DDS_SPM 0136] */
+/* [$Satisfies $DDS_SPM 0137] *//* [$Satisfies $DDS_SPM 0138] *//* [$Satisfies $DDS_SPM 0139] */
+static void Spm_TrgDvcFSMManager(void)
+{
+	uint8 i;
+
+	for(i = 0u; i < SPM_NUM_OF_PG_OUT_EDGE; i++)
+	{
+		switch(STATE_TRGDVC(i))
+		{
+			/* [$Satisfies $DDS_SPM 0211] */
+			/* OFF State: Starting or inactive state */
+			case SPM_Off:
+				Spm_OffStateHandler(i);
+				break;
+
+			/* [$Satisfies $DDS_SPM 0213] */
+			/* INITIALIZING State: System is initializing */
+			case SPM_Initializing:
+				Spm_InitializingStateHandler(i);
+				break;
+
+			/* ON State: Primary operational state */
+			/* [$Satisfies $DDS_SPM 0212] */
+			case SPM_On:
+				Spm_OnStateHandler(i);
+				break;
+
+			/* PENDING_SHUTDOWN State: Preparing for shutdown */
+			/* [$Satisfies $DDS_SPM 0210] */
+			case SPM_ShutdownPending:
+				Spm_ShutdownPendingStateHandler(i);
+				break;
+
+			/* REBOOT State: System reboot process */
+			/* [$Satisfies $DDS_SPM 0209] */
+			case SPM_Reboot:
+				Spm_RebootStateHandler(i);
+				break;
+
+			/* FAULTED State: System encountered irrecoverable error */
+			/* [$Satisfies $DDS_SPM 0208] */
+			case SPM_Faulted:
+				Spm_FaultedStateHandler(i);
+				break;
+
+			default:
+				/* Invalid state: it should not occur. */
+				break;
+		}
+	}
+}
+
+/*========================== START:  Target Device State Handlers ========================== */
+/**
+* @brief Handles transitions while a TrgDvc is in  state.
+* Take into account: 
+* 	- the reception of HB to evaluate the transition to a state based on the value of the HB received 
+* 	- the expiration of DTC timeout: 
+* 		if expired, the function evaluates if the device is requester or requested to understand if the device is monitored or not
+* 		and then transition the state accordingly.
+* 
+* @param i Index of the TrgDvc.
+*/
+static void Spm_OffStateHandler(const uint8 i){
+	/* PRQA S 3415 1 # Sum_Spm_IsRequester has no side effects, so it can be used as right hand operand. */
+	if ((TRUE == Sum_Spm_IsRequested(i)) || (TRUE == Sum_Spm_IsRequester(i)))
+	{
+		/* Event: PowerOnDevice Request or MonitorDevice Request.
+		** Transition: OFF -> INITIALIZING. */
+		STATE_TRGDVC(i) = SPM_Initializing;
+	} 
+	else if (TRUE == HB_SEQ_TRACKER_TRGDVC(i))
+	{
+		HB_SEQ_TRACKER_TRGDVC(i) = FALSE;
+		DTCTIMEOUT_TRACKER_TRGDVC(i) = SPM_GET_PGTT_INST_TIMEOUT( i ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS;
+		/* Event: HeartBeat Received &... */
+		if(Sum_Spm_GetPreviousHBval(i) > (0xFFFFFFFFu - 256u))
+		{
+			/* ... Pending Shutdown Value > 2^32 - 256.
+			** Transition: OFF -> PENDING_SHUTDOWN. */
+			/* [$Satisfies $DDS_SPM 0313] */
+			STATE_TRGDVC(i) = SPM_ShutdownPending;
+		}
+		else
+		{
+			/* ... value ok.
+			** Transition: OFF -> ON. */
+			STATE_TRGDVC(i) = SPM_On;
+		}
+	}
+	else
+	{
+		/* Nothing to do. */
+	}
+}
+
+static void Spm_InitializingStateHandler(const uint8 i){
+	/* PRQA S 3415 1 #  No side effect since the functions are getter. */
+	if ((FALSE == Sum_Spm_IsRequested(i)) && (FALSE == Sum_Spm_IsRequester(i)))
+	{
+		/* Event: Removed MonitorDevice Request.
+		** Transition: INITIALIZING -> OFF. */
+		STATE_TRGDVC(i) = SPM_Off;
+	}
+	else if (TRUE == HB_SEQ_TRACKER_TRGDVC(i))
+	{
+		HB_SEQ_TRACKER_TRGDVC(i) = FALSE;
+		DTCTIMEOUT_TRACKER_TRGDVC(i) = SPM_GET_PGTT_INST_TIMEOUT( i ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS;
+		/* Event: HeartBeat Received &... */
+		if (Sum_Spm_GetPreviousHBval(i) > (0xFFFFFFFFu - 256u))
+		{
+			/* ... Pending Shutdown Value > 2^32 - 256.
+			** Transition: INITIALIZING -> PENDING_SHUTDOWN. */
+			/* [$Satisfies $DDS_SPM 0313] */
+			STATE_TRGDVC(i) = SPM_ShutdownPending;
+		}
+		else
+		{
+			/* ... value ok.
+			** Transition: INITIALIZING -> ON. */
+			STATE_TRGDVC(i) = SPM_On;
+		}
+	}
+	else if (DTCTIMEOUT_TRACKER_TRGDVC(i) == 0u)
+	{
+		/* Event: HeartBeat not received within DTC timeout.
+		** Transition: INITIALIZING -> FAULTED. */
+		STATE_TRGDVC(i) = SPM_Faulted;
+	}
+	else
+	{
+		--DTCTIMEOUT_TRACKER_TRGDVC(i);
+	}
+}
+
+static void Spm_OnStateHandler(const uint8 i){
+	if (TRUE == HB_SEQ_TRACKER_TRGDVC(i))
+	{
+		HB_SEQ_TRACKER_TRGDVC(i) = FALSE;
+		DTCTIMEOUT_TRACKER_TRGDVC(i) = SPM_GET_PGTT_INST_TIMEOUT( i ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS;
+
+		/* Event: HeartBeat Received &... */
+		if(Sum_Spm_GetPreviousHBval(i) > (0xFFFFFFFFu - 256u))
+		{
+			/* ... Pending Shutdown Value > 2^32 - 256.
+			** Transition: ON -> PENDING_SHUTDOWN. */
+			/* [$Satisfies $DDS_SPM 0313] */
+			STATE_TRGDVC(i) = SPM_ShutdownPending;
+		}
+		else if (Sum_Spm_GetPreviousHBval(i) < Sum_Spm_GetPenultimateHBval(i))
+		{
+			/* ... Less Than Previous Value Received.
+			** Transition: ON -> REBOOT. */
+			STATE_TRGDVC(i) = SPM_Reboot;
+		}
+		else
+		{
+			/* Nothing to do. */
+		}
+	}
+	else if (DTCTIMEOUT_TRACKER_TRGDVC(i) == 0u)
+	{
+		/* Event: HB not received within DTC timeout &... */
+		/* PRQA S 3415 1 # Sum_Spm_IsRequester has no side effects, so it can be used as right hand operand. */
+		if ((FALSE == Sum_Spm_IsRequested(i)) && (FALSE == Sum_Spm_IsRequester(i)))
+		{
+			/* ... Device is not Monitored.
+			** Transition: ON -> OFF. */
+			STATE_TRGDVC(i) = SPM_Off;
+		}
+		else
+		{
+			/* ... Device is Monitored.
+			** Transition: ON -> FAULTED. */
+			STATE_TRGDVC(i) = SPM_Faulted;
+		}
+	}
+	else
+	{
+		--DTCTIMEOUT_TRACKER_TRGDVC(i);
+	}
+}
+
+static void Spm_ShutdownPendingStateHandler(const uint8 i){
+	if (TRUE == HB_SEQ_TRACKER_TRGDVC(i))
+	{
+		HB_SEQ_TRACKER_TRGDVC(i) = FALSE;
+		DTCTIMEOUT_TRACKER_TRGDVC(i) = SPM_GET_PGTT_INST_TIMEOUT( i ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS;
+		if (Sum_Spm_GetPreviousHBval(i) < Sum_Spm_GetPenultimateHBval(i))
+		{
+			/* Event: HB is less than previous value received.
+			** Transition: PENDING_SHUTDOWN -> REBOOT. */
+			STATE_TRGDVC(i) = SPM_Reboot;
+		}
+	}
+	else if (DTCTIMEOUT_TRACKER_TRGDVC(i) == 0u)
+	{
+		/* Event: HB not received within DTC timeout &... */
+		/* PRQA S 3415 1 # Sum_Spm_IsRequester has no side effects, so it can be used as right hand operand. */
+		if ((FALSE == Sum_Spm_IsRequested(i)) && (FALSE == Sum_Spm_IsRequester(i)))
+		{
+			/* ... Device is not Monitored.
+			** Transition: PENDING_SHUTDOWN -> OFF. */
+			STATE_TRGDVC(i) = SPM_Off;
+		}
+		else
+		{
+			/* ... Device is Monitored.
+			** Transition: PENDING_SHUTDOWN -> FAULTED. */
+			STATE_TRGDVC(i) = SPM_Faulted;
+		}
+	}
+	else
+	{
+		--DTCTIMEOUT_TRACKER_TRGDVC(i);
+	}			
+}
+
+static void Spm_RebootStateHandler(const uint8 i){
+
+	if (TRUE == HB_SEQ_TRACKER_TRGDVC(i))
+	{
+		HB_SEQ_TRACKER_TRGDVC(i) = FALSE;
+		DTCTIMEOUT_TRACKER_TRGDVC(i) = SPM_GET_PGTT_INST_TIMEOUT( i ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS;
+		/* Event: HB received &... */
+		if (Sum_Spm_GetPreviousHBval(i) > (0xFFFFFFFFu - 256u))
+		{
+			/* ... Pending Shutdown Value > 2^32 - 256.
+			** Transition REBOOT -> PENDING_SHUTDOWN. */
+			/* [$Satisfies $DDS_SPM 0313] */
+			STATE_TRGDVC(i) = SPM_ShutdownPending;
+		}
+		else if (Sum_Spm_GetPreviousHBval(i) > Sum_Spm_GetPenultimateHBval(i))
+		{
+			/* ... > than last value .
+			** Transition: REBOOT -> ON. */
+			STATE_TRGDVC(i) = SPM_On;
+		}
+		else
+		{
+			/* Nothing to do. */
+		}
+	}
+	else if (DTCTIMEOUT_TRACKER_TRGDVC(i) == 0u)
+	{
+		/* Event: HB not received within DTC timeout &... */
+		/* PRQA S 3415 1 # Sum_Spm_IsRequester has no side effects, so it can be used as right hand operand. */
+		if ((FALSE == Sum_Spm_IsRequested(i)) && (FALSE == Sum_Spm_IsRequester(i)))
+		{
+			/* ... Device is Not Monitored.
+			** Transition: REBOOT -> OFF. */
+			STATE_TRGDVC(i) = SPM_Off;
+		}
+		else
+		{
+			/* ... Device is Monitored.
+			** Transition: REBOOT -> FAULTED. */
+			STATE_TRGDVC(i) = SPM_Faulted;
+		}
+	}
+	else
+	{
+		--DTCTIMEOUT_TRACKER_TRGDVC(i);
+	}
+	
+}
+
+static void Spm_FaultedStateHandler(const uint8 i)
+{
+	/* PRQA S 3415 1 # Sum_Spm_IsRequester has no side effects, so it can be used as right hand operand. */
+	if ((FALSE == Sum_Spm_IsRequested(i)) && (FALSE == Sum_Spm_IsRequester(i)))
+	{
+		/* Event: Device no longer monitored.
+		** Transition: FAULTED -> OFF. */
+		STATE_TRGDVC(i) = SPM_Off;
+	}
+	else if (TRUE == HB_SEQ_TRACKER_TRGDVC(i))
+	{
+		HB_SEQ_TRACKER_TRGDVC(i) = FALSE;
+		DTCTIMEOUT_TRACKER_TRGDVC(i) = SPM_GET_PGTT_INST_TIMEOUT( i ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS;
+		/* Event: HeartBeat received &... */
+		if (Sum_Spm_GetPreviousHBval(i) > (0xFFFFFFFFu - 256u))
+		{
+			/* ... Pending Shutdown Value > 2^32 - 256.
+			**  Transition: FAULTED -> PENDING_SHUTDOWN. */
+			/* [$Satisfies $DDS_SPM 0313] */
+			STATE_TRGDVC(i) = SPM_ShutdownPending;
+		}
+		else if (Sum_Spm_GetPreviousHBval(i) > Sum_Spm_GetPenultimateHBval(i))
+		{
+			/* ... > than Last value.
+			** Transition: FAULTED -> ON. */
+			STATE_TRGDVC(i) = SPM_On;
+		}
+		else if (Sum_Spm_GetPreviousHBval(i) < Sum_Spm_GetPenultimateHBval(i))
+		{
+			/* ... value less than Previous Value Received.
+			** Transition: FAULTED -> REBOOT. */
+			STATE_TRGDVC(i) = SPM_Reboot;
+		}
+		else
+		{
+			/* Nothing to do. */
+		}
+	}
+	else
+	{
+		/* Nothing to do. */
+	}
+}
+
+/*==========================   END : Target Device State Handlers ========================== */
+
+/**
+ * @brief Getter function to get the status of the SPM's Shutdown Delay timer
+ *
+ */
+boolean Sum_Spm_Shutdown_Delay_Has_Expired(void)
+{
+       return Sum_Spm_Shutdown_Delay_Expired;
+}
+
+/**
+ * @brief Setter function to get the status of the SPM's Shutdown Delay Timer
+ *
+ */
+void Sum_Spm_Set_Shutdown_Delay_Timer_Expire_State(boolean has_Expired)
+{
+       Sum_Spm_Shutdown_Delay_Expired = has_Expired;
+}
+
+/**
+ * @brief Handles the shutdown delay timer. The status of expiration of the delay is updated.
+ *
+ */
+ /* Need to flag Sum_Spm_GetIsBranded as PRQA_NO_SIDE_EFFECTS since it is being called from
+ * an OR statement where it might not be called in case Sum_Spm_InitialHbBurstPhaseCompleted
+ * returns TRUE.
+ */
+«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+#pragma PRQA_NO_SIDE_EFFECTS Sum_Spm_GetIsBranded
+«ENDIF-»
+static void Sum_Spm_Shutdown_Delay_Timer_Handler(void)
+{
+       static uint16 Shutdown_Delay_Timer_Ticks = 0U;
+       static boolean timer_is_running = FALSE;
+
+       if (timer_is_running == TRUE)
+       {
+               Shutdown_Delay_Timer_Ticks += 1u;
+               if (Shutdown_Delay_Timer_Ticks >= SPM_SHUTDOWN_DELAY_TICK)
+               {
+                       Sum_Spm_Set_Shutdown_Delay_Timer_Expire_State(TRUE);
+                       Shutdown_Delay_Timer_Ticks = 0u;
+                       timer_is_running = FALSE;
+               }
+       }
+       else
+       {
+               if(Sum_Spm_Shutdown_Delay_Expired == FALSE)
+               {
+                   /* [$Satisfies $DDS_SPM 0639] */
+                «IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+                   /* Start timer when the initial HB burst phase is completed or if we start as unbranded*/
+                   timer_is_running = (Sum_Spm_InitialHbBurstPhaseCompleted() || !Sum_Spm_GetIsBranded());
+                «ELSE-»
+                   /* Start timer when the initial HB burst phase is completed*/
+                   timer_is_running = Sum_Spm_InitialHbBurstPhaseCompleted();
+                «ENDIF-»
+               }
+       }
+}
+
+/**
+ * @brief			Power Manager Runnable function.
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+/* [$Satisfies $DDS_SPM 0404] */
+void Runnable_SPM_PowerManager_MainFunction(void){
+	
+	if(Sum_Spm_Get_SpmCtrl_Initilization_Status() == TRUE){
+
+	«IF Spm_ECU_INTERMEDIATE(spm) == true -»
+		/* Polling for the reception of ETH WkUp */
+		Spm_ETHWkUpFrame_Rx_Polling_Handler();
+	«ENDIF-»
+
+		/* Polling for the rececption of Multicast ETH WkUp */
+		Spm_ETHWkUpFrame_Multicast_Rx_Polling_Handler();
+
+		/* Let's react on the information received through the WUFs
+		   and advance Sum_SPM_WakeUp internal timer */
+		Spm_ExecuteWakeUpFrameActions(TRUE);
+
+«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+		/* [$Satisfies $DDS_SPM 0673] */
+		if(TRUE == Sum_Spm_GetIsBranded()){
+«ENDIF -»
+			
+		«IF Spm_IsThereAnyManagedDevice(spm) && (Spm_ECU_INTERMEDIATE(spm) == true) -»
+			/* Handler for the Managed Devices */
+			Sum_Spm_WkupEdgeNodes(); 
+		«ENDIF-»
+			/* Polling for the reception of HB */
+			Spm_PM_Rx_Polling_Handler();
+
+			/* Handler of the TrgDvc's FSM */
+			Spm_TrgDvcFSMManager();
+
+			/* Handler of the WkUp Sequences */
+			Sum_Spm_WakeUpSequence_Handler(); 
+
+			/* DevicePowerState. */
+			Spm_DevicePowerState();
+
+			/* Time-controlled transmission of the HB. */
+			Spm_PM_HB_Tx_Handler();
+
+			/* Time-controlled transmission of the WkUp Frame. */
+			Sum_Spm_WkUpTiming_Handler();
+«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+		}
+«ENDIF -»
+		Sum_Spm_Shutdown_Delay_Timer_Handler();
+	}
+}
+
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE»

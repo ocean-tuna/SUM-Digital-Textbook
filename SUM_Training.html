@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RTA-SUM Training Documentation</title>
+<style>
+  :root {
+    --sidebar-w: 310px;
+    --topbar-h: 56px;
+    --primary: #1a5276;
+    --primary-dark: #0e2f44;
+    --primary-light: #2980b9;
+    --accent: #e67e22;
+    --bg: #f4f6f9;
+    --text: #2c3e50;
+    --text-light: #8395a7;
+    --border: #dce1e5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  /* Top Bar */
+  .top-bar {
+    position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h);
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    color: #fff; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; z-index: 200;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  .top-bar .brand { display: flex; align-items: center; gap: 12px; }
+  .top-bar .brand h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.5px; }
+  .top-bar .brand span { color: var(--accent); }
+  .sidebar-toggle-btn {
+    background: rgba(255,255,255,0.1); border: none; color: #fff;
+    width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.15s;
+  }
+  .sidebar-toggle-btn:hover { background: rgba(255,255,255,0.2); }
+  .sidebar-toggle-btn svg { width: 16px; height: 16px; }
+  .top-bar .meta { font-size: 0.78rem; opacity: 0.75; }
+  .top-bar .search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.12); border-radius: 6px;
+    padding: 6px 12px;
+  }
+  .top-bar .search-box input {
+    background: none; border: none; color: #fff; font-size: 0.85rem;
+    outline: none; width: 200px;
+  }
+  .top-bar .search-box input::placeholder { color: rgba(255,255,255,0.5); }
+
+  /* Sidebar */
+  .sidebar {
+    position: fixed; top: var(--topbar-h); left: 0; bottom: 0;
+    width: var(--sidebar-w); background: #1e2a3a;
+    overflow-y: auto; z-index: 100;
+    scrollbar-width: thin; scrollbar-color: #3d5066 #1e2a3a;
+    transition: transform 0.25s ease;
+  }
+  body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
+  body.sidebar-collapsed .resize-handle { display: none; }
+  body.sidebar-collapsed .content-area { left: 0 !important; }
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-track { background: #1e2a3a; }
+  .sidebar::-webkit-scrollbar-thumb { background: #3d5066; border-radius: 3px; }
+
+  .sidebar .nav-label {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px;
+    color: #5d7a94; padding: 18px 18px 8px; font-weight: 700;
+  }
+
+  /* Module entry */
+  .module-entry { border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .module-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; cursor: pointer; transition: all 0.15s;
+    color: #b8c9d9; font-size: 0.88rem; font-weight: 600;
+    border-left: 3px solid transparent;
+    user-select: none;
+  }
+  .module-header:hover {
+    background: rgba(255,255,255,0.05); color: #fff;
+  }
+  .module-header.active {
+    background: rgba(255,255,255,0.08); color: #fff;
+    border-left-color: var(--accent);
+  }
+  .module-header .arrow {
+    font-size: 0.6rem; transition: transform 0.2s; color: #5d7a94;
+  }
+  .module-header.active .arrow { color: var(--accent); }
+  .module-header.expanded .arrow { transform: rotate(90deg); }
+  .module-tag {
+    font-size: 0.65rem; background: rgba(255,255,255,0.08);
+    padding: 1px 6px; border-radius: 3px; color: #7a99b5; margin-right: 8px;
+    font-weight: 700; letter-spacing: 0.5px; flex-shrink: 0;
+  }
+  .module-name { flex: 1; }
+
+  /* Sub-sections */
+  .module-sections {
+    max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+    background: rgba(0,0,0,0.15);
+  }
+  .module-sections.open { max-height: 2000px; }
+  .module-sections a {
+    display: block; padding: 5px 18px 5px 42px;
+    color: #7a99b5; text-decoration: none; font-size: 0.78rem;
+    border-left: 3px solid transparent; transition: all 0.12s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .module-sections a:hover {
+    color: #fff; background: rgba(255,255,255,0.04);
+    border-left-color: var(--primary-light);
+  }
+  .module-sections a.active {
+    color: #fff; border-left-color: var(--accent);
+    background: rgba(230,126,34,0.1);
+  }
+
+  /* Resize Handle */
+  .resize-handle {
+    position: fixed;
+    top: var(--topbar-h); bottom: 0;
+    left: var(--sidebar-w);
+    width: 6px;
+    cursor: col-resize;
+    z-index: 150;
+    background: transparent;
+    transition: background 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .resize-handle::after {
+    content: '';
+    width: 2px; height: 40px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .resize-handle:hover {
+    background: rgba(41,128,185,0.25);
+  }
+  .resize-handle:hover::after,
+  .resize-handle.dragging::after {
+    width: 3px; height: 50px;
+    background: var(--primary-light);
+  }
+  .resize-handle.dragging {
+    background: rgba(41,128,185,0.15);
+  }
+
+  /* Content Area */
+  .content-area {
+    position: fixed;
+    top: var(--topbar-h); left: calc(var(--sidebar-w) + 6px);
+    right: 0; bottom: 0;
+    background: #fff;
+    transition: left 0.25s ease;
+  }
+  .content-area iframe {
+    width: 100%; height: 100%; border: none;
+  }
+
+  /* Overlay to capture mouse events over iframe while dragging */
+  .drag-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    cursor: col-resize;
+  }
+
+  /* Welcome screen */
+  .welcome {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; text-align: center;
+    padding: 40px; color: var(--text-light);
+  }
+  .welcome h2 { font-size: 2rem; color: var(--primary); margin-bottom: 12px; font-weight: 700; }
+  .welcome p { font-size: 1rem; max-width: 500px; line-height: 1.7; margin-bottom: 24px; }
+  .welcome .module-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px; max-width: 800px; width: 100%; margin-top: 20px;
+  }
+  .welcome .module-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px; cursor: pointer; transition: all 0.2s; text-align: left;
+  }
+  .welcome .module-card:hover {
+    border-color: var(--primary-light); box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+  .welcome .module-card .card-tag {
+    font-size: 0.7rem; font-weight: 700; color: var(--accent);
+    letter-spacing: 0.5px; margin-bottom: 4px;
+  }
+  .welcome .module-card .card-name {
+    font-size: 0.85rem; color: var(--text); font-weight: 600;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .resize-handle { display: none; }
+    .content-area { left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="top-bar">
+  <div class="brand">
+    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebarCollapse()" title="Toggle sidebar (Ctrl+B)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h1>RTA-<span>SUM</span> Training Documentation</h1>
+  </div>
+  <div class="search-box">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="Search modules..." oninput="filterModules(this.value)">
+  </div>
+  <div class="meta">10 Modules + Architecture + SWC Diagrams + ParamDef Guide</div>
+</header>
+
+<!-- SIDEBAR NAVIGATOR -->
+<nav class="sidebar" id="sidebar">
+  <div class="nav-label">Overview</div>
+
+  <!-- Architecture -->
+  <div class="module-entry" data-file="Modules/SUM_Architecture.html" data-keywords="architecture diagram interaction overview">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">ARCH</span>
+      <span class="module-name">SW Architecture &amp; Module Interactions</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'')">Interactive Diagram</a>
+    </div>
+  </div>
+
+  <!-- SWC Diagrams -->
+  <div class="module-entry" data-file="Modules/SUM_SWC_Diagrams.html" data-keywords="swc software component diagram port interface runnable irv sender receiver client server autosar">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">SWC</span>
+      <span class="module-name">SW Component Diagrams (Ports &amp; Interfaces)</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'mod-susd')">SUSD</a>
+      <a href="#" onclick="return loadSection(this,'mod-ssc')">SSC</a>
+      <a href="#" onclick="return loadSection(this,'mod-spm')">SPM</a>
+      <a href="#" onclick="return loadSection(this,'mod-srvcmgr')">SrvcMgr</a>
+      <a href="#" onclick="return loadSection(this,'mod-ssfm')">SSFM</a>
+      <a href="#" onclick="return loadSection(this,'mod-pnc')">PNC</a>
+      <a href="#" onclick="return loadSection(this,'mod-lnm')">LNM</a>
+      <a href="#" onclick="return loadSection(this,'mod-soh')">SUM_SOH</a>
+      <a href="#" onclick="return loadSection(this,'mod-diag')">SUM_DIAG</a>
+      <a href="#" onclick="return loadSection(this,'mod-tcs')">TCS</a>
+    </div>
+  </div>
+
+  <!-- ParamDef Guide -->
+  <div class="module-entry" data-file="Modules/SUM_ParamDef_Guide.html" data-keywords="paramdef parameter definition ecuc arxml container reference boolean integer float enumeration multiplicity configuration">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">PARAM</span>
+      <span class="module-name">Parameter Definitions (ParamDef)</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'overview')">Overview &amp; Concepts</a>
+      <a href="#" onclick="return loadSection(this,'stats')">Summary Statistics</a>
+      <a href="#" onclick="return loadSection(this,'mod-tcs')">TCS ParamDef</a>
+      <a href="#" onclick="return loadSection(this,'mod-diag')">SUM_DIAG ParamDef</a>
+      <a href="#" onclick="return loadSection(this,'mod-pnc')">PNC ParamDef</a>
+      <a href="#" onclick="return loadSection(this,'mod-srvcmgr')">SrvcMgr ParamDef</a>
+      <a href="#" onclick="return loadSection(this,'mod-spm')">SPM ParamDef</a>
+      <a href="#" onclick="return loadSection(this,'mod-lnm')">LNM ParamDef</a>
+      <a href="#" onclick="return loadSection(this,'mod-soh')">SOH ParamDef</a>
+      <a href="#" onclick="return loadSection(this,'mod-ssfm')">SSFM ParamDef</a>
+      <a href="#" onclick="return loadSection(this,'mod-susd')">SUSD ParamDef</a>
+      <a href="#" onclick="return loadSection(this,'common-params')">Common Patterns</a>
+      <a href="#" onclick="return loadSection(this,'glossary')">Glossary</a>
+    </div>
+  </div>
+
+  <div class="nav-label">Modules</div>
+
+  <!-- 1. SSC -->
+  <div class="module-entry" data-file="Modules/SSC_Training_Documentation.html" data-keywords="ssc security service coordinator">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">SSC</span>
+      <span class="module-name">Security Service Coordinator</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'intro')">Introduction</a>
+      <a href="#" onclick="return loadSection(this,'architecture')">Architecture Overview</a>
+      <a href="#" onclick="return loadSection(this,'components')">Module Components Map</a>
+      <a href="#" onclick="return loadSection(this,'runnables')">Execution Model & Runnables</a>
+      <a href="#" onclick="return loadSection(this,'f1')">F1: Execution State Machine</a>
+      <a href="#" onclick="return loadSection(this,'f2')">F2: MACT Configuration</a>
+      <a href="#" onclick="return loadSection(this,'f3')">F3: Counter Management</a>
+      <a href="#" onclick="return loadSection(this,'f4')">F4: Freshness Value Mgmt</a>
+      <a href="#" onclick="return loadSection(this,'f5')">F5: MAC Verification</a>
+      <a href="#" onclick="return loadSection(this,'f6')">F6: Counter Synchronization</a>
+      <a href="#" onclick="return loadSection(this,'f7')">F7: Key Provisioning (SHE)</a>
+      <a href="#" onclick="return loadSection(this,'f8')">F8: HSM Support</a>
+      <a href="#" onclick="return loadSection(this,'f9')">F9: APSRKP</a>
+      <a href="#" onclick="return loadSection(this,'f10')">F10: ECU Unlock Service</a>
+      <a href="#" onclick="return loadSection(this,'f11')">F11: SBAT Validation</a>
+      <a href="#" onclick="return loadSection(this,'f12')">F12: Diagnostic Services</a>
+      <a href="#" onclick="return loadSection(this,'f13')">F13: NvM Management</a>
+      <a href="#" onclick="return loadSection(this,'f14')">F14: DTC Management</a>
+      <a href="#" onclick="return loadSection(this,'f15')">F15: IVMAS</a>
+      <a href="#" onclick="return loadSection(this,'f16')">F16: PCSM Handling</a>
+      <a href="#" onclick="return loadSection(this,'f17')">F17: Acceptance Window</a>
+      <a href="#" onclick="return loadSection(this,'f18')">F18: Encrypted DID/RID</a>
+      <a href="#" onclick="return loadSection(this,'f19')">F19: Tx Variant Config</a>
+      <a href="#" onclick="return loadSection(this,'codegen')">Code Generation System</a>
+      <a href="#" onclick="return loadSection(this,'config-params')">Configuration Parameters</a>
+      <a href="#" onclick="return loadSection(this,'ext-interfaces')">External Interfaces</a>
+      <a href="#" onclick="return loadSection(this,'error-codes')">Error Code Reference</a>
+      <a href="#" onclick="return loadSection(this,'paramdef')">Parameter Definition</a>
+      <a href="#" onclick="return loadSection(this,'glossary')">Glossary</a>
+    </div>
+  </div>
+
+  <!-- 2. SrvcMgr -->
+  <div class="module-entry" data-file="Modules/SrvcMgr_Training_Guide.html" data-keywords="srvcmgr service manager">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">SrvcMgr</span>
+      <span class="module-name">Service Manager</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'introduction')">Introduction</a>
+      <a href="#" onclick="return loadSection(this,'why-srvcmgr')">Why SrvcMgr Exists</a>
+      <a href="#" onclick="return loadSection(this,'architecture')">High-Level Architecture</a>
+      <a href="#" onclick="return loadSection(this,'deep-dive')">Module Components Deep Dive</a>
+      <a href="#" onclick="return loadSection(this,'features')">Feature Overview</a>
+      <a href="#" onclick="return loadSection(this,'data-model')">Data Model & Configuration</a>
+      <a href="#" onclick="return loadSection(this,'interfaces')">External Interfaces</a>
+      <a href="#" onclick="return loadSection(this,'codegen')">Code Generation System</a>
+      <a href="#" onclick="return loadSection(this,'workflow')">9. Development Workflow</a>
+      <a href="#" onclick="return loadSection(this,'repo-structure')">10. Repository Structure</a>
+      <a href="#" onclick="return loadSection(this,'paramdef')">11. Parameter Definition</a>
+      <a href="#" onclick="return loadSection(this,'glossary')">12. Glossary</a>
+    </div>
+  </div>
+
+  <!-- 3. SPM -->
+  <div class="module-entry" data-file="Modules/SPM_Training_Documentation.html" data-keywords="spm software power manager mode">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">SPM</span>
+      <span class="module-name">Software/Power Manager</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'section-1')">1. What is SPM?</a>
+      <a href="#" onclick="return loadSection(this,'section-2')">2. Why Does SPM Exist?</a>
+      <a href="#" onclick="return loadSection(this,'section-3')">3. System Architecture</a>
+      <a href="#" onclick="return loadSection(this,'section-4')">4. Core Concepts</a>
+      <a href="#" onclick="return loadSection(this,'section-5')">5. Feature Deep-Dives</a>
+      <a href="#" onclick="return loadSection(this,'section-examples')">Practical Examples</a>
+      <a href="#" onclick="return loadSection(this,'section-6')">6. Module Architecture</a>
+      <a href="#" onclick="return loadSection(this,'section-7')">7. Code Generation</a>
+      <a href="#" onclick="return loadSection(this,'section-8')">8. Configuration System</a>
+      <a href="#" onclick="return loadSection(this,'section-9')">9. External Interfaces</a>
+      <a href="#" onclick="return loadSection(this,'section-10')">10. Diagnostic Services</a>
+      <a href="#" onclick="return loadSection(this,'section-11')">11. Developer Workflow</a>
+      <a href="#" onclick="return loadSection(this,'section-12')">12. Repository Structure</a>
+      <a href="#" onclick="return loadSection(this,'paramdef')">13. Parameter Definition</a>
+      <a href="#" onclick="return loadSection(this,'section-14')">14. Glossary</a>
+    </div>
+  </div>
+
+  <!-- 4. SSFM -->
+  <div class="module-entry" data-file="Modules/SSFM_Training_Documentation.html" data-keywords="ssfm signal status fault monitor">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">SSFM</span>
+      <span class="module-name">Signal Status & Fault Monitor</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'sec1')">1. Module Overview</a>
+      <a href="#" onclick="return loadSection(this,'sec2')">2. Architecture & Sub-Modules</a>
+      <a href="#" onclick="return loadSection(this,'sec3')">3. Execution Model</a>
+      <a href="#" onclick="return loadSection(this,'sec4')">4. SSM - Signal Status Monitor</a>
+      <a href="#" onclick="return loadSection(this,'sec5')">5. ERRH - Error Handler</a>
+      <a href="#" onclick="return loadSection(this,'sec6')">6. Core Data Model</a>
+      <a href="#" onclick="return loadSection(this,'sec7')">7. Config-Driven Architecture</a>
+      <a href="#" onclick="return loadSection(this,'sec8')">8. Code Generation System</a>
+      <a href="#" onclick="return loadSection(this,'sec9')">9. Development Workflow</a>
+      <a href="#" onclick="return loadSection(this,'paramdef')">10. Parameter Definition</a>
+      <a href="#" onclick="return loadSection(this,'sec12')">11. Glossary</a>
+    </div>
+  </div>
+
+  <!-- 5. SUSD -->
+  <div class="module-entry" data-file="Modules/SUSD_Training_Documentation.html" data-keywords="susd start up shut down coordinator">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">SUSD</span>
+      <span class="module-name">Start Up / Shut Down Coordinator</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'sec1')">1. Module Overview</a>
+      <a href="#" onclick="return loadSection(this,'sec2')">2. Why SUSD Exists</a>
+      <a href="#" onclick="return loadSection(this,'sec3')">3. Architecture at a Glance</a>
+      <a href="#" onclick="return loadSection(this,'sec4')">4. Feature Deep Dives</a>
+      <a href="#" onclick="return loadSection(this,'sec5')">5. Runnables - Execution Model</a>
+      <a href="#" onclick="return loadSection(this,'sec6')">6. File Map</a>
+      <a href="#" onclick="return loadSection(this,'sec7')">7. Code Generation Pipeline</a>
+      <a href="#" onclick="return loadSection(this,'sec8')">8. Configuration Guide</a>
+      <a href="#" onclick="return loadSection(this,'sec9')">9. External Interfaces</a>
+      <a href="#" onclick="return loadSection(this,'sec10')">10. Development Workflow</a>
+      <a href="#" onclick="return loadSection(this,'sec11')">11. Key Data Types</a>
+      <a href="#" onclick="return loadSection(this,'sec12')">12. NvM Blocks</a>
+      <a href="#" onclick="return loadSection(this,'paramdef')">13. Parameter Definition</a>
+      <a href="#" onclick="return loadSection(this,'sec14')">14. Glossary</a>
+    </div>
+  </div>
+
+  <!-- 6. PNC -->
+  <div class="module-entry" data-file="Modules/PNC_Training_Documentation.html" data-keywords="pnc partial network controller">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">PNC</span>
+      <span class="module-name">Partial Network Controller</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'sec1')">1. What is PNC?</a>
+      <a href="#" onclick="return loadSection(this,'sec2')">2. Why Does PNC Exist?</a>
+      <a href="#" onclick="return loadSection(this,'sec3')">3. Architecture</a>
+      <a href="#" onclick="return loadSection(this,'sec4')">4. Feature Overview</a>
+      <a href="#" onclick="return loadSection(this,'sec5')">5. Data Model</a>
+      <a href="#" onclick="return loadSection(this,'sec6')">6. PN Mode FSM</a>
+      <a href="#" onclick="return loadSection(this,'sec7')">7. Activation Criteria</a>
+      <a href="#" onclick="return loadSection(this,'sec8')">8. PDU Group Control</a>
+      <a href="#" onclick="return loadSection(this,'sec9')">9. Deadline Monitoring</a>
+      <a href="#" onclick="return loadSection(this,'sec10')">10. DTC Allowed Timer</a>
+      <a href="#" onclick="return loadSection(this,'sec11')">11. DID Management</a>
+      <a href="#" onclick="return loadSection(this,'sec12')">12. Shutdown Coordination</a>
+      <a href="#" onclick="return loadSection(this,'sec13')">13. Wakeup Reason Tracking</a>
+      <a href="#" onclick="return loadSection(this,'sec14')">14. Single PDU Disable</a>
+      <a href="#" onclick="return loadSection(this,'sec15')">15. NM Frame Indication</a>
+      <a href="#" onclick="return loadSection(this,'sec16')">16. Init & Main Function</a>
+      <a href="#" onclick="return loadSection(this,'sec17')">17. Timer Management</a>
+      <a href="#" onclick="return loadSection(this,'sec18')">18. Code Generation</a>
+      <a href="#" onclick="return loadSection(this,'sec19')">19. Configuration Params</a>
+      <a href="#" onclick="return loadSection(this,'sec20')">20. Repository Structure</a>
+      <a href="#" onclick="return loadSection(this,'sec21')">21. Development Workflow</a>
+      <a href="#" onclick="return loadSection(this,'sec22')">22. External Interfaces</a>
+      <a href="#" onclick="return loadSection(this,'paramdef')">23. Parameter Definition</a>
+      <a href="#" onclick="return loadSection(this,'sec24')">24. Glossary</a>
+      <a href="#" onclick="return loadSection(this,'quickref')">Quick Reference Card</a>
+    </div>
+  </div>
+
+  <!-- 7. SUM_SOH -->
+  <div class="module-entry" data-file="Modules/SUM_SOH_Training_Documentation.html" data-keywords="sum_soh state of health reliability">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">SUM_SOH</span>
+      <span class="module-name">State of Health</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'sec1')">1. Overview</a>
+      <a href="#" onclick="return loadSection(this,'sec2')">2. Architecture</a>
+      <a href="#" onclick="return loadSection(this,'sec3')">3. Core Concepts</a>
+      <a href="#" onclick="return loadSection(this,'sec4')">4. Detectors</a>
+      <a href="#" onclick="return loadSection(this,'sec5')">5. Filters</a>
+      <a href="#" onclick="return loadSection(this,'sec6')">6. Reliability Monitors</a>
+      <a href="#" onclick="return loadSection(this,'sec7')">7. DIDs</a>
+      <a href="#" onclick="return loadSection(this,'sec8')">8. State Machine</a>
+      <a href="#" onclick="return loadSection(this,'sec9')">9. Runnables</a>
+      <a href="#" onclick="return loadSection(this,'sec10')">10. Memory Architecture</a>
+      <a href="#" onclick="return loadSection(this,'sec11')">11. NvM Integration</a>
+      <a href="#" onclick="return loadSection(this,'sec12')">12. Shutdown Delay Detection</a>
+      <a href="#" onclick="return loadSection(this,'sec13')">13. RID 0x02C0</a>
+      <a href="#" onclick="return loadSection(this,'sec14')">14. Data Structures</a>
+      <a href="#" onclick="return loadSection(this,'sec15')">15. Code Walkthrough</a>
+      <a href="#" onclick="return loadSection(this,'sec16')">16. Configuration Params</a>
+      <a href="#" onclick="return loadSection(this,'sec17')">17. Port Interfaces</a>
+      <a href="#" onclick="return loadSection(this,'sec18')">18. Integration Notes</a>
+      <a href="#" onclick="return loadSection(this,'paramdef')">19. Parameter Definition</a>
+      <a href="#" onclick="return loadSection(this,'sec20')">20. Glossary</a>
+    </div>
+  </div>
+
+  <!-- 8. LNM -->
+  <div class="module-entry" data-file="Modules/LNM_Training_Documentation.html" data-keywords="lnm lin network manager">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">LNM</span>
+      <span class="module-name">LIN Network Manager</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'sec1')">1. What is LNM?</a>
+      <a href="#" onclick="return loadSection(this,'sec2')">2. Why Does LNM Exist?</a>
+      <a href="#" onclick="return loadSection(this,'sec3')">3. Feature Overview</a>
+      <a href="#" onclick="return loadSection(this,'sec4')">4. Architecture Overview</a>
+      <a href="#" onclick="return loadSection(this,'sec5')">5. Repository Structure</a>
+      <a href="#" onclick="return loadSection(this,'sec6')">6. Core Data Model</a>
+      <a href="#" onclick="return loadSection(this,'sec7')">7. Global State Machine</a>
+      <a href="#" onclick="return loadSection(this,'sec8')">8. Network Activation Mgmt</a>
+      <a href="#" onclick="return loadSection(this,'sec9')">9. Schedule Management</a>
+      <a href="#" onclick="return loadSection(this,'sec10')">10. MSCL & DID F1BE</a>
+      <a href="#" onclick="return loadSection(this,'sec11')">11. Fault Detection</a>
+      <a href="#" onclick="return loadSection(this,'sec12')">12. CyberFill Feature</a>
+      <a href="#" onclick="return loadSection(this,'sec13')">13. Project Variants</a>
+      <a href="#" onclick="return loadSection(this,'sec14')">14. Code Generation</a>
+      <a href="#" onclick="return loadSection(this,'sec15')">15. Configuration Params</a>
+      <a href="#" onclick="return loadSection(this,'sec16')">16. Runnables & Execution</a>
+      <a href="#" onclick="return loadSection(this,'sec17')">17. External Interfaces</a>
+      <a href="#" onclick="return loadSection(this,'sec18')">18. Timer Management</a>
+      <a href="#" onclick="return loadSection(this,'sec19')">19. Development Workflow</a>
+      <a href="#" onclick="return loadSection(this,'paramdef')">20. Parameter Definition</a>
+      <a href="#" onclick="return loadSection(this,'sec21')">21. Glossary</a>
+    </div>
+  </div>
+
+  <!-- 9. SUM_DIAG -->
+  <div class="module-entry" data-file="Modules/SUM_DIAG_Training_Documentation.html" data-keywords="sum_diag diagnostics diagnostic">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">SUM_DIAG</span>
+      <span class="module-name">Diagnostics Module</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'overview')">1. Overview</a>
+      <a href="#" onclick="return loadSection(this,'architecture')">2. Architecture</a>
+      <a href="#" onclick="return loadSection(this,'lifecycle')">3. Module Lifecycle</a>
+      <a href="#" onclick="return loadSection(this,'features')">4. Feature Deep-Dives</a>
+      <a href="#" onclick="return loadSection(this,'runnables')">5. Runnables Reference</a>
+      <a href="#" onclick="return loadSection(this,'inter-module')">6. Inter-Module Communication</a>
+      <a href="#" onclick="return loadSection(this,'nvm')">7. NvM Integration</a>
+      <a href="#" onclick="return loadSection(this,'config')">8. Configuration Params</a>
+      <a href="#" onclick="return loadSection(this,'codegen')">9. Code Generation</a>
+      <a href="#" onclick="return loadSection(this,'glue')">10. Glue Layer</a>
+      <a href="#" onclick="return loadSection(this,'datatypes')">11. Key Data Types</a>
+      <a href="#" onclick="return loadSection(this,'debugging')">12. Debugging Scenarios</a>
+      <a href="#" onclick="return loadSection(this,'filemap')">13. File Reference Map</a>
+      <a href="#" onclick="return loadSection(this,'paramdef')">14. Parameter Definition</a>
+      <a href="#" onclick="return loadSection(this,'boot-sequence')">Quick Ref: Boot Sequence</a>
+    </div>
+  </div>
+
+  <!-- 10. TCS -->
+  <div class="module-entry" data-file="Modules/TCS_Training_Documentation.html" data-keywords="tcs timing client service">
+    <div class="module-header" onclick="toggleModule(this)">
+      <span class="module-tag">TCS</span>
+      <span class="module-name">Timing Client Service</span>
+      <span class="arrow">&#9654;</span>
+    </div>
+    <div class="module-sections">
+      <a href="#" onclick="return loadSection(this,'section-1')">1. Introduction</a>
+      <a href="#" onclick="return loadSection(this,'section-2')">2. Why Does TCS Exist?</a>
+      <a href="#" onclick="return loadSection(this,'section-3')">3. Feature Overview</a>
+      <a href="#" onclick="return loadSection(this,'section-4')">4. Architecture</a>
+      <a href="#" onclick="return loadSection(this,'section-5')">5. Core Concepts</a>
+      <a href="#" onclick="return loadSection(this,'section-6')">6. Runnables Deep Dive</a>
+      <a href="#" onclick="return loadSection(this,'section-7')">7. Data Flow Scenarios</a>
+      <a href="#" onclick="return loadSection(this,'section-8')">8. AUTOSAR Port Interfaces</a>
+      <a href="#" onclick="return loadSection(this,'section-9')">9. Configuration Params</a>
+      <a href="#" onclick="return loadSection(this,'section-10')">10. Code Generation</a>
+      <a href="#" onclick="return loadSection(this,'section-11')">11. Repository Structure</a>
+      <a href="#" onclick="return loadSection(this,'section-12')">12. Development Workflow</a>
+      <a href="#" onclick="return loadSection(this,'section-13')">13. Naming Conventions</a>
+      <a href="#" onclick="return loadSection(this,'paramdef')">14. Parameter Definition</a>
+      <a href="#" onclick="return loadSection(this,'section-15')">15. Glossary</a>
+    </div>
+  </div>
+
+</nav>
+
+<!-- RESIZE HANDLE -->
+<div class="resize-handle" id="resizeHandle"></div>
+<div class="drag-overlay" id="dragOverlay"></div>
+
+<!-- CONTENT AREA -->
+<div class="content-area" id="contentArea">
+  <div class="welcome" id="welcomeScreen">
+    <h2>RTA-SUM Training Hub</h2>
+    <p>Select a module from the sidebar to begin, or click one of the modules below to get started.</p>
+    <div class="module-grid">
+      <div class="module-card" onclick="loadModule('Modules/SUM_Architecture.html')" style="border-color:var(--accent);grid-column:1/-1;">
+        <div class="card-tag" style="color:var(--primary);">ARCHITECTURE</div>
+        <div class="card-name">SW Architecture &amp; Module Interaction Diagram</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/SUM_SWC_Diagrams.html')" style="border-color:var(--primary-light);grid-column:1/-1;">
+        <div class="card-tag" style="color:var(--primary);">SWC</div>
+        <div class="card-name">SW Component Diagrams (Ports, Interfaces, Runnables &amp; IRVs)</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/SUM_ParamDef_Guide.html')" style="border-color:#27ae60;grid-column:1/-1;">
+        <div class="card-tag" style="color:#27ae60;">PARAMDEF</div>
+        <div class="card-name">Parameter Definitions Guide &mdash; All 9 Module ECUC ParamDefs (130+ Containers, 305+ Parameters, 185+ References)</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/SSC_Training_Documentation.html')">
+        <div class="card-tag">SSC</div>
+        <div class="card-name">Security Service Coordinator</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/SrvcMgr_Training_Guide.html')">
+        <div class="card-tag">SrvcMgr</div>
+        <div class="card-name">Service Manager</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/SPM_Training_Documentation.html')">
+        <div class="card-tag">SPM</div>
+        <div class="card-name">Software/Power Manager</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/SSFM_Training_Documentation.html')">
+        <div class="card-tag">SSFM</div>
+        <div class="card-name">Signal Status & Fault Monitor</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/SUSD_Training_Documentation.html')">
+        <div class="card-tag">SUSD</div>
+        <div class="card-name">Start Up / Shut Down Coordinator</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/PNC_Training_Documentation.html')">
+        <div class="card-tag">PNC</div>
+        <div class="card-name">Partial Network Controller</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/SUM_SOH_Training_Documentation.html')">
+        <div class="card-tag">SUM_SOH</div>
+        <div class="card-name">State of Health</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/LNM_Training_Documentation.html')">
+        <div class="card-tag">LNM</div>
+        <div class="card-name">LIN Network Manager</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/SUM_DIAG_Training_Documentation.html')">
+        <div class="card-tag">SUM_DIAG</div>
+        <div class="card-name">Diagnostics Module</div>
+      </div>
+      <div class="module-card" onclick="loadModule('Modules/TCS_Training_Documentation.html')">
+        <div class="card-tag">TCS</div>
+        <div class="card-name">Timing Client Service</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentFile = null;
+
+  // Load a module file into the content area
+  function loadModule(file) {
+    if (currentFile === file) return;
+    currentFile = file;
+
+    // Remove welcome screen and show iframe
+    const area = document.getElementById('contentArea');
+    area.innerHTML = '<iframe id="moduleFrame" src="' + file + '"></iframe>';
+
+    // Update sidebar active states
+    document.querySelectorAll('.module-header').forEach(h => {
+      h.classList.remove('active');
+    });
+    // Clear sub-link active
+    document.querySelectorAll('.module-sections a').forEach(a => a.classList.remove('active'));
+
+    const entry = document.querySelector('[data-file="' + file + '"]');
+    if (entry) {
+      const header = entry.querySelector('.module-header');
+      header.classList.add('active');
+      header.classList.add('expanded');
+      entry.querySelector('.module-sections').classList.add('open');
+    }
+  }
+
+  // Load a specific section within a module
+  function loadSection(anchor, sectionId) {
+    const entry = anchor.closest('.module-entry');
+    const file = entry.dataset.file;
+
+    // Clear active sub-links
+    document.querySelectorAll('.module-sections a').forEach(a => a.classList.remove('active'));
+    anchor.classList.add('active');
+
+    // Update header active state
+    document.querySelectorAll('.module-header').forEach(h => h.classList.remove('active'));
+    entry.querySelector('.module-header').classList.add('active');
+    entry.querySelector('.module-header').classList.add('expanded');
+    entry.querySelector('.module-sections').classList.add('open');
+
+    const iframe = document.getElementById('moduleFrame');
+
+    if (currentFile === file && iframe) {
+      // Same file already loaded - update iframe src hash to scroll
+      try {
+        iframe.contentWindow.location.replace(file + '#' + sectionId);
+      } catch(e) {
+        // Cross-origin fallback: recreate iframe
+        const area = document.getElementById('contentArea');
+        area.innerHTML = '<iframe id="moduleFrame" src="' + file + '#' + sectionId + '"></iframe>';
+      }
+    } else {
+      // Different file or first load - create iframe with file + hash
+      currentFile = file;
+      const area = document.getElementById('contentArea');
+      area.innerHTML = '<iframe id="moduleFrame" src="' + file + '#' + sectionId + '"></iframe>';
+    }
+
+    return false; // prevent <a href="#"> navigation
+  }
+
+  // Toggle module expansion in sidebar
+  function toggleModule(header) {
+    const entry = header.closest('.module-entry');
+    const sections = entry.querySelector('.module-sections');
+    const file = entry.dataset.file;
+    const isExpanded = header.classList.contains('expanded');
+
+    if (isExpanded && currentFile === file) {
+      // Already expanded and loaded - just collapse
+      header.classList.remove('expanded');
+      sections.classList.remove('open');
+    } else {
+      // Expand and load
+      header.classList.add('expanded');
+      sections.classList.add('open');
+      loadModule(file);
+    }
+  }
+
+  // Search / filter modules
+  function filterModules(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('.module-entry').forEach(entry => {
+      const keywords = entry.dataset.keywords;
+      const name = entry.querySelector('.module-name').textContent.toLowerCase();
+      const tag = entry.querySelector('.module-tag').textContent.toLowerCase();
+      // Also search sub-section text
+      const sectionTexts = Array.from(entry.querySelectorAll('.module-sections a'))
+        .map(a => a.textContent.toLowerCase()).join(' ');
+
+      const match = !q ||
+        keywords.includes(q) ||
+        name.includes(q) ||
+        tag.includes(q) ||
+        sectionTexts.includes(q);
+
+      entry.style.display = match ? '' : 'none';
+
+      // Auto-expand if searching and matching
+      if (q && match) {
+        entry.querySelector('.module-header').classList.add('expanded');
+        entry.querySelector('.module-sections').classList.add('open');
+      } else if (!q) {
+        // Collapse all when search is cleared (except active)
+        if (!entry.querySelector('.module-header').classList.contains('active')) {
+          entry.querySelector('.module-header').classList.remove('expanded');
+          entry.querySelector('.module-sections').classList.remove('open');
+        }
+      }
+    });
+  }
+
+  // --- Resizable sidebar ---
+  (function() {
+    const handle = document.getElementById('resizeHandle');
+    const overlay = document.getElementById('dragOverlay');
+    const root = document.documentElement;
+    const MIN_W = 180;
+    const MAX_W = 600;
+    let dragging = false;
+    let startX, startW;
+
+    handle.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      dragging = true;
+      startX = e.clientX;
+      startW = parseInt(getComputedStyle(root).getPropertyValue('--sidebar-w'));
+      handle.classList.add('dragging');
+      overlay.style.display = 'block';
+    });
+
+    document.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      let newW = startW + (e.clientX - startX);
+      if (newW < MIN_W) newW = MIN_W;
+      if (newW > MAX_W) newW = MAX_W;
+      root.style.setProperty('--sidebar-w', newW + 'px');
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (!dragging) return;
+      dragging = false;
+      handle.classList.remove('dragging');
+      overlay.style.display = 'none';
+    });
+
+    // Double-click to reset to default
+    handle.addEventListener('dblclick', function() {
+      root.style.setProperty('--sidebar-w', '310px');
+    });
+  })();
+
+  // --- Collapsible sidebar ---
+  const SIDEBAR_COLLAPSED_KEY = 'sumTrainingSidebarCollapsed';
+
+  function toggleSidebarCollapse() {
+    const collapsed = document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+  }
+
+  if (localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1') {
+    document.body.classList.add('sidebar-collapsed');
+  }
+
+  // Keyboard shortcut: Ctrl+K to focus search
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      document.getElementById('searchInput').focus();
+    }
+    // Ctrl+B to toggle sidebar
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      e.preventDefault();
+      toggleSidebarCollapse();
+    }
+    // Escape to clear search
+    if (e.key === 'Escape') {
+      const input = document.getElementById('searchInput');
+      if (document.activeElement === input) {
+        input.value = '';
+        filterModules('');
+        input.blur();
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

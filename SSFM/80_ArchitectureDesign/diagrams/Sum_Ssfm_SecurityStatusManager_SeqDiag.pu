@@ -1,0 +1,63 @@
+@startuml Sum_Ssfm_SecurityStatusManager_SeqDiag
+
+participant RTE as R
+participant SecOC as SecOC
+participant DEM as DEM
+box SUM_SSFM
+    participant Sum_Ssfm_ReceivedSerialData_Handler as RecSigHdlr
+    participant Sum_Ssfm_SecurityStatus_Manager as SecStatMgr
+    participant Sum_Ssfm_SingleFxI_Manager as FxIMgr
+    participant Sum_Ssfm_ProtStatusManager as ProtStatMgr
+	participant Sum_Ssfm_Ssm_ExecutionManager as EMgr
+    participant Sum_Ssfm_CANETH_Av_Manager as CANETH_AV
+    participant Sum_Ssfm_FaultIndications_DataManager as FIM
+    participant Sum_Ssfm_EventDebouncer_Manager as Debouncer
+    participant Sum_Ssfm_Service_Manager as SM
+end box
+participant SWC as S
+
+ref over SecStatMgr, RecSigHdlr, EMgr: Sum_Ssfm_Received_SerialData_Handler sequence
+
+activate S
+activate SecStatMgr
+activate R
+
+    activate EMgr
+        EMgr -> SecStatMgr: Sum_Ssfm_SsmFuncPermitExecution
+    deactivate EMgr
+
+
+    alt Successful or No MAC verification  
+        RecSigHdlr -> SecStatMgr: Ask to reset the FcI interface
+        opt single port FxI disabled
+            SecStatMgr -> S: Set the SerialData FcI interface
+        end
+    else Unsuccessful MAC verification
+        SecOC -> R: SecOC Verification Status
+        R -> SecStatMgr: Verification Status Callout
+        alt Sum_Ssfm_SsmFuncPermitExecution true
+            alt single port FxI disabled
+                SecStatMgr -> S: Set the SerialData FcI interface
+            else single port FxI enabled
+                SecStatMgr -> FxIMgr: Ask to set the FxI
+            end
+            SecStatMgr -> ProtStatMgr: Ask to set the SerialData FpI interface
+            SecStatMgr -> CANETH_AV: Ask to update the signal availability 
+        end
+    end
+
+    SecStatMgr -> Debouncer: Debounce the error
+    Debouncer --> SecStatMgr: Debouncing Status
+
+    alt debouncer failed
+        SecStatMgr -> SM: Resolve Service DTC
+        SecStatMgr -> DEM: Set DTC
+    else
+        SecStatMgr -> FIM: Ask for multiplexing
+    end
+
+deactivate R
+deactivate SecStatMgr
+deactivate S
+
+@enduml 

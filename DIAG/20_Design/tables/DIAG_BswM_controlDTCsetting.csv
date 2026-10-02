@@ -1,0 +1,5 @@
+3;15
+\cellcolor{ETASlightgray}\textbf{Port Name};RP_DIAG_BswM_controlDTCsetting
+\cellcolor{ETASlightgray}\textbf{Port Interface};SUM_ControlDTCSetting
+\cellcolor{ETASlightgray}\textbf{Port Type};Mode Switch
+\cellcolor{ETASlightgray}\textbf{Description};The port is connected to the BswM. The port will receive notification from BswM whether the DTC setting is enabled or disabled.

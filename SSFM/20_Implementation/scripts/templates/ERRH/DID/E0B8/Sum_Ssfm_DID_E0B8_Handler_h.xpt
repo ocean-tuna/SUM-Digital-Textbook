@@ -1,0 +1,69 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DID_E0B8_Handler.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM DID E0B8 Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_DID_E0B8_HANDLER_H
+#define SUM_SSFM_DID_E0B8_HANDLER_H
+
+// Derived from DCM DcmDspDataByteSize for DID 0xE0B8: max_msgs = (dcm_length - 1) / 10
+#define SSFM_DID_E0B8_MAX_MSGS ((uint16)«Ssfm_DID_E0B8_CalcMaxMsgs(sSFM)»u)
+#define SSFM_DID_E0B8_MAX_COUNTER ((uint16)65535u)
+#define SSFM_DID_E0B8_MSGS_START_BYTE ((uint16)1u)
+#define SSFM_DID_E0B8_MSG_ID_SIZE ((uint16)4u)
+#define SSFM_DID_E0B8_MSG_AV_CNT_SIZE ((uint16)2u)
+#define SSFM_DID_E0B8_MSG_CONTOP_CNT_SIZE ((uint16)2u)
+#define SSFM_DID_E0B8_MSG_PROT_CNT_SIZE ((uint16)2u)
+#define SSFM_DID_E0B8_MSG_SIZE (SSFM_DID_E0B8_MSG_ID_SIZE + SSFM_DID_E0B8_MSG_AV_CNT_SIZE + SSFM_DID_E0B8_MSG_CONTOP_CNT_SIZE + SSFM_DID_E0B8_MSG_PROT_CNT_SIZE)
+
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+
+extern void Sum_Ssfm_DID_E0B8_MetricUpdated(Sum_Ssfm_SerialData* serial_data, Sum_Ssfm_DID_E0B8_Metric metric);
+extern void Sum_Ssfm_DID_E0B8_ResetData(void);
+extern void Sum_Ssfm_DID_E0B8_SaveData(void);
+extern void Sum_Ssfm_DID_E0B8_RestoreData(void);
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

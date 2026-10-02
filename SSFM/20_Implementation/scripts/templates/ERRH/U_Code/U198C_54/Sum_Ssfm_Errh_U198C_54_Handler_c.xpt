@@ -1,0 +1,221 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Errh_U198C_54_Handler.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM ERRH U198C_54 Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+«IF Sum_Ssfm_Errh_U198C_54_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+    «IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U198C_54_MissSetup.sum_Ssfm_Errh_SSC_U198C_54_EventFilter_Ref != null-»
+    	«IF Ssfm_IsTimeBasedFilterType(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U198C_54_MissSetup.sum_Ssfm_Errh_SSC_U198C_54_EventFilter_Ref)-»
+static void Sum_Ssfm_Errh_FP_U198C_54_CbkWindowMoving(Sum_Ssfm_Debouncer* debouncer_instance);
+		«ENDIF-»
+	«ENDIF-»
+«ENDIF-»
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+«IF Sum_Ssfm_Errh_U198C_54_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+static Sum_Ssfm_U198C_54ErrorType  Sum_Ssfm_U198C_54_ErrorInfo;
+static const Sum_Ssfm_DemEvent Sum_Ssfm_U198C_54Error_DemEvents;
+«ENDIF-»
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+ /* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+«IF Sum_Ssfm_Errh_U198C_54_IsValid(sSFM.sum_Ssfm_ConfigSet) -»
+«LET sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.
+						sum_Ssfm_Errh_U198C_54_MissSetup.sum_Ssfm_Errh_SSC_U198C_54_EventFilter_Ref AS DEM_FILTER-»
+
+/* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+static uint16 Sum_Ssfm_Get_CalibPar_«DEM_FILTER.shortName»_X(void){
+	return Rte_CData_«DEM_FILTER.shortName»_X();
+}
+static uint16 Sum_Ssfm_Get_CalibPar_«DEM_FILTER.shortName»_Y(void){
+	return Rte_CData_«DEM_FILTER.shortName»_Y();
+}
+
+/* PRQA S 1504 1 # Based on the architecture design it is decided to keep the object in the corresponding component. */
+static Sum_Ssfm_U198C_54ErrorType  Sum_Ssfm_U198C_54_ErrorInfo = {
+
+	/* Function pointer to get flag for controlling whether to process DTC */
+	&Sum_Ssfm_Errh_Get_C_DTC_U198C_54_MissSetup,
+	/* Function pointer to Rte_Read function call */
+	&Rte_Read_RP_SSC_Errh_U198C_54_Status_status,
+};
+
+/* PRQA S 1504 1 # Based on the architecture design it is decided to keep the object in the corresponding component. */
+static const Sum_Ssfm_DemEvent Sum_Ssfm_U198C_54Error_DemEvents =
+{
+	/* RTE Dem Server Call Function Pointer to set dem event after filter */
+	&Rte_Call_RP_Dem_SSFM_DTC_U198C_54_SetEventStatus,
+	/* DTC Value of input event, not been used but initialized with 0x0 to be inline with using of Sum_Ssfm_DemEvent variable  */
+	0x00u,
+};
+
+/* PRQA S 1514 1 # Based on the architecture design it is decided to keep the object in the corresponding component. */
+Sum_Ssfm_Debouncer Sum_Ssfm_U198C_54Error_Debouncer[SSFM_NUM_OF_U198C_54_ERROR] = {
+	{
+		/* Error filter type */
+		SUM_SSFM_ErrorFilter_«Ssfm_GetFilterType(DEM_FILTER)-»,
+		/* Number of configured X threshold */
+		&Sum_Ssfm_Get_CalibPar_«DEM_FILTER.shortName»_X,
+		/* Number of configured Y threshold */
+		&Sum_Ssfm_Get_CalibPar_«DEM_FILTER.shortName»_Y,
+		/* Callback function */
+		«IF Ssfm_IsTimeBasedFilterType(DEM_FILTER)-»
+		&Sum_Ssfm_Errh_FP_U198C_54_CbkWindowMoving,
+		«ELSE-»
+		NULL_PTR,
+		«ENDIF-»
+		/* Counter failed event */
+		0u,
+		/* Number of sample or ms*/
+		0u,
+		/* First failed flag */
+		FALSE,
+		/* Last Evaluation Status */
+		SUM_SSFM_EvaluationSts_Unknown,
+		/* Reference to input DTC */
+		{.U198C_54Info = &Sum_Ssfm_U198C_54_ErrorInfo},/* PRQA S 1053 # To use the union type. */
+		/* Owner Type*/
+		SUM_SSFM_DebouncerRefType_PrmSec_MissingSetup,
+		/* Reference to DemEvent */
+		&Sum_Ssfm_U198C_54Error_DemEvents,
+	},
+};
+«ENDLET-»
+
+/**
+ * @brief           SSFM/SSM runnable function to be called upon any change in the status of DTC_U198C_54
+ *					Note: The actual fault logic (e.g. FSKAPC, MEC, MPKIS, MPKIPC) is handled in SSC
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE*/
+void Runnable_SSFM_U198C_54_Status_Changed(void){
+
+	/*[$Satisfies $DDS_SSFM 184] */
+	boolean dtc_U198C_54_status;
+	boolean reset_flag;
+	boolean battery_flag;
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+	Dem_EventStatusType event_status;
+	Sum_Ssfm_EvaluationStatus debouncer_status;
+
+	/*[$Satisfies $DDS_SSFM 185]*/ /*[$Satisfies $DDS_SSFM 189]*/
+	if ((Sum_Ssfm_U198C_54_ErrorInfo.FP_SSFM_pCdata_DTCProcess() == TRUE) && (dtcs_are_disabled == FALSE)){
+
+		/* Check if both reset and battery voltage recovery timers have expired */
+		/*[$Satisfies $DDS_SSFM 186]*/
+		reset_flag = Sum_Ssfm_Errh_GetResetPowerUpRecoveryTimerFlag();
+		battery_flag = Sum_Ssfm_Errh_GetBatteryVoltageRecoveryTimerFlag();
+
+		if(battery_flag && reset_flag){
+			/*[$Satisfies $DDS_SSFM 187]*/
+			/* Check if DTC is set for Primary Security Information Missing Setup/Learn fault active */
+			Sum_Ssfm_U198C_54Error_Debouncer[0u].DebouncerOwner.U198C_54Info->Rte_Read_SSFM_DiagnosticStatus(&dtc_U198C_54_status);
+
+			/* Apply X/Y debouncing logic to the status */
+			debouncer_status = Sum_Ssfm_ErrhDebouncerExecution(&Sum_Ssfm_U198C_54Error_Debouncer[0u],(Sum_Ssfm_EventStatus)
+							((dtc_U198C_54_status == TRUE) ? SUM_SSFM_EventSts_Failed : SUM_SSFM_EventSts_Passed));
+
+			/* If debouncing is complete (not still in debouncing or unknown), set the DEM event status */
+			if((debouncer_status != SUM_SSFM_EvaluationSts_InDebouncing) && (debouncer_status != SUM_SSFM_EvaluationSts_Unknown))
+			{
+				/*[$Satisfies $DDS_SSFM 194]*/
+				/* Convert the event status result after performing debouncing */
+				event_status = ((debouncer_status) == SUM_SSFM_EvaluationSts_Passed) ? DEM_EVENT_STATUS_PASSED : DEM_EVENT_STATUS_FAILED;
+				/* Set the event status from Dem_SetEventStatus */
+				Sum_Ssfm_U198C_54Error_Debouncer[0u].DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(event_status);
+			}
+			else
+			{
+				/* Debouncing is still ongoing, do nothing */
+			}
+		}
+	}
+}
+
+«IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U198C_54_MissSetup.sum_Ssfm_Errh_SSC_U198C_54_EventFilter_Ref != null-»
+	«IF Ssfm_IsTimeBasedFilterType(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U198C_54_MissSetup.sum_Ssfm_Errh_SSC_U198C_54_EventFilter_Ref)-»
+/**
+ * @brief           Callback function of debouncing Moving Window X of Y
+ * @details         To Pointer callback function of debouncing Moving Window X of Y
+ *
+ * @param[in]       Sum_Ssfm_Debouncer
+ * @return          void
+ */
+/* PRQA S 3673 5 # The pointer is not pointing to const to be aligned with the other callbacks used for debouncing callback */
+static void Sum_Ssfm_Errh_FP_U198C_54_CbkWindowMoving(Sum_Ssfm_Debouncer* debouncer_instance)
+{
+	/*set as event passed as call back is called after time elaspe condition*/
+	debouncer_instance->DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_PASSED);
+
+}
+	«ENDIF-»
+«ENDIF-»
+
+«ENDIF-»
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

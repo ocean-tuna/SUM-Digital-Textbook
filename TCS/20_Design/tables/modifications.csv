@@ -1,0 +1,11 @@
+6;8;5;18
+\textbf{Version};\textbf{Author};\textbf{Date};\textbf{Description of Changes}
+3.1.0;SUM Development Team;17/11/2020;First release of TCS as per GB8002
+3.2.0_Beta3;SUM Development Team;12/18/2020;Added Runnable_TCS_PermitExecutionShutdown state machine, Updated section 4.5.1
+3.2.1;SUM Development Team;18/03/2021;Release of RTA-SUM_TCS 3.2.1 (RTA-SUM 1.1.0)
+3.2.2;SUM Development Team;09/06/2021;Release of RTA-SUM_TCS 3.2.2 (RTA-SUM 1.2.0). Updated section 3.1.2
+3.2.4;SUM Development Team;17/09/2021;Release of RTA-SUM_TCS 3.2.4 (RTA-SUM 2.0.0)
+3.2.5;SUM Development Team;01/02/2021;Updated section \ref{sec:TcsGeneral}
+3.3.0;SUM Development Team;12/04/2022;Release of RTA-SUM_TCS 3.3.0 (RTA-SUM 2.2.0)
+8.0.0;SUM Development Team;22/08/2024;First version of RTA-SUM TCS for SDV 2.0.
+8.0.1;SUM Development Team;10/12/2024;First version of RTA-SUM TCS for SDV 2.0. Updated Sections ~\ref{sec:Environment}, ~\ref{sec:Generic_Component_Interface}, ~\ref{sec:periodic_runnables}, ~\ref{sec:communication} and ~\ref{sec:constraints} \\Updated Sections related to the DID 0xF129 : ~\ref{sec:TcsGeneral} and ~\ref{sec:trig_run}. \\ Updated Sections related to initialization: ~\ref{sec:TcsGeneral}, ~\ref{sec:system_initialization} and ~\ref{sec:periodic_runnables}. \\ Updated Section ~\ref{sec:data_types}. \\ Updated sections \ref{sec:TcsGeneral} and \ref{sec:periodic_runnables}.

@@ -1,0 +1,49 @@
+@startuml Sum_Ssfm_Received_SerialData_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_Received_SerialData_Handler"
+
+**Interfaces Legend**
+	//ri201 //: SerialData_n
+	//ri204 //: TransformerError
+	//II152 //: ERRH_ExecutionStatus / SSM_ExecutionStatus
+	//II201 //: SerialData<n>_Set_FcI
+	//II202 //: SerialData<n>_Set_FoI
+
+
+
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+
+    interface ri201
+    interface ri204
+	interface II152
+	interface II201
+	interface II202
+
+
+component [Sum_Ssfm_Received_SerialData_Handler] as E{
+	portin pri201
+	portin pri204
+}
+
+
+
+	
+	II152 )---E
+	II201 0---E
+	II202 0---E
+    ri201 )-down-pri201
+    ri204 )-down-pri204
+
+	
+
+@enduml

@@ -1,0 +1,75 @@
+@startuml Sum_Ssfm_Errh_U19A3_8A_SeqDiag
+
+
+control Scheduler as TE
+box SUM_SSFM
+    participant Sum_Ssfm_Errh_U19A3_8A_Handler as ERRH_U19A3_8A
+end box
+participant BswM as BSWM
+participant Sum_SUSD as SUSD
+participant Sum_SSC as SSC
+participant Dem 
+
+group Initialization Sequence
+activate ERRH_U19A3_8A
+TE -> ERRH_U19A3_8A: Init SSFM module
+ERRH_U19A3_8A -> ERRH_U19A3_8A: Read k_ERRH_FailedAuthenticationTimer and Init AuthenticationWindowTimer, FailedAuthenticationTimer & KeySlotState
+deactivate ERRH_U19A3_8A
+end
+
+group Process KeySlotVerifyErrors Sequence
+activate ERRH_U19A3_8A
+
+par
+    SSC -> ERRH_U19A3_8A: KeySlotVerify data is received from SSC by ports
+    ERRH_U19A3_8A->ERRH_U19A3_8A: Runnable_SSFM_SSC_KeySlotVerifyErrors_<keyslot_number>()
+end
+
+alt Calibration parameter is set
+    ERRH_U19A3_8A -> SUSD: Ask for battery voltage range
+    SUSD --> ERRH_U19A3_8A
+    alt (No OBD Support and voltage in range) or (OBD Support and not under voltage)
+        ERRH_U19A3_8A -> BSWM: Ask for SecP error status
+        BSWM --> ERRH_U19A3_8A
+        alt No SecP error
+		ERRH_U19A3_8A -> ERRH_U19A3_8A: Process KeySlotVerifyErrors Handler
+		ERRH_U19A3_8A -> ERRH_U19A3_8A: Update NumberOfFailures
+		end		
+    end
+end
+
+end
+
+TE -> ERRH_U19A3_8A: Scheduling KeySlotVerifyErrors Time Management
+ERRH_U19A3_8A -> ERRH_U19A3_8A: Increment per-keyslot last received PDU timer
+ERRH_U19A3_8A -> ERRH_U19A3_8A: Process authentication timer handler
+group Process authentication timer handler
+alt All KeySlotStates != $2 (Failed) AND at least one KeySlotState = $1 (Passed)
+ERRH_U19A3_8A -> Dem: Set interface Dem_SetEventStatus as PASSED
+else KeySlotState = $2 Failing AND FailedAuthenticationTimer > k_ERRH_FailedAuthenticationTimer
+ERRH_U19A3_8A -> Dem: Set interface Dem_SetEventStatus as FAILED
+end
+ERRH_U19A3_8A -> ERRH_U19A3_8A: Update AuthenticationWindowTimer, FailedAuthenticationTimer & KeySlotState
+end
+
+group Call back of DTC Status
+Dem -> ERRH_U19A3_8A : Call back DTC status changed
+end 
+
+deactivate ERRH_U19A3_8A
+
+group Key Provisioning Event
+activate ERRH_U19A3_8A
+TE -> ERRH_U19A3_8A: SSC_KeyProvisioned notification
+ERRH_U19A3_8A -> ERRH_U19A3_8A: Reset FailedAuthenticationTimer, AuthenticationWindowTimer & KeySlotState
+deactivate ERRH_U19A3_8A
+end
+
+group Clear DTC Service (0x14)
+activate ERRH_U19A3_8A
+TE -> ERRH_U19A3_8A: Service 0x14 triggered
+ERRH_U19A3_8A -> ERRH_U19A3_8A: Reset FailedAuthenticationTimer and AuthenticationWindowTimer
+deactivate ERRH_U19A3_8A
+end
+
+@enduml 

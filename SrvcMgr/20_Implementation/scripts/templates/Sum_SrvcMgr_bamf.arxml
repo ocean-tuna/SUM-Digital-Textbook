@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00049.xsd">
+  <AR-PACKAGES>
+    <AR-PACKAGE UUID="6f33e4c1-a5dc-4fc6-8f27-c58f03038058">
+      <SHORT-NAME>RB_Manifest</SHORT-NAME>
+      <ELEMENTS>
+        <BUILD-ACTION-MANIFEST UUID="5a8d7675-98ae-45fa-8128-20fcfe12ae85">
+          <SHORT-NAME>Sum_SrvcMgr_Manifest</SHORT-NAME>
+          <BUILD-ACTIONS>
+            <BUILD-ACTION UUID="e3370928-b107-4364-98f6-4b2a86a72a83">
+              <SHORT-NAME>Sum_SrvcMgr_Validate</SHORT-NAME>
+              <CATEGORY>VALIDATOR</CATEGORY>
+              <INVOCATION>
+                <SDGS>
+                  <SDG>
+                    <SD GID="STOP_ON_ERROR">true</SD>
+                    <SD GID="INPUT_VALIDATION1">true</SD>
+                  </SDG>
+                </SDGS>
+              </INVOCATION>
+              <INPUT-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">PROCESSOR</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Validate</SHORT-LABEL>
+                    <CATEGORY>CONFWF</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>oaw</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/SrvcMgr</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+              </INPUT-DATAS>
+              <REQUIRED-ENVIRONMENT-REF DEST="BUILD-ACTION-ENVIRONMENT">/RB_Manifest/com_bosch_configfw_bfwaction_oaw</REQUIRED-ENVIRONMENT-REF>
+            </BUILD-ACTION>
+            <BUILD-ACTION UUID="378699a3-e48d-40fa-8b36-9f413408ec8b">
+              <SHORT-NAME>Sum_SrvcMgr_Generate</SHORT-NAME>
+              <CATEGORY>GENERATOR</CATEGORY>
+              <INVOCATION>
+                <SDGS>
+                  <SDG>
+                    <SD GID="VARIANT">1</SD>
+                    <SD GID="ACTION_ATTRIBUTE_singleExecutable">true</SD>
+                    <SD GID="STOP_ON_ERROR">true</SD>
+                  </SDG>
+                </SDGS>
+              </INVOCATION>
+              <PREDECESSOR-ACTION-REFS>
+                <PREDECESSOR-ACTION-REF DEST="BUILD-ACTION">/RB_Manifest/Sum_SrvcMgr_Manifest/Sum_SrvcMgr_Validate</PREDECESSOR-ACTION-REF>
+              </PREDECESSOR-ACTION-REFS>
+              <CREATED-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Cfg_SWCD</SHORT-LABEL>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>arxml</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Cfg</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>c</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Cfg</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Execution_Manager</SHORT-LABEL>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>c</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Execution_Manager</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>                
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_LearningSession_Manager</SHORT-LABEL>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>c</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Service_Manager</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Service_Manager</SHORT-LABEL>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>c</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_LearningSession_Manager</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Calibration_Controller</SHORT-LABEL>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>c</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Calibration_Controller</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr</SHORT-LABEL>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Prv</SHORT-LABEL>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Initialization</SHORT-LABEL>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>c</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Initialization</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Types</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+              </CREATED-DATAS>
+              <INPUT-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">PROCESSOR</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_SrvcMgr_Generate</SHORT-LABEL>
+                    <CATEGORY>CONFWF</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>oaw</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SrvcMgr/EcucModuleDefs/SrvcMgr</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+              </INPUT-DATAS>
+              <REQUIRED-ENVIRONMENT-REF DEST="BUILD-ACTION-ENVIRONMENT">/RB_Manifest/com_bosch_configfw_bfwaction_oaw</REQUIRED-ENVIRONMENT-REF>
+            </BUILD-ACTION>
+          </BUILD-ACTIONS>
+        </BUILD-ACTION-MANIFEST>
+      </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>

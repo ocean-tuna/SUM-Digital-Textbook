@@ -1,0 +1,32 @@
+\chapter{Architecture Constraints}
+
+\section{Environment}
+\label{sec:Environment}
+In the context of an AUTOSAR ECU, RTA-SUM modules are technically built as Application Software Components. Therefore, each RTA-SUM module requires a full AUTOSAR SW stack to run. We assume that the following AUTOSAR SW will be used:
+\input{generated/tables/tools.tex}
+
+\section{Layers Definition}
+The SUM\_SOH is a software module in the application layer of the standardized architecture of AUTOSAR (Figure~\ref{fig:Layers}). 
+It interacts with other RTA-SUM modules and components of the BSW. In the latter case, the RTE is the means through which the interaction takes place.
+\begin{figure}[htp]
+\centering
+	\includegraphics[scale=0.3]{images/Layers}
+	\caption{System layer overview.}
+	\label{fig:Layers}
+\end{figure}
+
+\section{Generic component interface}
+
+The external interfaces of RTA-SUM module, and most of the interactions among SUM modules are specified in GM GB 8002.
+
+\section{Other constraints and assumptions}
+
+The ECU in which the SUM_SOH is implemented shall have a Secure cumulative NVM memory type, as defined in CTRS section 7.1.6, accessible to the SUM_SOH.
+The ECU in which the SUM_SOH is implemented shall have NonClearedRAM memory type accessible to the SUM_SOH.
+The ECU in which the SUM_SOH is implemented shall have an AdaptableNVM memory type accessible to the SUM_SOH.
+
+The ECU initialization sequence shall be implemented such that any NVM needed for the SUM_SOH function is available prior to the SUM_SOH being initialized.
+
+For ECUs that implement Memory Partitioning mechanisms, the SUM_SOH shall be implemented in the supervisory partition of the ECU software. Rationale: SUM_SOH must be in the trusted partition in order to interface with OS services. Supervisory partition is expected to include BSW Modules.
+
+The SUM_SOH shall be implemented as a Supervised Entity of the Watchdog Manager.

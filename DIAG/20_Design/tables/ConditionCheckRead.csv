@@ -1,0 +1,9 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};ConditionCheckRead
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};N\/A
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Parameters};Dcm_OpStatusType OpStatus \newline Dcm_NegativeResponseCodeType * const ErrorCode
+\cellcolor{ETASlightgray}\textbf{Return};Std_ReturnType (E_OK)
+\cellcolor{ETASlightgray}\textbf{Description};This function checks if the conditions to read the DID associated with the MEC are correct

@@ -1,0 +1,72 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DTCTriggeredMessage_Generator_Handler.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM SSFM DTC Trigger Message
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_DTCTRIGGERMESSAGE_GENERATOR_HANDLER_H
+#define SUM_SSFM_DTCTRIGGERMESSAGE_GENERATOR_HANDLER_H
+«IF (sum_Ssfm_DtcTriggerMessageSupport_IsTRUE(sSFM.sum_Ssfm_General) == true)-»
+#define SSFM_PERIOD_DTCTRIGGERED_RUNNABLE                «(sSFM.sum_Ssfm_General.sum_Ssfm_DTCTriggeredRunnablePeriodicity *1000).toInteger()»u
+#define SSFM_TIMER_1000MS                                1000000u
+#define SSFM_TIMER_1500MS                                1500000u
+«IF (sSFM.sum_Ssfm_General.sum_Ssfm_DTCNotificationQueueSize != null)-»
+#define SSFM_DTC_NOTIFICATION_QUEUE_SIZE                 «sSFM.sum_Ssfm_General.sum_Ssfm_DTCNotificationQueueSize»u
+«ENDIF»
+#define SUM_SSFM_NUMBER_OF_PNS «sSFM.sum_Ssfm_General.sum_Ssfm_ComMPNCRef.size»u
+extern Sum_Ssfm_PN_ActiveTxPDUEnable Sum_Ssfm_ActiveTxPDUEnables[SUM_SSFM_NUMBER_OF_PNS];
+extern Sum_Ssfm_DTC_NotificationType DTCNotificationList[«(sSFM.sum_Ssfm_General.sum_Ssfm_DTCNotificationQueueSize)»];
+
+/**************************************************************************************************************************
+ * VARIABLE DECLARATION
+ **************************************************************************************************************************
+ */
+extern Sum_Algo_Deque 					Sum_Ssfm_DtcTriggered_Queue;
+extern SSFM_SWC_DTC_TriggeredMessage   	Sum_Ssfm_DtcTriggeredMessage;
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+extern FUNC(boolean,SUM_SSFM_ERRH_CODE) Sum_Ssfm_AtLeastOneTxPN_Active(void);
+extern FUNC(void,SUM_SSFM_ERRH_CODE) Sum_Ssfm_Errh_CheckDTCStatus_And_Enqueue (uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew);
+«ENDIF»
+#endif //SUM_SSFM_DTCTRIGGERMESSAGE_GENERATOR_HANDLER_H
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

@@ -1,0 +1,68 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_RequesterLst.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for SPM Requester List for each Power Profile
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+
+#ifndef SPM_REQUESTER_LST_H_
+#define SPM_REQUESTER_LST_H_
+
+
+/*-----------------------------------------------------------------------------
+ *    Include files
+ *----------------------------------------------------------------------------*/
+
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_SM_Req_EthIf.h"
+#include "Sum_Spm_PowerProfileStateMachine.h"
+#include "Sum_Spm_PBCfg.h"
+#include "Sum_Spm_Request_Queue.h"
+
+/******************************************************************************
+ * BEGIN: declaration of global C functions defined by class SpmRequesterList_RAM_SubStruct
+ ******************************************************************************/
+
+void Spm_RequesterList_ActivationRequestHandler (struct SpmRequesterList_RAM_SubStruct * self, struct SPM_ProfileReqItm itm);
+void Spm_RequesterList_DeactivationRequestHandler (struct SpmRequesterList_RAM_SubStruct * self, struct SPM_ProfileReqItm itm);
+
+
+
+
+#endif /* SPM_REQUESTER_LIST_H_ */
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

@@ -1,0 +1,26 @@
+[
+    {
+        "Name": "SUM_SSFM_Example1_Thresh",
+        "Description": "",
+        "Multiplicity": "",
+        "Minimum": 0,
+        "Maximum": 1,
+        "Default": 0
+    },
+    {
+        "Name": "SUM_SSFM_Example2_Thresh",
+        "Description": "",
+        "Multiplicity": "0..1",
+        "Minimum": 0,
+        "Maximum": 1,
+        "Default": 0
+    },
+    {
+        "Name": "SUM_SSFM_Example3_Thresh",
+        "Description": "",
+        "Multiplicity": "0..1",
+        "Minimum": 0,
+        "Maximum": 1,
+        "Default": 0
+    }
+]

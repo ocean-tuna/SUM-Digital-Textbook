@@ -1,0 +1,11 @@
+2;2;6
+\textbf{Name};\textbf{Multiplicity};\textbf{Scope / Dependency}
+LNM_General;1..1;Defines the general parameters for SUM_LNM
+LNM_Network;1..inf;Defines the configuration of the LNM Networks
+LNM_ScheduleMa \newline nagement;1..1;Defines the configuration of the schedule state machine of the selected LNM Network
+LNM_ScheduleSta \newline tes;1..Inf;Defines the configuration of the project specific schedule states of the selected LMN Network
+LNM_ScheduleTra \newline nsitions;1..Inf;Defines the configuration of the possible transition between the different schedule states of the selected LMN Network
+LNM_Arbitration;1..1;Defines the configuration of all the project specific logic implemented in SUM_LNM
+LNM_Inputs;1..Inf;Defines all the possible inputs to SUM_LNM that can be used for project specific logic configuration
+LNM_Conditions;1..Inf;Defines configuration of simple logic operation based on a single LNM_Input
+LNM_Rules;1..Inf;Defines configuration of complex logic operation based on LNM_Conditions and LNM_Rules

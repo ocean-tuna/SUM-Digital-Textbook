@@ -1,0 +1,17 @@
+\begin{longtable}{|l|l|}
+\hline
+\hline
+\endfirsthead
+\hline
+\hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+\begin{minipage}{0.31\linewidth}\raggedright\vspace{.75ex}{\cellcolor{eTASPurple}\textcolor{white}{\bfseries Name} }\vspace{.75ex}\end{minipage} & \begin{minipage}{0.63\linewidth}\raggedright\vspace{.75ex}{\cellcolor{eTASGray30}  \textbf{PNC\_Modes}}\vspace{.75ex}\end{minipage}\\\hline
+\begin{minipage}{0.31\linewidth}\raggedright\vspace{.75ex}{\cellcolor{eTASPurple}\textcolor{white}{\bfseries Type} }\vspace{.75ex}\end{minipage} & \begin{minipage}{0.63\linewidth}\raggedright\vspace{.75ex}{\cellcolor{eTASGray30}  Enum}\vspace{.75ex}\end{minipage}\\\hline
+\begin{minipage}{0.31\linewidth}\raggedright\vspace{.75ex}{\cellcolor{eTASPurple}\textcolor{white}{\bfseries Range} }\vspace{.75ex}\end{minipage} & \begin{minipage}{0.63\linewidth}\raggedright\vspace{.75ex}{\cellcolor{eTASGray30}  PNC\_ENABLE\_CHECK=0,\\PNC\_MONITOR\_ACTIVATION,\\PNC\_ACK\_ACTIVATION,\\PNC\_TX\_ENABLE,PNC\_LOCALLY\_ACTIVE,\\PNC\_REMOTELY\_ACTIVE, \\PNC\_PREPARE\_SLEEP}\vspace{.75ex}\end{minipage}\\\hline
+\begin{minipage}{0.31\linewidth}\raggedright\vspace{.75ex}{\cellcolor{eTASPurple}\textcolor{white}{\bfseries Description} }\vspace{.75ex}\end{minipage} & \begin{minipage}{0.63\linewidth}\raggedright\vspace{.75ex}{\cellcolor{eTASGray30}  Describes the sub states of PN\_IDLE and PN\_ACTIVE, which helps in understanding local/remote activation of a PN. Based on the activation criteria, the PNC modes transition. When a PN is inactive (PN<n>\_IDLE), SUM\_PNC shall be set to PNC\_ENABLE\_CHECK. Once activation criteria is determined, SUM\_PNC shall transition to PNC\_MONITOR\_ACTIVATION in case of local activation or to PNC\_TX\_ENABLE in case of remote activation. }\vspace{.75ex}\end{minipage}\\\hline
+\caption{\label{table:} }
+\end{longtable}

@@ -1,0 +1,543 @@
+
+import bsw;
+import bsw::SOHModule;
+
+extension org::eclipse::xtend::util::stdlib::io;
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SOH
+ * Date        : Mar 22, 2021
+ * Revision    : 6.0.0
+ * Description : Validation script for SOH
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+context SOH ERROR "The OsCounterMaxAllowedValue of the SOHGeneral/sOH_OsCounterRef SHALL be less or equal to 4294967295." :
+	/* Exception handling if the next condition is not verified */
+	(this.sOHGeneral.sOH_OsCounterRef.osCounterMaxAllowedValue <= 4294967295)
+;
+
+context SOH
+ERROR "SOHConfigSet: An SOH_ResetReliabilityMonitor container should be created" :
+	(sOHConfigSet.sOH_ResetReliabilityMonitor != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_ResetReliabilityMonitor!=null)
+ERROR "SOHConfigSet:  An SOH_ImmediateReset container should be created" :
+	(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_ImmediateReset != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_ResetReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_DelayedReset container should be created" :
+	(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_DelayedReset != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_ResetReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_DiagnosticReset container should be created" :
+	(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_DiagnosticReset != null)
+;
+
+
+context SOH
+ERROR "SOHConfigSet: An SOH_MemoryStatusReliabilityMonitor container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_MemoryStatusReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_NVMErrorsDetector container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector != null)
+;
+
+context SOH
+if ((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor!=null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector != null))
+ERROR "SOHConfigSet: An SOH_StatusNVM container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_StatusNVM != null)
+;
+
+
+context SOH
+if ((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor!=null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector != null))
+ERROR "SOHConfigSet: An SOH_ActionNVM container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_ActionNVM != null)
+;
+
+
+context SOH
+if ((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor!=null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector != null))
+ERROR "SOHConfigSet: An SOH_PrivilegeNVM container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_PrivilegeNVM != null)
+;
+
+
+context SOH
+ERROR "SOHConfigSet: An SOH_OSErrorsDetector container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector!=null)
+ERROR "SOHConfigSet: An SOH_ExcepOS container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ExcepOS != null)
+;
+
+
+context SOH
+if ((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor!=null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector!=null))
+ERROR "SOHConfigSet: An SOH_ServOS container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ServOS != null)
+;
+
+
+context SOH
+if ((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor!=null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector!=null))
+ERROR "SOHConfigSet: An SOH_StackOS container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_StackOS != null)
+;
+
+
+context SOH
+if ((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor!=null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector!=null))
+ERROR "SOHConfigSet: An SOH_MemProtOS container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_MemProtOS != null)
+;
+
+
+context SOH
+if ((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor!=null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector!=null))
+ERROR "SOHConfigSet: An SOH_TimeProtOS container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_TimeProtOS != null)
+;
+
+context SOH
+if ((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor!=null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector!=null))
+ERROR "SOHConfigSet: An SOH_ErrOS container should be created" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ErrOS != null)
+;
+
+
+context SOH
+ERROR "SOHConfigSet: An SOH_CommunicationReliabilityMonitor container should be created" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_CommunicationReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_ClearDiagInfo container should be created" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_ClearDiagInfo != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_CommunicationReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_RejectClearDiag container should be created" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_RejectClearDiag != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_CommunicationReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_DiagSession container should be created" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_DiagSession != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_CommunicationReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_Accept_DiagSession container should be created" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_Accept_DiagSession != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_CommunicationReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_MACfailTenAct container should be created" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_MACfailTenAct != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_CommunicationReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_ReplayCount container should be created" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_ReplayCount != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_CommunicationReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_SecurityAccess container should be created" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_SecurityAccess != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_CommunicationReliabilityMonitor!=null)
+ERROR "SOHConfigSet: An SOH_SecP container should be created" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_SecP != null)
+;
+
+
+context SOH
+ERROR "SOHConfigSet: An SOH_WatchdogManagerReliabilityMonitor container should be created" :
+	(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor != null)
+;
+
+
+
+context SOH
+if (sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor!=null)
+ERROR "SOHConfigSet: A SUM_ERRH_Local_Supervision_Detector container should be created" :
+	(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.sUM_ERRH_Local_Supervision_Detector != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor!=null)
+ERROR "SOHConfigSet: A WdgM_DEM_Supervision_Errors_Detector container should be created" :
+	(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.wdgM_DEM_Supervision_Errors_Detector != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor!=null)
+ERROR "SOHConfigSet: A Local_Supervision_Failures_Detector container should be created" :
+	(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.local_Supervision_Failures_Detector != null)
+;
+
+
+context SOH
+ ERROR "SOHConfigSet: An SOH_PlatformReliabilityMonitor container should be created" :
+	(sOHConfigSet.sOH_PlatformReliabilityMonitor != null)
+;
+
+
+context SOH
+if (sOHConfigSet.sOH_PlatformReliabilityMonitor!=null)
+ ERROR "SOHConfigSet: An SOH_Shutdown container should be created" :
+	(sOHConfigSet.sOH_PlatformReliabilityMonitor.sOH_Shutdown != null)
+;
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F08F_ImmResetData_Reference in container sOH_ImmediateReset is mandatory" :
+	(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_ImmediateReset.sOH_DID_F08F_ImmResetData_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_ImmediateDelayed_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_ImmediateDelayed_SupportEnabled = true, all parameters in container sOH_ImmediateReset are mandatory" :
+	((sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_ImmediateReset.sOH_NvMImmResetDID_Reference != null)&&(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_ImmediateReset.sUM_SOH_ImmeReset_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_ImmediateReset.sUM_SOH_ImmeReset_Thresh_Init != null))
+;
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F08F_DelayedResetData_Reference in container sOH_DelayedReset is mandatory" :
+	(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_DelayedReset.sOH_DID_F08F_DelayedResetData_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_ImmediateDelayed_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_ImmediateDelayed_SupportEnabled = true, all parameters in container sOH_DelayedReset are mandatory" :
+	((sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_DelayedReset.sOH_NvMDelayedResetDID_Reference != null)&&(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_DelayedReset.sUM_SOH_DelayedReset_Thresh_Init != null)&&(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_DelayedReset.sUM_SOH_DelayedReset_TW_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F08F_DiagResetData_Reference in container sOH_DiagnosticReset is mandatory" :
+	(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_DiagnosticReset.sOH_DID_F08F_DiagResetData_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_DiagnosticReset_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_DiagnosticReset_SupportEnabled = true, all parameters in container sOH_DiagnosticReset are mandatory" :
+	((sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_DiagnosticReset.sOH_NvMDiagResetDID_Reference != null)&&(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_DiagnosticReset.sOH_NvMDiagResetCntr_Reference != null)&&(sOHConfigSet.sOH_ResetReliabilityMonitor.sOH_DiagnosticReset.sUM_SOH_DiagReset_Thresh_Init != null))
+;
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F090_ActNVM_Reference in container sOH_ActionNVM is mandatory" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_ActionNVM.sOH_DID_F090_ActNVM_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_ActNvM_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_ActNvM_SupportEnabled = true, all parameters in container sOH_ActionNVM are mandatory" :
+	((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_ActionNVM.sOH_NvMActNVMDID_Reference != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_ActionNVM.sUM_SOH_ActNVM_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_ActionNVM.sUM_SOH_ActNVM_Thresh_Init != null))
+;
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F090_StatNVM_Reference in container sOH_StatusNVM is mandatory" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_StatusNVM.sOH_DID_F090_StatNVM_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_StatNvM_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_StatNvM_SupportEnabled = true, all parameters in container sOH_StatusNVM are mandatory" :
+	((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_StatusNVM.sOH_NvMStatNVMDID_Reference != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_StatusNVM.sUM_SOH_StatNVM_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_StatusNVM.sUM_SOH_StatNVM_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F090_PrivNVM_Reference in container sOH_PrivilegeNVM is mandatory" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_PrivilegeNVM.sOH_DID_F090_PrivNVM_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_PrivNvM_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_PrivNvM_SupportEnabled = true, all parameters in container sOH_PrivilegeNVM are mandatory" :
+	((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_PrivilegeNVM.sOH_NvMPrivNVMDID_Reference != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_PrivilegeNVM.sUM_SOH_PrivNVM_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_NVMErrorsDetector.sOH_PrivilegeNVM.sUM_SOH_PrivNVM_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F090_ExcepOS_Reference in container sOH_ExcepOS is mandatory" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ExcepOS.sOH_DID_F090_ExcepOS_Reference != null)
+;
+
+
+context SOH
+if(sOHGeneral.sOH_ExcepOS_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_ExcepOS_SupportEnabled = true, all parameters in container sOH_ExcepOS are mandatory" :
+	((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ExcepOS.sOH_NvMExcepOSDID_Reference != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ExcepOS.sUM_SOH_ExcepOS_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ExcepOS.sUM_SOH_ExcepOS_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F090_ErrOS_Reference in container sOH_ErrOS is mandatory" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ErrOS.sOH_DID_F090_ErrOS_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_ErrOS_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_ErrOS_SupportEnabled = true, all parameters in container sOH_ErrOS are mandatory" :
+	((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ErrOS.sOH_NvMErrOSDID_Reference != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ErrOS.sUM_SOH_ErrOS_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ErrOS.sUM_SOH_ErrOS_Thresh_Init != null))
+;
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F090_MemProtOS_Reference in container sOH_MemProtOS is mandatory" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_MemProtOS.sOH_DID_F090_MemProtOS_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_MemProtOS_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_MemProtOS_SupportEnabled = true, all parameters in container sOH_MemProtOS are mandatory" :
+	((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_MemProtOS.sOH_NvMMemProtOSDID_Reference != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_MemProtOS.sUM_SOH_MemProtOS_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_MemProtOS.sUM_SOH_MemProtOS_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F090_ServOS_Reference in container sOH_ServOS is mandatory" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ServOS.sOH_DID_F090_ServOS_Reference != null)
+;
+
+
+context SOH
+if(sOHGeneral.sOH_ServOS_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_ServOS_SupportEnabled = true, all parameters in container sOH_ServOS are mandatory" :
+	((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ServOS.sOH_NvMServOSDID_Reference != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ServOS.sUM_SOH_ServOS_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_ServOS.sUM_SOH_ServOS_Thresh_Init != null))
+;
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F090_StackOS_Reference in container sOH_StackOS is mandatory" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_StackOS.sOH_DID_F090_StackOS_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_StackOS_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_StackOS_SupportEnabled = true, all parameters in container sOH_StackOS are mandatory" :
+	((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_StackOS.sOH_NvMStackDID_Reference != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_StackOS.sUM_SOH_StackOS_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_StackOS.sUM_SOH_StackOS_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F090_TimeProtOS_Reference in container sOH_TimeProtOS is mandatory" :
+	(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_TimeProtOS.sOH_DID_F090_TimeProtOS_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_TimeProtOS_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_TimeProtOS_SupportEnabled = true, all parameters in container sOH_TimeProtOS are mandatory" :
+	((sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_TimeProtOS.sOH_NvMTimeProtOSDID_Reference != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_TimeProtOS.sUM_SOH_TimeProtOS_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_MemoryStatusReliabilityMonitor.sOH_OSErrorsDetector.sOH_TimeProtOS.sUM_SOH_TimeProtOS_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F092_ClearDiagInfoDID_Reference in container sOH_ClearDiagInfo is mandatory" :
+   (sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_ClearDiagInfo.sOH_DID_F092_ClearDiagInfoDID_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_ClearDiagnosticInformation_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_ClearDiagnosticInformation_SupportEnabled = true, all parameters in container sOH_ClearDiagInfo are mandatory" :
+	((sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_ClearDiagInfo.sOH_NvMClearDiagInfoDID_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_ClearDiagInfo.sUM_SOH_ClearDiagInfo_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F092_RejectClearDiagDID_Reference in container sOH_RejectClearDiag is mandatory" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_RejectClearDiag.sOH_DID_F092_RejectClearDiagDID_Reference != null)
+;
+
+
+context SOH
+if(sOHGeneral.sOH_ClearDiagnosticInformation_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_ClearDiagnosticInformation_SupportEnabled = true, all parameters in container sOH_RejectClearDiag are mandatory" :
+	((sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_RejectClearDiag.sOH_NvMRejectClearDiagDID_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_RejectClearDiag.sUM_SOH_Reject_ClearDiag_Init != null))
+;
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F092_Accept_DiagSessionDID_Reference in container sOH_Accept_DiagSession is mandatory" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_Accept_DiagSession.sOH_DID_F092_Accept_DiagSessionDID_Reference != null)
+;
+
+
+context SOH
+if(sOHGeneral.sOH_DiagnosticSessionControl_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_DiagnosticSessionControl_SupportEnabled = true, all parameters in container sOH_Accept_DiagSession are mandatory" :
+	((sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_Accept_DiagSession.sOH_NvMAccept_DiagSessionDID_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_Accept_DiagSession.sOH_NvMAccept_DiagSessionCntr_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_Accept_DiagSession.sUM_SOH_Accept_DiagSession_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F092_DiagSessionDID_Reference in container sOH_DiagSession is mandatory" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_DiagSession.sOH_DID_F092_DiagSessionDID_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_DiagnosticSessionControl_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_DiagnosticSessionControl_SupportEnabled = true, all parameters in container sOH_DiagSession are mandatory" :
+	((sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_DiagSession.sOH_NvMDiagSessionDID_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_DiagSession.sOH_NvMDiagSessionCntr_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_DiagSession.sUM_SOH_DiagSession_Thresh_Init != null))
+;
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F092_MACfail_TenActDID_Reference in container sOH_MACfailTenAct is mandatory" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_MACfailTenAct.sOH_DID_F092_MACfail_TenActDID_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_MACFailures_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_MACFailures_SupportEnabled = true, all parameters in container sOH_MACfailTenAct are mandatory" :
+	((sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_MACfailTenAct.sOH_NvMMACfail_TenActDID_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_MACfailTenAct.sUM_SOH_MACfail_TenAct_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_MACfailTenAct.sUM_SOH_MACfail_TenAct_Thresh_Init != null))
+;
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F092_ReplayCountDID_Reference in container sOH_ReplayCount is mandatory" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_ReplayCount.sOH_DID_F092_ReplayCountDID_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_MACFailures_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_MACFailures_SupportEnabled = true, all parameters in container sOH_ReplayCount are mandatory" :
+	((sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_ReplayCount.sOH_NvMReplayCountDID_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_ReplayCount.sUM_SOH_ReplayCount_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_ReplayCount.sUM_SOH_ReplayCount_Thresh_Init != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_ReplayCount.sUM_SOH_ReplayCount_Start_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F092_SecPDID_Reference in container sOH_SecP is mandatory" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_SecP.sOH_DID_F092_SecPDID_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_SecPErrors_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_SecPErrors_SupportEnabled = true, all parameters in container sOH_SecP are mandatory" :
+	((sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_SecP.sOH_NvMSecPDID_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_SecP.sUM_SOH_SecP_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_SecP.sUM_SOH_SecP_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F092_SecurityAccessDID_Reference in container sOH_SecurityAccess is mandatory" :
+	(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_SecurityAccess.sOH_DID_F092_SecurityAccessDID_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_SecurityAccessFailures_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_SecurityAccessFailures_SupportEnabled = true, all parameters in container sOH_SecurityAccess are mandatory" :
+	((sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_SecurityAccess.sOH_NvMSecurityAccessDID_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_SecurityAccess.sOH_NvMSecurityAccessCntr_Reference != null)&&(sOHConfigSet.sOH_CommunicationReliabilityMonitor.sOH_SecurityAccess.sUM_SOH_SecurityAccess_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameters sOH_DID_F093_ERRHSupFail_Reference and sOH_DID_F093_ERRH_Local_Supervision_Status_Reference in container sUM_ERRH_Local_Supervision_Detector are mandatory" :
+	((sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.sUM_ERRH_Local_Supervision_Detector.sOH_DID_F093_ERRHSupFail_Reference != null)&&(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.sUM_ERRH_Local_Supervision_Detector.sOH_DID_F093_ERRH_Local_Supervision_Status_Reference != null))
+;
+
+
+context SOH
+if(sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_ERRHLocalSupervision_SupportEnabled = true, all parameters in container sUM_ERRH_Local_Supervision_Detector are mandatory" :
+	((sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.sUM_ERRH_Local_Supervision_Detector.sOH_ERRHLocalSupervisionFailures_DID_counter_Reference != null)&&(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.sUM_ERRH_Local_Supervision_Detector.sOH_ERRHSupFail_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.sUM_ERRH_Local_Supervision_Detector.sOH_ERRHSupFail_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F093_WdgMDEMErr_Reference in container wdgM_DEM_Supervision_Errors_Detector is mandatory" :
+	(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.wdgM_DEM_Supervision_Errors_Detector.sOH_DID_F093_WdgMDEMErr_Reference != null)
+;
+
+
+context SOH
+if(sOHGeneral.sOH_WdgMDEMSupervisionErrors_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_WdgMDEMSupervisionErrors_SupportEnabled = true, all parameters in container wdgM_DEM_Supervision_Errors_Detector are mandatory" :
+	((sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.wdgM_DEM_Supervision_Errors_Detector.sOH_WdgMDEMErr_DID_counter_Reference != null)&&(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.wdgM_DEM_Supervision_Errors_Detector.sUM_SOH_WdgM_DEMErr_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.wdgM_DEM_Supervision_Errors_Detector.sUM_SOH_WdgM_DEMErr_Thresh_Init != null))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F093_LocalStatFail_Reference in container local_Supervision_Failures_Detector is mandatory" :
+	(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.local_Supervision_Failures_Detector.sOH_DID_F093_LocalStatFail_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_LocalSupervisionFailures_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_LocalSupervisionFailures_SupportEnabled = true, all parameters in container local_Supervision_Failures_Detector are mandatory" :
+	((sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.local_Supervision_Failures_Detector.sOH_LocalSupervisionFailures_DID_counter_Reference != null)&&(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.local_Supervision_Failures_Detector.sUM_SOH_LocalStatFail_TW_Thresh_Init != null)&&(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.local_Supervision_Failures_Detector.sUM_SOH_LocalStatFail_Thresh_Init != null)&&(sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.local_Supervision_Failures_Detector.supervised_Entity_Reference.size != 0))
+;
+
+
+context SOH
+ERROR "SOHConfigSet: Parameter sOH_DID_F091_ShutdownDID_Reference in container sOH_Shutdown is mandatory" :
+	(sOHConfigSet.sOH_PlatformReliabilityMonitor.sOH_Shutdown.sOH_DID_F091_ShutdownDID_Reference != null)
+;
+
+context SOH
+if(sOHGeneral.sOH_ShutdownDelay_SupportEnabled == true)
+ERROR "SOHConfigSet: If sOH_ShutdownDelay_SupportEnabled = true, all parameters in container sOH_Shutdown are mandatory" :
+	((sOHConfigSet.sOH_PlatformReliabilityMonitor.sOH_Shutdown.sOH_NvMShutdownDID_Reference != null)&&(sOHConfigSet.sOH_PlatformReliabilityMonitor.sOH_Shutdown.sOH_NvMShutdownCntr_Reference != null)&&(sOHConfigSet.sOH_PlatformReliabilityMonitor.sOH_Shutdown.sUM_SOH_Shutdown_Timer_Thresh_Init != null)&&(sOHConfigSet.sOH_PlatformReliabilityMonitor.sOH_Shutdown.sUM_SOH_Shutdown_Thresh_Init != null))
+;
+
+context SOHGeneral
+	ERROR "SOHGeneral: the parameter SohGenerateInitRunnable shall be configured, since it is mandatory." :
+		(sohGenerateInitRunnable != null)
+;
+context SOHGeneral
+	if(sohGenerateInitRunnable == true)
+	ERROR "SOHGeneral: if the parameter SohGenerateInitRunnable is True the Sum_SOH_InitFuncPeriodicity parameter shall be configured ." :
+		(sohInitFuncPeriodicity != null)
+;
+
+

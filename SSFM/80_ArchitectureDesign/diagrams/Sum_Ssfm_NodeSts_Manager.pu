@@ -1,0 +1,56 @@
+@startuml Sum_Ssfm_NodeSts_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_NodeSts_Manager"
+
+**Interfaces Legend**
+	//II305 //: Sig<n>_Supervision
+	//II306 //: Sum_Ssfm_Is_DisablePdu_Rx()
+	//II307 //: Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive()
+	//II308 //: Sum_Ssfm_Is_DisableNormalComm()
+	//pi307 //: SSM_ERRH_ECU_NodeStatusIdx<n>
+	//pi308 //: SSFM_SerialData_<n>_LcFA
+	//ri305 //: SPM_LossOfNodeIndication()
+	//ri306 //: SSFM_DTC_<n>_LossOfCommunication()
+	//ri307 //: Dem_SSFM_DiagnosticMonitor_<n>_LossOfCommunication
+	//II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)   
+endlegend
+
+skinparam interface {
+	BackgroundColor White
+	BorderColor White
+	FixCircleLabelOverlapping true
+}
+	interface II305
+	interface II306
+	interface II307
+	interface II308
+	interface pi307
+	interface pi308
+	interface ri305
+	interface ri306
+	interface ri307
+    interface II184
+
+component [Sum_Ssfm_NodeSts_Manager]  as NodeSts{
+	portout ppi307
+	portout ppi308
+	portin rpi305
+	portin rpi306
+	portin rpi307
+}
+
+	NodeSts --up-( II305
+	NodeSts --up-( II306
+	NodeSts --up-( II307
+	NodeSts --up-( II308
+	rpi305 --up-( ri305
+	rpi306 --up-( ri306
+	rpi307 --up-( ri307
+	ppi307 --down-0 pi307
+	ppi308 --down-0 pi308
+    NodeSts --down-( II184
+
+@enduml

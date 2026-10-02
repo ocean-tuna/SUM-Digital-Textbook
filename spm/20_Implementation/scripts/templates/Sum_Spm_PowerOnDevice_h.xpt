@@ -1,0 +1,63 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_PowerOnDevice.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for defining the SPM API for the device power state information
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef SUM_SPM_POWERONDEVICE_H_
+#define SUM_SPM_POWERONDEVICE_H_
+
+«IF spm.spmConfigSet.spmPgttEntries.spmTrgDvc.size > 0  »
+#include "Sum_Spm_PBCfg.h"
+
+/**
+ * @brief
+ *
+ */
+boolean Spm_PowerOnDevice( uint32 reqIp );
+/**
+ * @brief
+ *
+ */
+boolean Spm_PowerOffDevice( uint32 reqIp );
+
+
+#endif /* SUM_SPM_POWERONDEVICE_H_ */
+«ENDIF»
+
+
+/* EOF */
+
+«ENDFILE»
+«ENDDEFINE»

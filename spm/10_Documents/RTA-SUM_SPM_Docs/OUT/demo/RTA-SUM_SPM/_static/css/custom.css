@@ -1,0 +1,75 @@
+/* Example for enlarging the left sidebar */
+.wy-side-nav-search, .wy-nav-side, .wy-nav-shift, .wy-side-scroll {
+    width: 340px; /* Adjust this value to your desired width */
+}
+
+.wy-nav-content, .reference_internal_current {
+    max-width: 100%;
+}
+
+.rst-content {
+    max-width: 100%;
+}
+
+/* Scale SVG images of UML drawings to stay inside screen */
+.plantuml object {
+    max-width: 100%;
+    width: auto !important;
+}
+
+/* Add support for SVG files in the search list items */
+ul.search li {
+    padding: 5px 0 5px 20px;
+    background-image: url(file.png), url(file.svg);
+    background-repeat: no-repeat;
+    background-position: 0 7px;
+}
+
+table {
+    border-collapse: collapse; /* Makes sure the borders are combined */
+    width: 100%; /* Full width */
+    border: 1px solid #000000;
+}
+
+/*
+table, th, td {
+    border: 1px solid black; /* Adds a solid black border */ 
+/* } */
+
+table th {
+    padding: 8px; /* Adds some padding for table cells */
+    text-align: left; /* Aligns text to the left */
+    border: 1px solid #000000;
+    background-color: rgb(162, 108, 175); /* Light grey background for header */
+}
+
+table td {
+    padding: 8px; /* Adds some padding for table cells */
+    text-align: left; /* Aligns text to the left */
+    border: 1px solid #000000;
+}
+
+.table_custom {
+    border-collapse: collapse; /* Makes sure the borders are combined */
+    width: 100%; /* Full width */
+    border: 1px solid #000000;
+}
+
+.table_custom th, .table_custom td {
+    padding: 8px; /* Adds some padding for table cells */
+    text-align: left; /* Aligns text to the left */
+    border: 1px solid #000000;
+    word-wrap: break-word; /* Ensure long words break to the next line */
+    overflow: hidden; /* Hide any overflowing content */
+}
+
+/* Define fixed widths for table columns */
+.table_custom th:nth-child(1), .table_custom td:nth-child(1) {
+    min-width: 150px !important; /* Adjust the width as needed */
+    max-width: 150px !important; /* Adjust the width as needed */
+}
+
+.table_custom th:nth-child(2), .table_custom td:nth-child(2) {
+    min-width: 200px !important; /* Adjust the width as needed */
+    max-width: 200px !important; /* Adjust the width as needed */
+}

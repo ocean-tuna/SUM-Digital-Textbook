@@ -1,0 +1,55 @@
+@startuml sd_TCSShutdown
+
+mainframe TCS Shutdown sequence
+skinparam ParticipantPadding 10
+
+participant NvM
+participant SUM_SUSD
+participant SWC
+
+box SUM_TCS #LightGrey
+    participant IRVs as RTE
+    participant Runnable_TCS_PermitExecutionShutdown as shutter
+end box
+
+== Pre-condition ==
+
+note over shutter
+    TCS in SUM_TCS_RUNNING_MODE
+end note
+
+SUM_SUSD -> shutter: stopping TCS functionalities by interface //SUSD_PermitExecution//
+activate shutter
+shutter -> RTE: set TCS_permit_execution = FALSE
+
+== Sequence fullfill ==
+
+group Periodic [TCSTimeManagementPeriod]
+
+    shutter -> SUM_SUSD: shutdown is not allowed by interface //TCS_SUSD_ShutdownPermission//
+    SUM_SUSD -> shutter: //RP_SUSD_TCS_BatteryVoltage_DisableNVMWrite//
+    alt DisableNvmWrite is FALSE
+        shutter -> NvM: //NvM_WriteBlock(...)//
+        note right: write request is for: Rte_SumTCSInitValue
+        activate NvM
+        shutter -> shutter: **Move** to SUM_TCS_MEMORY_MODE
+        activate shutter
+        shutter -> NvM: //GetErrorStatus()//
+        note right: Check if writing completed
+        NvM --> shutter: return memory status
+        deactivate NvM
+        alt ErrorStatus is not E_OK **and** TCS_NvM_ServRetryCntr > 0
+            shutter -> shutter: **Decrement** TCS_NvM_ServRetryCntr
+        end group
+    end group
+    deactivate shutter
+    shutter -> shutter: **Move** to SUM_TCS_SHUTDOWN_MODE
+    activate shutter
+    deactivate shutter
+
+== Post-Condition (COMMON TO ALL SCENARIO) ==
+    shutter -> SUM_SUSD: shutdown is allowed by interface //TCS_SUSD_ShutdownPermission//
+end group
+deactivate shutter
+
+@enduml

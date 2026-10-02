@@ -1,0 +1,8 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};Runnable_MEC_Handler
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};N\/A
+\cellcolor{ETASlightgray}\textbf{Periodicity};configured by user via DIAG_TE_MEC_Handler_Period parameter
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};SUSD_VehiclePowerMode, BatteryVoltage_DisableNVMWrite and NvMService
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};DIAG_GetMEC and NvMService
+\cellcolor{ETASlightgray}\textbf{Description};This runnable is responsible for: \newline to decrement the MEC value by one count upon each vehicle ignition cycle \newline Store in the NvM block and output MEC when a change has occurred

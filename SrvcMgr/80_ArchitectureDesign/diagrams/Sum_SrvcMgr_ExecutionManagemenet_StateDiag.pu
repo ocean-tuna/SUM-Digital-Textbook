@@ -1,0 +1,16 @@
+@startuml Sum_SrvcMgr_ExecutionManagement_StateDiag
+
+    [*] --> SUM_SrvcMgr_Init_and_Shutdown_Mode : {SrvcMgr_Shutdown_Permission = 0xFF \n SrvcMgr_Execution_State = FALSE}
+	
+	SUM_SrvcMgr_Run_Mode --> SUM_SrvcMgr_Init_and_Shutdown_Mode: [(Masked bits are INACTIVE || Reset bit is ACTIVE) && No req from SPM ongoing && NO learning session active]\n{SrvcMgr_Shutdown_Permission = 0xFF,  SrvcMgr_Execution_State = FALSE}
+	SUM_SrvcMgr_Run_Mode --> SUM_SrvcMgr_Prepare_To_Shutdown: [(Masked bits are INACTIVE || Reset bit is ACTIVE) && (req from SPM ongoing || learning session active)]\n{SrvcMgr_Shutdown_Permission = 0,1,2,3,  SrvcMgr_Execution_State = TRUE}
+	SUM_SrvcMgr_Run_Mode --> SUM_SrvcMgr_Run_Mode: [Masked bits are ACTIVE && Reset bit is INACTIVE]\n{SrvcMgr_Shutdown_Permission = 0, 1, 2, 3,  SrvcMgr_Execution_State = TRUE}
+	SUM_SrvcMgr_Run_Mode --> SUM_SrvcMgr_Invalid : Port's read failed
+	SUM_SrvcMgr_Invalid --> SUM_SrvcMgr_Init_and_Shutdown_Mode : {SrvcMgr_Shutdown_Permission = 0xFF \n SrvcMgr_Execution_State = FALSE}
+	
+	SUM_SrvcMgr_Prepare_To_Shutdown --> SUM_SrvcMgr_Run_Mode: [Masked bits are ACTIVE]\n{SrvcMgr_Shutdown_Permission = 0,1,2,3,  SrvcMgr_Execution_State = TRUE}
+    SUM_SrvcMgr_Init_and_Shutdown_Mode --> SUM_SrvcMgr_Run_Mode: [Masked bits are ACTIVE]\n{SrvcMgr_Shutdown_Permission = 0,  SrvcMgr_Execution_State = TRUE}
+	SUM_SrvcMgr_Init_and_Shutdown_Mode --> SUM_SrvcMgr_Invalid : Port's read failed
+	SUM_SrvcMgr_Prepare_To_Shutdown --> SUM_SrvcMgr_Prepare_To_Shutdown : [Masked bits are INACTIVE && (Req from SPM ongoing || learning session active)]\n{SrvcMgr_Shutdown_Permission = 0,1,2,3,  SrvcMgr_Execution_State = TRUE}
+	SUM_SrvcMgr_Prepare_To_Shutdown --> SUM_SrvcMgr_Init_and_Shutdown_Mode : [Masked bits are INACTIVE && NO req from SPM ongoing && NO learning session active]\n{SrvcMgr_Shutdown_Permission = 0xFF,  SrvcMgr_Execution_State = FALSE}
+@enduml 

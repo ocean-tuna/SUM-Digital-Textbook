@@ -1,0 +1,6 @@
+3;6;8;8
+\cellcolor{ETASlightgray}\textbf{Scenario No.};\cellcolor{ETASlightgray}\textbf{Arch. Requirement};\cellcolor{ETASlightgray}\textbf{Description};\cellcolor{ETASlightgray}\textbf{System Requirement}
+Pre-condition; \RequirementTag{ADS_TCS}{025}; Receives the permit_execution; \Satisfies{SRS_TCS 009} \\ \Satisfies{SRS_TCS 010}
+1;\RequirementTag{ADS_TCS}{026}; Activation after synchronization with master; \Satisfies{SRS_TCS 011} \\ \Satisfies{SRS_TCS 028}
+2;\RequirementTag{ADS_TCS}{027}; Activation without synchronization with master\\ time base is retried from memory; \Satisfies{SRS_TCS 007} \\ \Satisfies{SRS_TCS 011} \\ \Satisfies{SRS_TCS 028}
+Post-condition; \RequirementTag{ADS_TCS}{028}; Provide The shutdown permission to SUM_SUSD; \Satisfies{SRS_TCS 012}

@@ -1,0 +1,4 @@
+3;6;8;8
+\cellcolor{ETASlightgray}\textbf{Scenario No.};\cellcolor{ETASlightgray}\textbf{Arch. Requirement};\cellcolor{ETASlightgray}\textbf{Description};\cellcolor{ETASlightgray}\textbf{System Requirement}
+Pre-condition; \RequirementTag{ADS_TCS}{032}; Receive the permit execution; \Satisfies{SRS_TCS 009} \\ \Satisfies{SRS_TCS 010} \\ \Satisfies{SRS_TCS 013}
+Sequence fulfill; \RequirementTag{ADS_TCS}{033}; Provide the local timestamp to Dem; \Satisfies{SRS_TCS 001} \\ \Satisfies{SRS_TCS 014}

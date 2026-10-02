@@ -1,0 +1,56 @@
+@startuml remoteSleep
+
+skinparam ParticipanrPadding 20
+skinparam BoxPadding 20
+
+participant "Remote ECU"
+participant BswM
+
+
+participant SUM_PNC
+participant SUM_SSFM
+participant SWCs
+
+autonumber
+"Remote ECU" -> SUM_PNC: REMOTE ACTIVATION
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_PNC: PNC MainFunction
+activate SUM_PNC
+
+BswM -> SUM_PNC: PNC_BswM_ComM_Current_PNC_ModeUser
+note left: PNC_PREPARE_SLEEP is updated
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_PNC: PduGroupRX_State = STOP
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_PNC: PduGroupTX_State = STOP
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> BswM: PNC_BswM_ComM_Pdugroupswitch_RxReq
+activate BswM
+deactivate BswM
+
+SUM_PNC -> BswM: PNC_BswM_ComM_Pdugroupswitch_TxReq
+activate BswM
+deactivate BswM
+
+SUM_PNC -> SUM_SSFM: PNC_Active_RxPDU_Enable
+activate SUM_SSFM
+deactivate SUM_SSFM
+
+SUM_PNC -> SWCs: PNC_Active_TxPDU_Enable
+activate SWCs
+deactivate SWCs
+
+SUM_PNC -> SUM_PNC: PNC_ENABLE_CHECK
+activate SUM_PNC
+deactivate SUM_PNC
+
+deactivate SUM_PNC
+@enduml

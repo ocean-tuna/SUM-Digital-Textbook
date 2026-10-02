@@ -1,0 +1,83 @@
+@startuml SUM_SrvcMgr_ServiceManagement
+
+actor SPM
+participant SrvcMgr
+participant Sd
+participant BswM
+participant SWC
+
+SPM -> SrvcMgr : SrvcMgr_ActivateServices(serviceIdList,state,listLength,commandStatusList)
+Activate SrvcMgr
+note left: SD_GM_0044
+SrvcMgr -> SrvcMgr: SrvcMgr_Set_ActivateServiceReq_inProgress(TRUE)
+group while(x<listLength)
+    SrvcMgr -> SrvcMgr: Sum_SrvcMgr_HandleServiceActivation(serviceID[x], state, commandStatusList[x])
+    group if(serviceID[x] belongs to a Service Group?)
+        alt state == ACTIVATE
+            SrvcMgr -> Sd: ret_val = Sd_ServiceGroupStart(serviceGroupId)
+        else state == DEACTIVATE
+            SrvcMgr -> Sd: ret_val = Sd_ServiceGroupStop(serviceGroupId)
+        end
+        note right
+        SD_GM_0028
+        ret_val indicates if the request
+        was accepted or rejected by SD
+        end note
+    end
+    group if(serviceID[x] is NOT in a Service Group?)
+        group if(serviceID[x] is client?)
+            SrvcMgr -> Sd: ret_val = Sd_ClientServiceSetState(serviceID[x],state)
+        note right
+        SD_GM_0030, SD_GM_0022
+        ret_val indicates if the request
+        was accepted or rejected by SD
+        end note
+        note right
+        If state == REQUESTED and ret_val == E_OK,
+        SrvcMgr calls Sd_ConsumedEventGroupSetState()
+        for each associated Consumed Event Group.
+        end note
+        Sd -> Sd: Process_State_Update
+        note left
+        Service State updated
+        at next Sd Main cycle
+        end note
+        Sd -> BswM: BswM_Sd_ClientServiceCurrentState(serviceID[x],CurrentState)
+        note left
+        CurrentState of client service x
+        could be AVAILABLE or DOWN
+        end note
+        end
+        group if(serviceID[x] is server?)
+            SrvcMgr -> Sd: ret_val = Sd_ServerServiceSetState(serviceID[x],state)
+        note right
+        SD_GM_0029, SD_GM_0021
+        ret_val indicates if the request
+        was accepted or rejected by SD
+        end note
+        Sd -> Sd: Process_State_Update
+        note left
+        Service State updated
+        at next Sd Main cycle
+        end note
+        Sd -> BswM: BswM_Sd_EventHandlerCurrentState(serviceID[x],CurrentState)
+        note left
+        ONLY called for server
+        services containing EventHandler
+        associated to them.
+        For server services using
+        ONLY methods, SD does NOT
+        notify BswM about the state
+        update.
+        end note
+        end
+    end
+end
+SrvcMgr -> SrvcMgr: SrvcMgr_Set_ActivateServiceReq_inProgress(FALSE)
+note left
+SPM activation service request
+DONE. SrvcMgr could vote for 
+shutdown if other conditions are fullfilled.
+end note
+SrvcMgr -> SPM
+@enduml

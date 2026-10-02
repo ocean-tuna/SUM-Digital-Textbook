@@ -1,0 +1,1 @@
+ren "pages\?*.txt" "?*.md"

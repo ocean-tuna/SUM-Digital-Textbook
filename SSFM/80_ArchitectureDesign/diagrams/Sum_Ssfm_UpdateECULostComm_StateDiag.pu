@@ -1,0 +1,14 @@
+@startuml Sum_Ssfm_UpdateECULostComm_StateDiag
+
+skinparam defaultTextAlignment left
+
+state Sum_Ssfm_UpdateECULostComm{
+    state ECU_NODE_STATUS_NO_MISSINGMSG
+    state ECU_NODE_STATUS_MISSINGMSG
+
+	[*] --> ECU_NODE_STATUS_NO_MISSINGMSG
+	ECU_NODE_STATUS_NO_MISSINGMSG --> ECU_NODE_STATUS_MISSINGMSG: (FaultAndRecoveryDetection_SerialData<1> == ECU_NODE_STATUS_MISSINGMSG) OR \n ... OR \n (FaultAndRecoveryDetection_SerialData<N> == ECU_NODE_STATUS_MISSINGMSG)
+	ECU_NODE_STATUS_MISSINGMSG --> ECU_NODE_STATUS_NO_MISSINGMSG: (FaultAndRecoveryDetection_SerialData<1> == ECU_NODE_STATUS_NO_MISSINGMSG) AND \n ... AND \n (FaultAndRecoveryDetection_SerialData<N> == ECU_NODE_STATUS_NO_MISSINGMSG) AND \n (RecoveryOnlyDetection_SerialData<1> == ECU_NODE_STATUS_NO_MISSINGMSG) AND \n ... AND \n (RecoveryOnlyDetection_SerialData<N> == ECU_NODE_STATUS_NO_MISSINGMSG)
+}
+
+@enduml 

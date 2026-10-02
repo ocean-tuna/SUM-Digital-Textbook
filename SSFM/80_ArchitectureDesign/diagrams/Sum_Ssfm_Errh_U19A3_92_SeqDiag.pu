@@ -1,0 +1,30 @@
+@startuml Sum_Ssfm_Errh_U19A3_92_SeqDiag
+
+participant Dem 
+box SUM_SSFM
+    participant Sum_Ssfm_Errh_U19A3_92_Handler as ERRH_U19A3_92
+end box
+participant BswM as BSWM
+participant Sum_SUSD as SUSD
+
+activate ERRH_U19A3_92
+
+ERRH_U19A3_92 -> ERRH_U19A3_92: Check if calibration parameter is set
+
+alt Calibration parameter is set
+    ERRH_U19A3_92 -> SUSD: Ask for battery voltage range
+    SUSD --> ERRH_U19A3_92
+    alt (No OBD Support and voltage in range) or (OBD Support and not under voltage)
+        ERRH_U19A3_92 -> BSWM: Ask for SecP error status
+        BSWM --> ERRH_U19A3_92
+        alt error is Sequence/Memory/General Failure
+		ERRH_U19A3_92 -> Dem: set the U19A3_92 DTC
+		else other error
+		ERRH_U19A3_92 -> Dem: reset the U19A3_92 DTC
+		end		
+    end
+end
+
+deactivate ERRH_U19A3_92
+
+@enduml 

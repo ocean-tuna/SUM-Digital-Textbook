@@ -1,0 +1,44 @@
+@startuml Sum_Ssfm_ContinuousOperationStatusManager_SeqDiag
+
+participant RTE as R
+participant DEM as DEM
+box SUM_SSFM
+    participant Sum_Ssfm_ReceivedSerialData_Handler as RecSigHdlr
+	participant Sum_Ssfm_ContinuousOperationStatusManager as ContOpStatMgr
+    participant Sum_Ssfm_EventDebouncer_Manager as Debouncer
+    participant Sum_Ssfm_FaultIndications_DataManager as FIM
+    participant Sum_Ssfm_DID_E0B8_Handler as E0B8
+    participant Sum_Ssfm_Service_Manager as SM
+end box
+participant SWC as S
+
+ref over ContOpStatMgr, RecSigHdlr: Sum_Ssfm_Received_SerialData_Handler sequence
+
+activate S
+activate ContOpStatMgr
+
+    activate RecSigHdlr
+        RecSigHdlr -> ContOpStatMgr: Ask to set the FoI interface 
+    deactivate RecSigHdlr
+    
+    opt single port FxI disabled
+        ContOpStatMgr -> S: Set the SerialData FoI interface according to the transformer error
+    end
+
+    ContOpStatMgr -> Debouncer: Debounce the error
+    Debouncer --> ContOpStatMgr: Debouncing Status
+    
+    alt debouncer failed
+        ContOpStatMgr -> SM: Resolve Service DTC
+        ContOpStatMgr -> DEM: Set DTC
+    else
+        ContOpStatMgr -> FIM: Ask for multiplexing
+    end
+
+    alt ContOp is failed
+        ContOpStatMgr -> E0B8: Update Metric
+    end
+deactivate ContOpStatMgr
+deactivate S
+
+@enduml 

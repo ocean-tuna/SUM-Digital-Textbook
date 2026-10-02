@@ -1,0 +1,22 @@
+12;4;4;4;10
+Port Interface;Port type;P-Port;R-Port;Description
+PNC_ActiveTxPDUEnable;S/R;PNC;SSC, ERRH and Local SW-Cs;Notification that PN is transmitting signals
+PNC_ActiveRxPDUEnable;S/R;PNC;SSFM;Notification to SSFM that PN is receiving signals
+PNC_ShutdownPermission;S/R;PNC;SUSD;Notification to SUSD on activity/inactivity of PN
+SUSD_PermitExecution;S/R;SUSD;PNC;Interface to provide signal to enable start/stop of PNC
+DIAG_DisableNormalComm;S/R;DIAG;PNC;Provides notification to PNC about the status of diagnostics enabling or disabling of normal communications for each channel.
+PNC_Activation_signal_<n> _<Name>;S/R;SW-C (usually remote) or Dcm;PNC;n interface(s) for every serial data signal or RID that is involved in a PNs activation and/or deactivation criteria.
+PNC_Activation_Signals _Status_<n>_<Name>;S/R ;SW-C (usually remote) or Dcm;PNC;n interface(s) for every serial data signal or RID that is involved in a PNs activation and/or deactivation criteria.
+PNC_Activation_sensor _<n> _<Name>;C/S;Sensor SW-C;PNC;n C/S interface(s) to every sensor SW-C signal that is involved in a ECU's activation and/or deactivation criteria
+PNC_BswM_ComM_ CurrentPNCModeUser_<Name>;M. User;BswM;PNC;Receives the status of <Name> via BswM ComM_CurrentPNCMode for n PN(s) in which the ECU partecipates.
+PNC_BswM_ComM _CurrentPNCModeReq_<Name>;M. Req.;PNC;BswM;Request activation / deactivation of <Name>. For Activating ECU only.
+PNC_ComM_CurrentModeUser _<n>;M. User;BswM;PNC;Receives the status of the communication channel <n> of the ECU via BswM _ComMCurrentMode.
+PNC_BswMPduGroupSwitch TxReq_Interface;M. Req.;PNC;BswM;Request start / stop of I-PDU Tx group.
+PNC_BswMPduGroupSwitch RxReq_Interface;M. Req.;PNC;BswM;Request start / stop of I-PDU Rx group.
+DataServices_<Name>;C/S;PNC;DCM;Interface to DCM to get the local partial network activation status
+DataServices_<Name>;C/S;PNC;DCM;Interface to DCM to get the remote partial network activation status
+PNC_<Name>_Group_DM _Switch;M. Req.;PNC;BswM;Request to enable or disable the deadline monitoring of the Rx PDU Group associated to <Name>.
+PN_DTC_Allowed;S/R;PNC;SSFM, SSC;Notification that a DTC against the PDUs of a specific PN can be set.
+SUM_C_Disable_<n>;S/R;SSFM;PNC;This interface is used to read the C_Disable calibration published by SSFM for Tx Pdu.
+SUM_BswM_DisablePdu<n>;S/R;PNC;BswM;Mode interface with the BswM to disable the Pdu<n>.
+SUSD_PNC_UpdateRecord;C/S;SUSD;PNC;Interface from SUSD to retrieve record ID from SUM_PNC to update activity records.

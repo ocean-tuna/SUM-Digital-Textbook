@@ -1,0 +1,27 @@
+50;50;Detection Counter Memory Type@detCounterMemType
+\textbf{Detection Counter Name};\textbf{Memory Type}
+SUM_SOH_ImmeReset_Cntr;NonClearedRAM
+SUM_SOH_DelayedReset_Cntr;NonClearedRAM
+SUM_SOH_DiagReset_Cntr;AdaptableNVM
+SUM_SOH_StatNVM_Cntr;RAM
+SUM_SOH_ActNVM_Cntr;RAM
+SUM_SOH_PrivNVM_Cntr;RAM
+SUM_SOH_ExcepOS_Cntr;NonClearedRAM
+SUM_SOH_ServOS_Cntr;NonClearedRAM
+SUM_SOH_StackOS_Cntr;NonClearedRAM
+SUM_SOH_MemProtOS_Cntr;NonClearedRAM
+SUM_SOH_TimeProtOS_Cntr;NonClearedRAM
+SUM_SOH_ErrOS_Cntr;NonClearedRAM
+SUM_SOH_ShutDown_Cntr;AdaptableNVM
+SUM_SOH_ClearDiagInfo_Cntr;RAM
+SUM_SOH_Reject_ClearDiag_Cntr;RAM
+SUM_SOH_DiagSession_Cntr;Secure Cumulative NVM
+SUM_SOH_Accept_DiagSession_Cntr;Secure Cumulative NVM
+SUM_SOH_SecurityAccess_Cntr;Secure Cumulative NVM
+SUM_SOH_MACfail_TenAct_Cntr;RAM
+SUM_SOH_ReplayCount_Cntr;RAM
+SUM_SOH_SecP_Cntr;RAM
+SUM_SOH_LocalStatFail_Cntr;NonClearedRAM
+SUM_SOH_WdgM_DEMErr_Cntr;NonClearedRAM
+ERRH_SOHSupFail_Cntr;NonClearedRAM
+SOH_ERRHSupFail_Cntr;NonClearedRAM

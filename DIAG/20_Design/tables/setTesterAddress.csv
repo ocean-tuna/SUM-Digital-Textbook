@@ -1,0 +1,5 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};setTesterAddress
+\cellcolor{ETASlightgray}\textbf{Parameters};uint16 sourceAddress
+\cellcolor{ETASlightgray}\textbf{Return};void
+\cellcolor{ETASlightgray}\textbf{Description};Extracts and stores tester address from source address

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00051.xsd">
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>BuildActionManifests</SHORT-NAME>
+      <ELEMENTS>
+        <BUILD-ACTION-MANIFEST UUID="41e837ba-605c-47bb-bb82-df0161172a3e">
+          <SHORT-NAME>SOH_Manifest</SHORT-NAME>
+          <BUILD-ACTIONS>
+            <BUILD-ACTION UUID="eebcd55e-0413-414a-8dc2-2cbd87b5ddd7">
+              <SHORT-NAME>SOH_Generate</SHORT-NAME>
+              <CATEGORY>GENERATOR</CATEGORY>
+              <INVOCATION>
+                <SDGS>
+                  <SDG>
+                    <SD GID="VARIANT">1</SD>
+                    <SD GID="ACTION_ATTRIBUTE_singleExecutable">true</SD>
+                    <SD GID="STOP_ON_ERROR">true</SD>
+                    <SD GID="SUPPLIER">RBA-BSW</SD>
+                  </SDG>
+                </SDGS>
+              </INVOCATION>
+              <PREDECESSOR-ACTION-REFS>
+                <PREDECESSOR-ACTION-REF DEST="BUILD-ACTION">/BuildActionManifests/SOH_Manifest/SOH_Validate</PREDECESSOR-ACTION-REF>
+              </PREDECESSOR-ACTION-REFS>
+              <CREATED-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>SUM_SOH_PBCfg</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>SUM_SOH</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>SUM_SOH_Cfg</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>SUM_SOH_Cfg</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>SUM_SOH_PBCfg</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>h</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>SUM_SOH_Cfg_SWCD</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>arxml</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>SUM_SOH_ServicesRunnables</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>c</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+              </CREATED-DATAS>
+              <INPUT-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">PROCESSOR</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>CONFWF</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>SOH_generator</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>oaw</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+              </INPUT-DATAS>
+              <REQUIRED-ENVIRONMENT-REF DEST="BUILD-ACTION-ENVIRONMENT">/RB_Manifest/com_bosch_configfw_bfwaction_oaw</REQUIRED-ENVIRONMENT-REF>
+            </BUILD-ACTION>
+            <BUILD-ACTION UUID="93aed9eb-529c-442e-81b8-72e193b47cc7">
+              <SHORT-NAME>SOH_Validate</SHORT-NAME>
+              <CATEGORY>VALIDATOR</CATEGORY>
+              <INVOCATION>
+                <SDGS>
+                  <SDG>
+                    <SD GID="VARIANT">1</SD>
+                    <SD GID="ACTION_ATTRIBUTE_singleExecutable">true</SD>
+                    <SD GID="STOP_ON_ERROR">true</SD>
+                    <SD GID="INPUT_VALIDATION1">true</SD>
+                  </SDG>
+                </SDGS>
+              </INVOCATION>
+              <INPUT-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">PROCESSOR</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <CATEGORY>CONFWF</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <SHORT-LABEL-PATTERN>SOH_Validate</SHORT-LABEL-PATTERN>
+                    <FILE-TYPE-PATTERN>oaw</FILE-TYPE-PATTERN>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-MODULE-DEF">/AUTOSAR/SOH</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+              </INPUT-DATAS>
+              <REQUIRED-ENVIRONMENT-REF DEST="BUILD-ACTION-ENVIRONMENT">/RB_Manifest/com_bosch_configfw_bfwaction_oaw</REQUIRED-ENVIRONMENT-REF>
+            </BUILD-ACTION>
+          </BUILD-ACTIONS>
+        </BUILD-ACTION-MANIFEST>
+      </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>

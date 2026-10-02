@@ -1,0 +1,90 @@
+@startuml Srvcmgr_LearningSession_RID_0654
+start
+    if (OpStatus == DCM_INITIAL or DCM_PENDING) then (yes)
+        :Read PropSysActv and Vehicle Speed from RTE port;
+        :Read FsFA(VSAD) and FsFA(PSA) from SSFM;
+        if (RTE Read == E_OK
+	AND Vehicle Speed <= 3 km/h
+	AND FsFA(VSAD) == FALSE
+	AND PropSysActv == FALSE
+	AND FsFA(PSA) == FALSE) then (yes)
+            if (OpStatus == DCM_INITIAL) then (yes)
+                group DCM_INITIAL
+                    :Send Learning Status to SPM "PENDING" by\nSum_SrvcMgr_prv_Send_SPM_SDLearningStatusIndication();
+                    :Rtn = Sd_ClearLearningTable();
+                    if (Rtn == E_OK) then (yes)
+                        :RID_654_status = waiting_timer;
+                        :Set all Server Services as AVAILABLE; 
+                        :Set all Client Services and \nassociated Consumed Event Group as REQUESTED; 
+                        #LightSalmon: E_PENDING;
+                        note left
+                        Clear request
+                        accepted.
+                        Table clearing
+                        in progress.
+                        end note
+                        :Sum_SrvcMgr_LearningSessionReq = TRUE;
+                        note left
+                        Keep track that a
+                        learning session is
+                        active to prevent
+                        the Execution
+                        Manager from
+                        voting for shutdown
+                            end note
+                    else (no)
+                        : *ErrorCode = DCM_E_GENERALREJECT;
+                        :Send Learning Status to SPM "FAILED" by\nSum_SrvcMgr_prv_Send_SPM_SDLearningStatusIndication();
+                        #pink:E_NOK;
+                    endif
+                end group
+            else (no)
+                if (OpStatus == DCM_PENDING) then (yes)
+                    group DCM_PENDING
+                        :Sum_SrvcMgr_prv_CheckLearningTableWriteStatus();
+                        note left
+                        Check the actual status of the learning session
+                        end note
+                        if (Learning Session is finished?) then (yes)
+                            :Sum_SrvcMgr_LearningSessionReq = FALSE;
+                            :Sum_SrvcMgr_prv_Send_SPM_SDLearningStatusIndication(CurrentTableState);
+                            note left
+                            Forward the learning session status to the SPM module
+                            end note
+                            :Sd_GetLearningTableState(&CurrentTableState);
+                            :Sum_SrvcMgr_prv_HandleU19A6_87Status(CurrentTableState, RID_0654_END);
+                            note left
+                            Forward the learning table state to the SSFM module.
+                            end note
+                            :retVal = Sd_RetrieveIncompleteLearningReasons(&IncompleteLearningReasons);
+                            note left
+                            if RetVal == E_OK; Set or Reset the status of the DTC 19A6 57 based on
+                            the learning table state and the number of missing event groups.
+                            end note
+                            :Sum_SrvcMgr_prv_HandleU19A6_54Status(&CurrentTableState);
+                            note left
+                            Set or Reset the status of the DTC 19A6 54 based on the learning  table state.
+                            end note
+                        endif             
+                    end group        
+                else (no)
+                   #pink:E_NOK; 
+                endif
+            endif
+        else (no)
+            : *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+            note right
+                RTE Read failed or
+                Vehicle Speed > 3 km/h or
+                FsFA(VSAD) == TRUE or
+                PropSysActv != FALSE or
+                FsFA(PSA) == TRUE
+                Condition not met
+            end note
+            #pink:E_NOK;
+        endif
+    else (no)
+       #pink:E_NOK; 
+    endif  
+stop
+@enduml

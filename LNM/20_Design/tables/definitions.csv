@@ -1,0 +1,26 @@
+1;2
+\textbf{Term/Abbreviation};\textbf{Definition}
+API;Application Program Interface
+BSW;Basic Software
+BswM;Basic Software Mode Manager
+Cal;Calibration
+CAN;Controller Area Network
+Com;Communication Module
+Dcm;Diagnostic Communication Module
+DID;Data Identifier
+DTC;Diagnostic Trouble Code
+DIAG;Diagnostic Application Services
+ECU;Electronic Control Unit
+Ecuc;ECU Configuration File
+ERRH;Error Handling Module
+LNM;LIN Network Manager
+LSB;Least Significant Bit
+MSCL;Master Subnet Configuration List
+PNC;Partial Network Coordinator
+RTE;Run Time Environment
+RID;Routine Identifier
+SOH;State Of Health Manager
+SSM;Signal Status Monitor
+SUM;Standard Utility Module
+SUSD;Startup Shut down Coordinator
+SW;Software

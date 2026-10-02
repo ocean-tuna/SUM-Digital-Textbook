@@ -1,0 +1,80 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DID_Util.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM DID Utility
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_DID_UTIL_H
+#define SUM_SSFM_DID_UTIL_H
+
+#include "Sum_Ssfm_Cfg.h"
+/*
+ ***************************************************************************************************
+ * Defines
+ ***************************************************************************************************
+ */
+ extern ERRH_DetectorType SOHSupFail;
+
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+
+extern void Sum_Ssfm_DID_FillBuffer_u8(uint8* Buffer, uint8 Data, uint32 offset);
+extern void Sum_Ssfm_DID_FillBuffer_u16(uint8* Buffer, uint16 Data, uint32 offset);
+extern void Sum_Ssfm_DID_FillBuffer_u32(uint8* Buffer, uint32 Data, uint32 offset);
+extern void Sum_Ssfm_DID_ReadBuffer_u8(uint8* Buffer, uint8* Data, uint32 offset);
+extern void Sum_Ssfm_DID_ReadBuffer_u16(uint8* Buffer, uint16* Data, uint32 offset);
+extern void Sum_Ssfm_DID_ReadBuffer_u32(uint8* Buffer, uint32* Data, uint32 offset);
+«IF Ssfm_isEnableERRHLocalSupervision(sSFM.sum_Ssfm_General) -»
+FUNC(boolean, SUM_ERRH_CODE) ERRH_Filter(ERRH_DetectorType const* item);
+FUNC(void, SUM_ERRH_CODE) ERRH_CheckConditionAndWrite(ERRH_DetectorType const* item);
+FUNC(void, SUM_ERRH_CODE) ERRH_Event_Detector(ERRH_DetectorType const* item);
+
+FUNC(void, SUM_ERRH_CODE) ERRH_UpdateTimeWindows(void);
+
+extern FUNC(uint16, RTE_CODE) Rte_CData_SUM_ERRH_SOHSupFail_Thresh(void);
+extern FUNC(uint32, RTE_CODE) Rte_CData_SUM_ERRH_SOHSupFail_TW_Thresh(void);
+«ENDIF-»
+
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

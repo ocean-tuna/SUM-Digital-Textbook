@@ -1,0 +1,478 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Errh_BSW_Error_Management.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM BSW Error Management
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+/* PRQA S 1532 EOF # Here for modularity */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+ «IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.size > 0-»
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS SSFM_ERRH_BSW_ERROR-»
+static boolean Sum_Ssfm_Get_Attr_DTC_Process_«SSFM_ERRH_BSW_ERROR.shortName»(void);
+«ENDFOREACH-»
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.sum_Ssfm_Errh_BSWErr_EventFilter_Ref.select(e|e != null && e.sum_Ssfm_FilterType.contains("X_OF_Y")).toSet() AS EVENT_FILTER-»
+static uint16 Sum_Ssfm_Get_CalibPar_«EVENT_FILTER.shortName»_X(void);
+static uint16 Sum_Ssfm_Get_CalibPar_«EVENT_FILTER.shortName»_Y(void);
+«ENDFOREACH-»
+static void Sum_Ssfm_Errh_Set_Dem(uint8 Index,Sum_Ssfm_EvaluationStatus Status_val);
+static void Sum_Ssfm_Errh_check_bus_off(uint8 BswErrorsIndx, Sum_Ssfm_EvaluationStatus EvalStatus);
+static void Sum_Ssfm_Errh_set_bswevent_status(Sum_Ssfm_EventStatus EventStatus, uint32 Event);
+static void Sum_Ssfm_Errh_BswError_Notify_SOH(Sum_Ssfm_Errh_BswErrors Sum_Ssfm_Errh_BswErrorsInfo, Sum_Ssfm_EventStatus EventStatus);
+static void Sum_Ssfm_Errh_UpdateBswEvent_0(Sum_Ssfm_BswErrorEvent BswEvent,Sum_Ssfm_EventStatus Status);
+static void Sum_Ssfm_Errh_UpdateBswEvent_1(Sum_Ssfm_BswErrorEvent BswEvent,Sum_Ssfm_EventStatus Status);
+static void Sum_Ssfm_Errh_UpdateBswEvent_2(Sum_Ssfm_BswErrorEvent BswEvent,Sum_Ssfm_EventStatus Status);
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 3218 4 # it needs External linkage for future use. */
+/* PRQA S 1514 3 # for future use. */
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS DEM_EVENT-»
+«IF DEM_EVENT.sum_Ssfm_Channel_Ref != null-»
+/* To store status of the DTCs BUS OFF for each Eth/CAN channel */
+static uint8 Errh_Publish_«DEM_EVENT.sum_Ssfm_Channel_Ref.shortName-»_BusOffError;
+«ENDIF-»
+«ENDFOREACH-»
+/* To routed BswEvent (Bitmap unint32) to SOH */
+static uint32 bsw_event_status = 0u;
+
+/* PRQA S 1504 1 # Based on the architecture design it is decided to keep the object in the corresponding component. */
+Sum_Ssfm_Errh_BswErrors Sum_Ssfm_BswErrors_Info [SSFM_NUM_OF_BSW_ERRORS] =
+{
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS DEM_EVENT-»
+	{
+		/* Function pointer to get flag for controlling whether to process DTC */
+		&Sum_Ssfm_Get_Attr_DTC_Process_«DEM_EVENT.shortName-»,
+		/* Error filter type */
+		SUM_SSFM_BSW_Error_Event_«Ssfm_GetBswErrorEventType(DEM_EVENT)-»,
+		/* Error COM Bus type */
+		«IF DEM_EVENT.sum_Ssfm_Channel_Ref != null-»
+		SUM_SSFM_BSW_Error_«DEM_EVENT.sum_Ssfm_Channel_Ref.shortName-»,
+		«ELSE-»
+		0xFF,
+		«ENDIF-»
+	},
+«ENDFOREACH-»
+};
+
+/* PRQA S 1504 1 # Based on the architecture design it is decided to keep the object in the corresponding component. */
+const Sum_Ssfm_DemEvent Sum_Ssfm_BswError_DemEvents [SSFM_NUM_OF_BSW_ERRORS] =
+{
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS DEM_EVENT-»
+
+	{
+		«IF DEM_EVENT.sum_Ssfm_EventIdForSettingDTC_ref != null-»
+		/* RTE Dem Server Call Function Pointer to set dem event after filter */
+		&Rte_Call_RP_Dem_SSFM_ERRH_Bsw_Error_«DEM_EVENT.sum_Ssfm_EventIdForSettingDTC_ref.shortName»_SetEventStatus,
+		«ELSE-»
+		/* RTE Dem Server Call Function Pointer to set dem event after filter */
+		NULL_PTR,
+		«ENDIF-»
+		/* DTC Value of input event, not been used but initialized with 0x0 to be inline with using of Sum_Ssfm_DemEvent variable  */
+		0x00u,
+	},
+«ENDFOREACH-»
+};
+
+/* PRQA S 1504 1 # Based on the architecture design it is decided to keep the object in the corresponding component. */
+Sum_Ssfm_Debouncer Sum_Ssfm_BswError_Debouncers[SSFM_NUM_OF_BSW_ERRORS] = {
+«IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.size > 0-»
+// BSW error management
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.sum_Ssfm_Errh_BSWErr_EventFilter_Ref AS EVENT_FILTER ITERATOR i-»
+	{
+		/* Error filter type */
+		SUM_SSFM_ErrorFilter_«Ssfm_GetFilterType(EVENT_FILTER)-»,
+		/* Number of configured X threshold */
+		&Sum_Ssfm_Get_CalibPar_«EVENT_FILTER.shortName»_X,
+		/* Number of configured Y threshold */
+		&Sum_Ssfm_Get_CalibPar_«EVENT_FILTER.shortName»_Y,
+		/* Callback function */
+		«IF Ssfm_IsTimeBasedFilterType(EVENT_FILTER)-»
+		&Sum_Ssfm_Errh_FP_BSW_Error_CbkWindowMoving,
+		«ELSE-»
+		NULL_PTR,
+		«ENDIF-»
+		/* Counter failed event */
+		0u,
+		/* Number of sample or ms*/
+		0u,
+		/* First failed flag */
+		FALSE,
+		/* Last Evaluation Status */
+		SUM_SSFM_EvaluationSts_Unknown,
+		/* Reference to input DTC */
+		{.BSWError = &Sum_Ssfm_BswErrors_Info[«i.counter0-»]},/* PRQA S 1053 # To use the union type. */
+		/* Owner Type*/
+		SUM_SSFM_DebouncerRefType_BSW_Error,
+		/* Reference to DemEvent */
+		&(Sum_Ssfm_BswError_DemEvents[«i.counter0-»]),
+	},
+«ENDFOREACH-»
+«ENDIF-»
+};
+«ENDIF-»
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+«IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.size > 0-»
+/* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+/* PRQA S 1532 EOF # Based on the architecture design it is decided to keep the following objects in the corresponding component. */
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.sum_Ssfm_Errh_BSWErr_EventFilter_Ref.select(e|e != null && e.sum_Ssfm_FilterType.contains("X_OF_Y")).toSet() AS EVENT_FILTER-»
+static uint16 Sum_Ssfm_Get_CalibPar_«EVENT_FILTER.shortName»_X(void){
+	return Rte_CData_«EVENT_FILTER.shortName»_X();
+}
+static uint16 Sum_Ssfm_Get_CalibPar_«EVENT_FILTER.shortName»_Y(void){
+	return Rte_CData_«EVENT_FILTER.shortName»_Y();
+}
+«ENDFOREACH-»
+
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS SSFM_ERRH_BSW_ERROR-»
+static boolean Sum_Ssfm_Get_Attr_DTC_Process_«SSFM_ERRH_BSW_ERROR.shortName»(void){
+	return Rte_CData_Sum_Ssfm_Errh_C_DTC_Process_«SSFM_ERRH_BSW_ERROR.shortName»();
+}
+
+«ENDFOREACH-»
+
+
+/**
+ * @brief           Static interface to pulish CAN / Eth Bus off errors
+ * @details         To be called when an DTC is an CAN or Eth Bus Off and result will be stored
+ *
+ * @param[in]       Bsw Error description, Error Status
+ * @return          void
+ */
+
+static void Sum_Ssfm_Errh_check_bus_off(uint8 BswErrorsIndx, Sum_Ssfm_EvaluationStatus EvalStatus)
+{
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS DEM_EVENT-»
+«IF DEM_EVENT.sum_Ssfm_Channel_Ref != null-»
+
+	if((Sum_Ssfm_BswErrors_Info[BswErrorsIndx].BswErrorComChannelType) == SUM_SSFM_BSW_Error_«DEM_EVENT.sum_Ssfm_Channel_Ref.shortName-»)
+	{
+		Errh_Publish_«DEM_EVENT.sum_Ssfm_Channel_Ref.shortName-»_BusOffError = (uint8)EvalStatus;
+	}
+«ENDIF-»
+«ENDFOREACH-»
+}
+
+/**
+ * @brief           Static interface to bit map of SOH errors
+ * @details         To be called bit map of SOH errors
+ *
+ * @param[in]       EventStatus , SOH bit mappable error event
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_set_bswevent_status(Sum_Ssfm_EventStatus EventStatus, uint32 Event)
+{
+    /* Set the respective bit in the Errh_E_BswEvent interface based on event status */
+    if (EventStatus == SUM_SSFM_EventSts_Failed)
+    {
+    	/* PRQA S 1891 1 # needed for bitwise operation */
+        ((bsw_event_status) |= (1u<<(Event)));
+    }
+    else
+    {
+    	/* PRQA S 1891 1 # needed for bitwise operation */
+        ((bsw_event_status) &= ~(1u<<(Event)));
+    }
+}
+
+/**
+ * @brief           Static interface to notify BSW errors to SOH
+ * @details         To be called when to notify BSW errors to SOH via BswEvent (Bitmap unint32)
+ *					Bit 0 == NVM_E_HARDWARE
+ *					Bit 1 == NVM_E_INTEGRITY_FAILED
+ *					Bit 2 == NVM_E_REQ_FAILED
+ *					Bit 3 == NVM_E_WRONG_BLOCK_ID
+ *					Bit 4 == NVM_E_VERIFY_FAILED
+ *					Bit 5== NVM_E_LOSS_OF_REDUNDANCY
+ *					Bit 6 == NVM_E_QUEUE_OVERFLOW
+ *					Bit 7 == NVM_E_WRITE_PROTECTED
+ *					Bit 8 == WDGM_E_SUPERVISION
+ *					Bit 9 == WDGM_E_SET_MODE
+ *					Bit 10 till Bit 31== Reserved
+ * @param[in]       Bsw Error description, error Status
+ * @return          void
+ */
+
+static void Sum_Ssfm_Errh_BswError_Notify_SOH(Sum_Ssfm_Errh_BswErrors Sum_Ssfm_Errh_BswErrorsInfo, Sum_Ssfm_EventStatus EventStatus)
+{
+	/*To avoid CYC*/
+	Sum_Ssfm_Errh_UpdateBswEvent_0(Sum_Ssfm_Errh_BswErrorsInfo.BswErrorEvent,EventStatus);
+	Sum_Ssfm_Errh_UpdateBswEvent_1(Sum_Ssfm_Errh_BswErrorsInfo.BswErrorEvent,EventStatus);
+	Sum_Ssfm_Errh_UpdateBswEvent_2(Sum_Ssfm_Errh_BswErrorsInfo.BswErrorEvent,EventStatus);
+}
+
+/**
+ * @brief           Static interface to notify BSW errors to SOH to avoid CyC
+ * @details         To be called when to notify BSW errors to SOH
+ *
+ * @param[in]      	Event, debounced Status
+ * @return          void
+ */
+
+static void Sum_Ssfm_Errh_UpdateBswEvent_0(Sum_Ssfm_BswErrorEvent BswEvent,Sum_Ssfm_EventStatus Status)
+{
+    /* Decipher event ID and set event status bit */
+    switch(BswEvent)
+    {
+		case SUM_SSFM_BSW_Error_Event_NVM_E_HARDWARE:
+            Sum_Ssfm_Errh_set_bswevent_status(Status, ERRH_BSWEVENT_NVM_E_HARDWARE);
+            break;
+
+        case SUM_SSFM_BSW_Error_Event_NVM_E_INTEGRITY_FAILED:
+            Sum_Ssfm_Errh_set_bswevent_status(Status, ERRH_BSWEVENT_NVM_E_INTEGRITY_FAILED);
+            break;
+
+        case SUM_SSFM_BSW_Error_Event_NVM_E_REQ_FAILED:
+            Sum_Ssfm_Errh_set_bswevent_status(Status, ERRH_BSWEVENT_NVM_E_REQ_FAILED);
+            break;
+
+        case SUM_SSFM_BSW_Error_Event_NVM_E_WRONG_BLOCK_ID:
+            Sum_Ssfm_Errh_set_bswevent_status(Status, ERRH_BSWEVENT_NVM_E_WRONG_BLOCK_ID);
+            break;
+
+        default:
+            /* Do nothing, not needed to updated ERRH_E_BswEvent */
+            break;
+    }
+
+}
+
+/**
+ * @brief           Static interface to notify BSW errors to SOH to avoid CyC
+ * @details         To be called when to notify BSW errors to SOH
+ *
+ * @param[in]      	Event, debounced Status
+ * @return          void
+ */
+
+static void Sum_Ssfm_Errh_UpdateBswEvent_1(Sum_Ssfm_BswErrorEvent BswEvent,Sum_Ssfm_EventStatus Status)
+{
+    /* Decipher event ID and set event status bit */
+    switch(BswEvent)
+    {
+	    case SUM_SSFM_BSW_Error_Event_NVM_E_VERIFY_FAILED:
+	        Sum_Ssfm_Errh_set_bswevent_status(Status, ERRH_BSWEVENT_NVM_E_VERIFY_FAILED);
+	        break;
+
+	    case SUM_SSFM_BSW_Error_Event_NVM_E_LOSS_OF_REDUNDANCY:
+	        Sum_Ssfm_Errh_set_bswevent_status(Status, ERRH_BSWEVENT_NVM_E_LOSS_OF_REDUNDANCY);
+	        break;
+
+	    case SUM_SSFM_BSW_Error_Event_NVM_E_QUEUE_OVERFLOW:
+	        Sum_Ssfm_Errh_set_bswevent_status(Status, ERRH_BSWEVENT_NVM_E_QUEUE_OVERFLOW);
+	        break;
+
+	    case SUM_SSFM_BSW_Error_Event_NVM_E_WRITE_PROTECTED:
+	        Sum_Ssfm_Errh_set_bswevent_status(Status, ERRH_BSWEVENT_NVM_E_WRITE_PROTECTED);
+	        break;
+
+        default:
+        /* Do nothing, not needed to updated ERRH_E_BswEvent */
+        break;
+    }
+
+}
+
+/**
+ * @brief           Static interface to notify BSW errors to SOH to avoid CyC
+ * @details         To be called when to notify BSW errors to SOH
+ *
+ * @param[in]      	Event, debounced Status
+ * @return          void
+ */
+
+static void Sum_Ssfm_Errh_UpdateBswEvent_2(Sum_Ssfm_BswErrorEvent BswEvent,Sum_Ssfm_EventStatus Status)
+{
+    /* Decipher event ID and set event status bit */
+    switch(BswEvent)
+    {
+		case SUM_SSFM_BSW_Error_Event_WDGM_E_SUPERVISION:
+			Sum_Ssfm_Errh_set_bswevent_status(Status, ERRH_BSWEVENT_WDGM_E_SUPERVISION);
+			break;
+		case SUM_SSFM_BSW_Error_Event_WDGM_E_SET_MODE:
+			Sum_Ssfm_Errh_set_bswevent_status(Status, ERRH_BSWEVENT_WDGM_E_SET_MODE);
+			break;
+		default:
+			/* Do nothing, not needed to updated ERRH_E_BswEvent */
+			break;
+    }
+}
+
+/**
+ * @brief           Static interface to set Dem events
+ * @details         To be called set Dem events
+ *
+ * @param[in]       index of BSW error DTC, Status
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_Set_Dem(uint8 Index,Sum_Ssfm_EvaluationStatus Status_val)
+{
+	/* Check for debouncing result and proccess accordingly */
+    if(Status_val == SUM_SSFM_EvaluationSts_Failed)
+    {
+        Sum_Ssfm_BswError_Debouncers[Index].DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_FAILED);
+		/*Check if DTC is a Can Channel BUS OFF*/
+		/*[$Satisfies $DDS_SSFM 124]*/
+		Sum_Ssfm_Errh_check_bus_off(Index, Status_val);
+    }
+    else if(Status_val == SUM_SSFM_EvaluationSts_Passed)
+    {
+        Sum_Ssfm_BswError_Debouncers[Index].DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_PASSED);
+		/*Check if DTC is a Can Channel BUS OFF*/
+		/*[$Satisfies $DDS_SSFM 124]*/
+		Sum_Ssfm_Errh_check_bus_off(Index, Status_val);
+    }
+	else
+	{
+		/*do nothing*/
+	}
+
+}
+«ENDIF-»
+«IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.size > 0-»
+
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS DEM_EVENT ITERATOR i-»
+/**
+ * @brief           SSFM/SMM runnable to assess the lost comm status for a single signal group
+ * @details         To be called upon any change in the status of DTC notification to the Errh
+ *
+ * @param[in]       Old DTC Status,New DTC Status
+ * @return          void
+ */
+ /* PRQA S 1503 1 # Will be called in dtc status change runnable*/
+void «DEM_EVENT.sum_Ssfm_EventIdToUpdateError_ref.demCallbackEventUdsStatusChanged.first().demCallbackEventUdsStatusChangedFnc-»(Dem_UdsStatusByteType EventStatusByteOld, Dem_UdsStatusByteType EventStatusByteNew)
+{
+«IF DEM_EVENT.sum_Ssfm_EventIdForSettingDTC_ref != null-»
+	Sum_Ssfm_EvaluationStatus ret_val;
+«ENDIF-»
+    boolean dem_confirmed = ((SSFM_DEM_DTC_TEST_FAILED_MASK & EventStatusByteNew) == SSFM_DEM_DTC_TEST_FAILED_MASK);
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+    /*unused variable*/
+	(void)EventStatusByteOld;
+
+			/*[$Satisfies $DDS_SSFM 189]*/
+			/* Flag for controlling whether to process BSW production error and check if DTCs are enabled */
+			if((Sum_Ssfm_BswErrors_Info[«i.counter0-»].FP_ERRH_pCdata_Type() == TRUE) && (dtcs_are_disabled == FALSE))
+			{
+«IF DEM_EVENT.sum_Ssfm_EventIdForSettingDTC_ref != null-»
+				/*ERRH either debounces an event which is DTC relevant or passes the non-debounced event which are in
+											ERRH_E_BswEvent list to SUM_SOH for Operation Monitoring purposes*/
+					/*[$Satisfies $DDS_SSFM 122]*/
+					/* filter the bsw error based to filter type configured */
+					/* PRQA S 4302 1 # enum is casted to bool as in above statement confirmed condition is checked */
+					ret_val = Sum_Ssfm_ErrhDebouncerExecution(&Sum_Ssfm_BswError_Debouncers[«i.counter0-»],(dem_confirmed ? SUM_SSFM_EventSts_Failed : SUM_SSFM_EventSts_Passed));
+					/*[$Satisfies $DDS_SSFM 123]*/
+					/*Set Dem status*/
+					Sum_Ssfm_Errh_Set_Dem(«i.counter0-»,ret_val);
+«ELSE-»
+					/* Update Errh_E_BswEvent */
+					/* PRQA S 4302 1 # enum is casted to bool as in above statement confirmed condition is checked */
+					Sum_Ssfm_Errh_BswError_Notify_SOH(Sum_Ssfm_BswErrors_Info[«i.counter0-»],(dem_confirmed ? SUM_SSFM_EventSts_Failed : SUM_SSFM_EventSts_Passed));
+					/*notify to SOH */
+					(void)Rte_Write_PP_SSFM_ERRH_SOH_BSW_ERRORS_BswEvent(bsw_event_status);
+
+«ENDIF-»
+			}
+}
+«ENDFOREACH-»
+
+/**
+ * @brief           callback function of debouncing Moving Window X of Y
+ * @details         To Pointer callback function of debouncing Moving Window X of Y
+ *
+ * @param[in]       Sum_Ssfm_Debouncer
+ * @return          void
+ */
+ /* PRQA S 1505 2 # callback for debounced moving window of bsw error type*/
+/* PRQA S 3673 5 # The pointer is not pointing to const to be aligned with the other callbacks used for debouncing callback */
+void Sum_Ssfm_Errh_FP_BSW_Error_CbkWindowMoving(Sum_Ssfm_Debouncer* debouncer_instance)
+{
+	/*set as event passed as call back is called after time elaspe condition*/
+	debouncer_instance->DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_PASSED);
+
+}
+
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS DEM_EVENT-»
+«IF DEM_EVENT.sum_Ssfm_Channel_Ref != null-»
+
+/**
+ * @brief           function to publish BUS of error of CAN channel
+ * @details         To Pointer publish BUS of error of CAN channel
+ *
+ * @param[in]       void
+ * @return          error status
+ */
+/* PRQA S 1503 1 # it needs External linkage for future use. */
+uint8 Sum_Ssfm_Errh_Publish_«DEM_EVENT.sum_Ssfm_Channel_Ref.shortName-»(void)
+{
+	return Errh_Publish_«DEM_EVENT.sum_Ssfm_Channel_Ref.shortName-»_BusOffError;
+
+}
+«ENDIF-»
+«ENDFOREACH-»
+
+
+«ENDIF-»
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+ /* EOF */
+«ENDFILE»
+«ENDDEFINE»

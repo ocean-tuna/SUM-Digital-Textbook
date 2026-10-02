@@ -1,0 +1,88 @@
+<!--
+/* ********************************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as the communication of its contents to
+ * others without explicit authorization is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or design.
+ ******************************************************************************************************************* */
+
+/* Administrative Information (automatically filled in)
+* $Domain____:$
+* $Namespace_:$
+* $Class_____:$
+* $Name______:$
+* $Variant___:
+* $Revision__:0$
+* $Author____:$
+**********************************************************************************************************************
+*/
+ -->
+
+<workflow>
+	<!-- include of properties files with global settings -->
+    <property file="oaw.properties"/>
+
+  <!-- Property file containing model package and generator version info -->
+	<property file="Diag_Workflow.properties"/>
+   <!-- Property file containing model and editor version info -->
+   	  <property file="model_tool_version.properties"/>
+
+	<!-- generate Diag_Cfg.h -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="SUM_Diag_Cfg_h::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	<!-- generate Diag_Cfg.c -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="SUM_Diag_Cfg_c::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	<!-- generate Diag_Cfg_SWCD.arxml -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="SUM_Diag_Cfg_SWCD_arxml::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	<!-- generate SUM_Diag_Runnables.c -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="SUM_Diag_Runnables_c::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	<!-- generate SUM_Diag_Services.c -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="SUM_Diag_Services_c::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+</workflow>

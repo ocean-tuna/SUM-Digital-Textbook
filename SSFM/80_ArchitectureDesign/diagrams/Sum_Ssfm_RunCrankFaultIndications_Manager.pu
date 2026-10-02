@@ -1,0 +1,57 @@
+@startuml Sum_Ssfm_RunCrankFaultIndications_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_RunCrankFaultIndications_Manager"
+
+**Interfaces Legend**
+   //II152 //: ERRH_ExecutionStatus
+   //II163 //: Sum_Ssfm_ErrhDebouncerExecution (Error Debouncer)
+   //ri122 //: SUSD_ERRH_RunCrankInputStuckHighDiagnosticStatus
+   //ri123 //: SUSD_ERRH_RunCrankInputStuckLowDiagnosticStatus
+   //ri128 //: Dem_CallbackDTCStatusChangedIndication (Runk Crank Fault Indications)
+   //CI03  //: Sum_Ssfm_Errh_C_DTCProcess_RC<n> (High/Low)   
+   //pi136 //: DiagnosticMonitor (Dem_SetEventStatus)
+   //pi138 //: RunCrankInputStuckHigh_FA_StatusRequest
+   //pi139 //: RunCrankInputStuckLow_FA_StatusRequest
+   //II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)   
+endlegend
+
+component [SSFM::Sum_Ssfm_RunCrankFaultIndications_Manager] as EC{
+	portin ri122
+	portin ri123
+   portin ri128
+	portout pi136
+	portout pi138
+	portout pi139
+	[Sum_Ssfm_RunCrankFaultIndications_Manager]  as E
+}
+
+note top of EC
+It checks the RunCrankInputStuckHighDiagnosticStatus and 
+RunCrankInputStuckLowDiagnosticStatus (from SUSD)
+and requests the DEM to set/clear the corresponding DTC. 
+After receiving DTC confirmation from DEM via callback function 
+Dem_CallbackDTCStatusChangedIndication, it notifies back the SUSD through 
+the RunCrankInputStuckHigh_FA_StatusRequest
+and RunCrankInputStuckLow_FA_StatusRequest interfaces.
+end note
+
+   interface II152
+   interface CI03
+   interface II163
+   interface II184
+
+
+  II152 -> E
+  II163 -> E
+  ri122 -> E
+  ri123 -> E
+  ri128 -> E
+  CI03 -> E
+  II184 -> E
+  E -> pi136
+  E -> pi138
+  E -> pi139  
+@enduml

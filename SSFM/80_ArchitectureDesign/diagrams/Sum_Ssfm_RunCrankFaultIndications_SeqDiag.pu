@@ -1,0 +1,43 @@
+@startuml Sum_Ssfm_RunCrankFaultIndications_SeqDiag
+
+participant Sum_SUSD as SUSD
+participant Dem 
+participant RTE as RTE
+
+box SUM_SSFM
+    participant Sum_Ssfm_RunCrankFault_Manager as RCFault_Manager
+end box
+
+
+group RunCrank Input Fault Indication Sequence
+activate RCFault_Manager
+
+par
+    SUSD -> RCFault_Manager: RunCrankInputStuckHighDiagnosticStatus changed
+    RCFault_Manager->RCFault_Manager: Runnable_SSFM_RunCrankHighInputStuckDiagnosticStatus_Changed()
+else
+    SUSD -> RCFault_Manager: RunCrankInputStuckLowDiagnosticStatus changed
+    RCFault_Manager->RCFault_Manager: Runnable_SSFM_RunCrankLowInputStuckDiagnosticStatus_Changed()
+end
+
+alt Calibration parameter Run Crank Fault DTC Process is set
+    RCFault_Manager -> SUSD: Read interface RunCrankInputStuckHighDiagnosticStatus \n and RunCrankInputStuckLowDiagnosticStatus from SUSD
+activate SUSD
+    SUSD --> RCFault_Manager
+deactivate SUSD
+    RCFault_Manager -> Dem: Set interface Dem_SetEventStatus
+end
+end
+
+group Call back of DTC Status
+Dem -> RCFault_Manager: Call back DTC status changed
+alt DTC Value of call back function \n matches the DTC Value of configured RunCrankHigh or RunCrankLow
+par RunCrankHigh configured
+RCFault_Manager -> SUSD: Set fault active status request to interface RunCrankInputStuckHigh_FA_StatusRequest
+else RunCrankLow configured
+RCFault_Manager -> SUSD: Set fault active status request to interface  RunCrankInputStuckLow_FA_StatusRequest
+end
+end
+end 
+deactivate RCFault_Manager
+@enduml 

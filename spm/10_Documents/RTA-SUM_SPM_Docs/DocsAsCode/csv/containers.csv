@@ -1,0 +1,19 @@
+SpmConfigSet,Container for the configuration of module instance specific set
+SpmGeneral,Container for the Configuration of project specific settings
+SpmDiagnostic,Container with the reference needed for DIDs
+SpmETHWkUpFrmRef,Container with the reference to the ETH wake-up frame.
+SpmCANWkUpFrmRef,Container for the configuration of the SPM used CAN wake-up frames
+SpmVLANCom,Container for the configuration of VLAN communication for configurable interfaces.
+SpmVLANComPwrMgrHeartbeat, Container for the configuration of VLAN communication items for heartbeat frames.
+SpmVLANComPwrMgrWakeupFrames, Container for the configuration of VLAN communication items for wakeup frames.
+SpmVLANComPwrMgrWakeupFramesMulticast, Container for the configuration of VLAN communication items for Multicast wakeup frames.
+SpmVLANComSwrMgrInfo,Container for the configuration of VLAN communication items for software manager info frames.
+SpmPowPrf,Container for the configuration of Power Profile. At least one power profile needs to be configured for the ECU.
+SpmProfileSwDep,Container for the configuration of Power Profile Software Dependency
+SpmPgttEntries,Container for the configuration of Power Graph. SPM uses it for getting network information for its inter-ECU communication. Mandatory container.
+SpmTrgDvc,Container for the configuration of Remote device information. At least one target device needs to be in communication with the current SPM instance.
+SpmTrgDvcHndlngInfo,"The current container addresses (if configured) how the current SPM shall manage the target device. Not all the target device are directly managed by the current SPM instance. In case the current SPM runs on a INTERMEDIATE node and the Target Device is an EDGE, then whether SPM handles this edge node, this container reports the useful information on how to consume the wake-up frame information for the current device."
+SpmWkngDvc,Container for the configuration of local node network configurations.
+SpmTrgDvcInfo,Container for the configuration of Power Profile
+SpmWkUpSeq,Container for the configuration of a wake-up sequence.
+SpmWkUpStep,Container for the configuration of a specific step for a wake-up sequence.

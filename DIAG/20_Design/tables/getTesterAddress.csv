@@ -1,0 +1,5 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};getTesterAddress
+\cellcolor{ETASlightgray}\textbf{Parameters};void
+\cellcolor{ETASlightgray}\textbf{Return};uint16 testerAddress
+\cellcolor{ETASlightgray}\textbf{Description};Returns tester address stored in NvM

@@ -1,0 +1,28 @@
+1;2
+\textbf{Term/Abbreviation};\textbf{Definition}
+API;Application Program Interface
+BSW;Basic Software
+BswM;Basic Software Mode Manager
+CAN;Controller Area Network
+Com;Communication Module
+Dcm;Diagnostic Communication Module
+Dem;Diagnostic Event Manager
+DTC;Diagnostic Trouble Code
+DIAG;Diagnostic Application Services
+ECU;Electronic Control Unit
+Ecuc;ECU Configuration File
+ERRH;Error Handling Module
+GM;General Motors
+MEC;Manufacturer Enable Counter
+NvM;NVRAM Manager
+OTA;Over The Air
+OTA_PSF;Over The Air Programming State Flag
+PNC;Partial Network Coordinator
+PSF;Programming State Flag
+RTE;Run Time Environment
+SOH;State Of Health Manager
+SSC;Security Service Coordinator
+SSM;Signal Status Monitor
+SUM;Standard Utility Module
+SUSD;Startup Shut down Coordinator
+SW;Software

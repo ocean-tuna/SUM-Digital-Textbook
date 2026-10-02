@@ -1,0 +1,5 @@
+3;15
+\cellcolor{ETASlightgray}\textbf{Port Name};PP_DIAG_SSFM_GetMEC
+\cellcolor{ETASlightgray}\textbf{Port Interface};DIAG_GetMEC
+\cellcolor{ETASlightgray}\textbf{Port Type};Sender Receiver Interface
+\cellcolor{ETASlightgray}\textbf{Description};The port is connected to the SUM_SSFM. The port will provide the MEC value to the SUM_SSFM module

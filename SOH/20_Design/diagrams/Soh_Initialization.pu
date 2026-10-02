@@ -1,0 +1,18 @@
+@startuml Soh_Initialization
+
+participant BswM
+participant SUM_SOH
+
+
+
+group if (SohGenerateInitRunnable == False)
+BswM -> SUM_SOH : SOH_Init();
+end
+
+group if (SohGenerateInitRunnable == True)
+SUM_SOH -> SUM_SOH : Runnable_SOH_Init();
+SUM_SOH -> SUM_SOH : SOH_init();
+end
+
+
+@enduml

@@ -1,0 +1,42 @@
+[
+    {
+        "Name": "SUM_SOH_ImmeReset_Thresh",
+        "Description": "",
+        "Multiplicity": "",
+        "Minimum": 0,
+        "Maximum": 1,
+        "Default": 0
+    },
+    {
+        "Name": "SUM_SOH_ImmeReset_TW_Thresh",
+        "Description": "",
+        "Multiplicity": "0..1",
+        "Minimum": 0,
+        "Maximum": 1,
+        "Default": 0
+    },
+    {
+        "Name": "SUM_SOH_DelayedReset_Thresh",
+        "Description": "",
+        "Multiplicity": "0..1",
+        "Minimum": 0,
+        "Maximum": 1,
+        "Default": 0
+    },
+    {
+        "Name": "SUM_SOH_DelayedReset_TW_Thresh",
+        "Description": "",
+        "Multiplicity": "0..1",
+        "Minimum": 0,
+        "Maximum": 1,
+        "Default": 0
+    },
+    {
+        "Name": "SUM_SOH_DiagReset_Thresh",
+        "Description": "",
+        "Multiplicity": "0..1",
+        "Minimum": 0,
+        "Maximum": 1,
+        "Default": 0
+    }
+]

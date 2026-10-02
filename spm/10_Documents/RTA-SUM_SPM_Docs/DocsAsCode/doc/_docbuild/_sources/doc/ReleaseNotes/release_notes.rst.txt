@@ -1,0 +1,311 @@
+=========================
+RTA-SUM SPM Release Notes
+=========================
+
+************
+Introduction
+************
+
+This document describes release specific details and notes related to RTA-SUM SPM.
+
+Definitions and Abbreviations
+=============================
+
+============================== ===================================================================================================
+    Terms and Abbreviations                Definitions
+============================== ===================================================================================================
+    AUTOSAR                     AUTOmotive Open System ARchitecture
+    BSW                         Basic Software
+    CAN                         Controlled Area Network
+    CDD                         Complex-Device Driver
+    CanIf                       Can Interface AUTOSAR BSW Module
+    PGTT                        Power Graph Traversal Table
+    PM                          Power Manager 
+    RTE                         Run-Time environment AUTOSAR middleware between Application Software and Basic Software
+    SE                          Software Entity (Assume it as generic software module/function or Software Service)
+    SM                          Software Manager
+    SPM                         Software/Power manager
+    SUM                         Standardized Utility Module
+    SWCD                        Software Component Description
+    SoAd                        Socket Adaptor AUTOSAR BSW Module
+============================== ===================================================================================================
+
+Release Notes Revision History
+==============================
+
+=================  =======================================================================  =================================
+Version             Description of Changes                                                   Author
+=================  =======================================================================  =================================
+0.0.1               * Initial Version - First Release                                         RTA-SUM Development Team
+        
+0.0.2               * Removed Sum_Spm_SmPmIf.                                                 
+                    * Added Software for coordination of wake-up on CAN.                      RTA-SUM Development Team
+        
+0.0.3               * Added support for Can wake-up frames.                                   
+                    * First integration in RTA-SUM plugin                                     RTA-SUM Development Team
+        
+0.0.3_1             * Added header :code:`Cdd_SPM`                                            RTA-SUM Development Team
+        
+0.0.3_2             * Added scripts                                                           
+                        * :code:`Sum_Spm_Requester_Queue_*.xpt`,                                   
+                        * :code:`Sum_Spm_Header_h.xpt`,                                           
+                        * :code:`Sum_Spm_SM_Req_EthIf_*.xpt`,                                     
+                        * :code:`Sum_Spm_SoftwMgr.h`                                          RTA-SUM Development Team
+        
+0.0.3_3             * Added scripts :code:`Sum_Spm_ComCbk_*.xpt`                              RTA-SUM Development Team
+        
+0.4.4               * Added scripts :code:`Sum_Spm_Cbk_*.xpt`:                                
+                    * Support of Etherent Wake-up Frame and CAN Wake-up frame.                 
+                    * Removed                                                                  
+                        * :code:`Sum_Spm_WakeUpOnCan_*.xpt`,                                       
+                        * :code:`Sum_Spm_CanTransmit_*.xpt`,                                       
+                        * :code:`Sum_Spm_CanIf_Cbk_*.xpt` scripts.                                 
+                    * Renamed :code:`Cdd_SPM.h` in :code:`Cdd.h`                                
+                    * Support of Helper Function as Optional Parameter                        RTA-SUM Development Team
+        
+0.0.5               * Support of PDU handling: SPM can request to the BswM                    
+                    * the switch of the PDU modes in order to activate a Power Profile.       RTA-SUM Development Team
+        
+0.0.5_1             * RTE supports the metadata by SENDER-RECEIVER interface.                 
+                    * Modules :code:`Sum_Spm_ComCbk_*.xpt` not supported                       
+                      anymore and replaced by :code:`Sum_Spm_MetaData_*.xpt`                   
+                    * Bugfixes                                                                
+                    * Fixed Issue in the generation script                                     
+                      Sum_Spm_Cfg_h.xpt for macro SPM_REQER_LST_SIZE.                          
+                    * Fixed Issue Power profile status is sent several times.                 RTA-SUM Development Team
+        
+0.0.6               * Support of TC10 wake up frame.                                           
+                    * Bugfixes                                                                
+                    * Heartbeat and WkUp frame periodicities are calibratable.                 
+                    * SPM Incorrect rolling counter for ShutdownPermission is fixed.          
+                      It will be rolling from 0 to 3.                                         RTA-SUM Development Team
+        
+0.0.7               * Support of Metadata handling in Rx through RTE (GMSUM-8365)             RTA-SUM Development Team
+=================  =======================================================================  =================================
+
+*******************
+Release Description
+*******************
+
+Intended Use
+============
+
+This version of RTA-SUM SPM is recommended for SDV 2.0 programs and is **NOT** qualified for use in
+production/series releases.
+ 
+This version of RTA-SUM SPM is only intended to be reviewed by GM architects to confirm the correct implementation with respect to specification.
+
+Functions implemented in this release
+=====================================
+
+External References
+-------------------
+
++-----------------------------------------------------------------------------+--------------------------------------------------+
+|  Document Version                                                           |        Version                                   |
++=============================================================================+==================================================+
+| SDV-2017 "Vehicle Power management Architecture"                            |  4.0_20231206                                    |
++-----------------------------------------------------------------------------+--------------------------------------------------+
+| SDV-8217 - Mechatronic Power Manager Infrastructure Specification           |  27.174.0p0                                      |
++-----------------------------------------------------------------------------+--------------------------------------------------+
+| SDV-8201 "Service Discovery Extension Specification_27.27.172.3p1"          |  27.27.172.3p1 (Release date September 28, 2023) |                                         
++-----------------------------------------------------------------------------+--------------------------------------------------+
+
+Implementation Description
+--------------------------
+
+This version of RTA-SUM SPM implements the following functions:
+
+* Manual Configuration of:
+  
+    * Power Profile 
+    * Power Graph Traversal Table initial values
+    * General Parameters (refer to :ref:`module-configuration-overview` in the user Guide)
+  
+* RTE ports to/from RTE for:
+
+    * Sending a SM control message
+    * Sending periodically current instance heartbeat
+    * Receiving a SM control message
+    * Receiving a Remote Host heartbeat
+    * Sending the Shutdown permission to the RTA-SUM SUSD
+    * Receiving the permit execution value from the RTA-SUM SUSD
+    * Publish the list of available services
+    * Publish the list of Lost Nodes with the DTC status (Lost/Recover)
+    * Publish the list of Services to be Activated/Deactivated
+    * Receive a local request for activating/deactivating a Power Profile
+    * Provide the DTC number for a Target device
+  
+* Two Periodic Runnables:
+
+    * To coordinate the Power Manager features as per SDV-8217 and SDV-2017 specifications (Fixed periodicity to 5ms)
+    * To coordinate the Software Manager features as per SDV-8217 and SDV-2017 specifications (COnfigurable periodicity)
+
+* Per-Instance parameters to calibrate the value of the Heartbeat monitoring timing counter initialization value
+* An Initialization function
+* Object's attributes and functions for aggregating the request/response to send to remote host
+* Object's attributes and functions to build the message to a remote host.
+* Functions to coordinate the Transmission and Reception of Wake-up frames on CAN and Ethernet.
+
+ETAS RTA-SUM SPM Related Software
+=================================
+
+All the release software is below folder *20_Implementation/*.
+
+============================================================ ============================================================================================================================
+             File                                               Description                                    
+============================================================ ============================================================================================================================
+scripts/paramdef/Spm_EcucParamDef.arxml                                 Parameter Definition schema.
+scripts/templates/Spm_workflow.properties                               SPM Code generation Properties.
+scripts/templates/Sum_Spm_bamf.arxml                                    SPM build action manifest.
+scripts/templates/Sum_Spm_Generate.oaw                                  SPM generation action file.
+scripts/templates/Sum_Spm_Validate.oaw                                  SPM Validation action file.
+scripts/templates/Sum_Spm.chk                                           SPM configuration validation script.
+scripts/templates/Spm_Utils.ext                                         SPM extensions scripts.
+scripts/templates/Sum_Spm_Cfg_CDD_arxml.xpt                             Generation script for Complex Device Driver Software Component Description.
+scripts/templates/Sum_SpmTypes_h.xpt			                        Generation script of Header for SPM Data types
+scripts/templates/Sum_Spm_Cbk_c.xpt                                     Generation script of Source for managing Wake-up Frames on CAN and Ethernet.
+scripts/templates/Sum_Spm_Cbk_h.xpt                                     Generation script of Header for managing Wake-up Frames on CAN and Ethernet.
+scripts/templates/Sum_Spm_Cfg_c.xpt			                            Generation script of Source for Configuration dependent file.
+scripts/templates/Sum_Spm_Cfg_h.xpt			                            Generation script of Header for Configuration dependent file.
+scripts/templates/Sum_Spm_DevicePowerState_c.xpt			            Generation script of Source for The Device Power state API implementation.
+scripts/templates/Sum_Spm_DevicePowerState_h.xpt			            Generation script of Header for The Device Power state API implementation.
+scripts/templates/Sum_Spm_MetaData_c.xpt                                Generation script of Source for MetaData handling API implementation.
+scripts/templates/Sum_Spm_MetaData_h.xpt                                Generation script of Header for MetaData handling API implementation.
+scripts/templates/Sum_Spm_PBCfg_c.xpt			                        Generation script of Source for Post-Build data generated.
+scripts/templates/Sum_Spm_PBCfg_h.xpt			                        Generation script of Header for Post-Build data generated.
+scripts/templates/Sum_Spm_PowerOnDevice_c.xpt			                Generation script of Source for PowerOnDevice API implementation.
+scripts/templates/Sum_Spm_PowerOnDevice_h.xpt			                Generation script of Header for PowerOnDevice API implementation.
+scripts/templates/Sum_Spm_PowerProfileStateMachine_c.xpt			    Generation script of Source for Power Profile Finite State Machine management.
+scripts/templates/Sum_Spm_PowerProfileStateMachine_h.xpt			    Generation script of Header for Power Profile Finite State Machine management.
+scripts/templates/Sum_Spm_PwrMgr_c.xpt			                        Generation script of Source for Power Manager functionalities and coordination.
+scripts/templates/Sum_Spm_PwrMgr_h.xpt			                        Generation script of Header for Power Manager functionalities and coordination.
+scripts/templates/Sum_Spm_RequesterLst_c.xpt			                Generation script of Source for Requester list for power profile.
+scripts/templates/Sum_Spm_RequesterLst_h.xpt			                Generation script of Header for Requester list for power profile.
+scripts/templates/Sum_Spm_Requester_Queue_c.xpt                         Generation script of Source for Requester Queue for power profile.
+scripts/templates/Sum_Spm_Requester_Queue_h.xpt                         Generation script of Header for Requester Queue for power profile.
+scripts/templates/Sum_Spm_Services_c.xpt			                    Generation script of Source for SPM implementing services.
+scripts/templates/Sum_Spm_Services_h.xpt			                    Generation script of Header for SPM implementing services.
+scripts/templates/Sum_Spm_SM_Req_EthIf.c                                Generation script of Source for SPM builder of SM frames.
+scripts/templates/Sum_Spm_SM_Req_EthIf.h                                Generation script of Header for SPM builder of SM frames.
+scripts/templates/Sum_Spm_SoftwMgr_c.xpt			                    Generation script of Source for Software Manager functionalities and coordination.
+scripts/templates/Sum_Spm_SoftwMgr_h.xpt			                    Generation script of Header for Software Manager functionalities and coordination.
+scripts/templates/Sum_Spm_SrvcMgrIf_c.xpt			                    Generation script of Source for interfacing with Service Manager.
+scripts/templates/Sum_Spm_SrvcMgrIf_h.xpt			                    Generation script of Header for interfacing with Service Manager.
+scripts/templates/Sum_Spm_WakeUpHelperFunction_h.xpt			        Generation script of Header for external Helper Function (Project Specific).
+api/Sum_Spm_CanIfDispatchUL.h                                           Header for defining all the function to control the State of CAN bus.
+api/Cdd.h                                                               Header Dummy generated by BSW Code (Added only for compilation).
+api/Sum_Spm_Integration.h                                               Header for Sum_Spm_Integration. 
+api/Sum_Spm_MemMap.h                                                    Header for Sum_Spm_MemMap.
+api/Sum_Spm_PowerProfileStateMachineEventsCode.h                        Header that contains event codes for the updating of the power profile state machine.
+api/Sum_Spm_SrvLstInfoItm.h                                             Header that contains the structure definition for service item.
+scr/Sum_Spm_CanIfDispatchUL.c                                           Source file that contains all functions to set the state of the CAN Bus (Integrator scope).
+scr/Sum_Spm_CommErrHndlr.c                                              Source file to handle an error on CAN wake-up transmission frame and takes the countermeasures (Integrator scope).
+============================================================ ============================================================================================================================                        
+
+As additional work products, the current release includes some configuration arxml files to configure the involved modules of the CAN stack in the SPM feature.
+
+
+================================================= =====================================================
+ File                                                                   Description
+================================================= =====================================================
+IO_Aggregator2_Project_Can_EcucValues.arxml             Configuration of the CAN module.
+EcuC_DummyPduTx_Rx_SPM_WkonCan.arxml                    Configuration of the PduRef for Pdu Length.
+Cdd.arxml                                               Configuration of the Cdd for addressing
+                                                        communication between SPM and CanIf.
+CanIf.arxml                                             Configuration of the CanIf.
+================================================= =====================================================
+
+For the version of the GM ECU extract, please refer to **BASE_ECU_20_11_SDV_UBSW_OUTSOURCED_BASE1.arxml**.
+
+The SPM messages payloads are based on GM ECU version **BASE_ECU_20_11_SDV_UBSW_OUTSOURCED_BASE1.arxml** and according to SDV-2017. SPM traffic includes:
+
+* Ethernet Wake-up frames (Missing in the specified version of the GM ECU extract)
+* CAN Wake-up frames (Missing in the specified version of the GM ECU extract)
+* SM frame (SOME/IP frames on ETHERNET)
+* PM frame (SOME/IP frames on ETHERNET)
+
+Configuration Management Items (Documents Only)
+===============================================
+
+All the following documents are contained inside **10_Documentation.zip**
+
+============================================= ======================== =============================== ===============================
+ File name                                              Version                 Description                     Author
+============================================= ======================== =============================== ===============================
+ user_guide.html                                3.0.0proto16            RTA-SUM SPM User Guide             RTA-SUM Development Team
+ RTA-SUM_SPM_UT_report                          3.0.0proto16            RTA-SUM SPM Unit Test Report       RTA-SUM Development Team
+ RTA-SUM_SPM_Static_Code_Analysis_report        3.0.0proto16            RTA-SUM SPM Static Analysis        RTA-SUM Development Team
+============================================= ======================== =============================== ===============================
+
+.. note::
+
+    Please use the file *index.html* in folder **RTA-SUM_SPM_Static_Code_Analysis_report** to navigate among Static
+    analysis reports.
+
+    the *user_guide.html* file can be found under the path *RTA-SUM_SPM_Docs/docs/UserGuide*.
+
+    *RTA-SUM_SPM_UT_report* contains a single html. You can find the report of the unit test there.
+
+.. warning::
+
+    Any other documentation not included in this list is just shared for reviewing reasons to GM and it shall not be
+    considered as official SPM documentation.
+
+Target Environment Description
+==============================
+
+This version of the RTA-SUM SPM is only intended to be imported in a RTA-CAR 12.2.99.PR9 project to configure manually the SPM and 
+generate its related code. 
+This version is **NOT** recommended to be integrated on a target environment.
+
+Installation Instruction
+========================
+
+*N/A*
+
+Licensing
+=========
+
+Please review to the Statement of Work for specific licensing information.
+
+**********************
+Change in This version
+**********************
+
+Change Requests
+===============
+
+*N/A*
+
+
+Fixed in This Version
+=====================
+
+============== =============== ============================================================================= =================================================================================
+ Jira Ticket    GM-SUM Ticket                            Description                                                                Implementation
+============== =============== ============================================================================= =================================================================================
+ GMDT-144        GMSUM-8234        Heartbeat periodicity is a calibratable parameter.                             Heartbeat periodicity is a calibratable parameter instead of a fixed value. 
+
+ GMDT-284         GMSUM-8235       WakeUp frame periodicity (CAN and ETH) is a calibratable parameter with        Added PIM and SpmCANWkUpFrm_Period_ms and SpmETHWkUpFrm_Period_ms.
+				                   initial values the configuration ones.   	
+
+ ARC-4279       GMSUM-8145         Support of TC10 wake up frame.                                                Call EthSM API in order to send TC10 pulse. 
+ RHGM-3133      GMSUM-8266         Fixing Incorrect rolling counter for ShutdownPermission      			     Fixed the rolling counter from 0 - 255 to 0 - 3. 
+
+============== =============== ============================================================================= =================================================================================
+
+***********
+Know Issues
+***********
+
+* Unit test does not reach the 100\% of coverage
+
+***************************************
+Contacts, Support and Problem Reporting
+***************************************
+
+Contact details for your local sales office and local technical support team (where available) can be found on the ETAS web site:
+
+* ETAS subsidiaries: https://www.etas.com/en/contact.php
+* ETAS technical support: https://www.etas.com/en/hotlines.php

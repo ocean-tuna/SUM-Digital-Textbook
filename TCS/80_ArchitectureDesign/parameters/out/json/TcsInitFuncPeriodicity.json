@@ -1,0 +1,11 @@
+{
+   "Name": "TcsInitFuncPeriodicity",
+   "Description": "Specifies time in millisecond, for the periodicity of the runnable RE_TCS_Init. Float values are supported. This parameter is required when TcsGenerateInitRunnable is set to TRUE",
+   "Multiplicity": "0..1",
+   "Category": "ECUC-FLOAT-PARAM-DEF",
+   "Range": "1.0..5000.0",
+   "Default": "1000.0",
+   "Container": "TcsGeneral",
+   "Req_Definition": [],
+   "Req_Satisfies": []
+}

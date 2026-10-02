@@ -1,0 +1,56 @@
+@startuml Sum_Ssfm_Errh_ExecutionManager_SeqDiag
+
+control Scheduler as TE
+participant RTE as R
+box SUM_SSFM
+    participant Sum_Ssfm_Initialization as I
+    participant Sum_Ssfm_ExecutionManager as E
+end box
+
+TE -> E: Scheduling Event
+E -> E: Sum_Ssfm_ErrhExecutionManager()
+activate E
+activate E
+E -> I: get intialization status for ERRH
+activate I
+I --> E
+deactivate I
+deactivate E
+
+group DTC Enable Criteria in ERRH 
+alt 
+E -> R: Read from interface //BatteryVoltageRangeMinToMax//
+activate R
+R --> E
+deactivate R
+end
+end
+E -> E: Evaluate execution Mode of ERRH
+
+group Operation cycle in ERRH Running Mode
+alt Operation cycle is not started 
+E -> R: Read from interface //SWC_OpCycle_EnableConditions//
+activate R
+R --> E
+deactivate R
+alt Interface //SWC_OpCycle_EnableConditions// is unconnected OR Operation cycle enable condition is TRUE
+E -> R: Call interface //Dem_RestartOperationCycle//
+end
+end
+end
+
+E -> R: Write **//0xFF//** on interface //SUM_SSFM_ERRH_ShutdownPermission//
+activate R
+R --> E
+deactivate R
+
+
+
+E -> R : Notify the WdgM on the interface //WdgM_LocalSupervision// that it is alive
+
+activate R
+R --> E
+deactivate R
+deactivate E
+
+@enduml 

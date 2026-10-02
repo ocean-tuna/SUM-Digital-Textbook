@@ -1,0 +1,157 @@
+«IMPORT bsw»
+«IMPORT bsw::SrvcMgrModule»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SrvcMgr FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SrvcMgr FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_SrvcMgr_Initialization.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SrvcMgr
+ * Date        : Apr 20, 2026
+ * Revision    : 8.0.1_Pr16
+ * Description : Source file for SrvcMgr Initialization
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SrvcMgr Top Level Library */
+#include "Sum_SrvcMgr_Prv.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+
+/**
+ *  @brief Variable for initialization status of SrvcMgr
+ *  @private
+ */
+static boolean Sum_SrvcMgr_Initialization = FALSE;
+
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SrvcMgr_START_SEC_CODE
+#include "SUM_SrvcMgr_MemMap.h"
+
+/**
+ * @brief			SrvcMgr initialization getter function
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - Sum_SrvcMgr_Initialization
+ */
+FUNC(boolean, SUM_SRVCMGR_CODE) Sum_SrvcMgr_GetInitialization(void)
+{
+	return Sum_SrvcMgr_Initialization;
+}
+
+/**
+ * @brief			Callback that is invoked to initialize the Srvcmgr and to allow calibrating services off
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			None
+ */
+ /*[$Satisfies $DDS_SrvcMgr 016] */
+«IF srvcMgr.sum_SrvcMgr_General.sum_SrvcMgr_GenerateInitRunnable == true-»
+static FUNC(void,SUM_SrvcMgr_CODE) Sum_SrvcMgr_Init(void)
+«ELSE-»
+/* PRQA S 1503 5 # This function will and must be called by the BSW Init rule */
+FUNC(void,SUM_SrvcMgr_CODE) Sum_SrvcMgr_Init(void)
+«ENDIF-»
+{
+	/* Check if the module SrvcMgr is already initialized */
+	/*[$Satisfies $DDS_SrvcMgr 002] */
+	if (Sum_SrvcMgr_Initialization == FALSE)
+	{
+		/* Set Initialization status of SRVCMGR to INIT */
+		Sum_SrvcMgr_Initialization = TRUE;
+
+		/* Calibration handling section */
+
+		/* PRQA S 3469 1 # This function will be defined in BSW */
+		(void)Sd_InitializeServicesCalibrationState();
+		/* RTE CALL to server operation */
+		(void) Rte_Call_SUM_SrvcMgr_RP_SrvcMgr_CalibrationController_surveyServiceDisableCalibrations();
+
+		/* Check SdEnableExtendedLearningTableFormat calibration parameter value */
+		if(Sum_SrvcMgr_pub_GetSdEnableExtendedLearningTableFormat() == FALSE)
+		{	
+			/* Update the InstanceId and MajorVersion to 0 for each configured Service */
+			Sum_SrvcMgr_UpdateMajorVersionAndInstanceId();
+			
+		}
+
+		/* Note:  Dtc setting moved to Runnable_SrvcMgr_ExecutionManager */
+		/* It will be executed one time only when battery voltage is available */
+	}
+
+}
+«IF srvcMgr.sum_SrvcMgr_General.sum_SrvcMgr_GenerateInitRunnable == true-»
+/* PRQA S 1503 EOF # The following functions will be scheduled by OS Tasks */
+
+/**
+ * @brief			Runnable function for SUM Srvcmgr Initialization.
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+FUNC(void, SUM_SRVCMGR_CODE) Runnable_SrvcMgr_Init(void)
+{
+	/* Initialize SRVCMGR */
+	Sum_SrvcMgr_Init();
+}
+«ENDIF-»
+#define SUM_SrvcMgr_STOP_SEC_CODE
+#include "SUM_SrvcMgr_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

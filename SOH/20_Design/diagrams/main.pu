@@ -1,0 +1,26 @@
+@startuml main
+hide empty description
+[*] --> Init
+
+state Init {
+  Init --> Normal : C1 , /ShutdownPermission = 0xFF
+}
+
+state Normal {
+  Normal --> Shutdown : C2
+  Normal : - Check of MEC Value
+}
+
+state Shutdown {
+  Shutdown --> Normal : C1,  /ShutdownPermission = 0xFF
+  Shutdown --> Shutdown : C3, /ShutdownPermission = 0,1,2,3,0...
+}
+
+
+legend 
+C1: (PermitExecution|SOH_PE_MASK) == 0xFF
+C2: (PermitExecution|SOH_PE_MASK) !=   0xFF || (PermitExecution | SOH_RESETBIT_MASK) != 0xFF
+C3: NvmWrite_Status == E_PENDING
+endlegend
+
+@enduml

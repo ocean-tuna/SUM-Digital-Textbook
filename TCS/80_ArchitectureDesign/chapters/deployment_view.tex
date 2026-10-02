@@ -1,0 +1,54 @@
+\chapter{Deployment View}
+
+\section{Resource Limits}
+No resource limits are identified at the scope of the current Architecture design.
+\\
+\\
+The SUM\_TCS is developed in order to be deployed in a 32-bit automotive microcontroller-based system (Single Core).
+
+\section{AUTOSAR Resources}
+The current architecture has been designed in order to optimize the memory usage and the timing resources according to AR safety aspects and general specification.
+\\
+\\SUM\_TCS architecture has been developed in order to be fully compliant with Classic AR.
+\\
+\\
+All AUTOSAR resources that shall be deployed for the implementation and the integration of SUM\_TCS are presented in the previous sections of the current document.
+
+\section{Bus System}
+SUM\_TCS is originally designed in order to communicate in a multi-channel CAN and CAN-FD Bus System; Although The Design of SUM\_TCS is totally transparent to 
+the Bus system configuration and implementation.
+
+\section{Interrupts}
+N/A
+
+\section{Watchdog}
+N/A
+
+\section{External hardware dependencies}
+N/A
+
+\section{OS}
+The SUM\_TCS is designed to interfact into a RTOS.
+\\
+\\
+The SUM\_TCS Runnables shall be mapped in OS Tasks to be properly scheduled by integrator.
+\\
+OS is assumed to be configured as \textbf{non-preemptive}.
+\\
+\\
+SUM\_TCS defines:
+\begin{itemize}
+	\item 2 \textit{Periodic} Runnables;
+	\item 1 \textit{Data-Received} triggered Runnable;
+	\item 3 \textit{Operation-Invoked} triggered Runnable;
+\end{itemize}
+
+It is strongly suggested to map the periodic runnable in a Task and the Data-Received triggered one in another.
+\\
+\\
+It is strongly suggested to give an higher priority to Task for Data-Received event than Periodic Task.
+\\
+\\
+Within the Periodic task, it is strongly suggested to give an higher priority to \hyperref[subsec:Runnable_TCS_MasterClockPolling]{Runnable_TCS_MasterClockPolling} 
+than \hyperref[subsec:Runnable_TCS_TimeManagement]{Runnable_TCS_TimeManagement}.
+

@@ -1,0 +1,37 @@
+@startuml Sum_Ssfm_Errh_U198C_49_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_Errh_U198C_49_Handler"
+
+**Interfaces Legend**
+   //ri141 //: SSC_SSFM_KPKeysProvisioned 
+   //II100 //: GetResetPowerUpRecoveryTimerFlag
+   //II101 //: GetBatteryVoltageRecoveryTimerFlag
+   //pi158 //: DTC_U198C_49_SetEventStatus
+   //II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)   
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+}
+
+component [SSFM::Sum_Ssfm_Errh_U198C_49_Handler] as U198C_49{
+
+	portin pri141
+	portout ppi158
+}
+    interface II100
+    interface II101
+    interface II184
+
+   pri141 --up-( ri141
+   U198C_49 --right-( II100
+   U198C_49 --up-( II101
+   ppi158 --down-0 pi158
+   U198C_49 --down-( II184
+
+@enduml

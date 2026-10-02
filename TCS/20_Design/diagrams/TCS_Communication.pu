@@ -1,0 +1,47 @@
+@startuml TCS_Communication
+scale 1050 width
+
+
+[*] --> Init
+
+In_Ports --> Runnable_TCS_MasterClockPolling : TimeSyncMessage
+In_Ports --> Runnable_TCS_MasterClockPolling : TimeSyncMessage_Av
+In_Ports --> Runnable_TCS_PermitExecutionShutdown : SUSD_TCS_PermitExecution
+In_Ports --> Runnable_TCS_PermitExecutionShutdown : RP_SUSD_TCS_BatteryVoltage_\n_DisableNVMWrite
+
+Runnable_TCS_PermitExecutionShutdown --> Out_Ports : TCS_SWC_Clock
+Runnable_TCS_PermitExecutionShutdown -> Out_Ports : TCS_SUSD_ShutdownPermission
+Runnable_TCS_Dem_Clock --> Out_Ports : TCS_Dem_Clock
+
+  state Init {
+  }
+  state In_Ports {
+  }
+  state Out_Ports {
+  }
+  state Runnables { 
+
+    [*] --> Runnable_TCS_MasterClockPolling
+    [*] --> Runnable_TCS_TimeManagement
+    [*] --> Runnable_TCS_PermitExecutionShutdown
+
+    Runnable_TCS_MasterClockPolling --> Runnable_TCS_PermitExecutionShutdown : SumTCSInitValue
+    Runnable_TCS_PermitExecutionShutdown --> Runnable_TCS_TimeManagement : EA_LocalTimeClock
+    Runnable_TCS_PermitExecutionShutdown --> Runnable_TCS_Dem_Clock : EA_LocalTimeClock
+
+    Runnable_TCS_MasterClockPolling --> Runnable_TCS_TimeManagement : EA_SubCounter
+    Runnable_TCS_PermitExecutionShutdown --> Runnable_TCS_TimeManagement : EA_SubCounter
+
+
+
+    state Runnable_TCS_MasterClockPolling {
+    }
+    state Runnable_TCS_TimeManagement {
+    }
+    state Runnable_TCS_Dem_Clock {
+    }
+    state Runnable_TCS_PermitExecutionShutdown {
+    }
+  }
+
+@enduml

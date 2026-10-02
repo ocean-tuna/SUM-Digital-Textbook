@@ -1,0 +1,6 @@
+{
+  "Name": "TcsGeneral",
+  "Description": "General configuration of the TCS module.",
+  "Multiplicity": "1..1",
+  "Subcontainer": "No"
+}

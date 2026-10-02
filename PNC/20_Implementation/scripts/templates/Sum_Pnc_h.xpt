@@ -1,0 +1,278 @@
+«IMPORT bsw»
+«IMPORT bsw::PNCModule»
+«EXTENSION templates::mathlib»
+«EXTENSION templates::Sum_Pnc_General»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+
+
+«DEFINE Root FOR Autosar»
+    «EXPAND Expand FOR ecu»
+«ENDDEFINE»
+
+
+«DEFINE Expand FOR Ecu»
+«FILE "Sum_Pnc.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_PNC
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Module header for public module functions
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+
+#ifndef PNC_H
+#define PNC_H
+/*
+ *******************************************************************************
+ * Includes
+ *******************************************************************************
+ */
+#include "Std_Types.h"
+#include "Rte_SUM_PNC_Type.h"
+#include "Sum_Pnc_Types.h"
+#include "Sum_Pnc_Ram.h"
+#include "ComStack_Types.h"
+
+#if (Generate_Pnc_InitRunnable_Status == STD_ON)
+#include "SUM_Common_Types.h"
+#endif
+
+/* PRQA S 5087 EOF */
+/* PRQA S 3448 EOF */ /*Extern declarations of pNC structures*/
+/* PRQA S 3447 EOF */ /*Extern declarations of pNC functions*/
+/*
+********************************************************************************
+ * Defines
+********************************************************************************
+ */
+
+/**
+ * \brief This structure collects all information per PN
+ */
+typedef struct PNC_Struct_ConstType
+{
+
+  /** DID Bit Position */
+  uint8 DID_Bit_Position;
+
+  /** Number of Sensors */
+  uint8 Number_of_PNC_Activation_Sensors;
+
+  /** Number of Signals */
+  uint8 Number_of_PNC_Activation_Signals;
+
+  /** Number of Channels for this PNC */
+  uint8 Number_of_Channels;
+
+  /** Repeat message time timer reference from CanNm */
+  uint32 Repeat_Message_Time;
+
+  /** Is Transmission Enabled for the PN */
+  boolean IsTxEnabled;
+
+  /** Is Reception Enabled for the PN */
+   boolean IsRxEnabled;
+
+  /** Pointer to function for Rte_Call in Sensors */
+  Activation_sensor_Rte_Call_Interface *ptr_PNC_GaaSUM_Activation_sensor_Rte_Call_Interface;
+
+  /** Pointer to function for Signals */
+  Activation_Signal_Interface  *ptr_PNC_GaaSUM_Activation_Signals_Interface;
+
+  /** Pointer to function for Signals status*/
+  Activation_Signal_Status_Interface  *ptr_PNC_GaaSUM_Activation_Signals_Status_Interface;
+
+  /** Rte API's for BSWMPduGroupSwitch Rx Requests */
+  Rte_Switch_PNC_BswMPduGroupSwitchRxReq_Interface *ptr_PNC_GaaSUM_BswM_ComM_Pdugroupswitch_RxReq;
+
+  /** Rte API's for BSWMPduGroupSwitch Tx Requests */
+  Rte_Switch_PNC_BswMPduGroupSwitchTxReq_Interface *ptr_PNC_GaaSUM_BswM_ComM_Pdugroupswitch_TxReq;
+
+  /** Rte API's for ComM Current mode for channels associated with this PN */
+  Rte_mode_Bswm_ComM_Current_ModeUser_MDG_ComMChannel_State_Interface *ptr_PNC_GaaSUM_Bswm_ComM_Current_ModeUser_Interface;
+
+  /** Deadline Monitoring Timer threshold (in micorseconds) */
+  uint32 DM_Max_Timer;
+
+  /** Deadline Monitoring BswM notification */
+  Rte_Switch_PP_PNC_BswM_PDUGroup_DM_Switch ptr_Switch_DM_Mode;
+
+  /** Default timer value for DTC Enabling (in micorseconds) */
+  Rte_CData_SUM_PN_DTC_TIMER ptr_SUM_PN_DTC_TIMER_Default_Value;
+
+  /** Rte API's to set the DTC_Allowed status for the PN */
+  Rte_Write_PP_PNC_PN_DTC_Allowed ptr_SUM_PN_DTC_Allowed;
+
+  /*Name of this PNC (enum value is Name of the Partial Network. Among the possible choices:
+                      	0x21= All Nodes,
+						0x22= Wireless Charging,
+						0x23= Short Duration Event,
+						0x24= Diagnose Mechatronics.
+						0x25= Any Diagnose CAN PN						) */
+  uint8 PN_Name;
+}PNC_Struct_Const;
+
+/**
+ * \brief This structure collects all necessary information and values for PNC regarding:
+ *        1. Timers
+ *        2. Modes (PN and Channels)
+ *        3. Groups (Pdu)
+ */
+typedef struct PNC_StructType
+{
+    /** Current PNC mode */
+    PNC_Modes Current_PNC_Mode;
+
+    /** Current PNC State */
+    PNC_State Current_PNC_State;
+
+    /** Requested PNC State */
+    PNC_State Requested_PNC_State;
+
+    /** Current state of ComM like SUM_COMM_FULL_COMMUNICATION, SUM_COMM_FULL_COM_NETWORK_REQUESTED,SUM_COMM_NO_COMMUNICATION,etc */
+    ComMChannel_State Current_ComMChannel_State;
+
+    /** Current TX PDUGRP state like SUM_PDUGRP_STOP,SUM_PDUGRP_START for COM */
+    PduGroup_State Current_PduGroupTX_State;
+
+    /** Current RX PDUGRP state like SUM_PDUGRP_STOP,SUM_PDUGRP_START for COM */
+    PduGroup_State Current_PduGroupRX_State;
+
+    /** Current RxPDUgroup state STOP,START for each signal is provided to SSFM module */
+    PDUgroup RxPDUgroup;
+
+    /** Current TxPDUgroup state STOP,START for each SWCs */
+    PDUgroup TxPDUgroup;
+
+    /** Array for storing Counter_Sum_Active for each PNC */
+    uint16 Counter_Sum_Active;
+
+    /** Array for storing Counter_Sum_Passive for each PNC */
+    uint8 Counter_Sum_Passive;
+
+    /** Array for storing PNC_t_Activation_Req_Timer for each PNC */
+    uint8 Counter_PNC_t_Activation_Req_Timer;
+
+    /** Array for storing Repeat_Msg_Time_Timer for each PN */
+    uint16 Counter_Repeat_Msg_Time_Timer;
+
+    /** Timer Flags array for Sum_Active timer,Sum_Passive time and PNC_t_Activation_Req timer */
+    uint8 Flag_Counter_Sum_Active;
+
+    uint8 Flag_Counter_Sum_Passive;
+
+    uint8 Flag_Counter_PNC_t_Activation_Req_Timer;
+
+    /** Array for storing boolean value for PN de-activation status.
+     *  This flag when set will update the DID bits to report that once activated PN is now de-activated
+     */
+    uint8 PN_DeActState;
+
+    /** Deadline Monitoring Timer (in microseconds) */
+    uint32 DM_Timer;
+
+    /* [$Satisfies $SDD_PNC 081] */
+    /** Deadline Monitoring Timer state */
+    uint8 DM_Status;
+
+    /** PN_DTC_Timer Monitoring Timer (in micorseconds) */
+    /* [$Satisfies $SDD_PNC 085] */
+    uint32 PN_DTC_Timer;
+
+} PNC_Struct;
+
+/**
+ * \brief This structure contains information per CAN Channel
+ */
+typedef struct PNC_ChannelInfo_Type
+{
+  /** current ComM channel state type */
+	Rte_mode_Bswm_ComM_Current_ModeUser_MDG_ComMChannel_State_Interface	ptr_ComM_Current_ModeUser_Channel_Interface;
+
+  /** CAN channel number for the associated ComM channel for helping in updating Communication Channel Status DID */
+	uint8 CAN_Channel_Number;
+
+}PNC_ChannelInfo;
+
+/*******************************************************************************
+ * 				                  Constants
+ ******************************************************************************/
+/**
+ * \defgroup Utilities
+ * @{
+ */
+
+/**
+ * this macro is used to convert timers milliseconds values from RTE, in micorseconds value to operate on it in PNC functions
+ */
+#define conversion_factor (uint32)(1000u)
+
+/**
+ * @}
+ */
+
+/*******************************************************************************
+**                   Global Function Prototypes                               **
+*******************************************************************************/
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+extern FUNC(void, PNC_CODE) SUM_PNC_Init(void);
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Defines
+ *******************************************************************************
+ */
+/* PRQA S 3447 EOF */ /*Extern declarations of pNC functions*/
+extern FUNC(Std_ReturnType, PNC_CODE) PNC_Active_TxPDU_Enable(VAR(PDUgroup, AUTOMATIC) ATxPDUEnable);
+extern FUNC(PNC_State, PNC_CODE) PNC_BswM_ComM_Current_PNC_ModeUSer(void);
+extern FUNC(ComMChannel_State, PNC_CODE) PNC_ComM_Current_ModeUSer(void);
+extern FUNC(Std_ReturnType, PNC_CODE) PNC_BswM_ComM_Pdugroupswitch_RxReq(VAR(PduGroup_State, AUTOMATIC) Arg_PduGroup_State);
+extern FUNC(Std_ReturnType, PNC_CODE) PNC_BswM_ComM_Pdugroupswitch_TxReq(VAR(PduGroup_State, AUTOMATIC) Arg_PduGroup_State);
+extern FUNC(void, PNC_CODE) Activation_Sensor(void);
+extern FUNC(Std_ReturnType, PNC_CODE) PNC_BswM_Current_PNC_Mode_Req(VAR(PNC_State, AUTOMATIC) Arg_Current_PNC_State);
+extern FUNC(Std_ReturnType, PNC_CODE) PNC_Active_RxPDU_Enable(VAR(PDUgroup, AUTOMATIC) ARxPDUEnable);
+extern FUNC(boolean, PNC_CODE) Permit_Execution_SUSD(void);
+extern FUNC(void, NM_CODE) PNC_NM_Frame_Indication(CONST(NetworkHandleType, AUTOMATIC) NetworkHandle);
+extern FUNC(void, PNC_CODE) PNC_DeadlineMonitoring(uint8 PN_index);
+extern FUNC(void, PNC_CODE) Check_DTC_Allowed_Timer(void);
+
+/***************************************************************************************************
+ * Extern declarations
+ ***************************************************************************************************
+ */
+/* Post Build Config pointer for holding PB configuration parameters*/
+
+extern PNC_Struct_Const SUM_PNC_Cfg[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+extern PNC_Struct SUM_GaaPNC[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+extern PNC_ChannelInfo PNC_GaaSUM_ComM_Channel_Index[NUMBER_OF_PNC_TOTAL_CHANNELS];
+/* Activation Criteria */
+extern boolean SUM_PNC_Criteria_Sensor_Act[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+extern boolean SUM_PNC_Criteria_Signal_Act[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+extern boolean SUM_PNC_Criteria_NM_Act_Remote[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+
+#endif /* PNC_H */
+/********************************** END OF FILE ******************************************************/
+«ENDFILE»
+«ENDDEFINE»

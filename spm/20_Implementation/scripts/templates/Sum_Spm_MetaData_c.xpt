@@ -1,0 +1,255 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::Com»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_MetaData.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for handling the SPM MetaData
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+# include "Sum_Spm_Cfg.h"				/* Include for accessing to the Pgtt methods */
+# include "Sum_Spm_MetaData.h"			/* included for metadata function definition */
+# include "Sum_Spm_PwrMgr.h"
+# include "Sum_Spm_Services.h"
+/* -----------------------------------------------------------------------------------------------------
+ *	Direct Standard-C module Header inclusions
+ * ..................................................................................................... */
+#include "Sum_Common_Utils.h"		/* Included for Sum_Common_MemCopy function */
+/* ..................................................................................................... */
+
+
+/* -----------------------------------------------------------------------------------------------------
+ *	Direct TcpIp Header inclusions
+ * ..................................................................................................... */
+
+# ifndef TCPIP_CONFIGURED
+# define TCPIP_CONFIGURED
+# endif
+
+# include "TcpIp_GeneralTypes.h"
+/* ..................................................................................................... */
+
+/* PRQA S 3214 EOF # Used for Memory Mapping reason */
+/* PRQA S 1532 EOF # Function defined here for modularity reason */
+
+# define SPM_METADAT_PORTNUM			(0x7710U)	/* SPM control path frames transmission Port address */
+
+# define Spm_CpyBuffData				(Sum_Common_MemCopy)
+
+static uint8 Spm_MetaData[sizeof(TcpIp_SockAddrInetType)] = { 0U };
+
+/* ------------------------------------------------------------------------------------------------------
+ *	Static function declaration
+ * ...................................................................................................... */
+static void SPM_softpowr_tx_metadata (
+		uint32 const dstIP /* IN */
+	);
+
+/* ........................................................................................................ */
+
+/* ------------------------------------------------------------------------------------------------------
+ *	Functions implementation
+ * ...................................................................................................... */
+/**
+ *	@brief 		Function takes care about all the activities to send out
+ *		   		a SM frame from SPM on PPort corresponding to the VLAN the
+ * 			    TrgDvc belongs to.
+ *
+ *	@param[in] 	data 			Pointer to SPM_dt_Prv element in S/R interface
+ *	@return 	Std_ReturnType  Operation status from RTE
+ */
+Std_ReturnType
+SPM_Send_SMFrame (
+		SPM_dt_Prv * data /* IN */
+	)
+{
+
+	Std_ReturnType retVal_srt = E_NOT_OK;
+	uint8 i;
+
+	if( data != NULL_PTR )
+		{
+			/* PRQA S 2877 1 # This loop will never be executed more than once for configuration reason. */
+			for(i = 0u; i < SUM_SPM_NUMBER_OF_NET_CONF; i++){
+				if(SPM_NetworkInfo_Wrap[i].SPM_NetInfo->VlanID == ((data->PMDestId >> 16u) & 0xFFu)){
+
+					SPM_softpowr_tx_metadata( data->PMDestId );
+
+					retVal_srt = Spm_HandleVLANCommunication(SPM_NetworkInfo_Wrap[i].SPM_NetInfo->VlanID,
+					                                         SPM_SEND_HNDL,
+											                 SPM_SM_COMHNDLING,
+											                 NULL_PTR, 
+											                 NULL_PTR,
+											                 data,
+											                 (uint8 *)&(Spm_MetaData[0U]) ); 
+				}
+			}
+		} /* endif */
+
+	return retVal_srt;
+}
+
+/**
+ *	@brief 		Function takes care about all the activities to send out
+ *		   		a SM frame from SPM
+ *
+ *	@param[in] 	data 			Pointer to SPM_HB_dt_Prv element in S/R interface
+ *	@return 	Std_ReturnType  Operation status from RTE
+ */
+Std_ReturnType
+SPM_Send_PMFrame (
+		SPM_HB_dt_Prv * data /* IN */
+	)
+{
+	uint16 wkng_arr_idx;
+	Std_ReturnType retVal_srt = E_NOT_OK;
+
+	if( data != NULL_PTR )
+		{
+			/* PRQA S 2877 1 # This loop will never be executed more than once for configuration reason. */
+			for( wkng_arr_idx = 0U; (wkng_arr_idx < SUM_SPM_NUMBER_OF_NET_CONF); ++wkng_arr_idx )
+				{
+				 	if( SPM_NetworkInfo_Wrap[wkng_arr_idx].SPM_NetInfo->SrcIP == data->SrcPMId )
+					 	{
+							SPM_softpowr_tx_metadata( SPM_NetworkInfo_Wrap[wkng_arr_idx].SPM_NetInfo->MulticastAddress );
+
+							/* Call Rte API */
+							/* [$Satisfies $DDS_SPM 0312] */
+							retVal_srt = Spm_HandleVLANCommunication(SPM_NetworkInfo_Wrap[wkng_arr_idx].SPM_NetInfo->VlanID,
+							                                         SPM_SEND_HNDL,
+													                 SPM_HB_COMHNDLING,
+													                 data, 
+													                 NULL_PTR,
+													                 NULL_PTR,
+													                 (uint8 *)&(Spm_MetaData[0U]) ); 
+
+					 	} /* endif */
+				} /* endfor */
+
+		} /* endif */
+
+	return retVal_srt;
+}
+«IF (Spm_IsETHCommandPresent(spm) == true)-»
+/**
+ *	@brief 		Function takes care about all the activities to send out
+ *		   		an ETH WkUp frame from SPM
+ *
+ *	@param[in] 	data 			Pointer to WkUp element in S/R interface
+ *	@return 	Std_ReturnType  Operation status from RTE
+ */
+/* [$Satisfies $DDS_SPM 0147] */
+Std_ReturnType
+SPM_Send_ETHWkUpFrame (
+		SPM_WkUp_dt_Prv	* data /* IN */
+	)
+{
+	Std_ReturnType retVal_srt = E_NOT_OK;
+	uint8 i;
+	uint8 idx_intermediate;
+	/* PRQA S 3469 EOF # Following macro are called to access fields of the PGTT. */
+«IF Spm_ReturnSizeIntermediateList(spm) > 0 -»
+	if( data != NULL_PTR ){
+
+		/* Send the ETH WUF to each SpmIntermediateDstAddrs configured. */
+		for(idx_intermediate = 0u; idx_intermediate < SPM_GET_PGTT_INTERMEDIATE_DST_IP_SIZE; idx_intermediate++){
+			/* [$Satisfies $DDS_SPM 0143] */
+			data->SrcPMId = Spm_Get_SrcIpFromVLANId( (SPM_GET_PGTT_INTERMEDIATE_DST_IP(idx_intermediate) >> 16u) & 0xFFu);
+
+			/* Call Rte API */
+			/* [$Satisfies $DDS_SPM 0110] *//* [$Satisfies $DDS_SPM 0112] */
+			/* PRQA S 2877 1 # This loop will never be executed more than once for configuration reason. */
+			for(i = 0u; i < SUM_SPM_NUMBER_OF_NET_CONF; i++){
+
+				if(SPM_NetworkInfo_Wrap[i].SPM_NetInfo->VlanID == (( SPM_GET_PGTT_INTERMEDIATE_DST_IP(idx_intermediate) >> 16u) & 0xFFu)){
+
+					SPM_softpowr_tx_metadata( SPM_GET_PGTT_INTERMEDIATE_DST_IP(idx_intermediate) );
+					/* [$Satisfies $DDS_SPM 0142] */
+					/* PRQA S 0431 4 # The data pointer will NOT be modified since here is Tx side. */
+					retVal_srt = Spm_HandleVLANCommunication(SPM_NetworkInfo_Wrap[i].SPM_NetInfo->VlanID,
+					                                         SPM_SEND_HNDL,
+											                 SPM_WK_COMHNDLING,
+											                 NULL_PTR, 
+											                 data,
+											                 NULL_PTR,
+											                 (uint8 *)&(Spm_MetaData[0U]) ); 
+
+				}
+
+			}
+		}
+	}
+«ENDIF-»
+
+	return retVal_srt;
+}
+«ENDIF-»
+/**
+ * @brief Function computes the metadata that are owned by SPM
+ *
+ * @param[in] dstIP Destination address of the metadata
+ * @return Void
+ * @note Function uses the metadata struct TcpIp_SockAddrInetType as defined per header TcpIp_GeneralTypes
+ */
+/* [$Satisfies $DDS_SPM 0405] */
+static void
+SPM_softpowr_tx_metadata (
+		uint32 const dstIP /* IN */
+	)
+{
+
+	TcpIp_SockAddrInetType
+	tTcpIp_SockAddrInetType_metadataObj =
+		{
+			(uint32)TCPIP_AF_INET,
+			{ 0UL },
+			(uint16)SPM_METADAT_PORTNUM
+		};
+
+	{
+		/* Assign Ip address */
+		tTcpIp_SockAddrInetType_metadataObj.addr[0U]	= dstIP;
+		/* Serialize the metadata struct type in a byte buffer */
+		(void)Spm_CpyBuffData( 	&(Spm_MetaData[0U]),
+				 	       		&(tTcpIp_SockAddrInetType_metadataObj),
+				 	       		sizeof(uint8[SPM_METADAT_SIZE]) );
+	}
+
+}
+
+/* .......................................................................................................................... */
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

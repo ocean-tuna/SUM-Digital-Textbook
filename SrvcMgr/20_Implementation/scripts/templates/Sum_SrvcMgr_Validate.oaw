@@ -1,0 +1,11 @@
+
+<workflow>
+	<!-- Property file containing model package and generator version info -->
+	<property file="SrvcMgr_Workflow.properties"/>
+	<component class="com.bosch.oawtypesystem.actions.BCTCheckComponent">
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<checkFile value="Sum_SrvcMgr" />
+		<emfAllChildrenSlot value="model"/>
+		<warnIfNothingChecked value="false"/>
+	</component>
+</workflow>

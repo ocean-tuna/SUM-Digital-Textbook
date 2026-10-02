@@ -1,0 +1,339 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::Spm_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_WufRollingBuffer.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : WUF rolling buffer - time-windowed WUF validity
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#include "Sum_Spm_WufRollingBuffer.h"
+#include "Sum_Spm_VariantManagement.h"
+#include "Rte_SPM.h"
+
+/* [$Satisfies $DDS_SPM 0658] */
+
+/* CAN + Multicast ETH WUF buffer - present on every node type */
+static Spm_WufRollingBuffer_Type Spm_WufBuffer;
+
+/* Both buffer sets share the same 75 ms tick counter so they rotate in lockstep. */
+static uint16 Spm_WufSlotTickCounter;
+
+/* Last byte of the sender identifier (CAN ID or source IP) from the most recent
+ * Sum_Spm_WufRollingBuffer_StoreWuf() call; used by Sum_Spm_WufRollingBuffer_RetrievesWUFInfoForE0D7(). */
+static uint8 Spm_WufSenderLastByte;
+
+static uint8 Spm_GetFrameByteFromSlot(const Spm_WufSlot_Type* slot, uint8 byteIdx, uint8 typeOfFrame);
+static boolean Sum_Spm_WufRollingBuffer_StoreWuf_helper(SpmTrgDvcHndlngInfo const* wakeUpFrameInfo, const uint8* Wuf_A, const uint8* Wuf_B, const uint8* Wuf_C);
+static void Spm_WufRollingBuffer_AccumulateAndWriteSlots(const uint8* Wuf_A, const uint8* Wuf_B, const uint8* Wuf_C);
+
+/*-------------------------------------------------------------------------------------------------
+ * Internal helpers
+ *------------------------------------------------------------------------------------------------*/
+
+/* [$Satisfies $DDS_SPM 0527] */
+/* Returns the WUF byte at byteIdx for the requested frame type. */
+static uint8 Spm_GetFrameByteFromSlot(const Spm_WufSlot_Type* slot, uint8 byteIdx, uint8 typeOfFrame)
+{
+    uint8 val = 0u;
+    switch (typeOfFrame)
+    {
+        case SPM_CHK_WKUPFRM_A: val = slot->WufA[byteIdx]; break;
+        case SPM_CHK_WKUPFRM_B: val = slot->WufB[byteIdx]; break;
+        case SPM_CHK_WKUPFRM_C: val = slot->WufC[byteIdx]; break;
+        default:                                             
+        /*Shall not enter here*/
+        break;
+    }
+    return val;
+}
+
+static boolean Sum_Spm_WufRollingBuffer_StoreWuf_helper(SpmTrgDvcHndlngInfo const* wakeUpFrameInfo, const uint8* Wuf_A, const uint8* Wuf_B, const uint8* Wuf_C)
+{
+    boolean ownBitSet;
+    
+    switch (wakeUpFrameInfo->SpmTrgWkupFrm)
+    {
+        case SPM_CHK_WKUPFRM_B: 
+            ownBitSet = Spm_IsWakeUpBitSet(Wuf_B, wakeUpFrameInfo->SpmTrgWkupBit);
+            break;
+        case SPM_CHK_WKUPFRM_C: 
+            ownBitSet = Spm_IsWakeUpBitSet(Wuf_C, wakeUpFrameInfo->SpmTrgWkupBit);
+            break;
+        default:                 
+            ownBitSet = Spm_IsWakeUpBitSet(Wuf_A, wakeUpFrameInfo->SpmTrgWkupBit);
+            break;
+    }
+
+    return ownBitSet;
+}
+
+/* OR-accumulates the three WUF frames into the write slot. Each frame pointer is optional (NULL_PTR = absent). */
+static void Spm_WufRollingBuffer_AccumulateAndWriteSlots(const uint8* Wuf_A, const uint8* Wuf_B, const uint8* Wuf_C)
+{
+    uint8 byte;
+    Spm_WufSlot_Type           writeSlot;
+
+    /* Retrieve the write slot (deque back = newest = index NUM_SLOTS-1). */
+    /* PRQA S 0311 1 # Cast to void* is required by the Deque API signature. */
+    (void)Sum_Algo_Deque_GetAt(&Spm_WufBuffer.deque, (uint32)(SPM_WUF_NUM_SLOTS - 1u), (void*)&writeSlot);
+
+    if (Wuf_A != NULL_PTR)
+    {
+        for (byte = 0u; byte < WAKEUP_FRAME_LEN; byte++)
+        {
+            writeSlot.WufA[byte] |= Wuf_A[byte];
+        }
+    }
+    if (Wuf_B != NULL_PTR)
+    {
+        for (byte = 0u; byte < WAKEUP_FRAME_LEN; byte++)
+        {
+            writeSlot.WufB[byte] |= Wuf_B[byte];
+        }
+    }
+    if (Wuf_C != NULL_PTR)
+    {
+        for (byte = 0u; byte < WAKEUP_FRAME_LEN; byte++)
+        {
+            writeSlot.WufC[byte] |= Wuf_C[byte];
+        }
+    }
+
+    /*[$Satisfies $DDS_SPM 0660]*/
+    /* PRQA S 0311 1 # Cast to const void* is required by the Deque API signature. */
+    (void)Sum_Algo_Deque_SetAt(&Spm_WufBuffer.deque, (uint32)(SPM_WUF_NUM_SLOTS - 1u), (const void*)&writeSlot);
+}
+
+/*-------------------------------------------------------------------------------------------------
+ * Public API
+ *------------------------------------------------------------------------------------------------*/
+
+/**
+ * @brief Zero-initialises buffer(s) and pre-loads SPM_WUF_NUM_SLOTS empty slots.
+ *        Call once from SPM_PM_Init_WkUpFrame_Period().
+ */
+/* [$Satisfies $DDS_SPM 0659] */
+/* PRQA S 1532 1 # Defined here for modularity reason. */
+void Sum_Spm_WufRollingBuffer_Init(void)
+{
+    uint8            i;
+    uint8            byte;
+    Spm_WufSlot_Type emptySlot;
+
+    for (byte = 0u; byte < WAKEUP_FRAME_LEN; byte++)
+    {
+        emptySlot.WufA[byte] = 0u;
+        emptySlot.WufB[byte] = 0u;
+        emptySlot.WufC[byte] = 0u;
+    }
+
+    /* PRQA S 0311 1 # Cast to void* is required by the Deque API signature. */
+    (void)Sum_Algo_UnsortedDeque_Init(&Spm_WufBuffer.deque,
+                                       (uint8)sizeof(Spm_WufSlot_Type),
+                                       (uint32)SPM_WUF_NUM_SLOTS,
+                                       (void*)&Spm_WufBuffer.slotMemory[0]);
+
+    /* Pre-load SPM_WUF_NUM_SLOTS empty slots.
+     * After init: front = oldest (index 0), back = write slot (index NUM_SLOTS-1). */
+    for (i = 0u; i < SPM_WUF_NUM_SLOTS; i++)
+    {
+        /* PRQA S 0311 1 # Cast to const void* is required by the Deque API signature. */
+        (void)Sum_Algo_Deque_PushBack(&Spm_WufBuffer.deque, (const void*)&emptySlot);
+    }
+
+    Spm_WufSlotTickCounter = SPM_WUF_SLOT_TICKS;
+    Spm_WufSenderLastByte    = 0u;
+}
+
+
+/* [$Satisfies $DDS_SPM 0660] */
+/**
+ * @brief OR the received WUF bytes into the current write slot (deque back) of the
+ *        appropriate buffer.
+ *
+ * @param[in] Wuf_A       WUF frame A (8 bytes). Must not be NULL_PTR.
+ * @param[in] Wuf_B       WUF frame B (8 bytes). May be NULL_PTR (CAN has no B/C).
+ * @param[in] Wuf_C       WUF frame C (8 bytes). May be NULL_PTR.
+ * @param[in] lastByteId Last byte of sender CAN ID or source IP; stored for E0D7.
+ */
+/* PRQA S 1532 1 # Defined here for modularity reason. */
+void Sum_Spm_WufRollingBuffer_StoreWuf(const uint8* Wuf_A, const uint8* Wuf_B, const uint8* Wuf_C,
+                  uint8 lastByteId)
+{
+    boolean ownBitSet;
+    SpmTrgDvcHndlngInfo const* wakeUpFrameInfo;
+    uint8                      varIdx;
+
+
+    Spm_WufRollingBuffer_AccumulateAndWriteSlots(Wuf_A, Wuf_B, Wuf_C);
+
+    «IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+    /* [$Satisfies $DDS_SPM 0675] */
+    /* Branded: check own bit using the active variant's frame info only.
+     * Unbranded: check all configured variants; store lastByteId if any variant's own bit is set. */
+    if (TRUE == Sum_Spm_GetIsBranded())
+    {
+    «ENDIF -»    
+        wakeUpFrameInfo = Spm_ActiveWkupFrameInfo_p;
+        ownBitSet = Sum_Spm_WufRollingBuffer_StoreWuf_helper(wakeUpFrameInfo, Wuf_A, Wuf_B, Wuf_C);
+        if (ownBitSet)
+        {
+            Spm_WufSenderLastByte = lastByteId;
+        }
+    «IF Spm_ExistMultipleVariantConfigured(spm) == true -»    
+    }
+    else
+    {
+        for (varIdx = 0u; varIdx < SUM_SPM_NUMBER_OF_VARIANTS; varIdx++)
+        {
+            wakeUpFrameInfo = Spm_WkupFrameInfo_PerVariant[varIdx];
+            ownBitSet = Sum_Spm_WufRollingBuffer_StoreWuf_helper(wakeUpFrameInfo, Wuf_A, Wuf_B, Wuf_C);
+            if (ownBitSet)
+            {
+                Spm_WufSenderLastByte = lastByteId;
+                break;
+            }
+        }
+    }
+    «ENDIF -»
+}
+
+
+/* [$Satisfies $DDS_SPM 0661] */
+/**
+ * @brief Periodic slot rotation. Decrement shared tick counter; when it reaches zero,
+ *        discard the oldest slot (PopFront) and add a fresh empty write slot (PushBack).
+ *        Both buffer sets rotate together.
+ *        Call from Runnable_SPM_PowerManager_MainFunction() (5 ms period).
+ */
+/* PRQA S 1532 1 # Defined here for modularity reason. */
+void Sum_Spm_WufRollingBuffer_CheckAndShiftWufSlot(void)
+{
+    Spm_WufSlot_Type discardedSlot;
+    Spm_WufSlot_Type emptySlot;
+    uint8            byte;
+
+    if (Spm_WufSlotTickCounter > 0u)
+    {
+        Spm_WufSlotTickCounter--;
+    }
+
+    if (0u == Spm_WufSlotTickCounter)
+    {
+        for (byte = 0u; byte < WAKEUP_FRAME_LEN; byte++)
+        {
+            emptySlot.WufA[byte] = 0u;
+            emptySlot.WufB[byte] = 0u;
+            emptySlot.WufC[byte] = 0u;
+        }
+
+        /* Discard oldest slot (front) and push fresh write slot (back). */
+        /* PRQA S 0311 2 # Cast to void* is required by the Deque API signature. */
+        (void)Sum_Algo_Deque_PopFront(&Spm_WufBuffer.deque, (void*)&discardedSlot);
+        (void)Sum_Algo_Deque_PushBack(&Spm_WufBuffer.deque, (const void*)&emptySlot);
+
+        /* PRQA S 3469 1 # This is not a function-like macro, but just a unique way to put a x param as unused ((void)x). */
+        SUM_SPM_UNUSED(discardedSlot);  /* value is intentionally discarded */
+        Spm_WufSlotTickCounter = SPM_WUF_SLOT_TICKS;
+    }
+}
+
+
+/* [$Satisfies $DDS_SPM 0662] */
+/**
+ * @brief Check whether a specific WUF bit is set in any live slot across all buffer sets.
+ *
+ * @param[in] bitPositionX  Bit position within the 64-bit frame (0-63).
+ * @param[in] typeOfFrame   SPM_CHK_WKUPFRM_A, SPM_CHK_WKUPFRM_B, or SPM_CHK_WKUPFRM_C.
+ * @return TRUE if the bit is asserted in at least one live slot; FALSE otherwise.
+ */
+/* PRQA S 1505 EOF*/ /* Will be called in other modules.*/
+boolean Sum_Spm_WufRollingBuffer_IsBitXInWufYSet(uint8 bitPositionX, uint8 typeOfFrame)
+{
+    uint32           idx;
+    uint8            byteIdx;
+    uint8            bitMask;
+    uint8            aggregate;
+    boolean          result = FALSE;
+    Spm_WufSlot_Type slot;
+
+    if (bitPositionX < (WAKEUP_FRAME_LEN * 8u))
+    {
+        byteIdx   = (uint8)(bitPositionX >> 3u);
+        bitMask   = (uint8)(1u << (bitPositionX & 0x07u));
+        aggregate = 0u;
+
+        for (idx = 0u; idx < (uint32)SPM_WUF_NUM_SLOTS; idx++)
+        {
+            /* PRQA S 0311 1 # Cast to void* is required by the Deque API signature. */
+            (void)Sum_Algo_Deque_GetAt(&Spm_WufBuffer.deque, idx, (void*)&slot);
+            aggregate |= Spm_GetFrameByteFromSlot(&slot, byteIdx, typeOfFrame);
+        }
+
+        if ((aggregate & bitMask) != 0u)
+        {
+            result = TRUE;
+        }
+    }
+
+    return result;
+}
+
+
+/* [$Satisfies $DDS_SPM 0663] */
+/**
+ * @brief Check own wakeup bit validity across all live slots and retrieve last sender identifier.
+ *
+ * @param[out] Ip  Last byte of the most recent sender's IP or CAN ID. May be NULL_PTR.
+ * @return TRUE if own wakeup bit is set in any live slot; FALSE otherwise.
+ */
+/*PRQA S 1532 1 */ //This function will be called by an extern module.
+boolean Sum_Spm_WufRollingBuffer_RetrievesWUFInfoForE0D7(uint8* Ip, SpmTrgDvcHndlngInfo const* wakeUpFrameInfo)
+{
+    boolean ownBitSet;
+
+    ownBitSet = Sum_Spm_WufRollingBuffer_IsBitXInWufYSet(wakeUpFrameInfo->SpmTrgWkupBit,
+                                     wakeUpFrameInfo->SpmTrgWkupFrm);
+
+    if (Ip != NULL_PTR)
+    {
+        *Ip = Spm_WufSenderLastByte;
+    }
+
+    return ownBitSet;
+}
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

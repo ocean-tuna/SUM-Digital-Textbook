@@ -1,0 +1,42 @@
+@startuml Sum_Ssfm_DTCTriggeredMessage_Generator_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DTCTriggeredMessage_Generator"
+   //II152 //: ERRH_ExecutionStatus 
+   //ri131 //: ERRH_GeneralCallbackEventStatusChange
+   //ri132 //: ERRH_CallbackDTCStatusChange
+   //ri133 //: ERRH_GeneralDiagnosticInfo
+   //ri134 //: PNC_ActiveTxPDUEnable
+   //II182 //: Service14Requested
+   //pi145 //: DTCTriggeredMessage
+   
+endlegend
+
+note top of EC
+It is responsible for generating the DTC Triggered Message.
+end note
+
+component [SSFM::Sum_Ssfm_DTCTriggeredMessage_Generator] as EC{
+	portin ri131
+	portin ri132
+	portin ri133
+	portin ri134
+	portout pi145
+
+	[Sum_Ssfm_DTCTriggeredMessage_Generator]  as E
+}
+   interface II182
+
+
+  II152 -> E
+  ri131 -> E
+  ri132 -> E
+  ri133 -> E
+  ri134 -> E
+  II182 -> E
+  E -> pi145 
+
+
+@enduml

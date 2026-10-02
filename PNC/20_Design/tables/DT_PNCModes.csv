@@ -1,0 +1,5 @@
+4; 8; @@V
+Name; \textbf{PNC_Modes}
+Type; Enum
+Range; PNC_ENABLE_CHECK=0,\\PNC_MONITOR_ACTIVATION,\\PNC_ACK_ACTIVATION,\\PNC_TX_ENABLE,PNC_LOCALLY_ACTIVE,\\PNC_REMOTELY_ACTIVE, \\PNC_PREPARE_SLEEP
+Description; Describes the sub states of PN_IDLE and PN_ACTIVE, which helps in understanding local/remote activation of a PN. Based on the activation criteria, the PNC modes transition. When a PN is inactive (PN<n>_IDLE), SUM_PNC shall be set to PNC_ENABLE_CHECK. Once activation criteria is determined, SUM_PNC shall transition to PNC_MONITOR_ACTIVATION in case of local activation or to PNC_TX_ENABLE in case of remote activation. 

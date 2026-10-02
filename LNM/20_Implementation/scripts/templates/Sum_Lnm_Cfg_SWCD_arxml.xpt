@@ -1,0 +1,1368 @@
+«IMPORT bsw»
+«IMPORT bsw::LNMModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::LNM_Utils»
+
+«DEFINE LnmArxml FOR Autosar»
+«FILE "Sum_Lnm_Cfg_SWCD.arxml"-»
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00049.xsd">
+ <!--
+ ******************************************************************************
+ * BEGIN: Banner
+ ******************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ******************************************************************************
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ******************************************************************************
+ *    Administrative Information (automatically filled in)
+ ******************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_LNM
+ * Date        : Jun 26, 2026
+ * Revision    : 8.0.1_rc
+ * Description : LNM Configuration source file
+ ******************************************************************************
+ * END: Banner
+ ******************************************************************************
+-->
+
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>LNM</SHORT-NAME>
+      <ELEMENTS>
+        <APPLICATION-SW-COMPONENT-TYPE>
+          <SHORT-NAME>SUM_LNM</SHORT-NAME>
+          <PORTS>
+            <!-- Satisfies: [$SDD_LNM 497] [$SDD_LNM 498] [$SDD_LNM 499] [$SDD_LNM 500] -->
+            <P-PORT-PROTOTYPE>
+              <SHORT-NAME>PP_LNM_SUSD_ShutdownPermission</SHORT-NAME>
+              <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/LNM_ShutdownPermission</PROVIDED-INTERFACE-TREF>
+            </P-PORT-PROTOTYPE>
+	        «IF lNM.lNM_General.cyberFill_Supported != false -»
+	        <P-PORT-PROTOTYPE>
+              <SHORT-NAME>PP_LNM_Cyberfill</SHORT-NAME>
+              <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/LNM/Interfaces/CyberFill</PROVIDED-INTERFACE-TREF>
+            </P-PORT-PROTOTYPE>
+	        «ENDIF -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_SUSD_LNM_PermitExecution</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SUSD_PermitExecution</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_WdgM_LNM_LocalSupervision</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_WdgM/PortInterfaces/WdgM_LocalSupervision</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+            «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+            «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+            «IF Network.lNM_ActivationSignalType.matches("Rule") == false -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_LNM_ActivationSignal_«Network.shortName -»</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/LNM/Interfaces/LNM_ActivationSignal</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+            «ENDIF -»
+              «IF Network.lNM_ActivationSignalType.matches("Com") == true -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_LNM_ActivationSignal_Av_«Network.shortName -»</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/RxMonitoredSignal_Av</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+              «ENDIF -»
+            «ENDIF -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_LNM_BswM_LinSM_CurrentState_LNMNetwork_«Network.lNM_Network_ID -»</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/LNM/Interfaces/LNM_CurrentComMode_LNMNetwork_«Network.lNM_Network_ID-»</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_LNM_BswM_LinSM_CurrentSchedule_LNMNetwork_«Network.lNM_Network_ID -»</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/LNM/Interfaces/LNM_CurrentSchedule_LNMNetwork_«Network.lNM_Network_ID -»</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+            <P-PORT-PROTOTYPE>
+              <SHORT-NAME>PP_LNM_BswM_ComM_RequestComMode_LNMNetwork_«Network.lNM_Network_ID -»</SHORT-NAME>
+              <PROVIDED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/LNM/Interfaces/LNM_RequestComMode_LNMNetwork_«Network.lNM_Network_ID-»</PROVIDED-INTERFACE-TREF>
+            </P-PORT-PROTOTYPE>
+            <P-PORT-PROTOTYPE>
+              <SHORT-NAME>PP_LNM_BswM_LinSM_ScheduleRequest_LNMNetwork_«Network.lNM_Network_ID -»</SHORT-NAME>
+              <PROVIDED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/LNM/Interfaces/LNM_RequestSchedule_LNMNetwork_«Network.lNM_Network_ID -»</PROVIDED-INTERFACE-TREF>
+            </P-PORT-PROTOTYPE>
+            «ENDFOREACH -»
+            «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+            «FOREACH lNM.lNM_Arbitration.lNM_Inputs.lNM_ScheduleSignal AS ScheduleSignal -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_LNM_ScheduleSignal_«ScheduleSignal.shortName -»</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/LNM/Interfaces/LNM_ScheduleSignal_«ScheduleSignal.lNM_ScheduleSignalType -»</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+              «IF ScheduleSignal.lNM_ScheduleSignalSource.matches("Com") == true -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_LNM_ScheduleSignal_Av_«ScheduleSignal.shortName -»</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/RxMonitoredSignal_Av</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+              «ENDIF -»
+            «ENDFOREACH -»
+            «ENDIF -»
+            «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+              «IF Network.lNM_MSCL_Strategy.matches("Evaluation") == true -»
+                «FOREACH Network.lNM_Responders AS Responder -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_LNM_Cal_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</SHORT-NAME>
+			  <REQUIRED-COM-SPECS>
+                <PARAMETER-REQUIRE-COM-SPEC>
+                  <INIT-VALUE>
+                    <NUMERICAL-VALUE-SPECIFICATION>
+                      <SHORT-LABEL>NumericalValueSpecification_0</SHORT-LABEL>
+                      <VALUE>0</VALUE>
+                    </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                  <PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/Interfaces/LNM_«Network.shortName -»_«Responder.shortName -»_ResponderPresent/«Network.shortName -»_«Responder.shortName -»_ResponderPresent</PARAMETER-REF>
+                </PARAMETER-REQUIRE-COM-SPEC>
+              </REQUIRED-COM-SPECS>
+              <REQUIRED-INTERFACE-TREF DEST="PARAMETER-INTERFACE">/LNM/Interfaces/LNM_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+                «ENDFOREACH -»
+              «ENDIF -»
+            «ENDFOREACH -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_NvM_MSCL</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_NvM/PortInterfaces/NvMService</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+            «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+            <P-PORT-PROTOTYPE>
+              <SHORT-NAME>PP_«Network.shortName -»_LNM_SSM_MSCL</SHORT-NAME>
+              <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/LNM_SSM_MSCL_LIN</PROVIDED-INTERFACE-TREF>
+            </P-PORT-PROTOTYPE>
+            «ENDFOREACH -»
+            <P-PORT-PROTOTYPE>
+              <SHORT-NAME>PP_LNM_Dcm_DID_MSCL</SHORT-NAME>
+              <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«lNM.lNM_General.lNM_DID_F1BE_Reference.dcmDspDidSignal.get(0).dcmDspDidDataRef.shortName -»</PROVIDED-INTERFACE-TREF>
+            </P-PORT-PROTOTYPE>
+            «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+              «FOREACH Network.lNM_Responders AS Responder -»
+            <P-PORT-PROTOTYPE>
+              <SHORT-NAME>PP_LNM_ERRH_NodeStatusIdx_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+              <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/LNM_ERRH_NodeStatusId</PROVIDED-INTERFACE-TREF>
+            </P-PORT-PROTOTYPE>
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_SSM_LNM_NodeTimeout_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SSM_LNM_NodeTimeout</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+                «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+                  «IF Responder.lNM_IEF_APINFO2_Supported == true -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_COM_LNM_APINFO2_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/LNM/Interfaces/LNM_APINFO2</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+                  «ENDIF -»
+                  «IF Responder.lNM_IEF_APINFO4_Supported == true -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_COM_LNM_APINFO4_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/LNM/Interfaces/LNM_APINFO4</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+                  «ENDIF -»
+            <P-PORT-PROTOTYPE>
+              <SHORT-NAME>PP_LNM_ERRH_IntElectFault_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+              <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/LNM_ERRH_IntElectFault</PROVIDED-INTERFACE-TREF>
+            </P-PORT-PROTOTYPE>
+                «ENDIF -»
+                «IF Responder.lNM_Responder_Device_Not_Configured_Supported == true -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_COM_LNM_APINFO3_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/LNM/Interfaces/LNM_APINFO3</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+            <P-PORT-PROTOTYPE>
+              <SHORT-NAME>PP_LNM_ERRH_NotConfigured_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+              <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/LNM_ERRH_NotConfigured</PROVIDED-INTERFACE-TREF>
+            </P-PORT-PROTOTYPE>
+                «ENDIF -»
+              «ENDFOREACH -»
+            <P-PORT-PROTOTYPE>
+              <SHORT-NAME>PP_LNM_ERRH_LossCommBus_«Network.shortName -»</SHORT-NAME>
+              <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/LNM_ERRH_LossCommBus</PROVIDED-INTERFACE-TREF>
+            </P-PORT-PROTOTYPE>
+            «ENDFOREACH -»
+            <R-PORT-PROTOTYPE>
+              <SHORT-NAME>RP_SUSD_LNM_VehiclePowerMode</SHORT-NAME>
+              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SUSD_VehiclePowerMode</REQUIRED-INTERFACE-TREF>
+            </R-PORT-PROTOTYPE>
+          </PORTS>
+          <INTERNAL-BEHAVIORS>
+            <SWC-INTERNAL-BEHAVIOR>
+              <SHORT-NAME>IB_LNM</SHORT-NAME>
+              <DATA-TYPE-MAPPING-REFS>
+                <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/LNM/Interfaces/LNM_DataTypeMappingSet</DATA-TYPE-MAPPING-REF>
+              </DATA-TYPE-MAPPING-REFS>
+              <EVENTS>
+                <TIMING-EVENT>
+                  <SHORT-NAME>TE_MainFunction</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/Runnable_MainFunction</START-ON-EVENT-REF>
+                  <PERIOD>«lNM.lNM_General.lNM_MainFunction_Period -»</PERIOD>
+                </TIMING-EVENT>
+                <TIMING-EVENT>
+                  <SHORT-NAME>TE_NetworkStatus</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/Runnable_NetworkStatus</START-ON-EVENT-REF>
+                  <PERIOD>«lNM.lNM_General.lNM_NetworkStatus_Period -»</PERIOD>
+                </TIMING-EVENT>
+                «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                «IF Network.lNM_ActivationSignalType.matches("Rule") == false -»
+                <DATA-RECEIVED-EVENT>
+                  <SHORT-NAME>DRE_Activation_«Network.shortName -»</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/Runnable_Activation_«Network.shortName -»</START-ON-EVENT-REF>
+                  <DATA-IREF>
+                    <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ActivationSignal_«Network.shortName -»</CONTEXT-R-PORT-REF>
+                    <TARGET-DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/LNM_ActivationSignal/ActivationSignal</TARGET-DATA-ELEMENT-REF>
+                  </DATA-IREF>
+                </DATA-RECEIVED-EVENT>
+                «ELSE -»
+                «FOREACH sum_Lnm_ActivationRuleSignalsExceptVPM(Network) AS Signal -»
+                <DATA-RECEIVED-EVENT>
+                  <SHORT-NAME>DRE_Activation_«Signal.shortName -»</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/Runnable_Activation_«Network.shortName -»</START-ON-EVENT-REF>
+                  <DATA-IREF>
+                    <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ScheduleSignal_«Signal.shortName -»</CONTEXT-R-PORT-REF>
+                    <TARGET-DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/LNM_ScheduleSignal_«Signal.lNM_ScheduleSignalType -»/ScheduleSignal</TARGET-DATA-ELEMENT-REF>
+                  </DATA-IREF>
+                </DATA-RECEIVED-EVENT>
+                «ENDFOREACH -»
+                «ENDIF -»
+                «ENDFOREACH -»
+                «ENDIF -»
+                <TIMING-EVENT>
+                  <SHORT-NAME>TE_ScheduleManagement</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/Runnable_ScheduleManagement</START-ON-EVENT-REF>
+                  <PERIOD>«lNM.lNM_General.lNM_ScheduleManagement_Period -»</PERIOD>
+                </TIMING-EVENT>
+                <OPERATION-INVOKED-EVENT>
+                  <SHORT-NAME>OIE_DID_MSCL_CheckRead</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/Runnable_DID_MSCL_CheckRead</START-ON-EVENT-REF>
+                  <OPERATION-IREF>
+                    <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_Dcm_DID_MSCL</CONTEXT-P-PORT-REF>
+                    <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«lNM.lNM_General.lNM_DID_F1BE_Reference.dcmDspDidSignal.get(0).dcmDspDidDataRef.shortName -»/ConditionCheckRead</TARGET-PROVIDED-OPERATION-REF>
+                  </OPERATION-IREF>
+                </OPERATION-INVOKED-EVENT>
+                <OPERATION-INVOKED-EVENT>
+                  <SHORT-NAME>OIE_DID_MSCL_ReadData</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/Runnable_DID_MSCL_ReadData</START-ON-EVENT-REF>
+                  <OPERATION-IREF>
+                    <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_Dcm_DID_MSCL</CONTEXT-P-PORT-REF>
+                    <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«lNM.lNM_General.lNM_DID_F1BE_Reference.dcmDspDidSignal.get(0).dcmDspDidDataRef.shortName -»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+                  </OPERATION-IREF>
+                </OPERATION-INVOKED-EVENT>
+                <TIMING-EVENT>
+                  <SHORT-NAME>TE_NetworkFaultManager</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/Runnable_NetworkFaultManager</START-ON-EVENT-REF>
+                  <PERIOD>«lNM.lNM_General.lNM_NetworkFaultManager_Period -»</PERIOD>
+                </TIMING-EVENT>
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                  «FOREACH Network.lNM_Responders AS Responder -»
+                    «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+                      «IF Responder.lNM_IEF_APINFO2_Supported == true -»
+                <DATA-RECEIVED-EVENT>
+                  <SHORT-NAME>DRE_APINFO2_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/Runnable_APINFO2_«Network.shortName -»_«Responder.shortName -»</START-ON-EVENT-REF>
+                  <DATA-IREF>
+                    <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_COM_LNM_APINFO2_«Network.shortName -»_«Responder.shortName -»</CONTEXT-R-PORT-REF>
+                    <TARGET-DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/LNM_APINFO2/APINFO2</TARGET-DATA-ELEMENT-REF>
+                  </DATA-IREF>
+                </DATA-RECEIVED-EVENT>
+                      «ENDIF -»
+                    «ENDIF -»
+                    «IF Responder.lNM_Responder_Device_Not_Configured_Supported == true -»
+                <DATA-RECEIVED-EVENT>
+                  <SHORT-NAME>DRE_APINFO3_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/Runnable_APINFO3_«Network.shortName -»_«Responder.shortName -»</START-ON-EVENT-REF>
+                  <DATA-IREF>
+                    <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_COM_LNM_APINFO3_«Network.shortName -»_«Responder.shortName -»</CONTEXT-R-PORT-REF>
+                    <TARGET-DATA-ELEMENT-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/LNM_APINFO3/APINFO3</TARGET-DATA-ELEMENT-REF>
+                  </DATA-IREF>
+                </DATA-RECEIVED-EVENT>
+                    «ENDIF -»
+                  «ENDFOREACH -»
+                «ENDFOREACH -»
+                «IF lNM.lNM_General.lnmGenerateInitRunnable == true -»
+                <TIMING-EVENT>
+                  <SHORT-NAME>TE_InitFunction</SHORT-NAME>
+                  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/LNM/SUM_LNM/IB_LNM/RE_Lnm_Init</START-ON-EVENT-REF>
+                  <PERIOD>«lNM.lNM_General.lnmInitFuncPeriodicity/1000»</PERIOD>
+                </TIMING-EVENT>
+                «ENDIF -»
+              </EVENTS>
+              <EXPLICIT-INTER-RUNNABLE-VARIABLES>
+                <VARIABLE-DATA-PROTOTYPE>
+                  <SHORT-NAME>LNM_VehiclePowerModeRunOrPropulsion</SHORT-NAME>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                </VARIABLE-DATA-PROTOTYPE>
+              </EXPLICIT-INTER-RUNNABLE-VARIABLES>
+              <PORT-API-OPTIONS>
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_SUSD_ShutdownPermission</PORT-REF>
+                </PORT-API-OPTION>
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_SUSD_LNM_PermitExecution</PORT-REF>
+                </PORT-API-OPTION>
+                «IF lNM.lNM_General.cyberFill_Supported != false -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_Cyberfill</PORT-REF>
+                </PORT-API-OPTION>
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_WdgM_LNM_LocalSupervision</PORT-REF>
+                </PORT-API-OPTION>
+                «ENDIF -»
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+                  «IF Network.lNM_ActivationSignalType.matches("Com") == true -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ActivationSignal_Av_«Network.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                  «ENDIF -»
+                  «IF Network.lNM_ActivationSignalType.matches("Rule") == false -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ActivationSignal_«Network.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                  «ENDIF -»
+                «ENDIF -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_BswM_LinSM_CurrentState_LNMNetwork_«Network.lNM_Network_ID -»</PORT-REF>
+                </PORT-API-OPTION>
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_BswM_ComM_RequestComMode_LNMNetwork_«Network.lNM_Network_ID -»</PORT-REF>
+                </PORT-API-OPTION>
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_BswM_LinSM_CurrentSchedule_LNMNetwork_«Network.lNM_Network_ID -»</PORT-REF>
+                </PORT-API-OPTION>
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_BswM_LinSM_ScheduleRequest_LNMNetwork_«Network.lNM_Network_ID -»</PORT-REF>
+                </PORT-API-OPTION>
+                «ENDFOREACH -»
+                «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+                «FOREACH lNM.lNM_Arbitration.lNM_Inputs.lNM_ScheduleSignal AS ScheduleSignal -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ScheduleSignal_«ScheduleSignal.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                  «IF ScheduleSignal.lNM_ScheduleSignalSource.matches("Com") == true -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ScheduleSignal_Av_«ScheduleSignal.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                  «ENDIF -»
+                «ENDFOREACH -»
+                «ENDIF -»
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                  «IF Network.lNM_MSCL_Strategy.matches("Evaluation") == true -»
+                    «FOREACH Network.lNM_Responders AS Responder -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_Cal_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</PORT-REF>
+                </PORT-API-OPTION>
+                    «ENDFOREACH -»
+                  «ENDIF -»
+                «ENDFOREACH -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_NvM_MSCL</PORT-REF>
+                </PORT-API-OPTION>
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_«Network.shortName -»_LNM_SSM_MSCL</PORT-REF>
+                </PORT-API-OPTION>
+                «ENDFOREACH -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_Dcm_DID_MSCL</PORT-REF>
+                </PORT-API-OPTION>
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                  «FOREACH Network.lNM_Responders AS Responder -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_ERRH_NodeStatusIdx_«Network.shortName -»_«Responder.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_SSM_LNM_NodeTimeout_«Network.shortName -»_«Responder.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                    «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+                      «IF Responder.lNM_IEF_APINFO2_Supported == true -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_COM_LNM_APINFO2_«Network.shortName -»_«Responder.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                      «ENDIF -»
+                      «IF Responder.lNM_IEF_APINFO4_Supported == true -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_COM_LNM_APINFO4_«Network.shortName -»_«Responder.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                      «ENDIF -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_ERRH_IntElectFault_«Network.shortName -»_«Responder.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                    «ENDIF -»
+                    «IF Responder.lNM_Responder_Device_Not_Configured_Supported == true -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_COM_LNM_APINFO3_«Network.shortName -»_«Responder.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_ERRH_NotConfigured_«Network.shortName -»_«Responder.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                    «ENDIF -»
+                  «ENDFOREACH -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_ERRH_LossCommBus_«Network.shortName -»</PORT-REF>
+                </PORT-API-OPTION>
+                «ENDFOREACH -»
+                <PORT-API-OPTION>
+                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                  <INDIRECT-API>false</INDIRECT-API>
+                  <PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_SUSD_LNM_VehiclePowerMode</PORT-REF>
+                </PORT-API-OPTION>
+              </PORT-API-OPTIONS>
+              <RUNNABLES>
+                <RUNNABLE-ENTITY>
+                  <SHORT-NAME>Runnable_MainFunction</SHORT-NAME>
+                  <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_PermitExecution</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_SUSD_LNM_PermitExecution</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_PermitExecution/SUSD_SWC_ExecutionStatus</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    <VARIABLE-ACCESS UUID="472bf9de-03ba-4554-ba80-dad95a5f3b00">
+                      <SHORT-NAME>DRPA_VehiclePowerMode_0</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_SUSD_LNM_VehiclePowerMode</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_VehiclePowerMode/VehiclePowerMode</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                  </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                  <DATA-SEND-POINTS>
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DSP_ShutdownPermission</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_SUSD_ShutdownPermission</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/LNM_ShutdownPermission/SUSD_UserRequest</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «IF lNM.lNM_General.lnmGenerateInitRunnable == false -»
+                    «IF lNM.lNM_General.cyberFill_Supported != false -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DSP_LNM_Cyberfill</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_Cyberfill</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/CyberFill/DataElements_VariableDataPrototype</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «ENDIF -»
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DSP_LNM_MSCL_«Network.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_«Network.shortName -»_LNM_SSM_MSCL</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/LNM_SSM_MSCL_LIN/MSCL</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «ENDFOREACH -»
+                    «ENDIF -»
+                  </DATA-SEND-POINTS>
+                  «IF lNM.lNM_General.lnmGenerateInitRunnable == false -»
+                  <PARAMETER-ACCESSS>
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_C_Channel_Enable_«Network.shortName -»</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_C_Channel_Enable_«Network.shortName -»</LOCAL-PARAMETER-REF>
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+                    «FOREACH Network.lNM_Responders AS Responder -»
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_C_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                      «IF Network.lNM_MSCL_Strategy.matches("Evaluation") == true -»
+                        <AUTOSAR-PARAMETER-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_Cal_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/Interfaces/LNM_«Network.shortName -»_«Responder.shortName -»_ResponderPresent/«Network.shortName -»_«Responder.shortName -»_ResponderPresent</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-PARAMETER-IREF>
+                      «ELSE -»
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_C_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</LOCAL-PARAMETER-REF>
+                      «ENDIF -»
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+                    «ENDFOREACH -»
+                   «ENDFOREACH -»
+                  </PARAMETER-ACCESSS>
+                  «ENDIF -»
+                  <SERVER-CALL-POINTS>
+                    <SYNCHRONOUS-SERVER-CALL-POINT>
+                      <SHORT-NAME>SSCP_AliveSupervision</SHORT-NAME>
+                      <OPERATION-IREF>
+                        <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_WdgM_LNM_LocalSupervision</CONTEXT-R-PORT-REF>
+                        <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_WdgM/PortInterfaces/WdgM_LocalSupervision/CheckpointReached</TARGET-REQUIRED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </SYNCHRONOUS-SERVER-CALL-POINT>
+                    «IF lNM.lNM_General.lnmGenerateInitRunnable == false -»
+                    <SYNCHRONOUS-SERVER-CALL-POINT>
+                      <SHORT-NAME>SSCP_WriteBlock_MSCL</SHORT-NAME>
+                      <OPERATION-IREF>
+                        <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_NvM_MSCL</CONTEXT-R-PORT-REF>
+                        <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/WriteBlock</TARGET-REQUIRED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </SYNCHRONOUS-SERVER-CALL-POINT>
+                    «ENDIF -»
+                  </SERVER-CALL-POINTS>
+                  <WRITTEN-LOCAL-VARIABLES>
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>WLV_LNM_VehiclePowerModeRunOrPropulsion_0</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_VehiclePowerModeRunOrPropulsion</LOCAL-VARIABLE-REF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                  </WRITTEN-LOCAL-VARIABLES>
+                  <SYMBOL>LNM_MainFunction</SYMBOL>
+                </RUNNABLE-ENTITY>
+                <RUNNABLE-ENTITY>
+                  <SHORT-NAME>Runnable_NetworkStatus</SHORT-NAME>
+                  <MODE-ACCESS-POINTS>
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                    <MODE-ACCESS-POINT>
+                      <MODE-GROUP-IREF>
+                        <R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                          <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_BswM_LinSM_CurrentState_LNMNetwork_«Network.lNM_Network_ID -»</CONTEXT-R-PORT-REF>
+                          <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/LNM/Interfaces/LNM_CurrentComMode_LNMNetwork_«Network.lNM_Network_ID -»/CurrentMode_LNMNetwork_«Network.lNM_Network_ID -»</TARGET-MODE-GROUP-REF>
+                        </R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                      </MODE-GROUP-IREF>
+                    </MODE-ACCESS-POINT>
+                    «ENDFOREACH -»
+                  </MODE-ACCESS-POINTS>
+                  <MODE-SWITCH-POINTS>
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                    <MODE-SWITCH-POINT>
+                      <SHORT-NAME>MSP_RequestActivation_LNMNetwork_«Network.lNM_Network_ID -»</SHORT-NAME>
+                      <MODE-GROUP-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_BswM_ComM_RequestComMode_LNMNetwork_«Network.lNM_Network_ID -»</CONTEXT-P-PORT-REF>
+                        <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/LNM/Interfaces/LNM_RequestComMode_LNMNetwork_«Network.lNM_Network_ID -»/RequestMode_LNMNetwork_«Network.lNM_Network_ID -»</TARGET-MODE-GROUP-REF>
+                      </MODE-GROUP-IREF>
+                    </MODE-SWITCH-POINT>
+                    «ENDFOREACH -»
+                  </MODE-SWITCH-POINTS>
+                  <PARAMETER-ACCESSS>
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_TWuDelay_Commander</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_TWuDelayCommander</LOCAL-PARAMETER-REF>
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_TWuDelay_Responder</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_TWuDelay_Responder</LOCAL-PARAMETER-REF>
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+                  </PARAMETER-ACCESSS>
+                  <SYMBOL>LNM_NetworkStatus</SYMBOL>
+                </RUNNABLE-ENTITY>
+                «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                <RUNNABLE-ENTITY>
+                  <SHORT-NAME>Runnable_Activation_«Network.shortName -»</SHORT-NAME>
+                  <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                    «IF Network.lNM_ActivationSignalType.matches("Rule") == false -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_ActivationSignal</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ActivationSignal_«Network.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/LNM_ActivationSignal/ActivationSignal</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «IF Network.lNM_ActivationSignalType.matches("Com") == true -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_ActivationSignal_Av</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ActivationSignal_Av_«Network.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/RxMonitoredSignal_Av/SignalAvailability</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «ENDIF -»
+                    «ELSE -»
+                    «FOREACH sum_Lnm_ActivationRuleSignalsExceptVPM(Network) AS Signal -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_ActivationSignal_«Signal.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ScheduleSignal_«Signal.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/LNM_ScheduleSignal_«Signal.lNM_ScheduleSignalType -»/ScheduleSignal</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «IF Signal.lNM_ScheduleSignalSource.matches("Com") == true -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_ActivationSignal_Av_«Signal.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ScheduleSignal_Av_«Signal.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/RxMonitoredSignal_Av/SignalAvailability</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «ENDIF -»
+                    «ENDFOREACH -»
+                    «ENDIF -»
+                  </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                  <MODE-SWITCH-POINTS>
+                    <MODE-SWITCH-POINT>
+                      <SHORT-NAME>MSP_RequestActivation_LNMNetwork_«Network.lNM_Network_ID -»</SHORT-NAME>
+                      <MODE-GROUP-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_BswM_ComM_RequestComMode_LNMNetwork_«Network.lNM_Network_ID -»</CONTEXT-P-PORT-REF>
+                        <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/LNM/Interfaces/LNM_RequestComMode_LNMNetwork_«Network.lNM_Network_ID -»/RequestMode_LNMNetwork_«Network.lNM_Network_ID -»</TARGET-MODE-GROUP-REF>
+                      </MODE-GROUP-IREF>
+                    </MODE-SWITCH-POINT>
+                  </MODE-SWITCH-POINTS>
+                  <SYMBOL>LNM_Activation_«Network.shortName -»</SYMBOL>
+                </RUNNABLE-ENTITY>
+                «ENDFOREACH -»
+                «ENDIF -»
+                <RUNNABLE-ENTITY>
+                  <SHORT-NAME>Runnable_ScheduleManagement</SHORT-NAME>
+                  «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+                  <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                    «FOREACH lNM.lNM_Arbitration.lNM_Inputs.lNM_ScheduleSignal AS ScheduleSignal -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_ScheduleSignal_«ScheduleSignal.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ScheduleSignal_«ScheduleSignal.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/LNM_ScheduleSignal_«ScheduleSignal.lNM_ScheduleSignalType -»/ScheduleSignal</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «IF ScheduleSignal.lNM_ScheduleSignalSource.matches("Com") == true -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_ScheduleSignal_Av_«ScheduleSignal.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_ScheduleSignal_Av_«ScheduleSignal.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/RxMonitoredSignal_Av/SignalAvailability</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «IF ScheduleSignal.lNM_ScheduleSignalSource.matches("VPM") == true -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_ScheduleSignal_«ScheduleSignal.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_SUSD_LNM_VehiclePowerMode</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_VehiclePowerMode/VehiclePowerMode</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «ENDIF -»
+                    «ENDIF -»
+                  «ENDFOREACH -»
+                  </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                  «ENDIF -»
+                  <MODE-ACCESS-POINTS>
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                    <MODE-ACCESS-POINT>
+                      <MODE-GROUP-IREF>
+                        <R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                          <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_BswM_LinSM_CurrentSchedule_LNMNetwork_«Network.lNM_Network_ID -»</CONTEXT-R-PORT-REF>
+                          <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/LNM/Interfaces/LNM_CurrentSchedule_LNMNetwork_«Network.lNM_Network_ID -»/CurrentSchedule_LNMNetwork_«Network.lNM_Network_ID -»</TARGET-MODE-GROUP-REF>
+                        </R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                      </MODE-GROUP-IREF>
+                    </MODE-ACCESS-POINT>
+                    «ENDFOREACH -»
+                  </MODE-ACCESS-POINTS>
+                  <MODE-SWITCH-POINTS>
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                    <MODE-SWITCH-POINT>
+                      <SHORT-NAME>MSP_ScheduleRequest_LNMNetwork_«Network.lNM_Network_ID -»</SHORT-NAME>
+                      <MODE-GROUP-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_BswM_LinSM_ScheduleRequest_LNMNetwork_«Network.lNM_Network_ID -»</CONTEXT-P-PORT-REF>
+                        <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/LNM/Interfaces/LNM_RequestSchedule_LNMNetwork_«Network.lNM_Network_ID -»/RequestSchedule_LNMNetwork_«Network.lNM_Network_ID -»</TARGET-MODE-GROUP-REF>
+                      </MODE-GROUP-IREF>
+                    </MODE-SWITCH-POINT>
+                    «ENDFOREACH -»
+                  </MODE-SWITCH-POINTS>
+                  <READ-LOCAL-VARIABLES>
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>RLV_LNM_VehiclePowerModeRunOrPropulsion_0</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_VehiclePowerModeRunOrPropulsion</LOCAL-VARIABLE-REF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                  </READ-LOCAL-VARIABLES>
+<!-- Satisfies: [$SDD_LNM 515] -->
+				  <PARAMETER-ACCESSS>
+					«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_PreSleepDelay_«Network.shortName -»</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_C_PreSleepDelay_«Network.shortName -»</LOCAL-PARAMETER-REF>
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+					«ENDFOREACH -»
+                  </PARAMETER-ACCESSS>
+                  <SYMBOL>LNM_ScheduleManagement</SYMBOL>
+                </RUNNABLE-ENTITY>
+                <RUNNABLE-ENTITY>
+                  <SHORT-NAME>Runnable_DID_MSCL_CheckRead</SHORT-NAME>
+                  <SYMBOL>LNM_DID_MSCL_ConditionCheckRead</SYMBOL>
+                </RUNNABLE-ENTITY>
+                <RUNNABLE-ENTITY>
+                  <SHORT-NAME>Runnable_DID_MSCL_ReadData</SHORT-NAME>
+                  <SYMBOL>LNM_DID_MSCL_ReadData</SYMBOL>
+                </RUNNABLE-ENTITY>
+                <RUNNABLE-ENTITY>
+                  <SHORT-NAME>Runnable_NetworkFaultManager</SHORT-NAME>
+                  <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                      «FOREACH Network.lNM_Responders AS Responder -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_SSM_NodeTimeout_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_SSM_LNM_NodeTimeout_«Network.shortName -»_«Responder.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SSM_LNM_NodeTimeout/NodeTimeout</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                        «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+                          «IF Responder.lNM_IEF_APINFO4_Supported == true -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_APINFO4_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_COM_LNM_APINFO4_«Network.shortName -»_«Responder.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/LNM_APINFO4/APINFO4</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                          «ENDIF -»
+                        «ENDIF -»
+                      «ENDFOREACH -»
+                    «ENDFOREACH -»
+                  </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                  <DATA-SEND-POINTS>
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                      «FOREACH Network.lNM_Responders AS Responder -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DSP_ERRH_NodeStatusIdx_NodeStatusId_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_ERRH_NodeStatusIdx_«Network.shortName -»_«Responder.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/LNM_ERRH_NodeStatusId/NodeStatusId</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DSP_ERRH_NodeStatusIdx_NodeStatusTimer_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_ERRH_NodeStatusIdx_«Network.shortName -»_«Responder.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/LNM_ERRH_NodeStatusId/NodeStatusTimer</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                        «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DSP_LNM_ERRH_IntElectFault_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_ERRH_IntElectFault_«Network.shortName -»_«Responder.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/LNM_ERRH_IntElectFault/IntElectFault</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                        «ENDIF -»
+                      «ENDFOREACH -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DSP_LNM_ERRH_LossCommBus_«Network.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_ERRH_LossCommBus_«Network.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/LNM_ERRH_LossCommBus/LossCommBus</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «ENDFOREACH -»
+                  </DATA-SEND-POINTS>
+                  <PARAMETER-ACCESSS>
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_LNM_WupTxRetries_Commander</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_WupTxRetries_Commander</LOCAL-PARAMETER-REF>
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                      «FOREACH Network.lNM_Responders AS Responder -»
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_LNM_C_DTCProcess_Ief_«Network.shortName»_«Responder.shortName»</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/Sum_LNM_Errh_C_DTCProcess_Ief_«Network.shortName»_«Responder.shortName»</LOCAL-PARAMETER-REF>
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+                    «ENDFOREACH -»
+                    «ENDFOREACH -»
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                        <PARAMETER-ACCESS>
+                          <SHORT-NAME>PA_LNM_C_DTC_«Network.shortName -»_LINBusOff</SHORT-NAME>
+                          <ACCESSED-PARAMETER>
+                            <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_C_DTC_«Network.shortName -»_LINBusOff</LOCAL-PARAMETER-REF>
+                          </ACCESSED-PARAMETER>
+                        </PARAMETER-ACCESS>
+                    «ENDFOREACH -»
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_LNM_C_DTC_LostCommWithLinResp</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_C_DTC_LostCommWithLinResp</LOCAL-PARAMETER-REF>
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+                  </PARAMETER-ACCESSS>
+                  <READ-LOCAL-VARIABLES>
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>RLV_LNM_VehiclePowerModeRunOrPropulsion_0</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_VehiclePowerModeRunOrPropulsion</LOCAL-VARIABLE-REF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                  </READ-LOCAL-VARIABLES>
+                  <SYMBOL>LNM_NetworkFaultManager</SYMBOL>
+                </RUNNABLE-ENTITY>
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                  «FOREACH Network.lNM_Responders AS Responder -»
+                    «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+                      «IF Responder.lNM_IEF_APINFO2_Supported == true -»
+                <RUNNABLE-ENTITY>
+                  <SHORT-NAME>Runnable_APINFO2_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                  <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_APINFO2_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_COM_LNM_APINFO2_«Network.shortName -»_«Responder.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/LNM_APINFO2/APINFO2</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                  </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                  <SYMBOL>LNM_APINFO2_«Network.shortName -»_«Responder.shortName -»</SYMBOL>
+                </RUNNABLE-ENTITY>
+                      «ENDIF -»
+                    «ENDIF -»
+                  «ENDFOREACH -»
+                «ENDFOREACH -»
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                  «FOREACH Network.lNM_Responders AS Responder -»
+                    «IF Responder.lNM_Responder_Device_Not_Configured_Supported == true -»
+                <RUNNABLE-ENTITY>
+                  <SHORT-NAME>Runnable_APINFO3_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                  <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_APINFO3_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_COM_LNM_APINFO3_«Network.shortName -»_«Responder.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/LNM_APINFO3/APINFO3</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                  </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                  <DATA-SEND-POINTS>
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DSP_LNM_ERRH_NotConfigured_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_ERRH_NotConfigured_«Network.shortName -»_«Responder.shortName -»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/LNM_ERRH_NotConfigured/NotConfigured</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                  </DATA-SEND-POINTS>
+                  <PARAMETER-ACCESSS>
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_Config_Retries_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_Config_Retries_«Network.shortName -»_«Responder.shortName -»</LOCAL-PARAMETER-REF>
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+                  </PARAMETER-ACCESSS>
+                  <SYMBOL>LNM_APINFO3_«Network.shortName -»_«Responder.shortName -»</SYMBOL>
+                </RUNNABLE-ENTITY>
+                    «ENDIF -»
+                  «ENDFOREACH -»
+                «ENDFOREACH -»
+                «IF lNM.lNM_General.lnmGenerateInitRunnable == true -»
+                <RUNNABLE-ENTITY>
+                  <SHORT-NAME>RE_Lnm_Init</SHORT-NAME>
+                  <DATA-SEND-POINTS>
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DSP_LNM_MSCL_«Network.shortName -»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_«Network.shortName -»_LNM_SSM_MSCL</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/LNM_SSM_MSCL_LIN/MSCL</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «ENDFOREACH -»
+                    «IF lNM.lNM_General.cyberFill_Supported != false -»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DSP_LNM_Cyberfill</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/LNM/SUM_LNM/PP_LNM_Cyberfill</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/LNM/Interfaces/CyberFill/DataElements_VariableDataPrototype</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «ENDIF -»
+                  </DATA-SEND-POINTS>
+                  <PARAMETER-ACCESSS>
+                    «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_C_Channel_Enable_«Network.shortName -»</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_C_Channel_Enable_«Network.shortName -»</LOCAL-PARAMETER-REF>
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+                    «FOREACH Network.lNM_Responders AS Responder -»
+                    <PARAMETER-ACCESS>
+                      <SHORT-NAME>PA_C_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</SHORT-NAME>
+                      <ACCESSED-PARAMETER>
+                      «IF Network.lNM_MSCL_Strategy.matches("Evaluation") == true -»
+                        <AUTOSAR-PARAMETER-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_LNM_Cal_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/Interfaces/LNM_«Network.shortName -»_«Responder.shortName -»_ResponderPresent/«Network.shortName -»_«Responder.shortName -»_ResponderPresent</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-PARAMETER-IREF>
+                      «ELSE -»
+                        <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/LNM/SUM_LNM/IB_LNM/LNM_C_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</LOCAL-PARAMETER-REF>
+                      «ENDIF -»
+                      </ACCESSED-PARAMETER>
+                    </PARAMETER-ACCESS>
+                    «ENDFOREACH -»
+                   «ENDFOREACH -»
+                  </PARAMETER-ACCESSS>
+                  <SERVER-CALL-POINTS>
+                    <SYNCHRONOUS-SERVER-CALL-POINT>
+                      <SHORT-NAME>SSCP_WriteBlock_MSCL</SHORT-NAME>
+                      <OPERATION-IREF>
+                        <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/LNM/SUM_LNM/RP_NvM_MSCL</CONTEXT-R-PORT-REF>
+                        <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/WriteBlock</TARGET-REQUIRED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </SYNCHRONOUS-SERVER-CALL-POINT>
+                  </SERVER-CALL-POINTS>
+                  <SYMBOL>Runnable_LNM_Init</SYMBOL>
+                </RUNNABLE-ENTITY>
+                «ENDIF -»
+              </RUNNABLES>
+              <SHARED-PARAMETERS>
+                <PARAMETER-DATA-PROTOTYPE>
+                  <SHORT-NAME>LNM_TWuDelay_Responder</SHORT-NAME>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                        <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                  <INIT-VALUE>
+                    <NUMERICAL-VALUE-SPECIFICATION>
+                      <VALUE>«lNM.lNM_General.lNM_TWuDelay_Responder -»</VALUE>
+                    </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                </PARAMETER-DATA-PROTOTYPE>
+                <PARAMETER-DATA-PROTOTYPE>
+                  <SHORT-NAME>LNM_TWuDelayCommander</SHORT-NAME>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                        <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                  <INIT-VALUE>
+                    <NUMERICAL-VALUE-SPECIFICATION>
+                      <VALUE>«lNM.lNM_General.lNM_TWuDelay_Commander -»</VALUE>
+                    </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                </PARAMETER-DATA-PROTOTYPE>
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                <PARAMETER-DATA-PROTOTYPE>
+                  <SHORT-NAME>LNM_C_Channel_Enable_«Network.shortName -»</SHORT-NAME>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                        <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                  <INIT-VALUE>
+                    <NUMERICAL-VALUE-SPECIFICATION>
+                      «IF Network.lNM_ChannelEnable_InitValue == true -»
+                      <VALUE>1</VALUE>
+                      «ELSE -»
+                      <VALUE>0</VALUE>
+                      «ENDIF -»
+                    </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                </PARAMETER-DATA-PROTOTYPE>
+                  «IF Network.lNM_MSCL_Strategy.matches("Calibration") == true -»
+                    «FOREACH Network.lNM_Responders AS Responder -»
+                <PARAMETER-DATA-PROTOTYPE>
+                  <SHORT-NAME>LNM_C_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</SHORT-NAME>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                        <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                  <INIT-VALUE>
+                    <NUMERICAL-VALUE-SPECIFICATION>
+                      «IF Responder.lNM_C_ResponderPresent_InitValue == true -»
+                      <VALUE>1</VALUE>
+                      «ELSE -»
+                      <VALUE>0</VALUE>
+                      «ENDIF -»
+                    </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                </PARAMETER-DATA-PROTOTYPE>
+                    «ENDFOREACH -»
+                  «ENDIF -»
+                «ENDFOREACH -»
+                <PARAMETER-DATA-PROTOTYPE>
+                  <SHORT-NAME>LNM_WupTxRetries_Commander</SHORT-NAME>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                        <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                  <INIT-VALUE>
+                    <NUMERICAL-VALUE-SPECIFICATION>
+                      <VALUE>«lNM.lNM_General.lNM_WupTxRetries_Commander -»</VALUE>
+                    </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                </PARAMETER-DATA-PROTOTYPE>
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                  «FOREACH Network.lNM_Responders AS Responder -»
+                      <PARAMETER-DATA-PROTOTYPE>
+                          <SHORT-NAME>Sum_LNM_Errh_C_DTCProcess_Ief_«Network.shortName»_«Responder.shortName»</SHORT-NAME>
+                          <SW-DATA-DEF-PROPS>
+                            <SW-DATA-DEF-PROPS-VARIANTS>
+                              <SW-DATA-DEF-PROPS-CONDITIONAL>
+                                <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                              </SW-DATA-DEF-PROPS-CONDITIONAL>
+                            </SW-DATA-DEF-PROPS-VARIANTS>
+                          </SW-DATA-DEF-PROPS>
+                          <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                          <INIT-VALUE>
+                          <NUMERICAL-VALUE-SPECIFICATION>
+                            <VALUE>«Responder.lNM_Internal_Electronic_Failure_Supported»</VALUE>
+                          </NUMERICAL-VALUE-SPECIFICATION>
+                          </INIT-VALUE>
+                      </PARAMETER-DATA-PROTOTYPE>
+                  «ENDFOREACH-»
+                «ENDFOREACH-»
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                  «FOREACH Network.lNM_Responders AS Responder -»
+                    «IF Responder.lNM_Responder_Device_Not_Configured_Supported == true -»
+                <PARAMETER-DATA-PROTOTYPE>
+                  <SHORT-NAME>LNM_Config_Retries_«Network.shortName -»_«Responder.shortName -»</SHORT-NAME>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                        <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                  <INIT-VALUE>
+                    <NUMERICAL-VALUE-SPECIFICATION>
+                      <VALUE>«Responder.lNM_Config_Retries -»</VALUE>
+                    </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                </PARAMETER-DATA-PROTOTYPE>
+                    «ENDIF -»
+                  «ENDFOREACH -»
+                «ENDFOREACH -»
+                «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+					      <PARAMETER-DATA-PROTOTYPE>
+                  <SHORT-NAME>LNM_C_DTC_«Network.shortName -»_LINBusOff</SHORT-NAME>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                  <INIT-VALUE>
+                  <NUMERICAL-VALUE-SPECIFICATION>
+                    <VALUE>«Network.lNM_C_DTC_LINBusOff ? 1 : 0»</VALUE>
+                  </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                </PARAMETER-DATA-PROTOTYPE>
+                «ENDFOREACH -»
+                <PARAMETER-DATA-PROTOTYPE>
+                  <SHORT-NAME>LNM_C_DTC_LostCommWithLinResp</SHORT-NAME>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                        <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                  <INIT-VALUE>
+                    <NUMERICAL-VALUE-SPECIFICATION>
+                      <VALUE>«lNM.lNM_General.lNM_C_DTC_LostCommWithLinResp_Enabled ? 1 : 0-»</VALUE>
+                    </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                </PARAMETER-DATA-PROTOTYPE>
+<!-- Satisfies: [$SDD_LNM 515] -->
+				«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+				<PARAMETER-DATA-PROTOTYPE>
+                  <SHORT-NAME>LNM_C_PreSleepDelay_«Network.shortName -»</SHORT-NAME>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                        <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                  <INIT-VALUE>
+                    <NUMERICAL-VALUE-SPECIFICATION>
+                      <VALUE>«Network.lNM_C_PreSleepDelay -»</VALUE>
+                    </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                </PARAMETER-DATA-PROTOTYPE>
+				«ENDFOREACH -»
+              </SHARED-PARAMETERS>
+            </SWC-INTERNAL-BEHAVIOR>
+          </INTERNAL-BEHAVIORS>
+        </APPLICATION-SW-COMPONENT-TYPE>
+        <SWC-IMPLEMENTATION>
+	      <SHORT-NAME>SwcImplementation_IB_LNM</SHORT-NAME>
+	       <CODE-DESCRIPTORS>
+	        <CODE>
+	          <SHORT-NAME>Code_LNM</SHORT-NAME>
+	          <ARTIFACT-DESCRIPTORS>
+	            <AUTOSAR-ENGINEERING-OBJECT>
+	              <SHORT-LABEL>AEO1</SHORT-LABEL>
+	              <CATEGORY>SWSRC</CATEGORY>
+	            </AUTOSAR-ENGINEERING-OBJECT>
+	          </ARTIFACT-DESCRIPTORS>
+	        </CODE>
+	      </CODE-DESCRIPTORS>
+	      <PROGRAMMING-LANGUAGE>C</PROGRAMMING-LANGUAGE>
+	      <BEHAVIOR-REF DEST="SWC-INTERNAL-BEHAVIOR">/LNM/SUM_LNM/IB_LNM</BEHAVIOR-REF>
+        </SWC-IMPLEMENTATION>
+      </ELEMENTS>
+	  <AR-PACKAGES>
+        <AR-PACKAGE>
+          <SHORT-NAME>Interfaces</SHORT-NAME>
+		    <ELEMENTS>
+		      «IF lNM.lNM_General.cyberFill_Supported != false -»
+		      <SENDER-RECEIVER-INTERFACE>
+                <SHORT-NAME>CyberFill</SHORT-NAME>
+                <IS-SERVICE>false</IS-SERVICE>
+                <DATA-ELEMENTS>
+                  <VARIABLE-DATA-PROTOTYPE>
+                    <SHORT-NAME>DataElements_VariableDataPrototype</SHORT-NAME>
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                  </VARIABLE-DATA-PROTOTYPE>
+                </DATA-ELEMENTS>
+              </SENDER-RECEIVER-INTERFACE>
+              «ENDIF -»
+              «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+              <SENDER-RECEIVER-INTERFACE>
+                <SHORT-NAME>LNM_ActivationSignal</SHORT-NAME>
+                <IS-SERVICE>false</IS-SERVICE>
+                <DATA-ELEMENTS>
+                  <VARIABLE-DATA-PROTOTYPE>
+                    <SHORT-NAME>ActivationSignal</SHORT-NAME>
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                  </VARIABLE-DATA-PROTOTYPE>
+                </DATA-ELEMENTS>
+              </SENDER-RECEIVER-INTERFACE>
+              <SENDER-RECEIVER-INTERFACE>
+                <SHORT-NAME>LNM_ScheduleSignal_boolean</SHORT-NAME>
+                <IS-SERVICE>false</IS-SERVICE>
+                <DATA-ELEMENTS>
+                  <VARIABLE-DATA-PROTOTYPE>
+                    <SHORT-NAME>ScheduleSignal</SHORT-NAME>
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                  </VARIABLE-DATA-PROTOTYPE>
+                </DATA-ELEMENTS>
+              </SENDER-RECEIVER-INTERFACE>
+              <SENDER-RECEIVER-INTERFACE>
+                <SHORT-NAME>LNM_ScheduleSignal_uint8</SHORT-NAME>
+                <IS-SERVICE>false</IS-SERVICE>
+                <DATA-ELEMENTS>
+                  <VARIABLE-DATA-PROTOTYPE>
+                    <SHORT-NAME>ScheduleSignal</SHORT-NAME>
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                  </VARIABLE-DATA-PROTOTYPE>
+                </DATA-ELEMENTS>
+              </SENDER-RECEIVER-INTERFACE>
+              <SENDER-RECEIVER-INTERFACE>
+                <SHORT-NAME>LNM_ScheduleSignal_uint16</SHORT-NAME>
+                <IS-SERVICE>false</IS-SERVICE>
+                <DATA-ELEMENTS>
+                  <VARIABLE-DATA-PROTOTYPE>
+                    <SHORT-NAME>ScheduleSignal</SHORT-NAME>
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                  </VARIABLE-DATA-PROTOTYPE>
+                </DATA-ELEMENTS>
+              </SENDER-RECEIVER-INTERFACE>
+              «ENDIF -»
+              «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+                «IF Network.lNM_MSCL_Strategy.matches("Evaluation") == true -»
+                  «FOREACH Network.lNM_Responders AS Responder -»
+              <PARAMETER-INTERFACE>
+                <SHORT-NAME>LNM_«Network.shortName -»_«Responder.shortName -»_ResponderPresent</SHORT-NAME>
+                <IS-SERVICE>false</IS-SERVICE>
+                <PARAMETERS>
+                  <PARAMETER-DATA-PROTOTYPE>
+                    <SHORT-NAME>«Network.shortName -»_«Responder.shortName -»_ResponderPresent</SHORT-NAME>
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                  </PARAMETER-DATA-PROTOTYPE>
+                </PARAMETERS>
+              </PARAMETER-INTERFACE>
+                  «ENDFOREACH -»
+                «ENDIF -»
+              «ENDFOREACH -»
+              <SENDER-RECEIVER-INTERFACE>
+                <SHORT-NAME>LNM_APINFO2</SHORT-NAME>
+                <IS-SERVICE>false</IS-SERVICE>
+                <DATA-ELEMENTS>
+                  <VARIABLE-DATA-PROTOTYPE>
+                    <SHORT-NAME>APINFO2</SHORT-NAME>
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                    <INIT-VALUE>
+                      <NUMERICAL-VALUE-SPECIFICATION>
+                        <VALUE>0</VALUE>
+                      </NUMERICAL-VALUE-SPECIFICATION>
+                    </INIT-VALUE>
+                  </VARIABLE-DATA-PROTOTYPE>
+                </DATA-ELEMENTS>
+              </SENDER-RECEIVER-INTERFACE>
+              <SENDER-RECEIVER-INTERFACE>
+                <SHORT-NAME>LNM_APINFO4</SHORT-NAME>
+                <IS-SERVICE>false</IS-SERVICE>
+                <DATA-ELEMENTS>
+                  <VARIABLE-DATA-PROTOTYPE>
+                    <SHORT-NAME>APINFO4</SHORT-NAME>
+                    <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                    <INIT-VALUE>
+                      <NUMERICAL-VALUE-SPECIFICATION>
+                        <VALUE>0</VALUE>
+                      </NUMERICAL-VALUE-SPECIFICATION>
+                    </INIT-VALUE>
+                  </VARIABLE-DATA-PROTOTYPE>
+                </DATA-ELEMENTS>
+              </SENDER-RECEIVER-INTERFACE>
+              <SENDER-RECEIVER-INTERFACE>
+              <SHORT-NAME>LNM_APINFO3</SHORT-NAME>
+              <IS-SERVICE>false</IS-SERVICE>
+              <DATA-ELEMENTS>
+                <VARIABLE-DATA-PROTOTYPE>
+                  <SHORT-NAME>APINFO3</SHORT-NAME>
+                  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                  <INIT-VALUE>
+                    <NUMERICAL-VALUE-SPECIFICATION>
+                      <VALUE>0</VALUE>
+                    </NUMERICAL-VALUE-SPECIFICATION>
+                  </INIT-VALUE>
+                </VARIABLE-DATA-PROTOTYPE>
+              </DATA-ELEMENTS>
+            </SENDER-RECEIVER-INTERFACE>
+			</ELEMENTS>
+		</AR-PACKAGE>
+      </AR-PACKAGES>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+
+</AUTOSAR>
+
+
+
+«ENDFILE»
+«ENDDEFINE»

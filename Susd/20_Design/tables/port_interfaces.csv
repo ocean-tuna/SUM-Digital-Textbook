@@ -1,0 +1,74 @@
+14;4;5;5;8
+\textbf{Port Interface};\textbf{Port Type};\textbf{P-Port};\textbf{R-Port};\textbf{Description}
+VehiclePowerMode;Sender / Receiver;SUM_SUSD;SWCs, SUM_ERRH, SUM_SSC;Provide the calculated Vehicle Power Mode based on Power Moding Slave function.
+SUSD_<SUM/SWC>_ PermitExecution;Sender / Receiver;SUM_SUSD;SWCs, all SUMs;Provide signal to enable starting / stopping execution of applications
+VehicleBatteryVoltage;Sender / Receiver;Sensor SWC;SUM_SUSD;Receive the local I/O signal from SWC which reads the vehicle battery voltage
+BatteryVoltageRange<Min V>To<Max V>;Sender / Receiver;SUM_SUSD;SWC;An interface for each voltage range, to provide a signal to notify whether the vehicle battery is in the normal, under voltage or over voltage of the specified operation range.
+<SUM/SWC>_SUSD_ ShutdownPermission<1...n>;Sender / Receiver;SWCs, all SUMs;SUM_SUSD;Receive notification(s) to prevent SUM_SUSD from requesting shut down until all SW-C have finished their functions.
+SUSD_SOH_ResetOccurred;Sender / Receiver;SUM_SUSD;SUM_SOH;Send notification to SUM_SOH regarding the occurrence of a reset event and the type of the reset event.
+RunCrankActive;Sender / Receiver;SUM_SUSD;SWC;Provide the value of the Run/Crank signal
+RunCrankActive_Inv;Sender / Receiver;SUM_SUSD;SWC;Provide the invalidity of the Run/Crank signal
+RunCrankInput;Sender / Receiver;SUM_SUSD;SWC;Provide the Run/Crank Input value 
+RunCrankInput_Inv;Sender / Receiver;SUM_SUSD;SWC;Provide the invalidity of the Run/Crank Input value
+RunCrankInputVoltage;Sender / Receiver;SUM_SUSD;SWC;Provide the Run/Crank Input Voltage value
+VehiclePowerMode_Inv;Sender / Receiver;SUM_SUSD;SWC;Provide the calculated Vehicle Power Mode invalidity based on Power Moding Slave function.
+SystemPowerMode;Sender / Receiver;COM;SUM_SUSD;Receive the system power mode signal (part of a MAC protected message)
+SystemBackupPowerMode;Sender / Receiver;COM;SUM_SUSD;Receive the system backup power mode signal (part of a MAC protected message)
+PrimaryPowerMode\\_BackupPowerMode;Sender / Receiver;COM;SUM_SUSD;Receive both system power mode and system backup power mode in case both are in the same signal (part of a MAC protected message)
+SystemPowerMode_Av;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system power mode availability
+SystemPowerMode_FsFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system power mode Failed Safety Fault Active
+SystemPowerMode_FsI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system power mode Failed Safety Indication
+SystemPowerMode_FcFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system power mode Failed Security Fault Active
+SystemPowerMode_FcI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system power mode Failed Security Indication
+SystemPowerMode_FoFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system power mode Failed Continuous Operation Fault Active
+SystemPowerMode_FoI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system power mode Failed Continuous Operation Indication
+SystemBackupPowerMode_Av;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system backup power mode availability
+SystemBackupPowerMode_FsFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system backup power mode Failed Safety Fault Active
+SystemBackupPowerMode_FsI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system backup power mode Failed Safety Indication
+SystemBackupPowerMode_FcFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system backup power mode Failed Security Failed Active
+SystemBackupPowerMode_FcI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system backup power mode Failed Security Indication
+SystemBackupPowerMode_FoFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system power mode Failed Continuous Operation Fault Active
+SystemBackupPowerMode_FoI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the system power mode Failed Continuous Operation Indication
+SystemPowerMode\\_BackupPowerMode_Av;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive both the system power mode and system backup power mode availability in case both are in the same signal
+SystemPowerMode\\_BackupPowerMode_FsFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive both the system power mode and the system backup power mode Failed Safety Fault Active in case both are in the same signal
+SystemPowerMode\\_BackupPowerMode_FsI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive both the system power mode and the system backup power mode Failed Safety Indication in case both are in the same signal
+SystemPowerMode\\_BackupPowerMode_FcFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive both the system power mode and the system backup power mode Failed Security Failed Active in case both are in the same signal
+SystemPowerMode\\_BackupPowerMode_FcI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive both the system power mode and the system backup power mode Failed Security Indication in case both are in the same signal
+SystemPowerMode\\_BackupPowerMode_FoFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive both the system power mode and the system power mode Failed Continuous Operation Fault Active in case both are in the same signal
+SystemPowerMode\\_BackupPowerMode_FoI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive both the system power mode and the system power mode Failed Continuous Operation Indication in case both are in the same signal
+BatteryVoltage_Actual;Sender / Receiver;SUM_SUSD;SWC;Provide the current actual battery voltage
+PrimaryRunCrankCommand Active;Sender / Receiver;SUM_SSC;SUM_SUSD;Receive the Primary Run/Crank Command Active signal (part of a MAC protected message)
+PrimaryRunCrankCommand Active_Inv;Sender / Receiver;SUM_SSC;SUM_SUSD;Receive the Primary Run/Crank Command Active invalidity signal (part of a MAC protected message)
+SecondaryRunCrankCommand Active;Sender / Receiver;SUM_SSC;SUM_SUSD;Receive the Secondary Run/Crank Command Active signal (part of a MAC protected message)
+SecondaryRunCrankCommand Active_Inv;Sender / Receiver;SUM_SSC;SUM_SUSD;Receive the Secondary Run/Crank Command Active invalidity signal (part of a MAC protected message)
+PrimaryRunCrank_Av;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the Primary Run/Crank availability
+PrimaryRunCrank_FoFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the Primary Run/Crank Failed Continuous Operation Fault Active
+PrimaryRunCrank_FoI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the Primary Run/Crank Failed Continuous Operation Indication
+SecondaryRunCrank_Av;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the Secondary Run/Crank availability
+SecondaryRunCrank_FoFA;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the Secondary Run/Crank Failed Continuous Operation Fault Active
+SecondaryRunCrank_FoI;Sender / Receiver;SUM_SSM;SUM_SUSD;Receive the Secondary Run/Crank Failed Continuous Operation Indication
+RunCrankInputStuckHigh DiagnosticStatus;Sender / Receiver;SUM_SUSD;SUM_ERRH;Notification to SUM_ERRH about Run/Crank Input stuck high errors
+RunCrankInputStuckLowD iagnosticStatus;Sender / Receiver;SUM_SUSD;SUM_ERRH;Notification to SUM_ERRH about Run/Crank Input stuck low errors
+RunCrankInputStuckHigh Diagnostic_FA_StatusRequest;Sender / Receiver;SUM_ERRH;SUM_SUSD;Receive the DTC confirmation for Run/Crank Input stuck high
+RunCrankInputStuckLow Diagnostic_FA_StatusRequest;Sender / Receiver;SUM_ERRH;SUM_SUSD;Receive the DTC confirmation for Run/Crank Input stuck low
+RunCrankInputStuckHigh Diagnostic_FA;Sender / Receiver;SUM_SUSD;SWC;Provide the Run/Crank Input Stuck High Fault Active
+RunCrankInputStuckLow Diagnostic_FA;Sender / Receiver;SUM_SUSD;SWC;Provide the Run/Crank Input Stuck Low Fault Active
+RunCrankInputDiscreteActive;Sender / Receiver;BSW;SUM_SUSD;Receive the Run/Crank Input discrete value
+RunCrankInputPercentage;Sender / Receiver;BSW;SUM_SUSD;Receive the Run/Crank Input analog value as percentage points
+ECUOperatingModeReq;Mode Request;SUM_SUSD;BswM;Requests the ECU power mode to (Run, Sleep or Reset). BswM must be configured with a Mode Rule that handles this Mode Request.
+CurrentECUOperatingMode;Mode User;BswM;SUM_SUSD;Receive notification of the current ECU operational status
+DiagnosticReprogramming Request;Mode User;BswM;SUM_SUSD;Receive notification of a request to shutdown to boot
+DiagnosticResetRequest;Mode User;BswM;SUM_SUSD;Receive notification of a request to shutdown to reset
+BatteryCharge_DisableWkups;Mode Request;SUM_SUSD;BswM;Requests the disabling or enabling of wakeups. BswM must be configured with a Mode Rule that handles this request.
+VPwrSetEnableCond;Client / Server;SUM_SUSD;Dem;Maps to Dem interface: SyncDataElement<Data>. Provides the Vehicle Power Mode state to Dem so that it can be used to enable / disable error monitoring.
+RoutineServices_RID_041A_ ClearECUWakeupDetection Records;Client / Server;SUM_SUSD;Dem;Provides mechanism to clear the ECU Wakeup Detection Records to Dem.
+DataServices_DID_F09E\\_ECUWakeupDetectionRecords\\_Data;Client / Server;SUM_SUSD;Dcm;ReadData and ConditionCheckRead operations for DID 0xF09E ECU Wakeup Detection Records.
+NvMService;Client / Server;NVM;SUM_SUSD;Provides mechanism to store ECU Wakeup Detection Records in NVM.
+VehicleBatteryStateOfCharge;Sender / Receiver;Sensor SWC;SUM_SUSD;Interface used to get the battery state of charge input from another SWC.
+SystemPowerMode_FxFA (implemented through SignalGroup_FxFA);Sender / Receiver;SUM_SSFM;SUM_SUSD;Receive the system power mode for single port fault active status.
+SystemPowerMode_FxI (implemented through SignalGroup_FxI);Sender / Receiver;SUM_SSFM;SUM_SUSD;Receive the system power mode for single port status.
+SystemBackupPowerMode_FxFA (implemented through SignalGroup_FxFA);Sender / Receiver;SUM_SSFM;SUM_SUSD;Receive the system backup power mode for single port fault active status.
+SystemBackupPowerMode_FxI (implemented through SignalGroup_FxI);Sender / Receiver;SUM_SSFM;SUM_SUSD;Receive the system backup power mode for single port status.
+SPM_SUSD_ActivityRecordCmd;Client / Server;SUM_SPM;SUM_SUSD;To provide a command to SPM for resetting or storing DIDs E0DE and E0DF records.
+DataServices_DID_F089\\_ApplicationShutdownProhibit;Client / Server;SUM_SUSD;Dcm;ReadData and ConditionCheckRead operations for the DID 0xF089 "Application Shutdown Prohibit".
+BattVltgSnsrStsAvl;Sender / Receiver;Supplier SWC;SUM_SUSD;Receive the battery voltage sensor status to determine if the battery voltage reading is available and valid.

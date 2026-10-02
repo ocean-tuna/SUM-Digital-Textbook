@@ -1,0 +1,60 @@
+@startuml Sum_Ssfm_DTCU1962_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DTCU1962_Handler"
+
+**Interfaces Legend**
+   //II152 //: ERRH_ExecutionStatus
+   //ri116 //: SSC_E_KeySlotVerify<n>
+   //II191 //: Debounced Error
+   //II150 //: BatteryVoltage 
+   //II154 //: batteryvoltage_RecoveryTimer
+   //II153 //: reset_RecoveryTimer
+   //II08 //: PNs_Info
+   //II156 //: isTransportMode
+   //II157 //: DisableDTCs
+   //II165 //: SECPError_Occurred
+   //pi160 //: SSC_KeySlotVerify<n>_SetEventStatus
+   //II192 //: Undebounced Error
+   
+endlegend
+
+note top of EC
+It is responsible for asking the DEM to set the DTC 1962. 
+In particular, it verifies if the SSC reports errors for each key slot and, in case, it asks the DEM to set/clear the DTC accordingly.
+end note
+
+component [SSFM::Sum_Ssfm_DTCU1962_Handler] as EC{
+    portin ri116
+    portout pi160
+
+	[Sum_Ssfm_DTCU1962_Handler]  as E
+}
+   interface II152
+   interface II150
+   interface II154
+   interface II153
+   interface II08
+   interface II156
+   interface II157
+   interface II165
+   interface II191
+   interface II192
+
+  II152 -> E
+  II150 -> E
+  II08 -> E
+  ri116 -> E
+  II154 -> E
+  II153 -> E
+  II156 -> E
+  II157 -> E
+  II165 -> E
+  II191 -> E
+  E -> pi160
+  E -> II192  
+
+
+@enduml

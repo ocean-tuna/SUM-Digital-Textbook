@@ -1,0 +1,10 @@
+20;60
+\textbf{Term/Abbreviation};\textbf{Definition}
+CR;Change Request
+GM;General Motors
+LNM;LIN Network Manager
+SUM;Standard Utility Module
+LIN Commander;The ECU which controls the LIN Network by determining the order and priority of messages, monitoring the data and check bytes, and controlling the error handler. The LIN Commander can wake up the LIN Network based on project specific logic or can also be awakened by receiving a Signal Break from a LIN Responder.
+LIN Responder;An ECU which performs an action when commanded by the LIN Commander or provides a data response when requested by the LIN Commander.
+LIN Network;A set of ECUs with a single Commander, multi Responder connected via a LIN communication bus.
+VIP;Vehicle Intelligence Platform

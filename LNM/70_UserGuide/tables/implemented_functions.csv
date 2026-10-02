@@ -1,0 +1,3 @@
+3;2;5
+"\textbf{Functionality}";"\textbf{Status}";"\textbf{Description}"
+GMSUM-3765;Dignostic DTC; Implemented Loss of Com (Device/BUS), Internal Electronic Failure,Device not configured

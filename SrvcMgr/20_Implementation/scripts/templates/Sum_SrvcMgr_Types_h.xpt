@@ -1,0 +1,80 @@
+«IMPORT bsw»
+«IMPORT bsw::SrvcMgrModule»
+«IMPORT bsw::Dem»
+«IMPORT bsw::Sd»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SrvcMgr FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SrvcMgr FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_SrvcMgr_Types.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Apr 20, 2026
+ * Revision    : 8.0.1_Pr16
+ * Description : Header file for SrvcMgr Types
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SRVCMGR_TYPES_H
+#define SUM_SRVCMGR_TYPES_H
+
+/*
+ **********************************************************************************************************************************************************
+ *	Macros
+ **********************************************************************************************************************************************************
+ */
+
+/** @brief Macro to define code shutdown enable to be provided to SUSD */
+#define SUM_SRVCMGR_ENABLE_SHUTDOWN 					(uint8)0xFFu
+/** @brief Macro to check for Reset bit(bit 6) in Permit execution to enable/disable shutdown */
+#define SUM_SRVCMGR_RESETBIT_MASK 						(uint8)0xBFu
+/** @brief Macro addresses the Permit Execution value has passed the masking operation */
+#define SUM_SRVCMGR_EXEC_MASKING_PASSED					(uint8)0xFFu
+/** @brief Macro addresses the SRVCMGR module as uninitialized */
+#define SUM_SRVCMGR_UNINIT								(boolean)0x00
+/** @brief Macro addresses the SRVCMGR module as initialized */
+#define SUM_SRVCMGR_INIT								(boolean)0x01u
+
+/*
+ **********************************************************************************************************************************************************
+ * Enum
+ **********************************************************************************************************************************************************
+ */
+
+/** @brief Enum for SRVCMGR Execution Status values */
+typedef enum Sum_SrvcMgr_ExecutionStatusType
+{
+	SUM_SrvcMgr_Run_Mode      = 0x00u ,
+	SUM_SrvcMgr_Init_and_Shutdown_Mode = 0x01u,
+	SUM_SrvcMgr_Prepare_to_Shutdown = 0x02u,
+	SUM_SrvcMgr_Invalid_Mode  = 0xffu
+} Sum_SrvcMgr_ExecutionStatus;
+
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

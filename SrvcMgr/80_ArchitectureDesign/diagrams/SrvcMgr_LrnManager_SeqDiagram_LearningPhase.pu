@@ -1,0 +1,65 @@
+@startuml SrvcMgr_SeqDiagram_LearningPhase
+
+actor tester
+participant Dcm
+participant SrvcMgr
+participant SSFM
+participant Sd
+participant SdExt
+participant NVRAM
+participant RemoteEcu
+
+tester -> Dcm: RID 0x654 
+Dcm -> SrvcMgr: SrvcMgr_LearningSessionTrigger_Start_RID_0x0654\n(OpStatus DCM_INITIAL, dataOut LearningStatus)
+SrvcMgr -> Sd: Sd_ClearLearningTable()
+note right: SD_SWSEXT_0004, SD_GM_0017
+Sd -> SdExt: SdExt_ClearLearningTable(), clear ssfm buf
+note right
+with this learning
+will start
+end note
+SdExt -> NVRAM: NVM_Erase()
+
+SdExt -> SdExt: change \nstate to learning / CLEARED
+note right: SD_SWSEXT_0003
+
+loop for each Client Services
+note over SrvcMgr,SdExt: Service Group members are handled via Sd_ServiceGroupStart().
+alt Client Service belongs to Service Group
+    SrvcMgr -> SdExt : Start Service Group using Sd_ServiceGroupStart()
+else
+    SrvcMgr -> SdExt : Set Client Service as REQUESTED using Sd_ClientServiceSetState()
+    note right: If the service does not belong to a Service Group, use Sd_ClientServiceSetState() to set REQUESTED/RELEASED.
+    loop for each Consumed Events Group associated with Client Services
+       SrvcMgr -> SdExt : Set Consumed Event Group as REQUESTED using Sd_ConsumedEventSetState()
+       note right: When the client service is REQUESTED, associated consumed event groups are set via Sd_ConsumedEventSetState().
+    end
+end
+end
+
+loop for each Server Services
+alt Server Service belongs to Service Group
+    SrvcMgr -> SdExt : Start Service Group using Sd_ServiceGroupStart()
+else
+    SrvcMgr -> SdExt : Set Server Service as AVAILABLE using Sd_ServerServiceSetState()
+    note right: If the service does not belong to a Service Group, use Sd_ServerServiceSetState() to set AVAILABLE/DOWN.
+end
+end
+
+tester -> Dcm: RID 0x0654 
+Dcm -> SrvcMgr: SrvcMgr_LearningSessionTrigger_Start_RID_0x0654\n(OpStatus DCM_PENDING, dataOut LearningStatus)
+SrvcMgr -> Sd: Sd_GetLearningSessionStatus()
+alt Learning session finished (ret == E_OK or E_NOT_OK)
+    SrvcMgr -> Sd: Sd_GetLearningTableState()
+    SrvcMgr -> SrvcMgr: Sum_SrvcMgr_prv_HandleU19A6_87Status()
+    SrvcMgr -> Sd: retVal = Sd_RetrieveIncompleteLearningReasons()
+    alt if retVal == E_OK
+        SrvcMgr -> SrvcMgr: Sum_SrvcMgr_prv_HandleU19A6_57Status()
+    else  retVal != E_OK - no action performed for Dtc U19A6 57
+    end
+    SrvcMgr -> SrvcMgr: Sum_SrvcMgr_prv_HandleU19A6_54Status()
+else Learning session still in progress (ret == E_PENDING)
+    note over SrvcMgr: No DTC handling performed
+end
+
+@enduml

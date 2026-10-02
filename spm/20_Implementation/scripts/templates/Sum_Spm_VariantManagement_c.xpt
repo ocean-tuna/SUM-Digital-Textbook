@@ -1,0 +1,229 @@
+
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_VariantManagement.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header file for Sum_Spm_VariantManagement
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#include "Sum_Spm_VariantManagement.h"
+
+/* PRQA S 3469 EOF # Following macro are generated from RTE.  */
+
+«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+/**
+ * @brief	Flag indicating whether the ECU variant has been branded (identified).
+ * 			TRUE: The ECU has been branded.
+ * 			FALSE: The ECU has NOT been branded yet.
+ * @private
+ */
+ static boolean SPM_IsBranded = FALSE;
+ «ENDIF-»
+
+  /**
+ * @brief	Flag indicating which Id Variant the ECU represent.
+ * @private
+ */
+ uint8 Spm_ActiveVariantIdx_u8 = 0U;
+
+
+«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+/**
+ * @brief Getter function of the variable SPM_IsBranded.
+ *
+ * @retval TRUE: The ECU has been branded.
+ *         FALSE: The ECU has NOT been branded yet.
+ */
+/* [$Satisfies $DDS_SPM 0671] */
+/* PRQA S 1532 1 # The function is defined here for modularity reason. */
+boolean Sum_Spm_GetIsBranded(void){
+	return SPM_IsBranded;
+}
+
+/**
+ * @brief Setter function of the variable SPM_IsBranded.
+ *
+ * @param[in] value: TRUE to mark the ECU as branded, FALSE otherwise.
+ * @retval None.
+ */
+/* [$Satisfies $DDS_SPM 0671] */
+/* PRQA S 1505 1 # The function is defined here for modularity reason. */
+void Sum_Spm_SetIsBranded(boolean value){
+	SPM_IsBranded = value;
+}
+
+
+/**
+ * @brief Setter function of the variable Spm_ActiveVariantIdx_u8.
+ *
+ * @param[in] value: Id of the Variant to be set as active on the ECU.
+ * @retval None.
+ */
+/* PRQA S 1505 1 # The function is defined here for modularity reason. */
+void Sum_Spm_SetVariantId(uint8 value){
+	Spm_ActiveVariantIdx_u8 = value;
+}
+«ENDIF-»
+
+«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+/**
+ * @brief Function that checks if a specific variant has been set by the SWC in case there are multiple variants configured.
+ * 
+ *  Once the variant has been set (understood by calling Rte_Call_RP_SPM_GetDeviceVariantInfo_setVariant()):
+ * 
+ * - this function sets the SPM as Branded;
+ * - populates the data-structure pointing to the corresponding _PerVariant data-structure for SPM_NetworkInfo_Wrap[],
+ * 	 Spm_ActiveWkupFrameInfo_p and Spm_PowMgr_TrgDvc_List[].SpmTrgDevInfo.trgHndl_p;
+ *
+ * @retval None.
+ */
+/* [$Satisfies $DDS_SPM 0671] */
+/* [$Satisfies $DDS_SPM 0672] */
+/* PRQA S 1532 2 # Defined here for modularity reason. */
+/* PRQA S 3219 1 # This function will be used when the feature is completed. */
+void Sum_Spm_GetVariantId_DataStructurePopulation_WithVariant(void)
+{
+	uint8 variantInfo_u8 = 0U;
+	uint8 i;
+
+	if(FALSE == Sum_Spm_GetIsBranded()){
+
+		if (RTE_E_SWC_GetDeviceVariantInfo_E_OK == Rte_Call_RP_SPM_GetDeviceVariantInfo_setVariant(&variantInfo_u8)) {
+			if ((variantInfo_u8 > 0u) && (variantInfo_u8 <= (uint8)SUM_SPM_NUMBER_OF_VARIANTS)) {
+				/* PRQA S 2877 1 # The following loop will be more executed more than once if there are more networks configured. */
+				for(i = 0u; i < (uint8)SUM_SPM_NUMBER_OF_NET_CONF; i++) {
+					SPM_NetworkInfo_Wrap[i] = Spm_NetworkInfo_Wrap_PerVariant[variantInfo_u8 - 1u][i];
+				}
+				Spm_ActiveWkupFrameInfo_p = Spm_WkupFrameInfo_PerVariant[variantInfo_u8 - 1u];
+				Sum_Spm_SetVariantId(variantInfo_u8 - 1u);
+	«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc AS trgDvc ITERATOR i-»
+		«IF trgDvc.spmTrgDvcVariantHndlng.exists(v | v.spmTrgAssocWkUpFrm != null && v.spmTrgAssocWkupBit != null) -»
+				if(TrgHndlInfo_«trgDvc.shortName»_PerVariant[variantInfo_u8 - 1u] != NULL_PTR){
+					Spm_PowMgr_TrgDvc_List[«i.counter0»].SpmTrgDevInfo.trgHndl_p = TrgHndlInfo_«trgDvc.shortName»_PerVariant[variantInfo_u8 - 1u];
+				}
+		«ENDIF-»
+	«ENDFOREACH-»
+				Sum_Spm_SetIsBranded(TRUE);
+			}
+		}
+
+	}
+}
+«ENDIF-»
+
+«IF Spm_ExistMultipleVariantConfigured(spm) == false -»
+/**
+ * @brief Function that populates the data-structure w.r.t. the _PerVariant one when there is ONLY 
+ *        ONE variant configured.
+ *   
+ * It populates the data-structure:
+ * 
+ * - SPM_NetworkInfo_Wrap[], Spm_ActiveWkupFrameInfo_p and Spm_PowMgr_TrgDvc_List[].SpmTrgDevInfo.trgHndl_p: 
+ *   accessing the corresponding _PerVariant data-structure.
+ * 
+ * @retval None.
+ */
+void Sum_Spm_DataStructurePopulation_WithoutVariant(void){
+	uint8 i; 
+	/* PRQA S 2877 1 # This loop will never be executed more than once for configuration reason. */
+	for(i = 0u; i < (uint8)SUM_SPM_NUMBER_OF_NET_CONF; i++) {
+		SPM_NetworkInfo_Wrap[i] = Spm_NetworkInfo_Wrap_PerVariant[0u][i];
+	}
+	Spm_ActiveWkupFrameInfo_p = Spm_WkupFrameInfo_PerVariant[0u];
+	Spm_ActiveVariantIdx_u8 = 0u;
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc AS trgDvc ITERATOR i-»
+	«IF trgDvc.spmTrgDvcVariantHndlng.exists(v | v.spmTrgAssocWkUpFrm != null && v.spmTrgAssocWkupBit != null) -»
+	if(TrgHndlInfo_«trgDvc.shortName»_PerVariant[0u] != NULL_PTR){
+		Spm_PowMgr_TrgDvc_List[«i.counter0»].SpmTrgDevInfo.trgHndl_p = TrgHndlInfo_«trgDvc.shortName»_PerVariant[0u];
+	}
+	«ENDIF-»
+«ENDFOREACH-»
+}
+«ENDIF-»
+
+/**
+ * @brief Function that populate the general _PerVariant struct.
+ *        
+ * The _PerVariant data-structures are used in order to have a common design when dealing with the presence of
+ * multiple variants or a single variant.
+ * 
+ * This function populates the data-structure:
+ * 
+ * - TrgHndlInfo_xxxx_PerVariant[] and Spm_WkupFrameInfo_PerVariant[]: accessing the corresponding Rte_CData_xxxx.
+ *   
+ * - Spm_NetworkInfo_Wrap_PerVariant[][]: accessing the Rte_CData_xxxx for the VLAN defined in SpmVariantHBVLANCfg + 
+ *                                        (if there is only one variant configured) accessing the Spm_NetworkInfo_VLANId_yyyy 
+ * 										  for the VLAN NOT defined in SpmVariantHBVLANCfg
+ *
+ * @retval None.
+ */
+/* [$Satisfies $DDS_SPM 0670] */
+/* PRQA S 1532 1 # Defined here for modularity reason. */
+void Sum_Spm_VariantManagement_DataStructureInit(void)
+{
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc AS trgDvc-»
+  «FOREACH trgDvc.spmTrgDvcVariantHndlng AS variantAppended ITERATOR v-»
+	«IF variantAppended.spmTrgAssocWkUpFrm != null && variantAppended.spmTrgAssocWkupBit != null-»
+		TrgHndlInfo_«trgDvc.shortName»_PerVariant[«v.counter0»] = Rte_CData_SPM_TrgHndlInfo_«trgDvc.shortName»_«variantAppended.shortName»();
+	«ENDIF-»
+  «ENDFOREACH-»
+«ENDFOREACH-»
+
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmVariantCfg AS variant ITERATOR v-»
+	«FOREACH variant.spmVariantHBVLANCfg AS HBVlanNet ITERATOR i-»
+		Spm_NetworkInfo_Wrap_PerVariant[«v.counter0»][«i.counter0»].SPM_NetInfo = Rte_CData_SPM_NetworkInfo_«variant.shortName»_«HBVlanNet.shortName»();
+	«ENDFOREACH-»
+	«IF Spm_ExistMultipleVariantConfigured(spm) == false -»
+		«LET spm.spmConfigSet.spmPgttEntries.spmVariantCfg.spmVariantHBVLANCfg.spmVLANId.toSet() AS hbVlanIds-»
+			«FOREACH spm.spmGeneral.spmVLANCom.select(v | !hbVlanIds.contains(v.spmVLANId)) AS vlan ITERATOR k-»
+		Spm_NetworkInfo_Wrap_PerVariant[«v.counter0»][«variant.spmVariantHBVLANCfg.size» + «k.counter0»].SPM_NetInfo = &Spm_NetworkInfo_VLANId_«vlan.spmVLANId»;
+			«ENDFOREACH-»
+		«ENDLET-»
+	«ENDIF -»
+«ENDFOREACH-»
+
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmVariantCfg AS variant ITERATOR v-»
+		Spm_WkupFrameInfo_PerVariant[«v.counter0»] = Rte_CData_Spm_Wakeup_Frame_Info_«variant.shortName»();
+«ENDFOREACH-»
+}
+
+
+
+
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE»

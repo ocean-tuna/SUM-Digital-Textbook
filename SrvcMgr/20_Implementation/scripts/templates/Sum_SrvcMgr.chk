@@ -1,0 +1,198 @@
+
+import bsw;
+import AUTOSAR::SrvcMgr;
+extension org::eclipse::xtend::util::stdlib::io;
+extension templates::mathlib;
+extension Util::Sum_SrvcMgr_Utils;
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : RTA SUM
+ * Component   : SUM_SrvcMgr
+ * Date        : Feb 27, 2023
+ * Revision    : 8.0.0_TP1
+ * Description : Validation script for Service Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/* Check the configuration of the execution mask */
+context Sum_SrvcMgr_General
+	if (this.sum_SrvcMgr_PermitExecutionMask != null)
+	ERROR "Parameter sum_SrvcMgr_PermitExecutionMask has not a valid value."  :
+    (this.sum_SrvcMgr_PermitExecutionMask >= 0 && this.sum_SrvcMgr_PermitExecutionMask <= 255)
+;
+
+/* Check the configuration of the Execution Manager period */
+context Sum_SrvcMgr_General ERROR "Parameter sum_SrvcMgr_ExecutionManagerPeriodicity is mandatory." :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_SrvcMgr_ExecutionManagerPeriodicity != null)
+;
+
+context Sum_SrvcMgr_ConfigSet
+	ERROR "Parameter Sum_SrvcMgr_Did_E0CC_Ref has not a valid value!"  :
+    (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CC_Ref != null )
+;
+
+context Sum_SrvcMgr_ConfigSet
+	ERROR "Parameter Sum_SrvcMgr_Did_E0CD_Ref has not a valid value!"  :
+    (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CD_Ref != null )
+;
+
+context Sum_SrvcMgr_ConfigSet
+	ERROR "Parameter Sum_SrvcMgr_Did_E0CE_Ref has not a valid value!"  :
+    (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CE_Ref != null )
+;
+
+context Sum_SrvcMgr_ConfigSet
+	ERROR "Parameter Sum_SrvcMgr_Rid_0654_Ref has not a valid value!"  :
+    (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref != null )
+;
+
+context Sum_SrvcMgr_ConfigSet
+	ERROR "Parameter Sum_SrvcMgr_Rid_0612_Ref has not a valid value!"  :
+    (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref != null )
+;
+
+context Sum_SrvcMgr_ConfigSet
+    ERROR "Parameter DcmDspDataType for DID E0CD has not a valid value!" :
+    (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CD_Ref.dcmDspDidSignal.get(0).dcmDspDidDataRef.dcmDspDataType == "UINT8_DYN")
+;
+
+context Sum_SrvcMgr_ConfigSet
+    ERROR "Parameter DcmDspDataType for DID E0CE has not a valid value!" :
+    (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CE_Ref.dcmDspDidSignal.get(0).dcmDspDidDataRef.dcmDspDataType == "UINT8_DYN")
+;
+
+context Sum_SrvcMgr_General
+	if(this.sum_SrvcMgr_GenerateInitRunnable == true)
+    ERROR "Parameter Sum_SrvcMgr_InitFuncPeriodicity shall be configured if Sum_SrvcMgr_GenerateInitRunnable is set to TRUE!" :
+    (this.sum_SrvcMgr_InitFuncPeriodicity != null)
+;
+
+/* Validation: PropSysActv signal reference is mandatory */
+context Sum_SrvcMgr_ConfigSet
+	ERROR "Parameter Sum_SrvcMgr_Sig_PropSysActv_Ref is mandatory!"  :
+    (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref != null )
+;
+
+/* Validation: ComGroupSignal cannot be used for service-based communication with PropSysActv
+ * Service-based communication requires ComSignal (not ComGroupSignal) with UINT8_N type */
+context Sum_SrvcMgr_ConfigSet
+	if(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref != null &&
+	   this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref != null &&
+	   this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.metaType.toString().contains("ComGroupSignal"))
+	ERROR "Parameter sum_SrvcMgr_Sig_PropSysActv_Ref: ComGroupSignal cannot be used for service-based communication. Service-based communication requires a ComSignal (not ComGroupSignal) with UINT8_N type. Please reference a ComSignal or remove Sum_SrvcMgr_ServiceBased_PropSysActv_Ref.":
+	false
+;
+
+/* Validation: Sum_SrvcMgr_ServiceBased_PropSysActv_Ref must NOT be configured for non-service-based signals
+ * Service-based reference is only valid when signal type is UINT8_N */
+context Sum_SrvcMgr_ConfigSet
+	if(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref != null &&
+		!this.SrvcMgr_IsPSAServiceBased())
+	ERROR "Parameter Sum_SrvcMgr_ServiceBased_PropSysActv_Ref must NOT be configured when PropSysActv signal is not service-based. This reference is only valid for service-based communication.":
+	(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref == null)
+;
+
+/* Validation: PropSysActv signal must use UINT8 or BOOLEAN type when not service-based
+ * Standard signal types for signal-based communication (ComSignal or ComGroupSignal without service-based reference) */
+context Sum_SrvcMgr_ConfigSet
+	if(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref != null &&
+	   !this.SrvcMgr_IsPSAServiceBased())
+	ERROR "Parameter sum_SrvcMgr_Sig_PropSysActv_Ref: Invalid ComSignalType for signal-based communication. Expected UINT8 or BOOLEAN (for ComSignal or ComGroupSignal), but got '" + 
+	      this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.comSignalType + "'. If you want to use UINT8_N, configure Sum_SrvcMgr_ServiceBased_PropSysActv_Ref with a ComSignal reference for service-based communication.":
+	(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.comSignalType == "UINT8") ||
+	(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.comSignalType == "BOOLEAN")
+;
+
+/* Validation: PropSysActv signal must use UINT8_N type when service-based
+ * Service-based communication requires variable-length array type for proper data serialization */
+context Sum_SrvcMgr_ConfigSet
+	if(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref != null &&
+	   this.SrvcMgr_IsPSAServiceBased() &&
+	   !this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.metaType.toString().contains("ComGroupSignal"))
+	ERROR "Parameter sum_SrvcMgr_Sig_PropSysActv_Ref: Invalid ComSignalType for service-based propulsion system active signal. Expected UINT8_N, but got '" + 
+	      this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.comSignalType + "'.":
+	(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.comSignalType == "UINT8_N")
+;
+
+
+/* Validation: When service-based PropSysActv is configured, data type mapping set must also be configured
+ * Service-based communication requires proper data type transformation mappings */
+context Sum_SrvcMgr_ConfigSet
+	if (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref != null && this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref != null)
+	ERROR "SrvcMgr: sum_SrvcMgr_ServiceBased_DataTypeMappingSet must be configured when Sum_SrvcMgr_ServiceBased_PropSysActv_Ref is set." :
+	(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_DataTypeMappingSet != null && this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_DataTypeMappingSet.size > 0)
+;
+
+/* Validation: VehSpdAvgDrvn signal reference is mandatory */
+context Sum_SrvcMgr_ConfigSet
+	ERROR "Parameter Sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref is mandatory!"  :
+    (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref != null )
+;
+
+/* Validation: ComGroupSignal cannot be used for service-based communication with VehSpdAvgDrvn
+ * Service-based communication requires ComSignal (not ComGroupSignal) with UINT8_N type */
+context Sum_SrvcMgr_ConfigSet
+	if(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref != null &&
+	   this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref != null &&
+	   this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.metaType.toString().contains("ComGroupSignal"))
+	ERROR "Parameter sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref: ComGroupSignal cannot be used for service-based communication. Service-based communication requires a ComSignal (not ComGroupSignal) with UINT8_N type. Please reference a ComSignal or remove sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref.":
+	false
+;
+
+/* Validation: Sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref must NOT be configured for non-service-based signals
+ * Service-based reference is only valid when signal type is UINT8_N */
+context Sum_SrvcMgr_ConfigSet
+	if(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref != null &&
+		!this.SrvcMgr_IsVehSpdAvgDrvnServiceBased())
+	ERROR "Parameter Sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref must NOT be configured when VehSpdAvgDrvn signal is not service-based. This reference is only valid for service-based communication.":
+	(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref == null)
+;
+
+/* Validation: VehSpdAvgDrvn signal must use FLOAT32 type when not service-based
+ * Standard signal type for signal-based communication (ComSignal or ComGroupSignal without service-based reference) */
+context Sum_SrvcMgr_ConfigSet
+	if(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref != null &&
+	   !this.SrvcMgr_IsVehSpdAvgDrvnServiceBased())
+	ERROR "Parameter sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref: Invalid ComSignalType for signal-based communication. Expected FLOAT32 (for ComSignal or ComGroupSignal), but got '" + 
+	      this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.comSignalType + "'. If you want to use UINT8_N, configure sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref with a ComSignal reference for service-based communication.":
+	(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.comSignalType == "FLOAT32")
+;
+
+/* Validation: VehSpdAvgDrvn signal must use UINT8_N type when service-based
+ * Service-based communication requires variable-length array type for proper data serialization */
+context Sum_SrvcMgr_ConfigSet
+	if(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref != null &&
+	   this.SrvcMgr_IsVehSpdAvgDrvnServiceBased() &&
+	   !this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.metaType.toString().contains("ComGroupSignal"))
+	ERROR "Parameter sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref: Invalid ComSignalType for service-based vehicle speed signal. Expected UINT8_N, but got '" + 
+	      this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.comSignalType + "'.":
+	(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.comSignalType == "UINT8_N")
+;
+
+/* Validation: When service-based VehSpdAvgDrvn is configured, data type mapping set must also be configured
+ * Service-based communication requires proper data type transformation mappings */
+context Sum_SrvcMgr_ConfigSet
+	if (this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref != null && this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref != null)
+	ERROR "Parameter sum_SrvcMgr_ServiceBased_DataTypeMappingSet must be configured when sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref is set." :
+	(this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_DataTypeMappingSet != null && this.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_DataTypeMappingSet.size > 0)
+;
+

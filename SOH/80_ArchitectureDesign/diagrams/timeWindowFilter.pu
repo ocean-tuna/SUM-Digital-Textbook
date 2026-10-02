@@ -1,0 +1,33 @@
+@startuml
+'autonumber
+hide footbox
+skinparam ParticipantPadding 20
+
+title Time Window Filter sequence diagram
+
+box "SOH"
+ participant "Time Manager Runnable" as TimeManager
+ participant "Time Window Filter" as TimeFilter
+end box
+
+
+TimeManager -> TimeFilter : Counter value
+loop On each detector that uses the Time Window Filter
+alt First error detected in a monitoring cycle
+ loop (CounterValue-PreviousCounterValue)>=1s
+  hnote over TimeFilter
+   Increments Time Window by 1s
+   Increments Previous Counter by 1s
+  endhnote
+  alt TimeWindow>=TimeWindowThreshold
+   hnote over TimeFilter
+    Time Window = 0
+    Detector Counter = 0
+    Previous Counter Value = 0
+    break
+   endhnote
+  end
+ end
+end
+end
+@enduml

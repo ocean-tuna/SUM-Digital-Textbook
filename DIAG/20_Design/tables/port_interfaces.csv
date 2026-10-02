@@ -1,0 +1,26 @@
+6;2;2;2;4
+\textbf{Port Interface};\textbf{Port Type};\textbf{P-Port};\textbf{R-Port};\textbf{Description}
+SUSD_PermitExecution;Sender / Receiver;SUM_SUSD;SUM_DIAG;SUM_DIAG shall implement R port, PermitExecution, which receives a notification from SUM_SUSD whether it should execute its functions
+DIAG_ShutdownPermission;Sender / Receiver;SUM_DIAG;SUM_SUSD;The interface indicates to SUM_SUSD whether SUM_DIAG has enabled shutdown
+DIAG_DisableNormalComm <channel>;Sender / Receiver;SUM_DIAG;SUM_SSM, SUM_PNC;Notifies SSM and PNC if normal communication is to be enabled or disabled for a specified channel
+RxMonitoredSignal_Av;Sender / Receiver;SUM_SSM;SUM_DIAG; SUM_DIAG receives the signal availability of the network signal Remote Programming Active Authenticated.
+DIAG_ECUResetRequest;Sender / Receiver;SUM_DIAG;SUM_SOH;Provides notification to SUM_SOH module that an ECU Reset request has been received
+SUSD_VehiclePowerMode;Sender / Receiver;SUM_SUSD;SUM_DIAG;Provides to SUM_DIAG the Vehicle Power Mode as calculated by SUM_SUSD module to determine Off_power_mode status
+DIAG_GetMEC;Sender / Receiver;SUM_DIAG; SUM_SOH, SUM_SSC, SUM_SSFM;Used by the SUM_DIAG to communicate the MEC value.
+SSC_DIAG_GetECUAddress;Sender / Receiver;SUM_DIAG;SUM_SSC;It returns configured ECU Address
+SSC_DIAG_ReadMemorySec\newline urityVerification;Client / Server;SUM_SSC;SUM_DIAG;SUM_DIAG needs to trigger this interface as part of the ReadMemoryByAddress and DynamicallyDefineDataIdentifier functions
+SUM_ControlDTCSetting;Mode Switch;BswM;SUM_DIAG;Mode Switch between BswM and SUM_DIAG, so that BswM provides the DTC setting enabled/disabled information to SUM_DIAG
+ServiceRequestNotification (DIAG_EcuReset DIAG_DiagnosticSessionControl DIAG_CommunicationControl DIAG_ReadMemoryByAddress DIAG_DynamicallyDefineData\newline Identifier);Client / Server;SUM_DIAG;Dcm;Provide notification from Dcm to SUM_DIAG of the request of DcmDslserviceRequestSupplierNotification. All services uses same interface
+DIAG_BswM_Dcm_Communica\newline tionMode_CurrentState\newline <Channel>;Mode User;BswM;SUM_DIAG;BswM provides the status of each channel as enable or disable normal communication
+DIAG_BswM_DiagSession;Mode User;BswM;SUM_DIAG;BswM provides the current diagnostic session mode
+DataServices_DID_F1A0_Manu\newline facturerEnableCounter_0_0;Client / Server;SUM_DIAG;Dcm;When the tester wants to read/write the MEC value from/to the MEC RAM mirror block, Dcm interacts with SUM_DIAG to process the request by using this client-server interface
+DCMServices;Client / Server;Dcm;SUM_DIAG;The interface provides the current active security level from the Dcm
+EnableCondition;Client / Server;Dem;SUM_DIAG;SUM_DIAG notifies the Dem of OTA PSF enable condition status
+NvM_Service;Client / Server;NvM;SUM_DIAG;The interface provides services for the management and maintenance of NV data
+DIAG_SSC_InitialReflashFlag;Sender / Receiver;SUM_DIAG;SUM_SSC;This interface sends the Value of Reflash Flag when it is true after successful programming session.
+DIAG_SOH_DiagSessionRequest;Sender / Receiver;SUM_DIAG;SUM_SOH;The interface is used to notify to the SUM_SOH that a reprogramming request took place (service ID 0x10 sub-function 0x02)
+DIAG_SSC_InitialReflashFlag_\newline WrtStatus;Client /Server;SUM_SSC;SUM_DIAG;The interface provides services to get the InitialReflashFlag writing status in SUM_SSC. The writing status is checked in Diag_SetProgCondi\newline tions through a synchronous service request.
+BatteryVoltage_Disable\\NVMWrite;Sender / Receiver;SUM_SUSD;SUM_DIAG; SUM_DIAG receives Battery voltage information from SUM_SUSD to determine whether to perform an NVM write operation.
+SignalGroup_FsFA/FxFA;Sender / Receiver;SUM_SSM;SUM_DIAG ; SUM_DIAG receives the network signal (Remote Programming Active Authenticated) safety/single port fault active status from the SUM_SSFM module.
+BSPMP_RmtProgmActvAuth_\\Signal;Sender / Receiver;Com;SUM_DIAG; SUM_DIAG receives the OTA PSF value, via the network signal Remote Programming Active Authenticated, from the Com module.
+DIAG_RmtPrgmOtaPsf;Sender / Receiver;SUM_DIAG;Swc, SUM_SSFM; SUM_DIAG provides the value of OTA PSF to the Swc and SUM_SSFM module.

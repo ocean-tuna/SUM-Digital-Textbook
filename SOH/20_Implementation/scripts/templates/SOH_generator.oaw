@@ -1,0 +1,96 @@
+<!--
+/* ********************************************************************************************************************
+ *
+ * COPYRIGHT RESERVED, 2013 Robert Bosch GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as the communication of its contents to
+ * others without explicit authorization is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or design.
+ *
+ ******************************************************************************************************************* */
+
+/* Administrative Information (automatically filled in)
+* $Domain____:$
+* $Namespace_:$
+* $Class_____:$
+* $Name______:$
+* $Variant___:
+* $Revision__:0$
+* $Author____:BOSCH$
+**********************************************************************************************************************
+*/
+ -->
+
+<workflow>
+  <!-- Property file containing model package and generator version info -->
+	<property file="SOH_workflow.properties" />
+
+    <!-- generate SUM_SOH_PBCfg.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'SUM_SOH_PBCfg.c'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUM_SOH_PBCfg_c::SohPbcfg FOR model" />
+	</component>
+
+    <!-- generate SUM_SOH_PBCfg.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'SUM_SOH_PBCfg.h'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUM_SOH_PBCfg_h::SohPbcfg FOR model" />
+	</component>
+	
+	<!-- generate SUM_SOH.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'SUM_SOH.h'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUM_SOH_h::SohH FOR model" />
+	</component>
+
+    <!-- generate SUM_SOH_Cfg.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'SUM_SOH_Cfg.c'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUM_SOH_Cfg_c::SohCfgH FOR model" />
+	</component>
+    <!-- generate SUM_SOH_Cfg.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'SUM_SOH_Cfg.h'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUM_SOH_Cfg_h::SohCfgH FOR model" />
+	</component>
+
+	<!-- generate SUM_SOH_swcd.arxml -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="arxml::SUM_SOH_Swcd_arxml::Generate FOR model" />
+	</component>
+
+    <!-- generate SUM_SOH_ServicesRunnables_c.c -->
+    <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+        <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+        <globalVarDef name="FileName" value="'SUM_SOH_ServicesRunnables.c'"/>
+        <metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+        <expand value="SUM_SOH_ServicesRunnables_c::SOHServicesRunnablesC FOR model" />
+    </component>
+
+    <!-- generate SUM_SOH_Autosar_Runnables.c -->
+    <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+        <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+        <globalVarDef name="FileName" value="'SUM_SOH_Autosar_Runnables.c'"/>
+        <metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+        <expand value="SUM_SOH_Autosar_Runnables_c::SOHAutosarRunnablesC FOR model" />
+    </component>
+</workflow>

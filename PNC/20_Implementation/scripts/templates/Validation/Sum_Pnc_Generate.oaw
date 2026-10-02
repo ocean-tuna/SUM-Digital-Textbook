@@ -1,0 +1,123 @@
+<workflow>
+	<!-- include of properties files with global settings -->
+    <property file="oaw.properties"/>
+
+  <!-- Property file containing model package and generator version info -->
+	<property file="Sum_Pnc_Workflow.properties"/>
+   <!-- Property file containing model and editor version info -->
+   	  <property file="model_tool_version.properties"/>
+
+	<!-- generate PNC_Cfg.h -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="Sum_Pnc_Cfg_h::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	<!-- generate PNC_Cfg.c -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="Sum_Pnc_Cfg_c::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	   <!-- generate Sum_Pnc_Cfg_SWCD.arxml -->
+     <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+        <!--<fileEncoding value="ISO-8859-1"/>-->
+         <metaModel id="mm"
+            class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+        <globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+        <globalVarDef name="model_ver" value="'${model_ver}'"/>
+        <expand value="Sum_Pnc_Cfg_SWCD_arxml::GeneratePNC FOR model" />
+        <outlet path='${OutputDir}' />
+    </component>
+
+
+
+        <!-- generate PNC_PBCfg.c -->
+     <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+        <!--<fileEncoding value="ISO-8859-1"/>-->
+         <metaModel id="mm"
+            class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+        <globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+        <globalVarDef name="model_ver" value="'${model_ver}'"/>
+        <expand value="Sum_Pnc_PBCfg_c::Root FOR model" />
+        <outlet path='${OutputDir}' />
+    </component>
+
+	<!-- generate PNC_PBCfg.h -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="Sum_Pnc_PBCfg_h::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	<!-- generate Sum_Pnc_Autosar_Runnable -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="Sum_Pnc_Autosar_Runnable_c::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	<!-- generate Sum_Pnc_Main.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="Sum_Pnc_Main_c::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	<!-- generate Sum_Pnc.h -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="Sum_Pnc_h::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+
+	<!-- generate Sum_Pnc_Ram.h -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="Sum_Pnc_Ram_h::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	<!-- generate Sum_Pnc_Types.h -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="Sum_Pnc_Types_h::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+</workflow>

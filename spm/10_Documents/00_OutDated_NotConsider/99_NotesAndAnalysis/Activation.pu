@@ -1,0 +1,111 @@
+@startuml Activation
+
+start
+
+floating note left: AD extracted from SDV-2017 section 4.3.3.3\n(v20230908)\n\n**ProfileActivationRoutine**\n\nCompleted from SDV-8217
+
+floating note left: Need to massage this in more objects
+
+:Identify Request \nisRequestedFrom = //RequestType//;
+
+:Validate Request \n(//checking the id of the profile//) **AND** the status of the SPM\n\nack = //E_OK/E_NOT_OK//;
+floating note left: Assume that SPM can run only if\nthe SUSD has monitored a good condition\nto put SPM in running
+
+floating note left: Who asks? a LOCAL or a REMOTE
+if (isRequestedFrom) then (Locally)
+    :return = //ack//;
+else (Remotelly)
+    :recovery of Remote IP address from message payload;
+    :setMsg(Slot(PMSrcId), P_Id, ack);
+    floating note right: * slot is bond to remote Ip\n* Ack value depends from Validation of request
+endif
+
+if (pp.getProfileStatus() == ACTIVATING\n\t\t\t**OR**\npp.getProfileStatus() == ACTIVATED) then (false)
+    :pp.setProfileStatus(//ACTIVATING//);
+    repeat 
+        partition "**process** Identify Host" {
+            :sId = pp.Id >> 8;
+            floating note left: Let's assume only SwE
+            :ip = Sd_GetNodeAddress(sId, ...);
+        }
+
+        if (ip) then (NULL or LOCAL)
+            ://do some stuff to identify the resource (SwE, Hw, ...)//; 
+
+            'if (isLocalProfile) then (true)
+                ':pp.setStatProfileStatus(//ACTIVATED//);
+
+                if (pp.getDepList().size) then (==0)
+                    :pp.setStatProfileStatus(\n\t//ACTIVATED//\n);
+                    :**C/S**\n ret = SrvcMgr_ActivateServices(sId);
+
+                    partition "**process** Verifies return" {
+                        if (ret) then (E_OK_*_ENABLED)
+                            : pp.enablesRelatedPDU();
+                        else (E_DISABLED **OR** E_NOT_OK)
+
+                        endif
+                    }
+
+                    :status = //ACTIVATED//;
+                    :ActivationProfileStatus(\n\t//P_Id//, \n\t//status//\n);
+                    floating note right: Remove this API. \nUse code to return the status\n of the request to local\nrequester
+                else (>0)
+                    :status =  //ACTIVATING//;
+                    floating note left: Not a default profile
+                endif
+
+                if (isRequestedFrom) then (Remotelly)
+                    :setMsg(Slot(ip), P_Id, status);
+                else (Locally)
+                endif
+            'else (false)
+                'Nothing ot do in this branch
+            'endif
+
+        else (Otherwise)
+            :set falg isLocalProfile = //false//;  
+            :PowerOnDevice(ip);
+            repeat
+                'Nothing to do in this loop
+            repeat while (DevicePowerState() flag) is (Not set)
+            -> set;
+            if (flag) then (Device is Up)
+                :setMsg(Slot(ip), P_Id, Act/Deac);
+                floating note right: Request of the Profile
+                floating note right: We might do that each set message\nsets the message as ready
+            else (Error in wake-up)
+                :pp.setStatProfileStatus(\n\t//ACTIVATION_FAILED//\n);
+            endif
+        endif
+    repeat while(pp.popItmDepList()) is (not NULL)
+    -> No dependencies;
+
+    if (pp.hasMsgReady) then (true)
+        :sendMsg(Slot);
+    else (false)
+    endif
+
+else (true)
+    if (isRequestedFrom) then (true)
+        ://id = ?//;
+    else (false)
+        :id = //PMDstId in message Payload//;
+    endif
+
+    :pp.addRequesterToList(id);
+
+    partition "**process** Identify Host" {
+        :sId = pp.Id >> 8;
+        :ip = Sd_GetNodeAddress(sId, ...);
+    }
+
+    if (ip) then (Not NULL **AND** Not Local)
+        :PowerOnDevice(ip);
+    else (Otherwise)
+    endif    
+endif
+
+stop
+
+@enduml

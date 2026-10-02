@@ -1,0 +1,19 @@
+1;1
+\textbf{Term/Abbreviation};\textbf{Definition}
+AR;AUTOSAR
+ASW;Application Software
+BCT;Basic Software Code Generation
+BSW;Basic Software
+CR;Change Request
+DIAG;DIAGnostic Application Service Module
+Dcm;Diagnostic Communication Manager
+DTC;Diagnostic Trouble Code
+GM;General Motors
+NvM;NVRAM Manager
+OTA;Over The Air
+PSF;Programming State Flag
+RTE;Run-Time Environment
+SUM;Standard Utility Module
+SWCD;Software Component Description
+VIP;Vehicle Intelligence Platform
+MEC;Manufacturer Enable Counter

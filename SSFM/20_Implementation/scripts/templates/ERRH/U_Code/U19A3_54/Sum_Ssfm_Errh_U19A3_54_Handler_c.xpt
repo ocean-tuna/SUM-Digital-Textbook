@@ -1,0 +1,124 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Errh_U19A3_54_Handler.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM ERRH U19A3_54 Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+ /* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+«IF Sum_Ssfm_Errh_U19A3_54_SecPer_MissSetup_IsValid(sSFM.sum_Ssfm_ConfigSet) -»
+/**
+ * @brief           SSFM/SSM runnable function to be called upon any change in the status of DTC_U19A3_54
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE*/
+void Runnable_SSFM_SSC_DTC_U19A3_54_Status_Changed(void){
+	/*[$Satisfies $DDS_SSFM 117]*/
+	OperatingRangeType operating_range;
+	boolean dtc_u19A3_54_Status;
+	SSC_IVMASType Read_Ivmas;
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	/*[$Satisfies $DDS_SSFM 118]*/ /*[$Satisfies $DDS_SSFM 189]*/
+	if((Sum_Ssfm_Errh_Get_C_DTC_SecurityPeripheral_MissingSetup() == TRUE) && (dtcs_are_disabled == FALSE)){
+
+		/*[$Satisfies $DDS_SSFM 119]*/
+		(void)Rte_Read_RP_SUSD_SSFM_Errh_BatteryVoltage_BatteryVoltageRangeMinToMax_OperatingRange(&operating_range);
+
+		/*Read the IVMAS data from RPORT PP_SSC_SWC_IVMAS */
+		(void)Rte_Read_RP_SSC_SWC_IVMAS_IVMAS_Status(&Read_Ivmas);
+
+		/* Per SDV-6001/IDOC-887: U19A3_54 (SecurityPeripheral_MissingSetup) is a Key-Provisioning concern.
+		 * It must fire only when KP is supported, i.e. IVMAS in {0x01, 0x03}. */
+		«IF dem.demGeneral.demOBDSupport == "DEM_OBD_NO_OBD_SUPPORT"-»
+		if((operating_range == IN_Range)&&
+		   ((Read_Ivmas == SSC_IVMAS_KP_AND_AUTH_SUPPORTED) ||
+		    (Read_Ivmas == SSC_IVMAS_KP_SUPPORTED_AND_AUTH_NOT_SUPPORTED))){
+		«ELSE-»
+		if((operating_range != OUT_OF_RANGE_LOW)&&
+		   ((Read_Ivmas == SSC_IVMAS_KP_AND_AUTH_SUPPORTED) ||
+		    (Read_Ivmas == SSC_IVMAS_KP_SUPPORTED_AND_AUTH_NOT_SUPPORTED))){
+		«ENDIF-»
+
+			/*[$Satisfies $DDS_SSFM 120]*/
+			(void)Rte_Read_RP_SSC_SSFM_ERRH_DTC_U19A3_54_Status_status(&dtc_u19A3_54_Status);
+			if(dtc_u19A3_54_Status == TRUE){
+				(void)Rte_Call_RP_Dem_SSFM_DTC_U19A3_54_SetEventStatus(DEM_EVENT_STATUS_FAILED);
+			}
+			else{
+				(void)Rte_Call_RP_Dem_SSFM_DTC_U19A3_54_SetEventStatus(DEM_EVENT_STATUS_PASSED);
+			}
+		}
+	}
+}
+«ENDIF-»
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

@@ -1,0 +1,95 @@
+@startuml Spm
+
+entity SpmIntegration
+
+package SpmCommon {
+    class SpmController {
+        - SpmCtrl_Status
+        + Spm_SetCtrlStatus()
+        + Spm_GetControllerStatus()
+        + Spm_Init()
+        + Runnable_Spm_MainFunc()
+        + Spm_ActivateProfile()
+        + Spm_DeactivateProfile()
+    }
+
+    class SpmMsgHandler {
+        //callout from CLdCom, DRE or reception with callout from PduR//
+    }
+
+    class SpmDiagMonitor {
+        //to be defined yet//
+    }
+}
+
+package Cfg {
+    class SpmPowProfCfg {
+        + ProfileId
+        + IsRepresentative
+    }
+
+    class SpmPowPrfList <<MapList>> {
+        + DepListLength
+        + DepList
+    }
+
+    SpmPowPrfList "1"-l->"1..*" SpmPowProfCfg: contains
+}
+
+package Sm {
+    class SpmPowProfStatMng {
+        // Finite State machine in SDV-2017//
+    }
+}
+
+
+package Sm2Pm {
+    class SpmSmPmIf {
+        + Spm_InitObjects()
+        + Spm_PowerOnDevice()
+        + Spm_PowerOffDevice()
+        + Spm_DevicePowerState()
+    }
+}
+
+package Pm {
+    class SpmHostSlotIf {
+        + Spm_InitSlots()
+        + Spm_AssignSlot()
+    }
+
+    class SpmMsgBuilder {
+        + Spm_InitMsgBuilder()
+        + Spm_SetMsgByBuilder()
+        + Spm_GetMsgByBuilder()
+    }
+
+    class SpmHeartBeatMgr {
+        - Spm_Hb_LocCntr
+
+        + Spm_InitLocHBCntr()
+        + Runnable_Spm_TxHeartbeatMgr()
+        - Spm_LocHBCntrUpdate()
+    }
+}
+
+interface SpmPrivate
+
+entity RE_Spm_MainDrv <RTE>
+entity RE_Spm_TxHeartbeatMgr <RTE>
+
+RE_Spm_MainDrv ..> SpmController: calls
+SpmController --> SpmPowProfStatMng: examines
+SpmIntegration ..> SpmController: Spm_ActivateProfile()/\nSpm_DeactivateProfile()
+SpmMsgHandler ..> SpmController: Spm_ActivateProfile()/\nSpm_DeactivateProfile()
+SpmController "1"-l->"1" SpmPowPrfList: uses
+SpmPowPrfList <-- SpmSmPmIf: knows
+SpmController "1"-d->"1" SpmSmPmIf: interacts with
+SpmSmPmIf <-d-> SpmPowProfStatMng: publishes data on/from
+SpmSmPmIf <-d-> SpmHostSlotIf: publishes data on/from
+SpmHostSlotIf -r-> SpmMsgBuilder: Populates
+'SpmMsgHandler "1"..>"1..*" SpmHostSlotIf: notifies
+SpmMsgHandler ..> SpmHeartBeatMgr: HeartBeat received
+SpmHeartBeatMgr <.. RE_Spm_TxHeartbeatMgr: calls 
+SpmPowProfStatMng -d-> SpmHostSlotIf: populates
+@enduml

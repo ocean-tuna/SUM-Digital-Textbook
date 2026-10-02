@@ -1,0 +1,60 @@
+@startuml
+participant Spm
+participant RTE
+participant LdCom
+participant SecOC
+participant PduR
+participant SoAd
+participant TcpIp
+
+Spm -> Spm: Recover metadata
+activate Spm
+Spm -> RTE: Rte_Write_*(...)
+note top
+**GM expectation**:
+
+    Metadata are passed to this API.
+    The attachment of metadata to PDU
+    is in scope to the RTE
+end note
+activate RTE
+RTE -> LdCom: LdCom_Transmit()
+activate LdCom 
+LdCom -> PduR: PduR_LdComTransmit()
+activate PduR
+PduR -> SecOC: SecOC_Transmit()
+activate SecOC
+SecOC -> PduR: PduR_SecOCTransmit()
+activate PduR
+
+PduR -> SoAd: SoAd_IfTransmit()
+activate SoAd
+
+SoAd -> SoAd: SoAd_GetRemoteAddress()
+
+SoAd -> TcpIp: TcpIp_UdpTransmit()
+
+TcpIp --> SoAd
+
+SoAd -> SoAd: SoAd_ReleaseRemoteAddress()
+
+SoAd --> PduR
+deactivate SoAd
+
+PduR --> SecOC
+deactivate PduR
+
+SecOC --> PduR
+deactivate SecOC
+
+PduR --> LdCom
+deactivate PduR
+
+LdCom --> RTE
+deactivate LdCom
+
+RTE --> Spm
+deactivate RTE
+deactivate Spm
+
+@enduml

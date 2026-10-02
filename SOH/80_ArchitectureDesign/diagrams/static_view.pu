@@ -1,0 +1,49 @@
+@startuml
+skinparam linetype ortho
+skinparam nodesep 100
+'skinparam groupInheritance 2
+
+
+title Static View
+
+class OS {
+ GetElapsedCounterValue()
+}
+class SUSD {
+ SUSD_SOH_PermitExecution
+}
+class PNC {
+ PNC_SUSD_ShutdownPermission
+}
+package SOH <<Folder>> #DDDDDD {
+ package Runnables {
+  class Main
+  class TimeManager
+ }
+ package Filters {
+  class TimeWindow
+  class Threshold
+ }
+ package Detectors {
+  class ShutdownDelay
+ }
+}
+class NvM
+
+
+OS -> TimeManager
+TimeManager -> ShutdownDelay
+TimeManager -> TimeWindow
+
+OS -[hidden]- SUSD
+SUSD -[hidden]- PNC
+Runnables -[hidden]- Detectors
+Detectors -[hidden]- Filters
+SOH -[hidden]- NvM
+
+
+
+hide circle
+hide empty fields
+hide empty members
+@enduml

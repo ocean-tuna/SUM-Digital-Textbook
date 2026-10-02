@@ -1,0 +1,392 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DID_E0B9_Handler.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM DID E0B9 Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+#define SSFM_DID_E0B9_MSG_INFO_START_BYTE 2u
+#define SSFM_DID_E0B9_MSG_ID_SIZE 4u
+#define SSFM_DID_E0B9_MSG_TIME_SIZE 2u
+#define SSFM_DID_E0B9_MSG_SIZE (SSFM_DID_E0B9_MSG_ID_SIZE + SSFM_DID_E0B9_MSG_TIME_SIZE)
+#define SSFM_DID_E0B9_TOTAL_SIZE 98u
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+/* PRQA S 1503 EOF # When the SSFM is integrated, runnables will be called by the RTE */
+/* PRQA S 0499 EOF # Here, is unavoidable that right operand is greater of the left operand */
+/* PRQA S 1532 EOF # Here for modularity */
+/* PRQA S 1505 EOF # Call by RTE.  */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+
+ *********************************************************************************************************************************************************
+ */
+
+static const Sum_Ssfm_SerialData* Sum_Ssfm_DID_E0B9_SerialDatas_InList[16];
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Prototype
+ *********************************************************************************************************************************************************
+ */
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_ParseSingleMessageAvInfo(const uint32 messageId, uint8 index);
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_AppendMessagePtrToDIDLocalBuffer(const Sum_Ssfm_SerialData *serial_data);
+static FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_ReadData_DID_E0B9(uint8 *Data);
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/**
+ * @brief           This function is called when the ERRH perform the SUM_SSFM_Run_Mode -> SUM_SSFM_Shutdown_Mode.
+ * 					It is needed to store the info in the RAM buffer that will be later saved in the Non volatile
+ * 					memory by the NvM.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_SaveDIDE0B9_Data(void){
+
+	(void)Runnable_SSFM_DID_E0B9(DCM_INITIAL, (uint8 *)&«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[0u]);
+
+	/* Inform the NvM that the RAM buffer has value updated -> it shall be saved in the non volatile memory. */
+	(void)Rte_Call_RP_NvM_SSFM_NvMService_DID_E0B9_Data_SetRamBlockStatus(TRUE);
+
+}
+
+/**
+ * @brief           This function is called when the Clear DTC diagnostic service is processed.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_ClearDIDE0B9_Info(void){
+
+	uint16 i;
+
+	/* Clear internal buffer. */
+	for(i = 0u; i < 16u; i++){
+		Sum_Ssfm_DID_E0B9_SerialDatas_InList[i] = NULL_PTR;
+	}
+
+	/* Clear RAM buffer. */
+	for(i = 0u; i < SSFM_DID_E0B9_TOTAL_SIZE; i++){
+		«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[i] = 0u;
+	}
+
+}
+
+/**
+ * @brief           This function append the message ptr needed to the Sum_Ssfm_DID_E0B9_SerialDatas_InList.
+ *
+ * @param[in]       const Sum_Ssfm_SerialData *serial_data: ptr to the message to be appended
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_AppendMessagePtrToDIDLocalBuffer(const Sum_Ssfm_SerialData *serial_data){
+	uint8 i = 0u;
+
+	while(Sum_Ssfm_DID_E0B9_SerialDatas_InList[i] != NULL_PTR){
+		i++;
+	}
+
+	Sum_Ssfm_DID_E0B9_SerialDatas_InList[i] = serial_data;
+
+}
+
+/**
+ * @brief           This function restores the message's availability status and set it to the
+ * 					corresponding message.
+ * 					Related to DID 0xE0B9.
+ *
+ * @param[in]       const uint32 messageId: ID of the message restored from RAM block
+ * @param[in]       const uint8 index: index of the message inside the RAM buffer to be restored.
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_ParseSingleMessageAvInfo(const uint32 messageId, uint8 index){
+
+	Sum_Ssfm_SigStatus AvStatus;
+	uint16 i;
+
+	/* Check needed to understand if the av bit is in the first or second byte of the RAM buffer. */
+	if(index < 8u){
+		/* Av status contained in the first byte*/
+		AvStatus = (( «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[0u] & (1u << (7u - index)) ) == 0u ) ? SUM_SSFM_SigSts_Unavailable : SUM_SSFM_SigSts_Available;
+
+	}else{
+		/* PRQA S 1338 1 # No reason to declare another variable. */
+		index -= 8u;
+		/* Av status contained in the second byte*/
+		AvStatus = (( «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[1u] & (1u << (7u - index)) ) == 0u ) ? SUM_SSFM_SigSts_Unavailable : SUM_SSFM_SigSts_Available;
+
+	}
+
+	/* Update the status for the given message. */
+	for(i = 0u; i < SSFM_SSM_NUM_OF_SERIALDATAS; i++){
+		if((Sum_Ssfm_SerialDatas[i].MsgInfoGrp != NULL_PTR) && (Sum_Ssfm_SerialDatas[i].MessageID == messageId)){
+			Sum_Ssfm_SerialDatas[i].MsgInfoGrp->SigSts = AvStatus;
+			Sum_Ssfm_SerialDatas[i].MsgInfoGrp->UnavailableTimePrevSession = ((uint16)«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 4u] << 8u) |
+						  	  												 ((uint16)«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 5u]);
+
+			Sum_Ssfm_AppendMessagePtrToDIDLocalBuffer((Sum_Ssfm_SerialData *)&Sum_Ssfm_SerialDatas[i]);
+			break;
+		}
+	}
+
+}
+
+/**
+ * @brief           This function is the handler of the message's availability status restoring at init time.
+ * 					Related to DID 0xE0B9.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/*[$Satisfies $DDS_SSFM 129]*/
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_RestoreMessageAvDidE0B9(void){
+
+	uint32 messageId_retrieved;
+	uint8 i;
+
+	for(i = 0u; i < 16u; i++){
+		messageId_retrieved = ((uint32)«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE)] << 24u) |
+						  	  ((uint32)«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 1u] << 16u) |
+						  	  ((uint32)«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 2u] << 8u) |
+						  	  ((uint32)«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress-»[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 3u]);
+
+		/* If the messageID saved is 0u, it means that no more message are saved in the RAM buffer since 0u is the default value. */
+		if(0u == messageId_retrieved){
+			break;
+		}else{
+			Sum_Ssfm_ParseSingleMessageAvInfo(messageId_retrieved, i);
+		}
+	}
+}
+
+/**
+ * @brief           This function updates the internal queue of latest unavailable SerialDatas
+ *
+ * @param[in]       serial_data - const Sum_Ssfm_SerialData *: the serial data which has a change in status
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+void Sum_Ssfm_DID_E0B9_Update_Message_Av(const Sum_Ssfm_SerialData *serial_data){
+	/*[$Satisfies $DDS_SSFM 125]*/
+	uint8 i;
+	uint8 remove_candidate = 0xFFu; // No remove candidate
+	boolean message_already_in_list = FALSE;
+	uint32 oldest_tick = 0xFFFFFFFFu;
+
+	// Check if the message is already in list
+	for(i = 0u; i < 16u; i++){
+		if(Sum_Ssfm_DID_E0B9_SerialDatas_InList[i] == serial_data){
+			message_already_in_list = TRUE;
+			break;
+		}
+	}
+	if((!message_already_in_list) &&
+		(serial_data->MsgInfoGrp->SigSts == SUM_SSFM_SigSts_Unavailable)){
+		for(i = 0u; i < 16u; i++){
+			if(Sum_Ssfm_DID_E0B9_SerialDatas_InList[i] == NULL_PTR){
+				remove_candidate = i;
+				break;
+			}
+			if((Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MsgInfoGrp->SigSts != SUM_SSFM_SigSts_Unavailable) &&
+				(Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MsgInfoGrp->UnavailableSince < oldest_tick)){
+				remove_candidate = i;
+				oldest_tick = Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MsgInfoGrp->UnavailableSince;
+			}
+		}
+
+		if(remove_candidate != 0xFFu){
+			Sum_Ssfm_DID_E0B9_SerialDatas_InList[remove_candidate] = serial_data;
+		}
+	}
+}
+
+
+/**
+ * @brief           This function will be run at the time of DTC UXXXX87 is set or DCM is execured for the DID E0B9.
+ * 					It to populate the buffer with the E0D9 info.
+ *
+ * @param[in]       -
+ * @param[inout]    Data - uint8 *: The 98 byte buffer to fill in the data
+ * @param[out]      -
+ * @return          Std_ReturnType
+ */
+static FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_ReadData_DID_E0B9(uint8 *Data)
+{
+	uint8 i;
+	uint16 av_list = 0u;
+	uint32 curr_counter_value;
+	uint32 unavailable_time;
+
+	(void)GetCounterValue(«Ssfm_GetSsfm1msCounterName(sSFM.sum_Ssfm_General)», &curr_counter_value);
+	for(i = 0u; i < 16u; i++){
+		av_list = av_list << 1;
+		if(Sum_Ssfm_DID_E0B9_SerialDatas_InList[i] != NULL_PTR){
+			// Update Av List
+			av_list = av_list +
+				((Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MsgInfoGrp->SigSts == SUM_SSFM_SigSts_Unavailable) ? 0u : 1u);
+
+			// Set Message ID
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE)] =
+				(uint8)(Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MessageID >> 24);
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 1u] =
+				(uint8)(Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MessageID >> 16);
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 2u] =
+				(uint8)(Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MessageID >> 8);
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 3u] =
+				(uint8)(Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MessageID);
+
+			// Set Unavailable Time
+			/* PRQA S 3469 2 # This Macro is used to rely on the specific Os configuration */
+			/* PRQA S 2985 1 # Ignore the internal logic of OS_TICKS2MS */
+			unavailable_time = OS_TICKS2MS_«Ssfm_GetSsfm1msCounterName(sSFM.sum_Ssfm_General)»(curr_counter_value - Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MsgInfoGrp->UnavailableSince);
+
+			/* The timer offset stored in the RAM buffer SHALL be considered if and only if the message is unavailable since the startup of the ECU. */
+			if((0u == Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MsgInfoGrp->UnavailableSince) &&
+				(Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MsgInfoGrp->SigSts == SUM_SSFM_SigSts_Unavailable)){
+				/*[$Satisfies $DDS_SSFM 131]*/
+				unavailable_time += (uint16)Sum_Ssfm_DID_E0B9_SerialDatas_InList[i]->MsgInfoGrp->UnavailableTimePrevSession;
+
+			}
+
+			if(unavailable_time > 0xFFFFu){
+				unavailable_time = 0xFFFFu;
+			}
+
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE +
+				(i * SSFM_DID_E0B9_MSG_SIZE) +
+				SSFM_DID_E0B9_MSG_ID_SIZE] = (uint8)(unavailable_time >> 8);
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE +
+				(i * SSFM_DID_E0B9_MSG_SIZE) +
+				SSFM_DID_E0B9_MSG_ID_SIZE + 1u] = (uint8)(unavailable_time);
+		} else {
+			// Set Message ID to default
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE)] = 0;
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 1u] = 0;
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 2u] = 0;
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE + (i * SSFM_DID_E0B9_MSG_SIZE) + 3u] = 0;
+			// Set Unavailable Time to default
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE +
+				(i * SSFM_DID_E0B9_MSG_SIZE) +
+				SSFM_DID_E0B9_MSG_ID_SIZE] = 0;
+			Data[SSFM_DID_E0B9_MSG_INFO_START_BYTE +
+				(i * SSFM_DID_E0B9_MSG_SIZE) +
+				SSFM_DID_E0B9_MSG_ID_SIZE + 1u] = 0;
+		}
+	}
+
+	Data[0] = (uint8)(av_list >> 8);
+	Data[1] = (uint8)(av_list);
+
+}
+
+
+/**
+ * @brief           This Runnable will be run at the time of DID E0B9 read request.
+ * 					It uses the internal queue of messages to fill in the buffer.
+ *
+ * @param[in]       OpStatus - Dcm_OpStatusType: No usage
+ * @param[inout]    Data - uint8 *: The 98 byte buffer to fill in the data
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(Std_ReturnType, SUM_SSFM_CODE) Runnable_SSFM_DID_E0B9(Dcm_OpStatusType OpStatus,
+                                                           uint8 *Data){
+	/*[$Satisfies $DDS_SSFM 126]*/
+	Std_ReturnType ret = E_NOT_OK;
+
+	if((OpStatus == DCM_INITIAL) || (OpStatus == DCM_PENDING)){
+		Sum_Ssfm_ReadData_DID_E0B9(Data);
+		ret = E_OK;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief           This Runnable will be run at the time of DTC UXXXX87 is set.
+ * 					Dem will use it to retrieve the info related to DID E0B9 as Freeze Frame for DTC UXXXX87.
+ *
+ * @param[in]       -
+ * @param[inout]    Data - uint8 *: The 98 byte buffer to fill in the data
+ * @param[out]      -
+ * @return          Std_ReturnType
+ */
+FUNC(Std_ReturnType, SUM_SSFM_CODE) Runnable_SSFM_E0B9_FreezeFrame(uint8* Data)
+{
+	/*[$Satisfies $DDS_SSFM 190]*/
+
+	Sum_Ssfm_ReadData_DID_E0B9(Data);
+	return E_OK;
+}
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

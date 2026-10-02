@@ -1,0 +1,47 @@
+@startuml Sum_Ssfm_LinBusoff_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_LinBusoff_Handler"
+
+**Interfaces Legend**
+    //ri116 //: LNM_ERRH_LossCommBus<n>.
+   //II150 //: BatteryVoltage 
+   //II154 //: batteryvoltage_RecoveryTimer
+   //II153 //: reset_RecoveryTimer
+   //pi160 //: LNM_ERRH_LossCommBus_Dem_SetEvent()
+   //II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)   
+   
+endlegend
+
+note top of EC
+On reception of notification from LNM, 
+from port LNM_ERRH_LossCommBus<n> 
+SSFM will set the DTC related to the Network <n>.
+end note
+
+component [SSFM::Sum_Ssfm_LinBusoff_Handler] as EC{
+    portin ri116
+    portout pi160
+
+	[Sum_Ssfm_LinBusoff_Handler]  as E
+}
+
+   interface II150
+   interface II154
+   interface II153
+   interface II184
+
+
+ 
+  II150 -> E
+  ri116 -> E
+  II154 -> E
+  II153 -> E
+  II184 -> E
+
+  E -> pi160
+
+
+@enduml

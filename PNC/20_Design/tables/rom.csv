@@ -1,0 +1,4 @@
+6; 6
+Type; Size
+.rodata; 10 bytes
+.vletext (Code); 6560 bytes

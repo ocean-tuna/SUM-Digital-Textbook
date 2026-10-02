@@ -1,0 +1,61 @@
+@startuml sd_TCSActivationAndRunning
+skinparam ParticipantPadding 10
+
+mainframe SUM_TCS activation and Running
+
+participant Com
+participant NvM
+
+participant SUM_SUSD as susd
+participant SUM_SSM as ssm
+participant SWC
+
+box SUM_TCS
+    participant IRVs as RTE
+    participant Runnable_TCS_PermitExecutionShutdown as shutter
+    participant Runnable_TCS_MasterClockPolling as poll
+    participant Runnable_TCS_TimeManagement as manager
+end box
+
+== Pre-condition (COMMON TO ALL SCENARIOS) ==
+
+note over RTE, manager
+    SUM_TCS has been initialized and it is in 
+    SUM_TCS_SHUTDOWN_MODE
+end note
+
+susd -> shutter: request SUM_TCS functionalties from interface //SUSD_PermitExecution//
+activate shutter
+shutter -> RTE: set TCS_permit_execution = TRUE
+
+== Scenario 1: Synchronization with Master Clock ==
+
+ref over RTE, manager
+    Please look <u>Scenario 1</u> of **Synchronization** use case
+end ref
+
+group Periodic [TimeManagementPeriodicity]
+    shutter -> shutter: **move** to SUM_TCS_RUNNING_MODE
+    RTE -> manager: read TCS_permit_execution
+    activate manager
+    manager -> manager: **Increment** TCS_LocalTimeCounter
+    manager -> manager: **Manage** other counter with Time Division
+    manager -> NvM: update TCS_LocalTime_Value
+    manager -> NvM: //NvM_SetRamBlockStatus(...) passes TRUE//
+    activate NvM
+    NvM --> manager
+    deactivate NvM
+    NvM --> manager: read the updated value of TCS_TimeLocal_Value
+    manager -> SWC: local time clock by interface //TCS_SWC_Clock//
+    deactivate manager 
+    deactivate manager
+end group
+
+== Post-condition (COMMON TO ALL SCENARIOS) ==
+
+group Periodic [TimeManagementPeriodicity]
+    shutter -> susd: shutdown is not permitted by interface //TCS_SUSD_ShutdownPermission//
+    deactivate shutter
+end group
+
+@enduml

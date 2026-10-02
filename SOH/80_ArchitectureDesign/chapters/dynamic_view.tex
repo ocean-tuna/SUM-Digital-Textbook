@@ -1,0 +1,155 @@
+\chapter{Runtime View (Dynamic View)}
+
+\section{Runnables}
+\subsection{Init}
+\label{subsec:init}
+This periodic runnable is responsible for calling the SOH_init function once in order to load the values stored in the NvM and initialize the variables to their default value. In addition, it is necessary to specify that the runnable is generated, hence available, only if the \code{SohGenerateInitRunnable} parameter is configured to True.
+\subsection{Main}
+This periodic runnable is responsible of reading the SUSD_SOH_PermitExecution port and passing it to the Shutdown Delay Detector.
+
+\subsection{Time manager}
+\label{subsec:timeManager}
+This periodic runnable calls the OS API GetCounterValue() to read the counter configured as reference in SOHGeneral/Sum_SOH_Os_Counter_Ref and pass it to:
+\begin{itemize}
+	\item the Time Window Filter
+	\item the ShutDown Delay Detector.
+\end{itemize}
+The periodicity of this runnable is configurable.
+
+The following diagram shows the Time Manager Runnable workflow.
+\UMLDiagram{generated/diagrams/timeManager}{Time Manager Runnable workflow diagram}
+
+\section{Filters}
+\subsection{Threshold Filter}
+
+\subsection{Time Window Filter workflow}
+\label{subsec:timeWindowFilter}
+\Requirement{013}
+{
+	At ECU production, each detection counter, time window and DID counter is initialized to a value of 0x0000.
+}
+{	\Satisfies{SRS_SOH 048} \Satisfies{SRS_SOH 055} \Satisfies{SRS_SOH 059}	}
+
+\Requirement{014}
+{
+	At the detection of the first error occurrence in a monitoring cycle, SUM_SOH:
+	\begin{itemize}
+		\item starts its time window associated to that detector
+		\item continues counting error conditions in its detection counter.
+	\end{itemize}
+}
+{	\Satisfies{SRS_SOH 062}	}
+
+\Requirement{015}
+{
+	If the detection counter reaches its threshold count calibration within the calibration time window, SUM_SOH:
+	\begin{itemize}
+		\item increments the DID counter by one
+		\item resets the detection counter to 0x0000 and resets its time window to 0x00000 to start a new detection cycle.
+	\end{itemize}
+}
+{	\Satisfies{SRS_SOH 063}	}
+
+\Requirement{016}
+{
+	Instead, if the detection counter does not reach its threshold count calibration within the calibration time window, SUM_SOH only resets its detection counter to 0x0000 and resets its time window to 0x000000 to start a new detection cycle.
+}
+{	\Satisfies{SRS_SOH 064}	}
+
+\Requirement{017}
+{
+	Once a new detection cycle is started, the detector waits for the occurrence of the first error event detection to start its time window.
+}
+{	\Satisfies{SRS_SOH 065}	}
+
+\Requirement{018}
+{
+	If DID counter reaches its maximum value 0xFFFE, it is retained until the next execution of RID 0x02C0 Clear_SUM_SOH_logs.
+}
+{	\Satisfies{SRS_SOH 061}	}
+
+\Requirement{019}
+{
+	During execution of RID 0x02C0 Clear_SUM_SOH_logs, each detection counter, time window and DID counter is cleared to a value of 0x0000.
+}
+{	\Satisfies{SRS_SOH 049}	\Satisfies{SRS_SOH 056} \Satisfies{SRS_SOH 060}	}
+
+\Requirement{025}{
+	The calculation of the elapsed time is based on the ticks of a counter read periodically by the Time Manager Runnable (see \ref{subsec:timeManager}).\\
+	The difference between the current ticks value and the previous one is converted in seconds: at least 1 second should elapse to increase a time window.\\
+	The previous value is initialized to 0 and reset to 0 when a new detection cycle starts.\\
+	If the previous value is 0, the difference is not computed.
+}{	\Satisfies{SRS_SOH 051} \Satisfies{SRS_SOH 052} }
+
+The following diagram shows the Time Window Filter workflow.
+\UMLDiagram{generated/diagrams/timeWindowFilter}{Time Window Filter workflow diagram}
+
+
+\section{Reliability Monitors}
+\subsection{Platform Reliability Monitor}
+\subsubsection{ShutDown Delay Detector Workflow}
+\Requirement{004}
+{
+	The SUM_SOH_ShutDown_Timer is initialized to a value of 0x0000 at ECU production.
+}
+{	\Satisfies{SRS_SOH 123}	}
+
+\Requirement{005}
+{
+	SUM_SOH_ShutDown_Timer starts when all the following conditions are met:
+	\begin{itemize}
+		\item PNC indication that all partial networks were deactivated is received by SOH through the PNC_SUSD_ShutdownPermission port
+		\item The ECU shutdown target bit in the SUSD_SOH_PermitExecution port is set to OFF (bit 1 has value 0).
+	\end{itemize}
+	If the condition are met, the timer SUM_SOH_ShutDown_Timer's flag is set.
+}
+{	\Satisfies{SRS_SOH 127} \Satisfies{SRS_SOH 231} }
+
+\Requirement{006}
+{
+	The SUM_SOH increments its timer SUM_SOH_ShutDown_Timer until it receives a callback from BswM indicating that the shutdown action list has been invoked.\\
+	The callback is scheduled in order to complete all the operations that involve the NvM.
+}
+{	\Satisfies{SRS_SOH 128}	}
+
+\Requirement{007}
+{
+	In the case where a wakeup event happens during shutdown phase and the shutdown is aborted, the SUM_SOH is notified with
+	the least significant bit in the SUSD_SOH_PermitExecution port equals to 1.
+}
+{	\Satisfies{SRS_SOH 129}	}
+
+\Requirement{023}
+{
+	Upon being notified of a wakeup event occurrence while monitoring for the shutdown delay, the SUM_SOH clears its timer SUM_SOH_ShutDown_Timer.
+}
+{	\Satisfies{SRS_SOH 130}	}
+
+
+\Requirement{024}
+{
+	If SUM_SOH_ShutDown_Timer reaches its threshold value, the detection counter SUM_SOH_ShutDown_Cntr is incremented by 1.
+}
+{	\Satisfies{SRS_SOH 131}	}
+
+\Requirement{026}{
+	Once the counter is incremented, the filter associated with this Detector - the Threshold Filter - runs.
+}{	\Satisfies{SRS_SOH 119}	}
+
+\Requirement{027}{
+	As for the Time Window Filter (see \ref{subsec:timeWindowFilter}), the calculation of the elapsed time is based on the ticks of a counter read
+	\begin{itemize}
+		\item periodically by the Time Manager Runnable and
+		\item when the shutdown action list has been invoked.
+	\end{itemize}
+	The difference between the current ticks value and the previous one is converted in seconds: at least 1 second should elapse to increase SUM_SOH_ShutDown_Timer.\\
+	If the previous value has not been initialized yet, the difference is not computed.
+}{	\Satisfies{SRS_SOH 117} \Satisfies{SRS_SOH 124}	\Satisfies{SRS_SOH 128} }
+
+
+The following diagram shows the Shutdown detection workflow.
+\UMLDiagram{generated/diagrams/shutdownDetection}{Shutdown detection diagram}
+
+Instead, the following diagram shows the Shutdown Delay detection workflow.
+\UMLDiagram{generated/diagrams/shutdownDelayDetection}{Shutdown Delay detection diagram}
+

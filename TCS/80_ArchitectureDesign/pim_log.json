@@ -1,0 +1,6 @@
+{
+   "Name": "SumTCSInitValue",
+   "Type": "TimeSyncMessageType",
+   "Address": "VAR_POWER_ON_CLEARED",
+   "Implementation": "STANDARD"
+}

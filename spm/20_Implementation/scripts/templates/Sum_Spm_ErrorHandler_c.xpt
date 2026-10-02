@@ -1,0 +1,602 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_ErrorHandler.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for Spm Error Handler
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#include "Sum_Spm_PBCfg.h"
+#include "Sum_Spm_ErrorHandler.h"
+#include "Sum_Spm_Cfg.h"
+#include "Sum_SpmTypes.h"
+#include "Sum_Spm_SM_Req_EthIf.h"
+#include "Sum_Spm_Diagnostic.h"
+#include "Sum_Spm_SoftwMgr.h"
+#include "Sum_Spm_Interaction_VehicleEnergyOptimizer.h"
+
+/* PRQA S 3469 EOF # Following macro are used for sake of clarity.  */
+/* PRQA S 1532 EOF # The functions are defined here for modularity reason. */
+/* PRQA S 3214 EOF # Used for Memory Mapping reason */
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+static boolean Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority(const uint8 powProfIndex);
+«ENDIF-»
+
+static boolean Spm_Get_ActivationAvailabilityVehOff(const uint8 powProfIndex);
+static void Spm_RemoveFeedbackErrorItemFromList(const uint8 indexItemToRemove);
+static void Spm_update_local_profile_timewindow_or_deactivate(const uint8 powProfIndex);
+static boolean Spm_HasLocalRequesterForPowerProfile(const uint8 powProfIndex);
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+static void Spm_SetVehPowModeConditionSatisfiedForDID(const boolean value);
+static void Spm_VehPowModeHandlerForDiagnosticDID(const SUM_VehiclePowerMode_Signal_States VehPowMod);
+«ENDIF-»
+static SpmFeedbackErrorListType SpmFeedbackErrorList = {
+	{«FOREACH 0.upTo(spm.spmConfigSet.spmPowPrf.size - 1) AS itm-» {0u, 0u, 0u, 0u, 0u}, «ENDFOREACH -»},
+	0u
+};
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+static boolean VehPowModeConditionSatisfiedForDID = FALSE;
+
+/**
+ * @brief Setter function of the variable VehPowModeConditionSatisfiedForDID.
+ *
+ * @param[in] value: boolean that tells if the Vehichle Power Mode condition is satisfied or not for updating DID E0DF and E0DE.
+ *
+ * @return void
+ */
+static void Spm_SetVehPowModeConditionSatisfiedForDID(const boolean value){
+	VehPowModeConditionSatisfiedForDID = value;
+}
+
+/**
+ * @brief Getter function of the variable VehPowModeConditionSatisfiedForDID.
+ *
+ * @return TRUE: the Vehichle Power Mode condition is satisfied for updating DID E0DF and E0DE.
+ * 		   FALSE: the Vehichle Power Mode condition is NOT satisfied for updating DID E0DF and E0DE.
+ */
+boolean Spm_GetVehPowModeConditionSatisfiedForDID(void){
+	return VehPowModeConditionSatisfiedForDID;
+}
+«ENDIF-»
+/**
+ * @brief Function that append a Feedback Error Item to the Feedback Error List.
+ *
+ * @param[in] powProfIndex: Index of the PowerProfile.
+ * @param[in] trgDvcIp: IP address that needs feedback for its own request.
+ * @param[in] errorCode: error code that to set.
+ *
+ * @return void.
+ */
+void Spm_AppendFeedbackErrorItemToList(const uint8 powProfIndex, const uint32 trgDvcIp, const uint8 errorCode, const uint32 swId, const uint8 profileNumber){
+
+	/* If the List is not full, append the item and increase the size. */
+	if(SpmFeedbackErrorList.size < SPM_SIZE_ERROR_CODE_LIST){
+		SpmFeedbackErrorList.list[SpmFeedbackErrorList.size].prfIndex = powProfIndex;
+        SpmFeedbackErrorList.list[SpmFeedbackErrorList.size].trgDvcIp = trgDvcIp;
+        SpmFeedbackErrorList.list[SpmFeedbackErrorList.size].errorCode = errorCode;
+        SpmFeedbackErrorList.list[SpmFeedbackErrorList.size].swId = swId;
+        SpmFeedbackErrorList.list[SpmFeedbackErrorList.size].profileNumber = profileNumber;
+        SpmFeedbackErrorList.size++;
+	}
+
+	return;
+}
+
+/**
+ * @brief Function that append a Feedback Error Item to a SM frame.
+ *
+ * @param[in] trgDvcIp: IP address that needs feedback for its own request.
+ * @param[in] powProfIndex: Index of the PowerProfile to search
+ * @param[inout] sm_frame: SM frame already populated with the feedback needed.
+ *
+ * @return void.
+ */
+void Spm_SoftwMgr_AppendFeedbackErrorCodeToRequester(const uint32 trgDvcIp, const uint8 powProfIndex, SPM_dt_Prv *sm_frame ){
+	uint8 i;
+	boolean processed = FALSE;
+
+	for(i = 0u; i < SpmFeedbackErrorList.size; i++ ){
+
+		/* If in the Error List there is an item that match with the input parameter:
+		- append the error code to the sm frame;
+		- remove the item from the error list. */
+		if( (SpmFeedbackErrorList.list[i].prfIndex == powProfIndex) &&
+		    (SpmFeedbackErrorList.list[i].trgDvcIp == trgDvcIp) ){
+
+			/* If the PowerProfile is a dependency of the profile requested by the target device, it does not need any feedback.*/
+			if(TRUE == Spm_GetTrgDvcNeedsFeedbackForThisPowProf(trgDvcIp, powProfIndex)){
+
+				/* If the PowProf is already present in the SM Frame is because the FSM of the PowerProfile go to
+				Deactive/Deactivated after the deactivation sent by Spm_ErrorHandler_VehOff()/Spm_ErrorHandler_LowVoltageBattery().
+				If the PowProf is already present, the ErrorCode is written in the SM frame. */
+				if(FALSE == Spm_SoftwMgr_CheckPowProfIndexPresentInSMFrame(powProfIndex, sm_frame, SpmFeedbackErrorList.list[i].errorCode)){
+
+					Spm_SoftwMgr_AppendFeedback(powProfIndex, sm_frame, SpmFeedbackErrorList.list[i].errorCode, SpmFeedbackErrorList.list[i].swId, SpmFeedbackErrorList.list[i].profileNumber);
+				}
+
+			}
+
+			Spm_RemoveFeedbackErrorItemFromList(i);
+			processed = TRUE;
+		}
+		/*SPM_INVALID = 0xFF*/
+		else if((SpmFeedbackErrorList.list[i].prfIndex == (uint8)0xFF) &&
+				(SpmFeedbackErrorList.list[i].trgDvcIp == trgDvcIp) &&
+				(SpmFeedbackErrorList.list[i].errorCode == (uint8)Spm_REJECTED_PROFILE_UNKNOWN))
+		{
+			Spm_SoftwMgr_AppendFeedback((uint8)0xFF, sm_frame, SpmFeedbackErrorList.list[i].errorCode, SpmFeedbackErrorList.list[i].swId, SpmFeedbackErrorList.list[i].profileNumber);
+			Spm_RemoveFeedbackErrorItemFromList(i);
+			processed = TRUE;
+		}
+		else
+		{
+			/*Do nothing*/
+		}
+		if(TRUE == processed)
+		{
+			break;
+		}
+	}
+}
+
+/**
+ * @brief Reset Feedback Error Code List.
+ *
+ * @return void
+ */
+void Spm_ResetFeedbackErrorList(void){
+
+	uint8 i;
+
+	/* Reset each item of the list. */
+	for(i = 0u; i < SPM_SIZE_ERROR_CODE_LIST; i++){
+		SpmFeedbackErrorList.list[i].prfIndex = 0u;
+		SpmFeedbackErrorList.list[i].trgDvcIp = 0u;
+		SpmFeedbackErrorList.list[i].errorCode = 0u;
+        SpmFeedbackErrorList.list[i].swId = 0u;
+		SpmFeedbackErrorList.list[i].profileNumber = 0u;
+	}
+
+	SpmFeedbackErrorList.size = 0u;
+	return;
+}
+
+/**
+ * @brief Function that remove a Feedback Error Item from the Feedback Error List.
+ *
+ * @param[in] indexItemToRemove: index of the item to remove.
+ *
+ * @return void.
+ */
+static void Spm_RemoveFeedbackErrorItemFromList(const uint8 indexItemToRemove){
+
+	uint8 i;
+
+	/* Swap each item starting from the input one. */
+	for(i = indexItemToRemove; i < (SpmFeedbackErrorList.size - 1u); i++){
+		SpmFeedbackErrorList.list[i] = SpmFeedbackErrorList.list[i+1u];
+	}
+
+	/* Reset the last item. */
+	SpmFeedbackErrorList.list[SpmFeedbackErrorList.size - 1u].prfIndex = 0u;
+	SpmFeedbackErrorList.list[SpmFeedbackErrorList.size - 1u].trgDvcIp = 0u;
+	SpmFeedbackErrorList.list[SpmFeedbackErrorList.size - 1u].errorCode = 0u;
+	SpmFeedbackErrorList.list[SpmFeedbackErrorList.size - 1u].swId = 0u;
+	SpmFeedbackErrorList.list[SpmFeedbackErrorList.size - 1u].profileNumber = 0u;
+
+	/* Decrease the size. */
+	SpmFeedbackErrorList.size--;
+
+	return;
+}
+
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+/**
+ * @brief Periodic function that check if a profile needs to be deactivated for
+ *        LowVoltageBattery priority reason.
+ *
+ * The Priority can affect only the activation of a local profile. If the priority
+ * of a profile is smaller than the one received, it needs to be deactivated.
+ *
+ * @return void
+ */
+/* [$Satisfies $DDS_SPM 0038] */
+void Spm_ErrorHandler_LowVoltageBattery(void){
+
+	uint8 i;
+
+	for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++){
+
+		if( FALSE == Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority(i)){
+			Spm_SendDeactivationRequestForEachRequester(i, (uint8)Spm_REJECTED_LACK_OF_POWER);
+		}
+
+	}
+
+}
+
+/**
+ * @brief Function that check if the activation request can be handled for a local profile.
+ *
+ * The Priority can affect only the activation of a local profile.
+ *
+ * @param[in] powProfIndex: Index of the PowerProfile.
+ *
+ * @return TRUE: the profile can be activated.
+ *         FALSE: the profile can NOT be activated.
+ */
+/* [$Satisfies $DDS_SPM 0035] */
+static boolean Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority(const uint8 powProfIndex){
+	boolean ret = TRUE;
+	Std_ReturnType retRte;
+	SUM_VehiclePowerMode_Signal_States VehPowMode;
+
+	/* Check if the profile is Local. */
+	if((SPM_GET_PROF_IS_LOC_FROM_CONF(powProfIndex) == TRUE)){
+
+		/* Retrieve the Vehicle Power Mode from the SUSD */
+		retRte = Rte_Read_RP_SUSD_SPM_VehiclePowerMode_VehiclePowerMode(&VehPowMode);
+
+		if((retRte == E_OK) && (VehPowMode == OFF) ){
+			/* If the Vehicle Power Mode is OFF, the LowVoltageBattery priority can affect the activation if it is
+			configured for Vehicle OFF. */
+			if((SPM_GET_LOWVOLTAGEPRIORITY_VEHOFF(powProfIndex) != SPM_NOT_APPLICABLE)){
+				ret = ((uint8)SPM_GET_LOWVOLTAGEPRIORITY_VEHOFF(powProfIndex) <= Spm_GetPriorityLevelValue()) ? FALSE : TRUE;
+			}
+
+		}
+		else if (retRte == E_OK){
+			/* If the Vehicle Power Mode is not OFF, the LowVoltageBattery priority can affect the activation if it is
+			configured for Vehicle ON. */
+			if((SPM_GET_LOWVOLTAGEPRIORITY_VEHON(powProfIndex) != SPM_NOT_APPLICABLE)){
+				ret = ((uint8)SPM_GET_LOWVOLTAGEPRIORITY_VEHON(powProfIndex) <= Spm_GetPriorityLevelValue()) ? FALSE : TRUE;
+			}
+		}
+		else
+		{
+			/* Nothing to do. Returns True.*/
+		}
+	}
+
+	return ret;
+
+}
+
+«ENDIF-»
+/**
+ * @brief Function that check if the activation request can be handled w.r.t. Vehicle Power Mode.
+ *
+ * The VehPowMode can affect only the activation of a local profile.
+ *
+ * @param[in] powProfIndex: Index of the PowerProfile.
+ *
+ * @return TRUE: the profile can be activated.
+ *         FALSE: the profile can NOT be activated.
+ */
+static boolean Spm_Get_ActivationAvailabilityVehOff(const uint8 powProfIndex){
+
+	boolean ret = TRUE;
+	SUM_VehiclePowerMode_Signal_States VehPowMode;
+
+	if(SPM_GET_PROF_IS_LOC_FROM_CONF(powProfIndex) == TRUE){
+
+		if( E_OK == Rte_Read_RP_SUSD_SPM_VehiclePowerMode_VehiclePowerMode(&VehPowMode) ){
+			/* [$Satisfies $DDS_SPM 0051] */
+			if((VehPowMode == OFF) && (SPM_GET_TIMEOUT_VEH_OFF_SECOND(powProfIndex) == 0u)){
+				ret = FALSE;
+			}
+
+		}
+
+		/* Reload timer tracker. */
+		SPM_GET_TICKTRACKER_VEH_OFF(powProfIndex) = (uint32)SPM_GET_TIMEOUT_VEH_OFF_SECOND(powProfIndex) * 1000u / SPM_SM_PERIODICITY_MS;
+	}
+
+	return ret;
+
+}
+
+/**
+ * @brief Function that check if the remote activation request can be handled.
+ *
+ * Wrapper function of Spm_Get_ActivationAvailabilityVehOff() that can be expanded
+ * in future development.
+ *
+ * @param[in] powProfIndex: Index of the PowerProfile.
+ *
+ * @return
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+ *         Spm_REJECTED_LACK_OF_POWER: the profile can NOT be activated for LowVoltageBattery Priority reason.
+«ENDIF-»
+ * 		   Spm_REQUEST_ACCEPTED: the profile can be activated.
+ * 		   Spm_REJECTED_PROFILE_BLOCKED: the profile can NOT be activated since LRNG Session is currently ongoing.
+ */
+SpmRejectionReasonType Spm_Get_ActivationAvailabilityForRemoteRequest(const uint8 powProfIndex){
+
+	SpmRejectionReasonType ret;
+
+	«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+	if(Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority(powProfIndex) == FALSE){
+
+		/* [$Satisfies $DDS_SPM 0050] */
+		ret = Spm_REJECTED_LACK_OF_POWER;
+
+	}
+	else
+	«ENDIF-»
+	/* [$Satisfies $DDS_SPM 0654] */
+	if(Rte_IrvRead_RE_SPM_SoftMgr_MainFunction_Spm_Learning_Status() == SUM_LRNG_PENDING){
+
+		ret = Spm_REJECTED_PROFILE_BLOCKED;
+	}else{
+
+		ret = Spm_REQUEST_ACCEPTED;
+	};
+
+	return ret;
+
+}
+
+/**
+ * @brief Function that check if the local activation request can be handled.
+ *
+ * This function also rejects any local activation request if the SPM is not in Running state,
+ * ensuring that no new activations are accepted during Initialized or PrepareToShutdown phases.
+ *
+ * @param[in] powProfIndex: Index of the PowerProfile.
+ *
+ * @return TRUE: the profile can be activated.
+ *         FALSE: the profile can NOT be activated.
+ */
+boolean Spm_Get_ActivationAvailabilityForLocalRequest(const uint8 powProfIndex){
+
+	boolean ret;
+
+	/* Reject local activation requests if SPM is not in Running state */
+	if(Spm_GetState() != Spm_Running){
+		ret = FALSE;
+	}
+	/* Check if the profile can be activated from local activation. */
+	else if((SPM_GET_LOC_ACT_ALLOWED_FROM_CONF(powProfIndex) == TRUE) &&
+	        /* [$Satisfies $DDS_SPM 0654] */
+	        (Rte_IrvRead_RE_SPM_ActivateProfile_Spm_Learning_Status() != SUM_LRNG_PENDING)){
+		/* [$Satisfies $DDS_SPM 0050] */
+		/* PRQA S 3415 1 #  No side effect since the function is a getter. */
+		ret = Spm_Get_ActivationAvailabilityVehOff(powProfIndex) «IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»&& Spm_Get_ActivationAvailabilityLowVoltageBatteryPriority(powProfIndex) «ENDIF-»;
+
+
+	}else{
+		ret = FALSE;
+	}
+
+	return ret;
+
+}
+
+/**
+ * @brief Function that is used to force deactivation of a local profile.
+ *
+ * Function that enques deactivation requests for each requester (local and remote) for the local profile requested.
+ * Requested profile must be local and have a current state equal to SPM_Activated or SPM_Activating.
+ * This is used e.g.:
+ * - Vehicle Power mode no longer allows a profile to be on;
+ * - Battery Level Priority no longer allows a profile to be on;
+ * - In case a Learning session is triggered.
+ *
+ * @param[in] powProfIndex: Index of the local PowerProfile for which to request deactivation.
+ * @param[in] ErrorCode: error code to return to the remote requester.
+ *
+ */
+void Spm_SendDeactivationRequestForEachRequester(const uint8 powProfIndex, const uint8 ErrorCode){
+
+	uint8 i;
+	Std_ReturnType retVal;
+
+	/* This feature is needed only for Local Power Profile. */
+	if( (SPM_GET_PROF_IS_LOC_FROM_CONF(powProfIndex) == TRUE) &&
+	    ((SPM_PrfStsMgr_RAM[powProfIndex].sm == SPM_Activated) || (SPM_PrfStsMgr_RAM[powProfIndex].sm == SPM_Activating)) ){
+
+		for(i = 0u; i < SPM_PrfStsMgr_RAM[powProfIndex].reqLst.size; i++){
+
+			if((SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[i].ReqType != SPM_NULL_REQ) &&
+			   (SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[i].ReqType != SPM_REQ_DEACTIVATION)){
+					Spm_prv_prfReqDispatcher((uint8)powProfIndex,
+											SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[i].requesterIP,
+											SPM_DEA_REQ,
+											&retVal);
+					if(SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[i].requesterIP != 0u){
+						/* Only a remote requester of a local profile needs a feedback. */
+						Spm_AppendFeedbackErrorItemToList(powProfIndex, SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[i].requesterIP, ErrorCode, (uint32)0xFFFFFFFFU, (uint8)0xFFU);
+					}
+			}
+		}
+	}
+}
+
+
+/**
+ * @brief Function that is used to force deactivation of a remote profile.
+ *
+ * It enques deactivation requests for each requester (local and remote) for the remote profile requested,
+ * despite the the profile activation status.
+ * This is used e.g.:
+ * - Trigger profile deactivation with the purpose of potentially release resources held by that remote profile (PDUs, remote ECU HW)
+ *
+ * @param[in] powProfIndex: Index of the remote PowerProfile for which to request deactivation.
+ *
+ */
+void Spm_ForceRemoteProfileDeactivationRequest(const uint8 powProfIndex){
+
+    uint8 i;
+    Std_ReturnType retVal;
+
+    if(SPM_GET_PROF_IS_LOC_FROM_CONF(powProfIndex) == FALSE){
+        for(i = 0u; i < SPM_PrfStsMgr_RAM[powProfIndex].reqLst.size; i++){
+            /* We only take into account profiles that have a Requester currently demanding Activation */
+            if((SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[i].ReqType != SPM_NULL_REQ) &&
+               (SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[i].ReqType != SPM_REQ_DEACTIVATION)){
+                /* Queue the deactivation request as if it was coming from a specific IP (can be local too...in that case requesterIP==0) */
+                Spm_prv_prfReqDispatcher((uint8)powProfIndex,
+                                         SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[i].requesterIP,
+                                         SPM_DEA_REQ,
+										 &retVal);
+                /* Remote profiles are dependencies of a root local profile, therefore no feedback is needed for any requester*/
+            }
+        }
+    }
+}
+
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Function that handle the VehPowMode value for the Diagnostic DID.
+ *
+ * If the actual VehPowMode is different from Propulsion, recording shall start.
+ *
+ * If the VehPowMode just become Propulsion, we need to shift the values recorded
+ * from the actual to previous session.
+ *
+ * If the VehPowMode is different from OFF, the timer trackers are reloaded.
+ *
+ * @param[in] VehPowMod: Vehicle Power Mode read.
+ *
+ */
+ /* [$Satisfies $DDS_SPM 0634] */
+static void Spm_VehPowModeHandlerForDiagnosticDID(const SUM_VehiclePowerMode_Signal_States VehPowMod){
+
+	static SUM_VehiclePowerMode_Signal_States VehPowMod_PreviousValue = OFF;
+
+	/* Check the Vehicle Power Mode value needed for DID E0DE and E0DF. */
+	if(VehPowMod == PROPULSION){
+		Spm_SetVehPowModeConditionSatisfiedForDID(FALSE);
+	}else{
+
+		/* A transition to a new PowerOff session just occours. So, we need to reset the queue. */
+		if(VehPowMod_PreviousValue == PROPULSION){
+			Spm_ClearQueueDID_E0DE_E0DF();
+		}
+
+		Spm_SetVehPowModeConditionSatisfiedForDID(TRUE);
+	}
+
+	VehPowMod_PreviousValue = VehPowMod;
+	return;
+}
+«ENDIF-»
+
+/**
+ * @brief Function that handle the SpmProfActivationTimeOutVehOff w.r.t. the Vehicle Power Mode.
+ *
+ * If the VehPowMode is OFF, a local Power Profile with SpmProfActivationTimeOutVehOff equal to zero shall be
+ * automatically deactivated.
+ * If the timeout configured is greater then zero, it shall be decreased till it reaches the zero.
+ * Once it reaches the zero, the local Power Profile shall be automatically deactivated.
+ *
+ * If the VehPowMode is different from OFF, the timer trackers are reloaded.
+ *
+ */
+ /* [$Satisfies $DDS_SPM 0052] */
+void Spm_ErrorHandler_VehOff(void){
+
+
+	SUM_VehiclePowerMode_Signal_States VehPowMod;
+	uint8 i;
+
+	if(E_OK == Rte_Read_RP_SUSD_SPM_VehiclePowerMode_VehiclePowerMode(&VehPowMod)){
+
+		if(VehPowMod == OFF){
+			for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++){
+               Spm_update_local_profile_timewindow_or_deactivate(i);
+			}
+		}else{
+			for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++){
+				SPM_GET_TICKTRACKER_VEH_OFF(i) = ((uint32)(SPM_GET_TIMEOUT_VEH_OFF_SECOND(i)) * 1000u) / SPM_SM_PERIODICITY_MS;
+			}
+		}
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+		Spm_VehPowModeHandlerForDiagnosticDID(VehPowMod);
+«ENDIF-»
+	}
+}
+/**
+ * @brief Manages the VehOff timeout for a local Power Profile and deactivates only
+ *        the local requester when the timeout expires.
+ *
+ * For local power profiles only: if the VehOff tick tracker has reached zero and an active
+ * local requester is present, a deactivation request is dispatched for the local
+ * requester. Remote activators are not affected by the VehOff condition.
+ * If the tick tracker has not yet expired, it is decremented.
+ *
+ * @param[in] powProfIndex Index of the Power Profile to evaluate.
+ */
+static void Spm_update_local_profile_timewindow_or_deactivate(const uint8 powProfIndex){
+    Std_ReturnType retVal;
+    if(SPM_GET_PROF_IS_LOC_FROM_CONF(powProfIndex) == TRUE){
+	    if(SPM_GET_TICKTRACKER_VEH_OFF(powProfIndex) == 0u){
+	        /* Is at least one local requester present for a power profile? */
+	        if(Spm_HasLocalRequesterForPowerProfile(powProfIndex) != FALSE) {
+	            Spm_prv_prfReqDispatcher((uint8)powProfIndex, 0u, SPM_DEA_REQ, &retVal);
+	        }
+	    }else{
+            SPM_GET_TICKTRACKER_VEH_OFF(powProfIndex)--;
+	    }
+	}
+}
+/**
+ * @brief Checks if at least one local requester is present for a power profile.
+ *
+ * A local requester is identified by requesterIP == 0u.
+ *
+ * @param[in] powProfIndex Index of the power profile in SPM_PrfStsMgr_RAM.
+ *
+ * @retval TRUE  At least one local requester for the power profile is present.
+ * @retval FALSE No local requester for the power profile is present.
+ */
+static boolean Spm_HasLocalRequesterForPowerProfile(const uint8 powProfIndex)
+{
+   uint8 idx;
+   boolean ret = FALSE;
+   for(idx = 0u; idx < SPM_PrfStsMgr_RAM[powProfIndex].reqLst.size; idx++)
+   {
+      if((SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[idx].requesterIP == 0u) &&
+         (SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[idx].ReqType != SPM_NULL_REQ) &&
+         (SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[idx].ReqType != SPM_REQ_DEACTIVATION))
+      {
+          ret = TRUE;
+          break;
+      }
+   }
+   return ret;
+}
+/* EOF */
+«ENDFILE-»
+«ENDDEFINE-»

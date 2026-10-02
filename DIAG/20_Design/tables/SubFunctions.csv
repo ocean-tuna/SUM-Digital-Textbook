@@ -1,0 +1,5 @@
+6;12
+\cellcolor{ETASlightgray}\textbf{Name};SubFunctions
+\cellcolor{ETASlightgray}\textbf{Type};enum
+\cellcolor{ETASlightgray}\textbf{Members};SubFunction_00 0x00 \newline SubFunction_01 0x01 \newline SubFunction_02 0x02 \newline SubFunction_03 0x03 \newline SubFunction_04 0x04 \newline SubFunction_05 0x05
+\cellcolor{ETASlightgray}\textbf{Description};Contains enumerated values for Diagnostic Request Sub Functions

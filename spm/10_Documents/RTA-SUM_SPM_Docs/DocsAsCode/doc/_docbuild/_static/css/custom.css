@@ -1,0 +1,13 @@
+.wy-nav-content {
+    max-width: 100%;
+}
+
+.rst-content {
+    max-width: 100%;
+}
+
+/* Scale SVG images of UML drawings to stay inside screen */
+.plantuml object {
+	max-width: 100%;
+	width: auto !important;
+}

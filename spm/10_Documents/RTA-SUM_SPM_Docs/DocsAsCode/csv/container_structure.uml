@@ -1,0 +1,190 @@
+@startuml
+class "SpmConfigSet" {
+  +name : SpmConfigSet
+  +multiplicity : 1 .. 1
+}
+class "SpmGeneral" {
+  +name : SpmGeneral
+  +multiplicity : 1 .. 1
+}
+
+class "SpmETHWkUpFrmRef" {
+  +name : SpmETHWkUpFrmRef
+  +multiplicity : 0 .. 0
+}
+class "SpmCANWkUpFrmRef" {
+  +name : SpmCANWkUpFrmRef
+  +multiplicity : 0 .. 1
+}
+class "SpmVLANCom" {
+  +name : SpmVLANCom
+  +multiplicity : 1 .. Inf
+}
+class "SpmDiagnostic" {
+  +name : SpmDiagnostic
+  +multiplicity : 0 .. 1
+}
+class "SpmVLANComPwrMgrHeartbeat" {
+  +name : SpmVLANComPwrMgrHeartbeat
+  +multiplicity : 0 .. 1
+}
+class "SpmVLANComPwrMgrWakeupFrames" {
+  +name : SpmVLANComPwrMgrWakeupFrames
+  +multiplicity : 0 .. 1
+}
+class "SpmVLANComPwrMgrWakeupFramesMulticast" {
+  +name : SpmVLANComPwrMgrWakeupFramesMulticast
+  +multiplicity : 0 .. 1
+}
+class "SpmVLANComSwrMgrInfo" {
+  +name : SpmVLANComSwrMgrInfo
+  +multiplicity : 0 .. 1
+}
+class "SpmPowPrf" {
+  +name : SpmPowPrf
+  +multiplicity : 1 .. Inf
+}
+class "SpmProfileSwDep" {
+  +name : SpmProfileSwDep
+  +multiplicity : 0 .. Inf
+}
+class "SpmPgttEntries" {
+  +name : SpmPgttEntries
+  +multiplicity : 1 .. 1
+}
+class "SpmTrgDvc" {
+  +name : SpmTrgDvc
+  +multiplicity : 1 .. Inf
+}
+class "SpmTrgDvcHndlngInfo" {
+  +name : SpmTrgDvcHndlngInfo
+  +multiplicity : 0 .. 1
+}
+class "SpmWkngDvc" {
+  +name : SpmWkngDvc
+  +multiplicity : 1 .. 1
+}
+class "SpmTrgDvcInfo" {
+  +name : SpmTrgDvcInfo
+  +multiplicity : 1 .. Inf
+}
+class "SpmWkUpSeq" {
+  +name : SpmWkUpSeq
+  +multiplicity : 0 .. Inf
+}
+class "SpmWkUpStep" {
+  +name : SpmWkUpStep
+  +multiplicity : 1 .. Inf
+}
+
+class "SpmGenerateInitRunnable" {
+  +name : SpmGenerateInitRunnable
+  +multiplicity : 1 .. 1
+}
+
+class "SpmInitFuncPeriodicity" {
+  +name : SpmInitFuncPeriodicity
+  +multiplicity : 1 .. 1
+}
+
+class "SpmWkUpHelperFunction" {
+  +name : SpmWkUpHelperFunction
+  +multiplicity : 1 .. 1
+}
+
+class "SpmPermitExecutionMask" {
+  +name : SpmPermitExecutionMask
+  +multiplicity : 1 .. 1
+}
+
+class "SpmBurstPhsPeriodicity" {
+  +name : SpmBurstPhsPeriodicity
+  +multiplicity : 1 .. 1
+}
+
+class "SpmSMMainFuncPeriodicity" {
+  +name : SpmSMMainFuncPeriodicity
+  +multiplicity : 1 .. 1
+}
+
+class "SpmWakeupFrame" {
+  +name : SpmWakeupFrame
+  +multiplicity : 1 .. 1
+}
+
+class "SpmWakeupBit" {
+  +name : SpmWakeupBit
+  +multiplicity : 1 .. 1
+}
+
+class "SpmHBShutdownDelayMs" {
+  +name : SpmHBShutdownDelayMs
+  +multiplicity : 1 .. 1
+}
+
+class "SpmSMStayAwakeTimeMs" {
+  +name : SpmSMStayAwakeTimeMs
+  +multiplicity : 1 .. 1
+}
+
+class "Spm_SmFrame_QueueLength" {
+  +name : Spm_SmFrame_QueueLength
+  +multiplicity : 0 .. 1
+}
+
+class "Spm_PmETHwakeUpMULTIC_QueueLength" {
+  +name : Spm_PmETHwakeUpMULTIC_QueueLength
+  +multiplicity : 0 .. 1
+}
+
+class "Spm_PmETHwakeUpUNIC_QueueLength" {
+  +name : Spm_PmETHwakeUpUNIC_QueueLength
+  +multiplicity : 0 .. 1
+}
+
+
+class "Spm_LocalRequests_QueueLength" {
+  +name : Spm_LocalRequests_QueueLength
+  +multiplicity : 0 .. 1
+}
+
+class "Spm_PmHeartbeat_QueueLength" {
+  +name : Spm_PmHeartbeat_QueueLength
+  +multiplicity : 0 .. 1
+}
+
+"Spm" --> "SpmConfigSet"
+"Spm" --> "SpmGeneral"
+"SpmGeneral" --> "SpmETHWkUpFrmRef"
+"SpmGeneral" --> "SpmCANWkUpFrmRef"
+"SpmGeneral" --> "SpmVLANCom"
+"SpmGeneral" --> "SpmDiagnostic"
+"SpmGeneral" --> "SpmGenerateInitRunnable"
+"SpmGeneral" --> "SpmInitFuncPeriodicity"
+"SpmGeneral" --> "SpmWkUpHelperFunction"
+"SpmGeneral" --> "SpmPermitExecutionMask"
+"SpmGeneral" --> "SpmBurstPhsPeriodicity"
+"SpmGeneral" --> "SpmSMMainFuncPeriodicity"
+"SpmGeneral" --> "SpmWakeupFrame"
+"SpmGeneral" --> "SpmWakeupBit"
+"SpmGeneral" --> "SpmHBShutdownDelayMs"
+"SpmGeneral" --> "SpmSMStayAwakeTimeMs"
+"SpmGeneral" --> "Spm_SmFrame_QueueLength"
+"SpmGeneral" --> "Spm_PmETHwakeUpMULTIC_QueueLength"
+"SpmGeneral" --> "Spm_PmETHwakeUpUNIC_QueueLength"
+"SpmGeneral" --> "Spm_LocalRequests_QueueLength"
+"SpmGeneral" --> "Spm_PmHeartbeat_QueueLength"
+"SpmVLANCom" --> "SpmVLANComPwrMgrHeartbeat"
+"SpmVLANCom" --> "SpmVLANComPwrMgrWakeupFrames"
+"SpmVLANCom" --> "SpmVLANComPwrMgrWakeupFramesMulticast"
+"SpmVLANCom" --> "SpmVLANComSwrMgrInfo"
+"SpmConfigSet" --> "SpmPowPrf"
+"SpmPowPrf" --> "SpmProfileSwDep"
+"SpmConfigSet" --> "SpmPgttEntries"
+"SpmPgttEntries" --> "SpmTrgDvc"
+"SpmTrgDvc" --> "SpmTrgDvcHndlngInfo"
+"SpmPgttEntries" --> "SpmWkngDvc"
+"SpmWkngDvc" --> "SpmTrgDvcInfo"
+"SpmPgttEntries" --> "SpmWkUpSeq"
+"SpmWkUpSeq" --> "SpmWkUpStep"
+@enduml

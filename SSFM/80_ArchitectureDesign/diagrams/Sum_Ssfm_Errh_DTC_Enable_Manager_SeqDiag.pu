@@ -1,0 +1,26 @@
+@startuml
+
+participant SUM_DIAG
+participant SWC
+box SUM_SSFM
+    participant Sum_Ssfm_Errh_DTC_Enable_Manager as DTC_Man
+end box
+
+group The use of DIAG_RmtPrgmOtaPsf for DTC set
+SUM_DIAG -> DTC_Man: Data event RemoteProgrammingOtaPsf changed
+DTC_Man->DTC_Man: Execute Runnable_SSFM_RemoteProgrammingOtaPsf_Status_Handler
+DTC_Man -> SUM_DIAG: Rte_Read_RP_DIAG_SWC_RmtPrgmOtaPsf_Status_DIAG_RemoteProgrammingOtaPsf(&status)
+SUM_DIAG --> DTC_Man: retValue = RTE_E_OK, status
+
+alt retValue == RTE_E_OK
+    alt status == TRUE
+        DTC_Man -> SWC: Rte_Write_PP_SUM_ERRH_SWC_DisableDTCs_TestEnable(TRUE)
+        DTC_Man -> DTC_Man: Prevent setting DTC to internal modules(set Sum_Ssfm_DTCsDisabled)
+    else status != TRUE
+        DTC_Man -> SWC: Rte_Write_PP_SUM_ERRH_SWC_DisableDTCs_TestEnable(FALSE)
+    end
+else retValue != RTE_E_OK
+
+end
+end
+@enduml

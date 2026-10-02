@@ -1,0 +1,157 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_LinBusOff_Handler.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM Lin BusOff Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+ «IF sum_Lnm_NetworkSupport_IsTRUE(lNM)-»
+ static void Sum_Ssfm_CheckPreCond_SetEvent(uint8 Network_Index);
+ «ENDIF -»
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+ «IF sum_Lnm_NetworkSupport_IsTRUE(lNM)-»
+ /* PRQA S 3218 EOF # The variables are here for modularity             */
+static const Sum_Ssfm_LNM_NetworkInfo Sum_Ssfm_LIN_NetworkInfo[SSFM_LNM_NUMBER_OF_NETWORKS] =
+{
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+    /* «Network.shortName -» configuration*/
+	{
+		/* Function pointer to Rte_Read function call */
+		&Rte_Read_RP_LNM_SSFM_LossCommBusoff_«Network.shortName -»_LossCommBus,
+		/* Function pointer to set Bus off Dem Event Status */
+		&Rte_Call_RP_Dem_SSFM_DiagnosticMonitor_«Network.shortName -»_CommBusoff_SetEventStatus
+	},
+«ENDFOREACH-»
+};
+«ENDIF -»
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+ «IF sum_Lnm_NetworkSupport_IsTRUE(lNM)-»
+ /* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network ITERATOR index-»
+/**
+ * @brief           SSFM/SSM runnable function to be called upon when detection of LIN Bus off
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE*/
+void Runnable_SSFM_LNM_LIN_Busoff_«Network.shortName -»(void){
+	/*[$Satisfies $DDS_SSFM 189]*/
+
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+	/*[$Satisfies $DDS_SSFM 189]*/
+	if (dtcs_are_disabled == FALSE)
+	{
+		/*[$Satisfies $DDS_SSFM 172]*/
+		Sum_Ssfm_CheckPreCond_SetEvent(«index.counter0»u);
+	}
+}
+«ENDFOREACH -»
+«ENDIF -»
+
+ «IF sum_Lnm_NetworkSupport_IsTRUE(lNM)-»
+/**
+ * @brief           SSFM/SSM static function will be called upon when detection of LIN Bus
+ *						off which check pre-condtion and sets appropriate DTC
+ *
+ * @param[in]       Index of LNM Network
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+
+static void Sum_Ssfm_CheckPreCond_SetEvent(uint8 Network_Index)
+{
+	boolean battery_voltage_flag;
+	boolean reset_recovery_flag;
+	LNM_ErrorStatus_Type dtc_Network_Status;
+	OperatingRangeType operating_range;
+
+	/*[$Satisfies $DDS_SSFM 173]*/
+	battery_voltage_flag = Sum_Ssfm_Errh_GetBatteryVoltageRecoveryTimerFlag();
+	(void)Rte_Read_RP_SUSD_SSFM_Errh_BatteryVoltage_BatteryVoltageRangeMinToMax_OperatingRange(&operating_range);
+	reset_recovery_flag = Sum_Ssfm_Errh_GetResetPowerUpRecoveryTimerFlag();
+
+«IF dem.demGeneral.demOBDSupport == "DEM_OBD_NO_OBD_SUPPORT"-»
+	if(((battery_voltage_flag == TRUE)&&(operating_range == IN_Range))&&(reset_recovery_flag == TRUE)){
+«ELSE-»
+	if(((battery_voltage_flag == TRUE)&&(operating_range != OUT_OF_RANGE_LOW))&&(reset_recovery_flag == TRUE)){
+«ENDIF-»
+
+		Sum_Ssfm_LIN_NetworkInfo[Network_Index].Rte_Read_LNM_SSFM_LossCommBus(&dtc_Network_Status);
+		/*[$Satisfies $DDS_SSFM 172]*/
+		if(dtc_Network_Status == ERROR_EVENT_ACTIVE){
+			Sum_Ssfm_LIN_NetworkInfo[Network_Index].Rte_Call_Dem_SSFM_SetBusOffEventStatus(DEM_EVENT_STATUS_FAILED);
+
+		}
+		else{
+			Sum_Ssfm_LIN_NetworkInfo[Network_Index].Rte_Call_Dem_SSFM_SetBusOffEventStatus(DEM_EVENT_STATUS_PASSED);
+		}
+	}
+}
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+«ENDIF -»
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

@@ -1,0 +1,21 @@
+7;2;2;2;5;@@H
+Port Interface; Port Type; P-Port; R-Port; Description
+\footnotesize{PNC_ActiveTxPDUEnable<n>}; \small{S/R}; \small{SUM_PNC}; \small{SUM_SSC, SUM_ERRH and Local SW-Cs}; \small{Notification that PN<n> is transmitting signals}
+\footnotesize{PNC_ActiveRxPDUEnable<n>}; \small{S/R}; \small{SUM_PNC}; \small{SUM_SSFM}; \small{Notification to SSFM that PN<n> is receiving signals}
+\footnotesize{ShutdownPermission}; \small{S/R}; \small{SUM_PNC}; \small{SUM_SUSD}; \small{Notification to SUSD on activity/inactivity of PN}
+\footnotesize{PermitExecution}; \small{S/R}; \small{SUM_SUSD}; \small{SUM_PNC}; \small{Interface to provide signal to enable start/stop of PNC}
+\footnotesize{DIAG_DisableNormalComm<channel>}; \small{S/R}; \small{SUM_DIAG}; \small{SUM_PNC}; \small{Provides notification to SUM_PNC the status of diagnostics enabling or disabling of normal communications for each <channel>}
+\footnotesize{<ActivationSignal_n>}; \small{S/R}; \small{SW-C (usually remote) or Dcm}; \small{SUM_PNC}; \small{n interface(s) for every serial data signal or RID that is involved in a PNs activation and/or deactivation criteria.}
+\footnotesize{<ActivationSignal_Status_n>}; \small{S/R }; \small{SW-C (usually remote) or Dcm}; \small{SUM_PNC}; \small{n interface(s) for every serial data signal or RID that is involved in a PNs activation and/or deactivation criteria}
+\footnotesize{<ActivationSensor_n>}; \small{C/S}; \small{Sensor SW-C}; \small{SUM_PNC}; \small{n C/S interface(s) to every sensor SW-C signal that is involved in a ECU's activation and/or deactivation criteria}
+\footnotesize{PNC_BswM_CurrentPNCModeUser<n>}; \small{Mode User}; \small{BswM}; \small{SUM_PNC}; \small{Receives the status of PN<n> via BswM ComM_CurrentPNCMode for n PN(s) in which the ECU participates}
+\footnotesize{PNC_BswM_CurrentPNCModeReq <n>}; \small{Mode Request}; \small{SUM_PNC}; \small{BswM}; \small{Request activation / deactivation of PN<n>. For Activating ECU only.}
+\footnotesize{PNC_ComM_CurrentModeUser <n>}; \small{Mode User}; \small{BswM}; \small{SUM_PNC}; \small{Receives the status of the communication channels<n> of the ECU via BswM_ComMCurrentMode.}
+\footnotesize{PNC_BswMPduGroupSwitchTxReq<n>}; \small{Mode Request}; \small{SUM_PNC}; \small{BswM}; \small{Request start / stop of I-PDU Tx group <n>}
+\footnotesize{PNC_BswMPduGroupSwitchRxReq<n>}; \small{Mode Request}; \small{SUM_PNC}; \small{BswM}; \small{Request start / stop of I-PDU Rx group<n>}
+\footnotesize{DataServices_PNC_DID_F08B_Info_Local}; \small{S/R}; \small{SUM_PNC}; \small{DCM}; \small{Interface to DCM to get the local partial network activation status (Conditional, if it is allowed by ECU type)}
+\footnotesize{DataServices_PNC_DID_F08D_Info_Remote}; \small{S/R}; \small{SUM_PNC}; \small{DCM}; \small{Interface to DCM on remote partial activation status. (Conditional, if it is allowed by ECU type)}
+\footnotesize{PNC_ComMPNC_<n>_Group_DM_Switch}; \small{Mode Request}; \small{SUM_PNC}; \small{BswM}; \small{Request to enable or disable the deadline monitoring of the Rx PDU Group associated to PN<n>}
+\footnotesize{PN_DTC_Allowed_<n>}; \small{S/R}; \small{SUM_PNC}; \small{SUM_SSFM, SUM_SSC}; \small{Notification that a DTC against the PDUs of a specific PN can be set }
+\footnotesize{SUM_C_Disable_<n>}; \small{S/R}; \small{SSFM}; \small{PNC}; \small{This interface is used to read the C_Disable calibration provided by SSFM for Tx Pdu.}
+\footnotesize{SUM_BswM_DisablePdu<n>}; \small{S/R}; \small{PNC}; \small{BswM}; \small{Mode interface with the BswM to disable the Pdu with PduID.}

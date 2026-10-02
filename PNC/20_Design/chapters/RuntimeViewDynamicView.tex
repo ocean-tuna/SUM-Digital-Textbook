@@ -1,0 +1,1063 @@
+\chapter{Runtime View Dynamic View}
+\RequirementTag{SDD_PNC}{040}
+\\
+The behavior of SUM PNC is described below as part of dynamic view:
+
+\begin{enumerate}
+	\item SUM_PNC shall be initialized following the initialization of RTE, SchM and SUM_SUSD, and prior to the initialization of any other functional SW-Cs.
+	\item SUM_PNC shall implement a port for Permit Execution, which can receive notification from SUM_SUSD to execute its functions or prepare for shutdown.
+	\item SUM_PNC may use the configuration PNC_PermitExecution_Mask in its logic to allow configuration of which Permit Exectution bits are considered to trigger a start of its functions.
+	\item If SUM_PNC has no project specific dependency on HW, then SUM_PNC shall start execution of its functions when the Wakeup(s) Active bit in the Permit Execution interface is TRUE.
+	\item If SUM_PNC has project specific dependency on HW, then SUM_PNC shall execute its functions when both the HW Ready bit and the Wakeup(s) Active bit in the Permit Execution interface is TRUE.
+	\item When the ECU Reset is requested in the Permit Execution, then SUM_PNC shall set its Shutdown Permission to enable to support ECU reprogramming, even if there is one or more currently active Partial Networks.
+	\item SUM_PNC shall implement a port, Shutdown Permission, which can publish notification to SUM_SUSD to control the disable or enable shutting down the ECU.
+	\item Configuration parameters are assumed to be pre-compile, which means the ECU behaviour modification requires a reflash of the complete application software. 
+	\item Calibration parameters are assumed to be post-build, which means the ECU behaviour can be modified by only reflashing the calibration software.
+\end{enumerate}
+
+{\Satisfies{SRS_PNC 002} \Satisfies{SRS_PNC 008} \Satisfies{SRS_PNC 009} \Satisfies{SRS_PNC 010} \Satisfies{SRS_PNC 011} \Satisfies{SRS_PNC 012} \Satisfies{SRS_PNC 013}}
+
+\section{System initialization}
+\RequirementTag{SDD_PNC}{041}
+\\
+\begin{itemize}
+	\item PNC_Init() API checks the activation criteria is FALSE and PNC_BswM_currentPNCModeUser is PNC_NO_COMM;
+	\item If both the conditions are satisfied then it sets Current_PNC_Mode as PNC_Enable_Check (TRUE). Else it will:
+	\begin{enumerate}[label=\roman*]
+		\item Initialize all activation criteria to FALSE: local sensor activation (\code{SUM\_PNC\_Criteria\_Sensor\_Act}), local signal activation (\code{SUM\_PNC\_Criteria\_Signal\_Act}), and NM frame-based remote activation (\code{SUM\_PNC\_Criteria\_NM\_Act\_Remote})
+		\item Initialize Current PNC State to SUM_PNC_NO_COMMUNICATION
+		\item Initialize ComM Channel State to SUM_COMM_NO_COMMUNICATION
+		\item Initialize PduGroup_State to SUM_PDUGRP_STOP
+		\item Initialize Current_PNC_Mode to PNC_Enable_Check 
+		\item Initialize the DM FSM to DM_ACTIVE state
+		\item Initialize DM timer to the configured value
+		\item Initialize PN_DTC_Timers to the configured value
+		\item Intialize all PN_DTC_Allowed ports to DTC_Not_Allowed	
+	\end{enumerate}
+	\item SUM_PNC_Mainfunction() API is called periodically at the rate specified with configuration parameter PNC_t_MainFunction_Periodicity.
+	\item The Current_PNC_Mode is set to PNC_Enable_Check during initialization.
+	\item The DID related interfaces are implemented as conditional and ComM channel specific check during transition from PNC_ACK_ACTIVATION to PNC_TX_ENABLE is implemented in API PNC_BswM_ComM_Current_ModeUSer().	
+\end{itemize}
+\noindent
+\textbf{NOTE}: Super states IDLE and ACTIVE are not implemented as there is only one transition which can be handled in transition from Sub state PNC_REMOTLY_ACTIVE to sub state PNC_ENABLE_CHECK.
+\\
+\Satisfies{SRS_PNC 001} \Satisfies{SRS_PNC 002} \Satisfies{SRS_PNC 017} \Satisfies{SRS_PNC 024}
+
+\section{System de-initialization}
+<N/A>
+\newline
+\section{Wake-up procedure}
+\RequirementTag{SDD_PNC}{045}
+\\
+\begin{itemize}
+	\item Partial Network activators will be assigned criteria that describes the conditions, which the ECU will evaluate, to determine if a Partial Network should be activated or deactivated;
+	\item Following Diagram describes the PN states and Sub-states within, these determine how SUM_PNC does Partial network activation/deactivation.
+	\UMLDiagram{generated/diagrams/wakeUpProc}{Partial Network Activation and Deactivation}
+\end{itemize}
+\noindent
+The Activation of a PN can be locally or via Remote activation. Both these methods are explained below.
+
+\Satisfies{SRS_PNC 021}
+
+\subsection{\textit{Local Activation}}
+\label{subsection:LocalActivation}
+\RequirementTag{SDD_PNC}{029}
+
+Local activation is triggered when local sensor inputs (\textit{Activation\_Sensor}) or signal inputs (\textit{Activation\_Signal\_In}) are active. Signal status validity is checked internally per signal within \textit{Activation\_Signal\_In}. The combined local activation criterion evaluates as: \code{Sensor\_Act == TRUE OR Signal\_Act == TRUE}. Local activation is explained in the next diagram:
+
+\UMLDiagram{generated/diagrams/locAct}{PN Local Activation}
+
+\Satisfies{SRS_PNC 007} \Satisfies{SRS_PNC 021} \Satisfies{SRS_PNC 031} \Satisfies{SRS_PNC 032} \Satisfies{SRS_PNC 033} \Satisfies{SRS_PNC 034} \Satisfies{SRS_PNC 036} \Satisfies{SRS_PNC 037} \Satisfies{SRS_PNC 106}
+
+\RequirementTag{SDD_PNC}{046}
+\\
+When SUM\_PNC determines that the local activation criteria are FALSE (\code{Sensor\_Act == FALSE AND Signal\_Act == FALSE}) and the Repeat Message Timer has expired or not started, Locally Active changes to Remotely Active state:
+	
+	\UMLDiagram{generated/diagrams/locActActiveState}{PN Transition to Locally active to Remotely Active}
+
+\Satisfies{SRS_PNC 041}
+
+\subsection{\textit{Remote Activation}}
+\RequirementTag{SDD_PNC}{030}
+\\
+Remote activation is driven by NM frames received via the \textit{PNC\_NM\_Frame\_Indication} callback. When an NM frame with the PN bit active is received from the configured PN Coordinator Node, SUM\_PNC sets \code{SUM\_PNC\_Criteria\_NM\_Act\_Remote} to TRUE and records the wakeup reason in \code{SUM\_PNC\_NM\_WR}. This NM remote activation criterion is evaluated in \textit{Status\_PNC\_Enable\_Check}: when TRUE (and no local activation criteria active), the PN transitions directly from \code{PNC\_ENABLE\_CHECK} to \code{PNC\_TX\_ENABLE}, bypassing \code{PNC\_MONITOR\_ACTIVATION} and \code{PNC\_ACK\_ACTIVATION}, then enters \code{PNC\_REMOTELY\_ACTIVE}.
+
+Note: The application signal interface (\textit{Activation\_Signal\_In}) contributes to \textbf{local} activation criteria (signal value and signal status are both evaluated internally per signal), not remote activation.
+
+Remote activation is explained below:
+
+\UMLDiagram{generated/diagrams/remoteActProc}{Remote Activation}
+
+When SUM\_PNC determines that the NM remote activation criterion is inactive and the local activation criteria are TRUE (\code{Sensor\_Act == TRUE OR Signal\_Act == TRUE}), SUM\_PNC requests local activation (local takeover). Following actions are executed:
+
+\UMLDiagram{generated/diagrams/remoteActActiveState}{Transition from remotely to locally active}
+
+Afterwards, if SUM\_PNC determines that the NM remote activation criterion is active and the local activation criteria are FALSE (\code{Sensor\_Act == FALSE AND Signal\_Act == FALSE}) and the Repeat Message Timer has not started or expired, SUM\_PNC changes the PN state from Locally Active to Remotely Active.
+
+\Satisfies{SRS_PNC 007} \Satisfies{SRS_PNC 021} \Satisfies{SRS_PNC 038}
+\Satisfies{SRS_PNC 039} \Satisfies{SRS_PNC 040}
+
+\section{Sleep Procedure}
+\RequirementTag{SDD_PNC}{042}
+\\
+The sleep procedure is as described as below when SUM_PNC is notified of AUTOSAR BSW PN mode user state is PNC_PREPARE_SLEEP.
+
+\UMLDiagram{generated/diagrams/sleepProc}{Sleep Procedure}
+
+\Satisfies{SRS_PNC 042} \Satisfies{SRS_PNC 021}
+
+\section{Deadline Monitoring Timer}
+\RequirementTag{SDD_PNC}{081}
+\\
+SUM_PNC implements a timer SUM_PN<n>_DM_Timer and a FSM for each PN.
+The following states are implemented:
+
+\begin{itemize}
+	\item DM_ACTIVE: default state. The deadline monitoring is enabled for that PN.
+	\item DM_INACTIVE: deadline monitoring is disabled for that PN.
+\end{itemize}
+
+Deadline monitoring FSM is executed only when SUM_PNC is in PNC_REMOTELY_ACTIVE state.
+When SUM_PNC exits from PNC_REMOTELY_ACTIVE state, the DM_ACTIVE status is immediately set and a BswM request is sent to enable the deadline monitoring of the corresponding PN. 
+\\
+When SUM_PNC enters the PNC_REMOTELY_ACTIVE state, the deadline monitoring timer is periodically decremented. If the timer expires, the DM_INACTIVE state is entered, and a request is sent to BswM to disable the deadline monitoring of the corresponding PN.
+A transition from DM_INACTIVE to DM_ACTIVE state happens when the timer has been set to the configuration value, and a request is sent to BswM to enable the deadline monitoring of the corresponding PN.
+
+SUM PNC implements a NM callback that is used to process all the received NM Frames.
+PN timers are set to the configuration value each time that the corresponding PN is remotely requested by the PN Coordinator ECU (ECU ID configurable through \textit{PNCGeneral/SUM_PN_Coordinator_Node_ID}). 
+
+\textbf{NOTE}: In this implementation it is assumed that the NM callback is executed before a new NM frame is processed by CanNm.
+
+\Satisfies{SRS_PNC 064}
+
+\section{PN DTC Delay Timer}
+\label{sec:PNDTCDelayTimer}
+\RequirementTag{SDD_PNC}{085}
+\\
+SUM_PNC implements a decrementing timer \textit{SUM_PN_DTC_TIMER<n>} for each configured PN.
+\\
+\Satisfies{SRS_PNC 080} \Satisfies{SRS_PNC 081} \Satisfies{SRS_PNC 082}
+\\
+\\
+\RequirementTag{SDD_PNC}{086}
+\\
+The default value of this timer is read from \textit{SUM_PN_DTC_TIMER<n>} calibration parameter.
+\Satisfies{SRS_PNC 056}
+
+\RequirementTag{SDD_PNC}{087}
+\\
+SUM_PNC sets the timer to the default value on ECU start up and on deactivation of the associated PN.
+\\
+\Satisfies{SRS_PNC 080}
+\\
+\RequirementTag{SDD_PNC}{105}
+\\
+SUM_PNC shall set the SUM_PN_DTC_TIMER to default value when SUM_PN_DM_Timer expires.
+\\
+{\Satisfies{SRS_PNC 102}}
+\\
+\RequirementTag{SDD_PNC}{106}
+\\
+When SUM_PNC transitions out of PNC_DM_INACTIVE sub state and CanNmPnResetTime is not expired yet, SUM_PN_DTC_TIMER shall be started and PN_DTC_Allowed Interface shall be set to 2.
+\\
+\Satisfies{SRS_PNC 103}
+\\
+\RequirementTag{SDD_PNC}{088}
+\\
+SUM_PNC starts the timer for a PN when the PN state is either PNC_LOCALLY_ACTIVE or PNC_REMOTELY_ACTIVE.
+\\
+\Satisfies{SRS_PNC 081}
+\\
+\RequirementTag{SDD_PNC}{089}
+\\
+SUM_PNC stops decrementing the timer for a PN and resets it to the default value when the PN state exits from PNC_LOCALLY_ACTIVE or PNC_REMOTELY_ACTIVE states.
+\\
+\Satisfies{SRS_PNC 082}
+
+\RequirementTag{SDD_PNC}{090}
+\\
+For each decrementing timer \textit{SUM_PN_DTC_TIMER<n>} SUM_PNC creates and associates an output port of the S/R interface \textit{PN_DTC_Allowed<n>}. 
+The output parameter of such port interface can assume any of the following values:
+
+\begin{itemize}
+	\item 0 = DTC not allowed for the particular PN;
+	\item 1 = DTC allowed for the particular PN;
+	\item 2 = DTC might be allowed for the particular PN
+\end{itemize}
+	
+\Satisfies{SRS_PNC 086} \Satisfies{SRS_PNC 087}
+\\
+\RequirementTag{SDD_PNC}{091}
+\\
+When the timer for a particular PN reaches zero, SUM_PNC shall set the \textit{PN_DTC_Allowed<n>} port interface to 1 (DTC Allowed for this PN).
+\Satisfies{SRS_PNC 083}
+\\
+\RequirementTag{SDD_PNC}{092}
+\\
+When the value of the timer for a particular PN is equal to the default value, SUM_PNC shall set the \textit{PN_DTC_Allowed<n>} port interface to 0 (DTC Not Allowed for this PN).
+\Satisfies{SRS_PNC 084}
+\\
+\RequirementTag{SDD_PNC}{093}
+\\
+When the timer for a particular PN is decrementing, SUM_PNC shall set the \textit{PN_DTC_Allowed<n>} port interface to 2 (PN Timer Decrementing).
+\\
+\Satisfies{SRS_PNC 085}
+
+\section{Wakeup Reason Tracking}
+\label{sec:WakeupReasonTracking}
+\RequirementTag{SDD_PNC}{122}
+\\
+SUM\_PNC maintains activation history buffers for both local and remote partial network activation sources. This information is forwarded to SUSD via the \code{SUSD\_PNC\_UpdateRecord} interface to populate the Wakeup Reason DID (DID E0D7).
+
+{\Satisfies{SRS\_PNC 107} \Satisfies{SRS\_PNC 108}}
+
+\subsection{Local Activation History}
+\RequirementTag{SDD_PNC}{123}
+\\
+For each PN, SUM\_PNC maintains a per-PN buffer \code{SUM\_PNC\_LocalActReason[n][]} (capacity: \code{SUM\_PNC\_MAX\_SENSORS} entries) containing the enumerated names of all currently active local sources (sensors and application signals share a unified list). The variable \code{SUM\_PNC\_LocalActReasonCount[n]} tracks how many sources are active for each PN, and \code{SUM\_PNC\_Local\_WR[n]} holds the primary wakeup reason (the first/head entry of the active list).
+\\
+\begin{itemize}
+  \item When a sensor or signal becomes active, its identifier is appended to the buffer via \code{SUM\_PNC\_Update\_LocalActivation\_History()}, and \code{SUM\_PNC\_Local\_WR[n]} is set to the head of the list.
+  \item When a source becomes inactive, it is removed via \code{SUM\_PNC\_Update\_LocalDeactivation\_History()}, and \code{SUM\_PNC\_Local\_WR[n]} is updated to the next remaining head, or set to \code{SUM\_PNC\_WR\_UNSET} (0xFF) if the list empties.
+\end{itemize}
+
+{\Satisfies{SRS\_PNC 107}}
+
+\subsection{Remote Activation History}
+\RequirementTag{SDD_PNC}{124}
+\\
+SUM\_PNC maintains a sorted ascending list \code{SUM\_PNC\_NM\_ActReason[]} of active remote PN names derived from received NM frames. The variable \code{SUM\_PNC\_NM\_WR} holds the minimum (lowest) active PN name in the list, which is the current remote wakeup reason.
+\\
+\begin{itemize}
+  \item When a PN bit becomes active in a received NM frame and the activation is new (i.e.\ criterion was previously cleared), the PN's \code{PN\_Name} is inserted into the sorted list via \code{SUM\_PNC\_Update\_NM\_Activation\_History()}, and \code{SUM\_PNC\_NM\_WR} is set to the list minimum.
+  \item When a PN bit becomes inactive, the PN name is removed via \code{SUM\_PNC\_Update\_NM\_Deactivation\_History()}. If other PNs remain active, \code{SUM\_PNC\_NM\_WR} is updated to their minimum. If no PNs remain active, \code{SUM\_PNC\_NM\_WR} retains the minimum of those just deactivated, preserving the last known remote activation reason.
+\end{itemize}
+
+{\Satisfies{SRS\_PNC 107}}
+
+\subsection{SUSD Record Info Dispatch}
+\RequirementTag{SDD_PNC}{125}
+\\
+\code{SUM\_PNC\_SUSD\_RecordInfo\_Update()} is called from both the main function (for local activation) and the NM callback (for remote activation). It evaluates two RID categories defined by the SPM record identification scheme:
+
+\begin{description}
+  \item \code{LOC\_DIAG\_PN} (0x25, \code{SPM\_PNC\_LOC\_DIAG\_RID}) Aggregates all PNs currently in \code{PNC\_LOCALLY\_ACTIVE} mode. The wakeup reason (\code{RWR}) is the \code{SUM\_PNC\_Local\_WR} of a newly-activated PN during the current evaluation cycle, or the \code{SUM\_PNC\_Local\_WR} of the first found locally active PN otherwise.
+  \item \code{REMOTE\_PN} (0x02, \code{SPM\_PNC\_REMOTE\_RID}) Aggregates all PNs where \code{SUM\_PNC\_Criteria\_NM\_Act\_Remote} is TRUE (accounts for PNs that remain remotely activated even after DM timer expiry). The wakeup reason is \code{SUM\_PNC\_NM\_WR} (minimum active remote PN name).
+\end{description}
+
+Change detection is performed by \code{SUM\_PNC\_Handle\_RecordInfo\_Update()}: SUSD is notified via \code{SUSD\_PNC\_UpdateRecord} only when the \code{RWR} value or the \code{state} field changes compared to the previous evaluation. This avoids redundant SUSD calls.
+
+{\Satisfies{SRS\_PNC 107} \Satisfies{SRS\_PNC 108}}
+
+\section{Boot loading procedure}
+<N/A>
+
+\section{Failure handling strategy}
+
+\begin{itemize}
+	\item In case of inactivity of an PN, the interface to SUSD determines execution of SUM_PNC
+	\item Also interface to other SUMs like SOH, ERRH is notified by SUM_PNC in case of inactivity or unexpected error.
+\end{itemize}
+
+\section{Critical timing constraints}
+<N/A>
+
+\section{Tasks management}
+
+\begin{itemize}
+	\item Assumed that this Module is not a safety critical module as we are using EXPLICIT non-queued communications.
+\end{itemize}
+
+\subsection{Periodic Runnable}
+\label{subsec:periodic}
+Periodic runnables can be of two types:
+
+\begin{enumerate}
+	\item Fixed periodicity that cannot be configured;
+	\item Fixed periodicity that can be configured via configuration parameter;
+\end{enumerate}
+\RequirementTag{SDD_PNC}{102}
+\\
+For the second ones their periodicity can be expressed as a real number and it shall be considered as a time value in microseconds, with the exception of runnable \textit{Runnable_Pnc_Init} where it shall be considered as a time value in milliseconds.
+\\
+\Satisfies{SRS_PNC 098}
+
+\subsubsection{\textit{Runnable_Pnc_Init}}
+
+\RequirementTag{SDD_PNC}{100}
+\\
+\RunnableTriggered{Runnable_Pnc_Init}
+{Timing Event}
+{NA}
+{NA}
+{PN_DTC_Allowed}
+{NA}
+{void}
+{The periodic runnable, whose periodicity is configured in the \textit{PncInitFuncPeriodicity} parameter, calls the initialization function SUM_PNC_Init() only the first time it is invoked. This runnable exists \textbf{if and only if} the configuration parameter \textit{GeneratePncInitRunnable} is TRUE, otherwise the user shall call the initialization function SUM_PNC_Init() in the BswM initialization action}
+\\
+\Satisfies{SRS_PNC 097}
+\subsubsection{\textit{SUM_PNC_MainFunction}}
+\RequirementTag{SDD_PNC}{008}
+
+\RunnableFixed{SUM_PNC_Mainfunction}
+{Configured via \code{PNC_t_MainFunction_Periodicity}}
+{NA}
+{SUSD_PNC_PermitExecution \newline DIAG_DisableNormalComm \newline ActivationSensor<n> \newline ActivationSignal<n>}
+{PNC_ActiveTxPDUEnable<n> \newline PNC_ActiveRxPDUEnable<n> \newline PNC_BswM_CurrentPNCModeReq \newline PNC_BswMPduGroupSwitchReq \newline PN_DTC_Allowed<n>}
+{NA}
+{void}
+{Manages status of all the PNs which ECU is part of}
+
+{\Satisfies{SRS_PNC 022} \Satisfies{SRS_PNC005} \Satisfies{SRS_PNC 006} \Satisfies{SRS_PNC 016} \Satisfies{SRS_PNC 017} \Satisfies{SRS_PNC 024} \Satisfies{SRS_PNC 025} \Satisfies{SRS_PNC 026} \Satisfies{SRS_PNC 030} \Satisfies{SRS_PNC 033} \Satisfies{SRS_PNC 034} \Satisfies{SRS_PNC 042}
+\Satisfies{SRS_PNC 043} \Satisfies{SRS_PNC 019} \Satisfies{SRS_PNC 044} \Satisfies{SRS_PNC 056}}
+
+\subsubsection{\textit{Activation_Signal_In}}
+\RequirementTag{SDD_PNC}{009}
+
+\RunnableFixed{Activation_Signal_In}
+{Configured via \code{PNC_t_RemoteSignals_Periodicity}}
+{NA}
+{ActivationSignal<n> \newline ActivationSignalStatus<n>}
+{NA}
+{NA}
+{void}
+{This runnable reads application signal activation criteria and the corresponding signal status, evaluating both per signal to determine the combined local activation criterion (\code{SUM\_PNC\_Criteria\_Signal\_Act}). It helps in setting the PNC mode.}
+
+{\Satisfies{SRS_PNC 020}}
+
+\subsubsection{\textit{Activation_Sensor}}
+\RequirementTag{SDD_PNC}{011}
+
+\RunnableFixed{Activation_Sensor}
+{50ms}
+{ \textit{in} \hspace*{1.5in} \vrule \hspace*{0.1in} Activation_Criteria_out}
+{ActivationSensor<n>}
+{NA}
+{NA}
+{void}
+{This runnable provides the activation criteria from Signals that are read by a Sensor SW-C, local to the ECU.}
+
+{\Satisfies{SRS_PNC 020}}
+
+\subsubsection{\textit{Shutdown_Permission_SUSD}}
+\RequirementTag{SDD_PNC}{012}
+
+\RunnableFixed{Shutdown_permission_SUSD}
+{50ms}
+{NA}
+{NA}
+{PNC_SUSD_ShutdownPermission}
+{NA}
+{void}
+{This runnable manages the ShutdownPermission interface port connected to SUM_SUSD. If at least one PN is active, then SUM_PNC sets the status of ShutdownPermission to disabled (0 to 3). If no PNs are active, then SUM_PNC sets the status of ShutdownPermisison to enabled (0xFF).}
+
+{\Satisfies{SRS_PNC 013} \Satisfies{SRS_PNC 063}}
+
+\subsubsection{\textit{PNC_BswM_ComM_Pdugroupswitch_RxReq}}
+\RequirementTag{SDD_PNC}{014}
+
+\RunnableFixed{PNC_BswM_ComM_Pdugroupswitch_RxReq}
+{50ms}
+{\textit{in} \hspace*{1.5in} \vrule \hspace*{0.1in} Arg_PduGroup_State}
+{PNC_BswMPduGroupSwitchReq}
+{NA}
+{NA}
+{Std_ReturnType}
+{This runnable Writes PduGroupRX_State to SUM_SSFM}
+
+{\Satisfies{SRS_PNC 014} \Satisfies{ SRS_PNC 022}}
+
+\subsubsection{\textit{PNC_Active_TxPDU_Enable}}
+\RequirementTag{SDD_PNC}{015}
+
+\RunnableFixed{PNC_Active_TxPDU_Enable}
+{50ms}
+{ \textit{in} \hspace*{1.5in} \vrule \hspace*{0.1in} ATxPDUEnable}
+{PNC_ActiveTxPduEnable<n>}
+{NA}
+{ NA}
+{Std_ReturnType}
+{This runnable Sends Notification from SUM_PNC that Tx PDU groups for PN<n> are transmitting signals.}
+
+{\Satisfies{SRS_PNC 026}}
+
+\subsubsection{\textit{PNC_Active_RxPDU_Enable}}
+\RequirementTag{SDD_PNC}{016}
+
+\RunnableFixed{PNC_Active_RxPDU_Enable}
+{50ms}
+{ \textit{in} \hspace*{1.5in} \vrule \hspace*{0.1in} ARxPDUEnable}
+{PNC_ActiveRxPduEnable<n>}
+{NA}
+{ NA}
+{Std_ReturnType}
+{This runnable Sends Notification from SUM_PNC that Rx PDU groups for PN<n> are started/stopped.}
+
+{\Satisfies{SRS_PNC 036} \Satisfies{SRS_PNC 038}}
+
+\subsubsection{\textit{PNC_BswM_ComM_Current_PNC_ModeUSer}}
+\RequirementTag{SDD_PNC}{017}
+
+\RunnableFixed{PNC_BswM_ComM_Current_PNC_ModeUSer}
+{Mode Switch Event}
+{\textit{in} \hspace*{1.5in} \vrule \hspace*{0.1in} NA}
+{PNC_BswM_CurrentPNCModeUser<n>}
+{NA}
+{NA}
+{PNC_State}
+{The port type is Mode user where bswM is P port and SUM_PNC is R Port. This runnable receives the status of the current PNC mode from Bswm.}
+
+{\Satisfies{SRS_PNC 023} \Satisfies{SRS_PNC 018}}
+
+\subsubsection{\textit{PNC_ComM_Current_ModeUSer}}
+\RequirementTag{SDD_PNC}{018}
+
+\RunnableFixed{PNC_ComM_Current_ModeUSer}
+{Mode Switch Event}
+{ \textit{in} \hspace*{1.5in} \vrule \hspace*{0.1in} NA}
+{PNC_ComM_CurrentModeUser <n>}
+{NA}
+{NA}
+{ComMChannel_State}
+{The port type is Mode user where bswM is P port and SUM_PNC is R Port. This runnable receives the status of the current communication channels<n> of the ECu  via BswM_ComMCurrentMode.}
+
+{\Satisfies{SRS_PNC 023}}
+
+\subsubsection{\textit{PNC_BswM_ComM_CurrentPNCMode_Req}}
+\RequirementTag{SDD_PNC}{019}
+
+\RunnableFixed{PNC_BswM_Current_PNC_Mode_Req}
+{Mode Switch Event}
+{\textit{in} \hspace*{1.5in} \vrule \hspace*{0.1in} Arg_Current_PNC_State}
+{PNC_BswM_CurrentPNCModeReq <n>}
+{NA}
+{NA}
+{Std_ReturnType}
+{The port type is Mode requester where SUM_PNC is P port and BswM is R Port. This runnable request for activation/ deactivation of PN<n>}
+
+{\Satisfies{SRS_PNC 022} \Satisfies{SRS_PNC 018}}
+
+\subsection{Event-Triggered Runnable}
+\label{subsec:EventTriggeredRunnable}
+
+\subsubsection{\textit{PNC_DataServicesPN_DID_F08B_Info_Local}}
+\RequirementTag{SDD_PNC}{058}
+
+\RunnableTriggered{PNC_DataServicesPN_DID_F08B_Info_Local}
+{Operation invoked event}
+{\textit{in} \hspace*{1.45in} \vrule \hspace*{0.1in} OpStatus \newline \textit{in/out} \hspace*{1.2in} \vrule \hspace*{0.1in} Data}
+{DataServices<PNC>Data<n>}
+{NA}
+{NA}
+{Std_ReturnType}
+{The port type is Client/Server where SUM_PNC is P port and DcM is R Port. This runnable requests DID getting information on ECU operating state in case of Local activation. This runnable is Conditional: if ECU type does not prevent the DIDs, runnable shall be defined}
+
+{\Satisfies{SRS_PNC 057} \Satisfies{SRS_PNC 054} \Satisfies{SRS_PNC 105}}
+
+\subsubsection{\textit{PNC_DataServicesPN_DID_F08B_Info_Local_CheckRead}}
+\RequirementTag{SDD_PNC}{059}
+
+\RunnableTriggered{PNC_DataServicesPN_DID_F08B_Info_Local_CheckRead}
+{Operation invoked event}
+{\textit{in/out} \hspace*{1.2in} \vrule \hspace*{0.1in} OpStatus \newline \textit{in/out} \hspace*{1.2in} \vrule \hspace*{0.1in} ErrorCode}
+{DataServices<PNC>Data<n>}
+{NA}
+{NA}
+{Std_ReturnType}
+{The port type is Client/Server where SUM_PNC is P port and DcM is R Port. This runnable requests DID for getting information on Condition Check Read of ECU Operating State in case of Local activation. This runnable is Conditional: if ECU type does not prevent the DIDs, runnable shall be defined}
+
+{\Satisfies{SRS_PNC 057} \Satisfies{SRS_PNC 105}}
+
+\subsubsection{\textit{PNC_DataServicesPN_DID_F08D_Info_Remote}}
+\RequirementTag{SDD_PNC}{060}
+
+\RunnableTriggered{PNC_DataServicesPN_DID_F08D_Info_Remote}
+{Operation invoked event}
+{\textit{in} \hspace*{1.2in} \vrule \hspace*{0.1in} OpStatus \newline \textit{in/out} \hspace*{0.95in} \vrule \hspace*{0.1in} Data}
+{DataServices<PNC>Data<n>}
+{NA}
+{NA}
+{Std_ReturnType}
+{The port type is Client/Server where SUM_PNC is P port and DcM is R Port. This runnable requests DID for getting information of ECU Operating State in case of remote activation. This runnable is Conditional: if ECU type does not prevent the DIDs, runnable shall be defined}
+
+{\Satisfies{SRS_PNC 059} \Satisfies{SRS_PNC 054} \Satisfies{SRS_PNC 105}}
+
+\subsubsection{\textit{PNC_DataServicesPN_DID_F08D_Info_Remote_CheckRead}}
+\RequirementTag{SDD_PNC}{061}
+
+\RunnableTriggered{PNC_DataServicesPN_DID_F08D_Info_Remote_CheckRead}
+{Operation invoked event}
+{\textit{in/out} \hspace*{1.2in} \vrule \hspace*{0.1in} OpStatus \newline \textit{in/out} \hspace*{1.2in} \vrule \hspace*{0.1in} ErrorCode}
+{DataServices<PNC>Data<n>}
+{NA}
+{NA}
+{Std_ReturnType}
+{The port type is Client/Server where SUM_PNC is P port and DcM is R Port. This runnable requests DID for getting information on Condition Check Read of ECU Operating State in case of remote activation. This runnable is Conditional: if ECU type does not prevent the DIDs, runnable shall be defined}
+
+{\Satisfies{SRS_PNC 059} \Satisfies{SRS_PNC 105}}
+
+\subsection{Private Functions}
+
+\subsubsection{\textit{SUM_PNC_Init}}
+
+\RequirementTag{SDD_PNC}{020}
+
+\Function{SUM_PNC_Init}
+{NA}
+{NA}
+{NA}
+{void}
+{Initialization function for PNC module}
+
+{\Satisfies{SRS_PNC 017} \Satisfies{SRS_PNC 001}}
+\\
+\\
+\RequirementTag{SDD_PNC}{070}
+\\
+All SUM_PN<n>_DM_Timers are set to default value – configured with SUM_PN_DM_Timer parameter – as part of SUM_PNC Initialization sequence.
+\\
+{\Satisfies{SRS_PNC 065}}
+
+\subsubsection{\textit{Set_Alarm}}
+
+\Function{ Set_Alarm}
+{\code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} Alarm_Value \newline \code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} PNC_Number}
+{NA}
+{NA}
+{void}
+{Handles the timer functionalities}
+
+\subsubsection{\textit{Permit_Execution}}
+\RequirementTag{SDD_PNC}{021}
+
+\Function{Permit_Execution_SUSD}
+{NA}
+{NA}
+{NA}
+{boolean}
+{8 bit data received from SUM_SUSD, the wakeup bit of this value is compared with configured PNC_PermitExecution_Mask, if the wakeup bit is set, this function returns the permit execution permission as enabled else permit execution permission denied.}
+
+{\Satisfies{SRS_PNC 008} \Satisfies{SRS_PNC 010} \Satisfies{SRS_PNC 011} \Satisfies{SRS_PNC 009}}
+
+\subsubsection{\textit{Get_DIAG_DisableNormalComM}}
+\RequirementTag{SDD_PNC}{022}
+
+\Function{Get_DIAG_DisableNormalCommunicationMode}
+{NA}
+{NA}
+{NA}
+{boolean}
+{This function receives the mode status from SUM_DIAG. If the Disable normal communication is ON, SUM_PNC will enable normal communication for each channel. If the Disable Normal communication is OFF, SUM_PNC will disable normal communication for each channel.}
+
+{\Satisfies{SRS_PNC 025}}
+
+\subsubsection{\textit{PNC_Update_Local_Remote_DID_Bits}}
+
+\Function{PNC_Update_Local_Remote_DID_Bits}
+{NA}
+{NA}
+{NA}
+{NA}
+{This Function is for setting the DID bits to indicate remote activation/Local activation of PNs in NM PU frame}
+
+\subsubsection{\textit{Status_PNC_Enable_Check}}
+
+\RequirementTag{SDD_PNC}{023}
+
+\Function{Status_PNC_Enable_Check}
+{NA}
+{NA}
+{NA}
+{void}
+{This Function is for handling PNC_ENABLE_CHECK state of PNC State chart}
+
+{\Satisfies{SRS_PNC 038}}
+
+\subsubsection{\textit{Status_PNC_Monitor_Activation}}
+
+\RequirementTag{SDD_PNC}{024}
+
+\Function{Status_PNC_Monitor_Activation}
+{NA}
+{NA}
+{NA}
+{void}
+{This Function is for handling PNC_MONITOR_ACTIVATION state of PNC State chart}
+
+{\Satisfies{SRS_PNC 031} \Satisfies{SRS_PNC 032}}
+
+\subsubsection{\textit{Status_PNC_Ack_Activation}}
+\RequirementTag{SDD_PNC}{025}
+
+\Function{Status_PNC_Ack_Activation}
+{NA}
+{NA}
+{NA}
+{void}
+{This Function is for handling PNC_ACK_ACTIVATION state of PNC State chart}	
+
+{\Satisfies{SRS_PNC 032} \Satisfies{SRS_PNC 033} \Satisfies{SRS_PNC 034}}
+
+\subsubsection{\textit{Status_PNC_Tx_Enable}}
+\label{subsec:statuspnctxenable}
+\RequirementTag{SDD_PNC}{026}
+
+\Function{Status_PNC_Tx_Enable}
+{NA}
+{NA}
+{NA}
+{void}
+{This Function is for handling PNC_TX_ENABLE state of PNC State chart}	
+
+When the PDU group is activated, after the PN reactivation, 
+the single PDUs shall be disabled since activation of the PDU group activates the single PDUs as well.   
+
+{\Satisfies{SRS_PNC 035} \Satisfies{SRS_PNC 036} \Satisfies{SRS_PNC 038} \Satisfies{SRS_PNC 100} \Satisfies{SRS_PNC 101}}
+
+\subsubsection{\textit{Status_PNC_Locally_Active}}
+\RequirementTag{SDD_PNC}{027}
+
+\Function{Status_PNC_Locally_Active}
+{NA}
+{NA}
+{NA}
+{void}
+{This Function is for handling PNC_LOCALLY_ACTIVE state of PNC State chart}
+
+{\Satisfies{SRS_PNC 037} \Satisfies{SRS_PNC 041}}
+
+\subsubsection{\textit{Status_PNC_Remotely_Active}}
+
+\RequirementTag{SDD_PNC}{028}
+
+\Function{Status_PNC_Remotely_Active}
+{NA}
+{NA}
+{NA}
+{void}
+{This Function is for handling PNC_REMOTEY_ACTIVE state of PNC State chart}
+
+{\Satisfies{SRS_PNC 039} \Satisfies{SRS_PNC 040}}
+\\
+\\
+\RequirementTag{SDD_PNC}{071}
+\\
+SUM_PN<n>_DM_Timer is disabled, i.e. the timer state is set to PNC_DM_ACTIVE, when the PN exits PNC_REMOTELY_ACTIVE state.
+\\
+{\Satisfies{SRS_PNC 066}}
+\\
+\\
+\RequirementTag{SDD_PNC}{084}
+\\
+SUM_PNC invokes COM_ReceptionDMControl API on exit from PNC_REMOTELY_ACTIVE sub-state to enable deadline monitoring for the associated Rx PDU groups for PN<n> due to local activation of the PN.
+\\
+{\Satisfies{SRS_PNC 079} \Satisfies{SRS_PNC 064}}
+
+
+\subsubsection{\textit{PNC_NM_Frame_Indication}}
+
+\Function{PNC_NM_Frame_Indication}
+{\code{NetworkHandleType} \hspace*{1.5in} \vrule \hspace*{0.1in} NetworkHandle}
+{NA}
+{NA}
+{void}
+{This function implements the NM callback needed for deadline monitoring. Sets the timer of requested PN by the PN Coordinator ECU}
+\\
+\\
+\RequirementTag{SDD_PNC}{073}
+\\
+SUM_PNC implements the callback PNC_NM_Frame_Indication to be called by the Nm module when an NM frame is received by the ECU. This callback allows to determine the Partial Network status for all PNs supported by the individual ECU.
+\\
+{\Satisfies{SRS_PNC 068} \Satisfies{SRS_PNC 074}}
+\\
+\\
+\RequirementTag{SDD_PNC}{074}
+\\
+In the context of the callback PNC_NM_Frame_Indication, SUM_PNC evaluates the ECUID associated with SUM_PN_Coordinator_Node ID.
+\\
+{\Satisfies{SRS_PNC 069} \Satisfies{SRS_PNC 075}}
+\\
+\\
+\RequirementTag{SDD_PNC}{075}
+\\
+SUM_PNC evaluates individual partial network Identifier Bits (Bytes 2-7) extracted through CanNm_GetPduData API to determine if individual PNs relevant for the ECU is requested to be active. For ECUs supporting Partial Networking on Ethernet bus, SUM_PNC shall use UdpNm_GetPduData interface from UdpNm for obtaining the status information associated with each individual partial network.
+\\
+{\Satisfies{SRS_PNC 070} \Satisfies{SRS_PNC 076} \Satisfies{SRS_PNC 098}}
+\\
+\\
+\RequirementTag{SDD_PNC}{076}
+\\
+Every time an individual partial network Identifier Bits (Bytes 2-7) indicates PN bit to be active (remotely active PN) SUM_PNC shall:
+\begin{itemize}
+  \item Resets the deadline monitoring timer to its default configured value.
+  \item For non-IDS PNs only (PN name configured and non-zero):
+  \begin{itemize}
+    \item Sets the NM remote activation criterion to flag the PN as remotely active.
+    \item If this is a new activation (i.e.\ the criterion was previously cleared), records the wakeup reason and updates the NM activation history.
+    \item Marks a new remote activation event for the PN.
+  \end{itemize}
+\end{itemize}
+
+When an NM frame indicates a PN bit as inactive, SUM\_PNC clears the NM remote activation criterion for that PN and updates the wakeup reason as follows:
+\begin{itemize}
+  \item If one or more other PNs remain remotely active, the wakeup reason is set to the minimum active PN name.
+  \item If no PNs remain remotely active, the wakeup reason is set to the minimum PN name among those that just deactivated, preserving the last known remote activation.
+\end{itemize}
+
+{\Satisfies{SRS_PNC 071}}
+
+
+\subsubsection{\textit{PNC_DeadlineMonitoring}}
+
+\Function{PNC_DeadlineMonitoring}
+{ \code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} PN_index}
+{NA}
+{NA}
+{void}
+{Function that implements the deadline monitoring FSM.}
+
+
+
+\RequirementTag{SDD_PNC}{072}
+\\
+SUM_PN<n>_DM_Timer is enabled when the PN enters the PNC_DM_ACTIVE state.
+\\
+\Satisfies{SRS_PNC 067}
+\\
+\\
+\RequirementTag{SDD_PNC}{077}
+\\
+SUM_PNC transitions from PNC_DM_ACTIVE sub state to PNC_DM_INACTIVE sub state on expiry of the SUM_PN<n>_DM_Timer for PN<n>.
+\\
+\Satisfies{SRS_PNC 072}
+\\
+\\
+\RequirementTag{SDD_PNC}{078}
+\\
+SUM_PNC invokes COM_ReceptionDMControl on entry into PNC_DM_INACTIVE sub state mode request to disable deadline monitoring for the associated Rx PDU groups for PN<n>.
+\\
+\Satisfies{SRS_PNC 073}
+\\
+\\
+\RequirementTag{SDD_PNC}{082}
+\\
+SUM_PNC transitions from PNC_DM_INACTIVE sub state to PNC_DM_ACTIVE sub state on determination that an individual partial network Identifier Bits (Bytes 2-7) PN bit transitions from inactive to active.
+\\
+{\Satisfies{SRS_PNC 077}}
+\\
+\\
+\RequirementTag{SDD_PNC}{083}
+\\
+SUM_PNC invokes COM_ReceptionDMControl on exit from PNC_DM_INACTIVE sub state mode request to enable deadline monitoring for the associated Rx PDU groups for PN<n>
+\\
+{\Satisfies{SRS_PNC 078}}
+\\
+\\
+
+\subsubsection{\textit{Check_DTC_Allowed_Timer}}
+
+\Function{Check_DTC_Allowed_Timer}
+{NA}
+{NA}
+{NA}
+{NA}
+{Function that implements the PNC DTC Timer FSM.}
+
+\subsubsection{\textit{PNC_BswM_ComM_Pdugroupswitch_TxReq}}
+\RequirementTag{SDD_PNC}{013}
+
+	\Function{PNC_BswM_ComM_Pdugroupswitch_TxReq}
+	{ \code{PduGroup_State}}
+	{NA}
+	{NA}
+	{Std_ReturnType}
+	{Function that writes PduGroupTX_State to BswM.}
+
+{\Satisfies{SRS_PNC 015} \Satisfies{SRS_PNC 022} \Satisfies{SRS_PNC 030}}
+
+\subsubsection{\textit{SUM\_PNC\_SUSD\_RecordInfo\_Update}}
+\RequirementTag{SDD_PNC}{126}
+
+\Function{SUM\_PNC\_SUSD\_RecordInfo\_Update}
+{\code{RID\_Enum} \hspace*{1.5in} \vrule \hspace*{0.1in} RID}
+{NA}
+{NA}
+{void}
+{Main dispatcher for SUSD wakeup reason record info updates. Evaluates the active state and wakeup reason for the given RID category (LOC\_DIAG\_PN or REMOTE\_PN) via \code{SUM\_PNC\_Handle\_Generic\_RID\_Logic()}, then calls \code{SUM\_PNC\_Handle\_RecordInfo\_Update()} to conditionally notify SUSD via \code{SUSD\_PNC\_UpdateRecord} only when the record changes.}
+
+{\Satisfies{SRS\_PNC 107} \Satisfies{SRS\_PNC 108}}
+
+\subsubsection{\textit{SUM\_PNC\_Handle\_RecordInfo\_Update}}
+\RequirementTag{SDD_PNC}{127}
+
+\Function{SUM\_PNC\_Handle\_RecordInfo\_Update}
+{\code{RID\_Enum} \hspace*{1.5in} \vrule \hspace*{0.1in} RID \newline
+ \code{RecordIdType} \hspace*{1.2in} \vrule \hspace*{0.1in} CurrentRecord \newline
+ P2VAR(\code{RecordIdType}) \hspace*{0.8in} \vrule \hspace*{0.1in} PreviousRecordIdInfo}
+{NA}
+{NA}
+{void}
+{Change-detection wrapper. Compares the current \code{RecordIdType} (RWR value and state) against the previously stored value. Only invokes the SUSD \code{UpdateRecord} RTE call when a change is detected, preventing redundant SUSD notifications.}
+
+{\Satisfies{SRS\_PNC 107} \Satisfies{SRS\_PNC 108}}
+
+\subsubsection{\textit{SUM\_PNC\_Handle\_Generic\_RID\_Logic}}
+\RequirementTag{SDD_PNC}{128}
+
+\Function{SUM\_PNC\_Handle\_Generic\_RID\_Logic}
+{\code{RID\_Enum} \hspace*{1.5in} \vrule \hspace*{0.1in} RID \newline
+ \code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} Count \newline
+ P2VAR(\code{RecordIdType}) \hspace*{0.8in} \vrule \hspace*{0.1in} RecordIdInfo}
+{NA}
+{NA}
+{void}
+{Aggregates active PNs for the given RID category. For LOC\_DIAG\_PN: iterates all PNs in \code{PNC\_LOCALLY\_ACTIVE} mode and selects the wakeup reason from the newly-activated PN (if any transition occurred) or from the first locally active PN. For REMOTE\_PN: iterates all PNs with \code{SUM\_PNC\_Criteria\_NM\_Act\_Remote} TRUE and sets the wakeup reason to \code{SUM\_PNC\_NM\_WR}.}
+
+{\Satisfies{SRS\_PNC 107}}
+
+\subsubsection{\textit{SUM\_PNC\_AnyPnActive\_Update}}
+\RequirementTag{SDD_PNC}{129}
+
+\Function{SUM\_PNC\_AnyPnActive\_Update}
+{\code{RID\_Enum} \hspace*{1.5in} \vrule \hspace*{0.1in} RID \newline
+ \code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} PN\_Index \newline
+ \code{boolean} \hspace*{1.5in} \vrule \hspace*{0.1in} IsNewActivation \newline
+ P2VAR(\code{RecordIdType}) \hspace*{0.8in} \vrule \hspace*{0.1in} RecordIdInfo}
+{NA}
+{NA}
+{void}
+{Finalizes the \code{RecordIdType} state for a single PN contribution. Sets \code{state = TRUE} and prioritises the wakeup reason of a newly-activated PN over a previously active one, ensuring the most recent activation source is reported first.}
+
+{\Satisfies{SRS\_PNC 107}}
+
+\subsubsection{\textit{SUM\_PNC\_Update\_LocalActivation\_History}}
+\RequirementTag{SDD_PNC}{130}
+
+\Function{SUM\_PNC\_Update\_LocalActivation\_History}
+{\code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} SourceId \newline
+ \code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} PN\_Index}
+{NA}
+{NA}
+{void}
+{Appends an active local activation source (sensor or signal, identified by its enumerated name) to the per-PN history buffer \code{SUM\_PNC\_LocalActReason[PN\_Index]}. Updates \code{SUM\_PNC\_LocalActReasonCount[PN\_Index]} and sets \code{SUM\_PNC\_Local\_WR[PN\_Index]} to the head (first active entry). No-operation if the buffer is full (\code{SUM\_PNC\_MAX\_SENSORS} limit reached).}
+
+{\Satisfies{SRS\_PNC 107}}
+
+\subsubsection{\textit{SUM\_PNC\_Update\_LocalDeactivation\_History}}
+\RequirementTag{SDD_PNC}{131}
+
+\Function{SUM\_PNC\_Update\_LocalDeactivation\_History}
+{\code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} SourceId \newline
+ \code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} PN\_Index}
+{NA}
+{NA}
+{void}
+{Removes a deactivated local source from the per-PN history buffer. After removal, updates \code{SUM\_PNC\_LocalActReasonCount[PN\_Index]} and sets \code{SUM\_PNC\_Local\_WR[PN\_Index]} to the new head, or to \code{SUM\_PNC\_WR\_UNSET} (0xFF) if the list is now empty.}
+
+{\Satisfies{SRS\_PNC 107}}
+
+\subsubsection{\textit{SUM\_PNC\_Update\_NM\_Activation\_History}}
+\RequirementTag{SDD_PNC}{132}
+
+\Function{SUM\_PNC\_Update\_NM\_Activation\_History}
+{\code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} PN\_Name \newline
+ \code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} Count}
+{NA}
+{NA}
+{void}
+{Inserts the given PN name into the sorted ascending list \code{SUM\_PNC\_NM\_ActReason[]} and increments the count. Calls \code{SUM\_PNC\_MergeReasonIntoNMList()} for deduplication and capacity checking, then \code{SUM\_PNC\_SortReasonBuffer()} to maintain sort order. Sets \code{SUM\_PNC\_NM\_WR} to the minimum active PN name (list head).}
+
+{\Satisfies{SRS\_PNC 107}}
+
+\subsubsection{\textit{SUM\_PNC\_Update\_NM\_Deactivation\_History}}
+\RequirementTag{SDD_PNC}{133}
+
+\Function{SUM\_PNC\_Update\_NM\_Deactivation\_History}
+{\code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} PN\_Name \newline
+ \code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} Count}
+{NA}
+{NA}
+{void}
+{Removes the given PN name from \code{SUM\_PNC\_NM\_ActReason[]} and decrements the count. If one or more PNs remain active, \code{SUM\_PNC\_NM\_WR} is set to the new minimum. If the list becomes empty, \code{SUM\_PNC\_NM\_WR} retains the minimum of the just-deactivated PNs, preserving the last known remote activation reason until the next activation event.}
+
+{\Satisfies{SRS\_PNC 107}}
+
+\subsubsection{\textit{SUM\_PNC\_SortReasonBuffer}}
+\RequirementTag{SDD_PNC}{134}
+
+\Function{SUM\_PNC\_SortReasonBuffer}
+{P2VAR(\code{uint8}) \hspace*{1.1in} \vrule \hspace*{0.1in} Buffer \newline
+ \code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} Count}
+{NA}
+{NA}
+{void}
+{In-place ascending insertion sort of an array of PN names. Used to maintain the sorted order of \code{SUM\_PNC\_NM\_ActReason[]} after insertions, ensuring \code{SUM\_PNC\_NM\_WR} always points to the minimum active PN name.}
+
+{\Satisfies{SRS\_PNC 107}}
+
+\subsubsection{\textit{SUM\_PNC\_MergeReasonIntoNMList}}
+\RequirementTag{SDD_PNC}{135}
+
+\Function{SUM\_PNC\_MergeReasonIntoNMList}
+{\code{uint8} \hspace*{1.5in} \vrule \hspace*{0.1in} Reason}
+{NA}
+{NA}
+{void}
+{Appends a single PN name to \code{SUM\_PNC\_NM\_ActReason[]} with deduplication and capacity checking. If the entry is already present in the list or the list is at maximum capacity (\code{NUMBER\_OF\_PNC\_PARTIAL\_NETWORKS}), the function is a no-operation. Called from \code{SUM\_PNC\_Update\_NM\_Activation\_History()}.}
+
+{\Satisfies{SRS\_PNC 107}}
+
+\section{Detailed Design}
+
+\subsection{Macros}
+For macros detailed design please refer to Doxygen documentation. Main pAges are:
+
+\begin{itemize}
+	\item \href{./doxygen/html/group___shutdown___macros.html}{Shutdown macros (static code)}
+	\item \href{./doxygen/html/group___p_n___deactivation___macros.html}{Deactivation macros (static code)}
+	\item \href{./doxygen/html/group___alarm___macros.html}{Alarm macros (static code)}
+	\item \href{./doxygen/html/group___p_n_c___timer___macros.html}{Timer macros (static code)}
+	\item \href{./doxygen/html/group___configuration___macros.html}{Configuration Macros (dynamic code)}
+	\item \href{./doxygen/html/group___utilities.html}{Utilities}
+\end{itemize}
+\subsection{Data Types}
+
+\subsubsection{PNC_State}
+
+\RequirementTag{SDD_PNC}{031}
+
+	\input{generated/tables/DT_PNCState}
+
+{\Satisfies{SRS_PNC 045} \Satisfies{SRS_PNC 018}}
+
+\subsubsection{PNC_Modes} 
+\RequirementTag{SDD_PNC}{044}
+\input{generated/tables/DT_PNCModes}
+{\Satisfies{SRS_PNC 030} \Satisfies{SRS_PNC 035}}
+
+\subsubsection{PduGroup_State}
+\RequirementTag{SDD_PNC}{033}
+\input{generated/tables/DT_PduGroupState}
+{\Satisfies{SRS_PNC 047}}
+
+\subsubsection{ComMChannel_State}
+\RequirementTag{SDD_PNC}{032}
+\input{generated/tables/DT_comMChannelState}
+{\Satisfies{SRS_PNC 046}}
+
+\subsection{Structures}
+Please refer to the following pages of doxygen documentation:
+
+\begin{itemize}
+	\item \href{./doxygen/html/struct_p_n_c___struct___const_type.html}{Struct Const Type}
+	\item \href{./doxygen/html/struct_p_n_c___struct_type.html}{Struct Type}
+	\item \href{/doxygen/html/struct_p_n_c___channel_info___type.html}{Channel Info Type}
+\end{itemize}
+
+\section{Runtime Scenario}
+
+\subsection{Local Activation when ECU is asleep}
+\RequirementTag{SDD_PNC}{051}
+\\
+\textbf{Goal}: To understand the partial network activation triggered by local criteria (sensor, signal, or signal status inputs) when the ECU is asleep.\newline
+\textbf{Pre-Condition}: PNC is initialized, Also RTE and SCHM are initiated prior to PNC\newline 
+\textbf{Activities}: Follow the numbering to understand the sequence of activity.
+
+\UMLDiagram{generated/diagrams/actLocECUSleep}{}
+
+\Satisfies{SRS_PNC 020} \Satisfies{SRS_PNC 021} \Satisfies{SRS_PNC 022} 
+\Satisfies{SRS_PNC 023} \Satisfies{SRS_PNC 024}
+
+\subsection{Remote Activation when ECU is asleep}
+\RequirementTag{SDD_PNC}{052}\\
+\textbf{Goal}: To understand the partial network activation triggered by an NM frame received from the PN Coordinator Node when the ECU is asleep.\newline
+\textbf{Pre-Condition}: PNC is initialized, Also RTE and SCHM are initiated prior to PNC\newline
+\textbf{Activities}: Follow the numbering to understand the sequence of activity.
+
+\UMLDiagram{generated/diagrams/actRemoteECUSleep}{}
+
+\Satisfies{SRS_PNC 020} \Satisfies{SRS_PNC 021} \Satisfies{SRS_PNC 022}
+\Satisfies{SRS_PNC 023} \Satisfies{SRS_PNC 024}
+
+\subsection{Remote Activation when ECU is awake}
+\RequirementTag{SDD_PNC}{053}
+\\
+\textbf{Goal}: To understand the partial network activation triggered by an NM frame received from the PN Coordinator Node when the ECU is already awake.\newline
+\textbf{Pre-Condition}: PNC is initialized, Also RTE and SCHM are initiated prior to PNC\newline
+\textbf{Activities}: Follow the numbering to understand the sequence of activity.
+
+\UMLDiagram{generated/diagrams/actRemoteECUawake}{}
+
+\Satisfies{SRS_PNC 020} \Satisfies{SRS_PNC 021} \Satisfies{SRS_PNC 022}
+\Satisfies{SRS_PNC 023} \Satisfies{SRS_PNC 024}
+
+\subsection{Local Activation when ECU is awake}
+\RequirementTag{SDD_PNC}{054}
+\\
+\textbf{Goal}: To understand the partial network activation triggered by local criteria (sensor, signal inputs) when the ECU is already awake.\newline
+\textbf{Pre-Condition}: PNC is initialized, Also RTE and SCHM are initiated prior to PNC \newline
+\textbf{Activities}: Follow the numbering to understand the sequence of activity.
+
+\UMLDiagram{generated/diagrams/actLocECUawake}{}
+
+{\Satisfies{SRS_PNC 020} \Satisfies{SRS_PNC 021} \Satisfies{SRS_PNC 022} \Satisfies{SRS_PNC 023} \Satisfies{SRS_PNC 024}}
+
+\subsection{Remote ECU relinquishes PN activation for a remotely active PN}
+\textbf{Goal}: To understand the PN state transition when the NM remote activation criterion (NM frame) becomes inactive and no local activation criteria (sensor, signal, or signal status) are active.\newline
+\textbf{Pre-Condition}: PNC is initialized, Also RTE and SCHM are initiated prior to PNC\newline
+\textbf{Activities}: Follow the numbering to understand the sequence of activity.
+
+\UMLDiagram{generated/diagrams/remoteECURemoteAct}{}
+
+\subsection{Local Activation Criteria is detected TRUE for a Remotely active PN}
+\RequirementTag{SDD_PNC}{047}
+\\
+\textbf{Goal}: To understand the behavior when the PN is in PNC\_REMOTELY\_ACTIVE state and SUM\_PNC detects that the local activation criteria (sensor, signal, or signal status) are TRUE, triggering a local takeover.\newline
+\textbf{Pre-Condition}:
+\begin{enumerate}
+\item PNC is initialized, Also RTE and SCHM are initiated prior to PNC
+\item PN is already ACTIVE and in Remotely Active state.
+\end{enumerate}
+\textbf{Activities}: Follow the numbering to understand the sequence of activity.
+
+\UMLDiagram{generated/diagrams/deacRemAct}{}
+
+\Satisfies{SRS_PNC 040}
+
+\subsection{Local Activation Criteria is detected FALSE for a Locally active PN}
+\RequirementTag{SDD_PNC}{048}
+\\
+\textbf{Goal}: To understand the behavior when the PN is in PNC\_LOCALLY\_ACTIVE state and SUM\_PNC determines that local activation criteria are FALSE (\code{Sensor\_Act == FALSE AND Signal\_Act == FALSE}) and the Repeat Message Timer has expired or not started, then SUM\_PNC transitions to PNC\_REMOTELY\_ACTIVE state.\newline
+\textbf{Pre-Condition}:
+\begin{enumerate}
+\item PNC is initialized, Also RTE and SCHM are initiated prior to PNC.
+\item PN is already active and in locally active state.
+\item Repeat Message timer is expired or not started.
+\end{enumerate}
+\textbf{Activities}: Follow the numbering to understand the sequence of activity.
+
+\UMLDiagram{generated/diagrams/deactLocalAct}{}
+
+\Satisfies{SRS_PNC 041}
+
+\subsection{Sequence for going to Sleep for locally Active PN}
+\RequirementTag{SDD_PNC}{049}
+\\
+\textbf{Goal}: To understand the sleep procedure when the Partial network is in PNC_LOCALLY_ACTIVE state.\newline
+\textbf{Pre-Condition}: PNC is initialized, Also RTE and SCHM are initiated prior to PNC\newline
+\textbf{Activities}: Follow the numbering to understand the sequence of activity.
+
+\UMLDiagram{generated/diagrams/locallySleep}{}
+
+\Satisfies{SRS_PNC 042}
+
+\subsection{Sequence for going to Sleep for Remotelly Active PN}
+\RequirementTag{SDD_PNC}{050}
+\\
+\textbf{Goal}: To understand the Sleep procedure when the PN is in PNC_REMOTELY_ACTIVE state.\newline
+\textbf{Pre-Condition}: PNC is initialized, Also RTE and SCHM are initiated prior to PNC \newline
+\textbf{Activities}: Follow the numbering to understand the sequence of activity.
+
+\UMLDiagram{generated/diagrams/remoteSleep}{}
+
+\Satisfies{SRS_PNC 042}

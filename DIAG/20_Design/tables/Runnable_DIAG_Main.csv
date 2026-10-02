@@ -1,0 +1,8 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};Runnable_DIAG_Main
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};N\/A
+\cellcolor{ETASlightgray}\textbf{Periodicity};configured by user via DIAG_TE_Main_Period parameter
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};SUSD_PermitExecution
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};DIAG_EcuResetRequest \newline DIAG_SOH_DiagSessionRequest \newline DIAG_DisableNormalComm<channel> \newline SSC_DIAG_GetEcuAddress
+\cellcolor{ETASlightgray}\textbf{Description};This runnable is responsible for: \newline Evaluation of permit execution \newline Initializing output ports \newline Output initial Manufacturer Enable Counter \newline Output Ecu Address \newline Initialize tester source address in NvM

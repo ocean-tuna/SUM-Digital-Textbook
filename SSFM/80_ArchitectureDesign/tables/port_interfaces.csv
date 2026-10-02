@@ -1,0 +1,69 @@
+50;9;12;12;20
+Port Interface;Port Type;P-Port;R-Port;Description
+SUSD_PermitExecution;S/R;SUSD;SSFM; Interface contains a value for informing the SSFM module about the enabling status of its functionality.
+ERRH_ShutdownPermission;S/R;SSFM;SUSD; Interfaces provides a value for informing the SUSD about the possibility to go in shutdown (SSFM-ERRH submodule).
+SSM_ShutdownPermission;S/R;SSFM;SUSD; Interfaces provides a value for informing the SUSD about the possibility to go in shutdown (SSFM-SSM submodule).
+SignalGroup_FcI;S/R;SSFM;SW-C; SUM_SSFM uses this interface to transmit the SerialData security indication to other SW-Cs.
+SignalGroup_FoI;S/R;SSFM;SW-C; SUM_SSFM uses this interface to transmit the SerialData continuous operation status to other SW-Cs.
+SignalGroup_FpI;S/R;SSFM;SW-C; SUM_SSFM uses this interface to transmit the SerialData protection status to other SW-Cs.
+SignalGroup_FsI;S/R;SSFM;SW-C; SUM_SSFM uses this interface to transmit the SerialData safety status to other SW-Cs.
+SignalGroup_FxI;S/R;SSFM;SW-C; SUM_SSFM uses this interface to transmit the SerialData fault indication status to other SW-Cs.
+SignalGroup_FcFA;S/R;SSFM;SW-C; SUM_SSFM uses this interface to transmit the SerialData security fault active to other SW-Cs.
+SignalGroup_FoFA;S/R;SSFM;SW-C; SUM_SSFM uses this interface to transmit the SerialData continuous operation fault active to other SW-Cs.
+SignalGroup_FpFA;S/R;SSFM;SW-C; SUM_SSFM uses this interface to transmit the SerialData protection fault active to other SW-Cs.
+SignalGroup_FsFA;S/R;SSFM;SW-C; SUM_SSFM uses this interface to transmit the SerialData safety fault active to other SW-Cs.
+SignalGroup_FxFA;S/R;SSFM;SW-C; SUM_SSFM uses this interface to transmit the SerialData single port fault active status to other SW-Cs.
+SUM_BswM_DisablePdu;M/R;SSFM;BswM; SUM_SSFM uses this interface to notify to BswM to disable a transmission Pdu. SUM_SSFM will only call the interface if a certain Pdu needs to be disabled after checking the corresponding calibration parameter (SSFM_C_\\SsmDisable_Tx_\\PDU_<Pduname\\>).
+SUM_C_Disable_Tx_<n>;S/R;SSFM;SSC\\PNC; SUM_SSFM uses this interface to publish the C_Disable calibration parameter to SUM SSC /SUM PNC.
+Dem_OperationCycle;C/S;Dem;SSFM;Interfaces to allow ERRH to inform Dem about the start of the Operation Cycle.
+SWC_OperationCycle_EnableConditions;S/R;SW-C;SSFM;SUM_SSFM uses this interface inform ERRH of Project Specific enable conditions for the start of the operation cycle.
+BatteryVoltageRangeMinToMax;S/R;SUSD;SSFM;SUM_SSFM uses this interface to read the level of battery voltage.
+PNC_ActiveRxPDUEnable<SerialData>;S/R;PNC;SSFM;SUM_SSFM uses this interface Notification of whether Rx PDU groups for a PN are started / stopped
+DIAG_DisableNormalComm<channel>;S/R;DIAG;SSFM;Provides notification to SUM_SSFM the status of diagnostics enabling or disabling of normal communications for each <channel>
+RxMonitoredSignal<n>_Av;S/R;SSFM;SWC;Notification from SUM_SSM of the availability status of the associated signals.
+SSC_ERRH_DTC_U19A3_57_Status;S/R;SSC;SSFM;Notification from SUM_SSC regarding the status of DTC U19A3 57.
+DiagnosticMonitor;C/S;Dem;SSFM;SUM_SSFM uses this port to inform Dem about the status of all DTCs.
+SECPError_Notification;M/R;BswM;SSFM;SUM_SSFM uses this mode switch port to get the notification about any change in the status of the Security Peripheral Error.
+SPM_ServiceActivation\\StatusNotification;S/R;SPM;SSFM;SUM_SPM notifies SSFM through this interface reagrding the latest activation status of services.
+RunCrankInputStuckHigh\\DiagnosticStatus;S/R;SUSD;SSFM;Notification to SUM_SSFM about run crank input stuck high errors.
+RunCrankInputStuckLow\\DiagnosticStatus;S/R;SUSD;SSFM;Notification to SUM_SSFM about run crank input stuck low errors.
+RunCrankInputStuckHigh_FA_\\StatusRequest;S/R;SSFM;SUSD;SUM_SSFM uses this interface to confirm the corresponding DTC status to SUM_SUSD.
+RunCrankInputStuckLow_FA_\\StatusRequest;S/R;SSFM;SUSD;SUM_SSFM uses this interface to confirm the corresponding DTC status to SUM_SUSD.
+NodeStatusECU_<X>[_CAN_<n>];S/R;SSFM;SW-C;SUM_SSFM on Gateway module uses this interface to notify the other ECUs about the loss of comm status. The SSFM on the gateway module provides this interface and the SSFM on other ECUs requires this interface (if gateway is present).
+SSFM_SerialData_<n>_LcFA;S/R;SSFM;SW-C;SUM_SSFM uses these interfaces to transmit the SerialData loss of communication indication status to other SW-Cs.
+SSC_E_KeySlotVerify;S/R;SSC;SSFM;Notification for individual key slots that report MAC verify errors from SUM_SSC.
+SPM_GetDTCIdentifier;C/S;SPM;SSFM;SSFM uses this interface to retrieve a 2-bytes DTC ID from an IPv4 identifier.
+SPM_LossOfNodeIndication;S/R;SPM;SSFM; SUM_SSFM uses this interface to receive Loss of Node Indication from SUM_SPM to handle setting the Loss Of Node DTC.
+SSFM_ClearDiagReq;Sender / Receiver;SUM_SSFM;SW-C;SUM_SSFM uses this interface to send notification to other modules regarding the approval or rejection of a clear diagnostic request.
+ServiceRequestNotification;C/S;SSFM;Dcm;SUM_SSFM uses this interface to provide and interpret the service request type per diagnostic function.
+MACAuthenticationEnabled;S/R;SSC;SSFM;SUM_SSFM uses this interface to check if a signal group has MAC Authentication Enabled via Development-only Calibration.
+WdgM_LocalSupervision;C/S;SSFM;WdgM;SUM_SSFM uses this interface to communicate to the WdgM that is alive.
+SSFM_LIN_Signal_Inv<n>;S/R;SSFM;SW-C;SUM_SSFM uses these interfaces to transmit the SerialData loss of communication indication status to other SW-Cs.
+LNM_ERRH_IntElectFault<X>;S/R;LNM;SSFM;Notification from SUM_LNM of Internal Electronic Failure Fault Active (one for each Responder).
+DataServices<SSFM>Data<n>C/S;SSFM;Dcm;SSFM;SSFM uses this interface support the collection of Diagnostic DIDs that are part of the SUM_SSFM functionalities.
+NvMService;C/S;NvM;SSFM;The interface provides services for the management and maintenance of NVM data related to SSFM Metrics.
+WdgM_LocalMode;Mode User;WdgM;SSFM; Notification of the SUM_SOH local supervision status and failures occurrences from WdgM to SSFM.
+WdgM_LocalSupervision;C/S;SSFM;WdgM;SUM_SSFM uses this interface to communicate to the WdgM that is alive.
+SSC_DIAG_GetECUAddress;S/R;DIAG;SSFM;SUM_SSFM uses this interface to communicate to the SSC to get the Dignostic address.
+PNC_ActiveTxPDUEnable_PN_<n>;S/R;PNC;SSFM;SUM_PNC notifies SUM_SSFM whether or not the PDU for which the DTC_Triggered interface participates is active.
+SSFM_DTCTriggered;S/R;SSFM;SWC;SUM_SSFM uses this interface to notify remote ECUs/testers of a DTC occurrence.
+LNM_SSM_MSCL_LIN;S/R;LNM;SSFM;SUM_SSFM uses this interface to receive the latest MSCL bytes of LIN Channels.
+LinSM_CurrentSchedule;Mode User;BswM;SSFM;SUM_SSFM uses this interface to receive the latest schedule status of LIN Channels.
+SrvcMgr_ERRH_U19A6_54_Status;S/R;SrvcMgr;SSFM;SUM_SSFM uses this interface to get the latest status of U19A6 54 DTC.
+SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57;S/R;SrvcMgr;SSFM;SUM_SSFM uses this interface to get the latest status of U19A6 57 DTC.
+SSFM_SrvcMgr_SDMissingMessage;S/R;SSFM;SrvcMgr;SUM_SSFM uses this interface to notify SrvcMgr of missing Service Discovery message identifiers when no provider is found in the SD learning table (supports DID 0xE0CD).
+DIAG_GetMEC;S/R;DIAG;SSFM;SUM_SSFM uses this interface to get the MEC value from DIAG.
+PN_DTC_Allowed<n>;S/R;PNC;SSFM;SUM_PNC notifies SUM_SSFM when there is a status change in any partial network relatively to the settability of DTCs (Allowed/Not Allowed/Might Be Allowed).
+SUM_ControlDTCSetting;M/R;BswM;SSFM;SUM_SSFM uses this mode switch port to receive notification of any change in DTCs status.
+DisableDTCs;S/R;SSFM;SWC;SUM_SSFM uses this interface to communicate the DTCs status to SWCs.
+SSC_ERRH_U198C_8A_Status;S/R;SSC;SSFM;SUM_SSFM uses this interface to get the latest status of U198C 8A DTC.
+LNM_SSFM_LossCommBusoff<X>;S/R;LNM;SSFM;SUM_SSFM uses this interface to receive the notification from SUM_LNM about LIN Bus off (one for each network).
+SSC_ERRH_U198C_54_Status;S/R;SSC;SSFM;SUM_SSFM uses this interface to get the latest status of U198C 54 DTC.
+SSC_ERRH_U19A3_54_Status;S/R;SSC;SSFM;SUM_SSFM uses this interface to get the latest status of U19A3 54 DTC.
+LNM_ERRH_NodeStatusId<x>;S/R;SUM_LNM;SUM_SSFM;SUM_SSFM uses this interface to get notification from SUM_LNM of the error status of the associated code.
+SSM_LNM_NodeTimeout<x>;S/R;SUM_SSFM;SUM_LNM;SUM_SSFM uses this interface to notify the node timeout status of the associated LIN Responder xxx
+DIAG_RmtPrgmOtaPsf;S/R;SUM_DIAG;SWC; SUM_DIAG provides the value of OTA PSF to the Swc and SUM_SSFM module.
+SSC_SSFM_KPKeysProvisioned;S/R;SSC;SSFM;SUM_SSFM uses this interface to get the latest status of U198C 49 DTC.
+SSFM_IF_QoS_PayloadRx_ <SerialData.shortName>;S/R;Com;SSFM;SUM_SSFM requires this interface to read the payload of the ConsolidatedService associated to the SerialData.
+SSFM_IF_QoS_Indication;S/R;SSFM;SW-C;SUM_SSFM provides per-member (A1,B1,C1,...) and PDU QoS indication bytes after dispatch.
+SrvcMgr_SSFM_LearningTableStatus;S/R;SrvcMgr;SSFM;SUM_SSFM uses this interface to get the learning table status from SrvcMgr.

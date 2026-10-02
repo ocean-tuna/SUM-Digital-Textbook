@@ -1,0 +1,64 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Errh_EventDebouncer_Manager.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM Event Debouncer Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+#ifndef SUM_SSFM_ERRH_EVENT_DEBOUNCER_H
+#define SUM_SSFM_ERRH_EVENT_DEBOUNCER_H
+
+#define SSFM_DEM_DTC_TEST_FAILED_MASK (uint8)0x01
+#define SSFM_DEBOUNCING_FEATURES «Ssfm_GetNumOfDebouncingFeatures(sSFM)»u
+
+extern Sum_Ssfm_Debouncer* Sum_Ssfm_Debouncer_Lists[SSFM_DEBOUNCING_FEATURES];
+extern uint16 Sum_Ssfm_Debouncer_Sizes[SSFM_DEBOUNCING_FEATURES];
+
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+extern Sum_Ssfm_EvaluationStatus Sum_Ssfm_ErrhDebouncerExecution(Sum_Ssfm_Debouncer * const self, Sum_Ssfm_EventStatus new_event_notification);
+extern void Ssfm_Dem_CB_DTCStatusChanged (uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew);
+
+/* EOF */
+#endif
+«ENDFILE»
+«ENDDEFINE»

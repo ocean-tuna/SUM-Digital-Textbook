@@ -1,0 +1,62 @@
+@startuml Srvcmgr_LearningSession_DID_E0CE
+start
+group SrvcMgr_DID_E0CE_ConditionCheckRead
+    :Sd_GetLearningTableState(&LearningState);
+    if (LearningState == LEARNING_INCOMPLETE) then (yes)
+        :ret = Sd_RetrieveIncompleteLearningReasons(&IncompleteLrng);
+        if (ret == E_OK and IncompleteLrng.num_Of_Missing_EventGroups <= 400) then (yes)          
+            #palegreen:E_OK;    
+        else (no)
+            #pink:E_NOK;
+        endif   
+    else  (no) 
+        if (LearningState == LEARNING_COMPLETED) then (yes)
+            #palegreen:E_OK;      
+        else (no)
+			#pink:E_NOK;
+            #pink:DCM_E_CONDITIONSNOTCORRECT;
+        endif
+    endif        
+end group
+stop 
+
+start
+group SrvcMgr_DID_E0CE_ReadDataLength
+    :ret = Sd_RetrieveIncompleteLearningReasons(&IncompleteLrng);
+    if (ret == E_OK) then (yes)
+        if (IncompleteLrng.Num_Of_Missing_EventGroups <= 400) then (yes)
+            : *DataLength = LengthOfDidData;
+            note left
+             Data related to
+             server section
+            end note
+            #palegreen:E_OK;    
+        else (no)
+            #pink:E_NOK;
+        endif
+    else (no)
+        #pink:E_NOK;
+    endif
+end group
+stop
+
+start
+group SrvcMgr_DID_E0CE_ReadData
+    :ret = Sd_RetrieveIncompleteLearningReasons(&IncompleteLrng);
+    if (ret == E_OK) then (yes)
+        if (IncompleteLrng.Num_Of_Missing_EventGroups <= 400) then (yes)
+            : *Data = IncompleteLrng;
+            note left
+             Data related to
+             server section
+            end note
+            #palegreen:E_OK;    
+        else (no)
+            #pink:E_NOK;
+        endif
+    else (no)
+        #pink:E_NOK;
+    endif
+end group
+stop
+@enduml

@@ -1,0 +1,56 @@
+\chapter{Introduction and Goals}
+
+This document intends to describe the architecture design of the SUM_TCS module.
+
+\section{Introduction}
+This section lists some of the driving forces that software architects must consider in their decisions. In particular, we will first present the purpose of the module, and then we will describe the purpose of the document.
+
+\subsection{Module Purpose}
+
+This document refers to a set of standard software compositions which are named GM Standardized Utility Modules (SUM).
+Use of the SUM modules allows for the standardized specification of behaviorial requirements and expectations concerning the interface to the software infrastructure (BSW Services).
+Hence, we can completely abstract functional software from the software infrastructure.
+We can use SUMs to communicate a set of standardized implementations of the interactions between SW-C and BSW.
+
+The SUM_TCS is a software module in the application layer of the standardized architecture of AUTOSAR.
+
+SUM_TCS implements the following functionalities:
+
+\begin{itemize}
+	\item Receive the global time from the Master Clock global time provider via serial data communication;
+	\item Synchronize the local ECU time to the master global time;
+	\item Substitute the last received value (default if never received) following initialization, until the initial Master Clock signal is received via serial communication;
+	\item Maintain a local time source to provide to SWC, between the reception of master clock values;
+	\item Provide a DID Interface to the diagnostic module Dcm, providing current timing client local time value.
+	\item Provide unique Time Synch signal to Dem based on Master Clock global time signal.
+\end{itemize}
+
+\subsection{Document Purpose}
+
+This document introduces the key ideas of the architecture of SUM_TCS.
+Its intended audience comprises System Architects, Product Architects, Developers and Testers who need a rough understanding of the concepts of the product.
+The document describes the product and its functionality on the component level, the interaction and communication between those components and the integration of ETAS wide shared-components.
+The document does not explain the design of the components in detail.
+
+\section{Goals of the Architecture}
+
+The main goals of the architecture are:
+
+\begin{enumerate}
+\item \textbf{Configurability}: The module has to be designed with the highest possible level of configurability, to be easy to adapt it in the future to changes on the standard or even in some project requirements.
+\item \textbf{Maintainability}: The architecture of the component shall be clearly defined and easy to understand, to minimize the cost of change.
+\item \textbf{Performance}: The component shall be designed to maximize run-time execution speed as well as minimize memory consumption.
+\item \textbf{Correctness of Implementation}: The Detailed Design shall follow the requirements listed in the Architecture document (SDV-8002).
+\end{enumerate}
+
+\section{Stakeholders}
+
+Stakeholders for SUM\_TCS module are GM, RTA-SUM Customers, Systems engineers, Software architect, QA personnel.
+
+\section{Definitions, Acronyms and Abbreviations}
+
+\input{generated/tables/definitions.tex}
+
+\section{Referenced Documents}
+
+\input{generated/tables/references.tex}

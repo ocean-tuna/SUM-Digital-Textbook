@@ -1,0 +1,143 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Errh_U19A6_87_Handler.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM ERRH U19A6_87 Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+/* PRQA S 1503 EOF # There might be unused functions based on the configuration.                */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+«IF Sum_Ssfm_Errh_U19A6_87_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+
+/**
+ * @brief           SSFM function to be called upon any change in the status of DTC_U19A6_87
+ *
+ * @param[in]       boolean direct_failure: Setting this to true, indicates that the test is known as failed and
+ *											the DTC shall be set right after checking the test enable criteria.
+ * 											Having direct_failure==false will cause the check of conditions for pass or fail status.
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+
+void Sum_Ssfm_U19A6_87_Update(boolean direct_failure){
+	/*[$Satisfies $DDS_SSFM 166]*/
+	OperatingRangeType operating_range;
+	SrvcMgr_SSFM_LearningTableStatusType l_SSFM_LearningTableStatus_st;
+	boolean dtc_U19A6_87_status = FALSE;
+	uint16 i;
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	/*[$Satisfies $DDS_SSFM 167]*/
+	if(direct_failure){
+		dtc_U19A6_87_status = TRUE;
+	} else {
+		for (i = 0u; i < SSFM_SSM_NUM_OF_SERIALDATAS; i++){
+			if(Sum_Ssfm_SerialDatas[i].ServiceInfo != NULL_PTR){
+				if(Sum_Ssfm_SerialDatas[i].ServiceInfo->IpAddress == 0u){
+					dtc_U19A6_87_status = TRUE;
+					break;
+				}
+			}
+		}
+	}
+
+	/*[$Satisfies $DDS_SSFM 168]*/ /*[$Satisfies $DDS_SSFM 189]*/
+	if((Sum_Ssfm_Errh_Get_C_DTC_U19A6_87_MissingMessage() == TRUE) && (dtcs_are_disabled == FALSE)){
+		/*[$Satisfies $DDS_SSFM 169]*/
+		(void)Rte_Read_RP_SUSD_SSFM_Errh_BatteryVoltage_BatteryVoltageRangeMinToMax_OperatingRange(&operating_range);
+		if(operating_range
+			«IF dem.demGeneral.demOBDSupport == "DEM_OBD_NO_OBD_SUPPORT"-»== IN_Range«ELSE-»!= OUT_OF_RANGE_LOW«ENDIF-»
+		){
+			/*[$Satisfies $DDS_SSFM 170]*/
+			(void)Rte_Read_RP_SrvcMgr_SSFM_LearningTableStatus_LearningTableStatus(&l_SSFM_LearningTableStatus_st);
+			if((l_SSFM_LearningTableStatus_st.RID_0654_Status == SUM_RID_0654_STATUS_COMPLETE) || (l_SSFM_LearningTableStatus_st.RID_0654_Status == SUM_RID_0654_STATUS_INCOMPLETE)){
+				/*[$Satisfies $DDS_SSFM 171]*/
+				(void)Rte_Call_RP_Dem_SSFM_DTC_U19A6_87_SetEventStatus((dtc_U19A6_87_status == TRUE) ? DEM_EVENT_STATUS_FAILED : DEM_EVENT_STATUS_PASSED);
+			}
+		}
+	}
+}
+
+
+/**
+ * @brief           Runnable to handle Learning Table Status changes
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(void, SUM_SSFM_CODE) Runnable_SSFM_LearningTableStatus(void)
+{
+	/*[$Satisfies $DDS_SSFM 364]*/
+    /* Trigger U19A6_87 evaluation when Learning Table Status changes */
+    Sum_Ssfm_U19A6_87_Update(FALSE);
+}
+«ENDIF-»
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

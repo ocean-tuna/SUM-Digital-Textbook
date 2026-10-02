@@ -1,0 +1,48 @@
+@startuml SrvcMgr_ServiceManager_ActiveServices
+Title Srvcmgr_ServiceManager()
+
+start   
+
+group Runnable_SrvcMgr_ActivateServices()
+    :Sum_SrvcMgr_ActivateServiceReq = TRUE;
+    note left
+        Flag that track if a request from SPM is ongoing.
+        Necessary for NOT let the Execution Manager vote for shutdown.
+    end note        
+
+    while (i < listLength?) is (yes)
+        if (serviceIdList[i] is configured?) then (yes)
+            if (serviceIdList[i] calibration state is ON?) then (yes)
+                :srvGrpResult = Sum_SrvcMgr_ConfigureServiceGroupActivation(SrvcIndexInTheConfArray, activationCommandList[i]);
+                if (srvGrpResult == E_OK) then (yes)
+                    if (serviceIdList[i] is a client?) then (yes)
+                        #lightgreen: commandStatusList[i] = E_OK_REMOTE_ENABLED;
+                    else (no)
+                        #lightgreen: commandStatusList[i] = E_OK_LOCAL_ENABLED; 
+                    endif
+                else (no)
+                    :Sum_SrvcMgr_HandlerServiceCommand(SrvcIndexInTheConfArray, activationCommandList[i], &commandStatusList[i]);
+                    note left
+                        Sum_SrvcMgr_HandlerServiceCommand handles
+                        Sd_Client/ServerServiceSetState and consumed event
+                        groups for requested client services.
+                    end note
+                endif
+            else (no)
+                #lightgreen: commandStatusList[i] = E_DISABLED;                 
+            endif
+        else (no)
+            #pink: commandStatusList[i] = E_GENERAL_ERROR;
+        endif
+    endwhile
+
+    :Sum_SrvcMgr_ActivateServiceReq = FALSE;
+    note left
+        Flag that track if a request from SPM is ongoing.
+        Necessary for NOT let the Execution Manager vote for shutdown.
+    end note     
+
+end group
+
+stop
+@enduml

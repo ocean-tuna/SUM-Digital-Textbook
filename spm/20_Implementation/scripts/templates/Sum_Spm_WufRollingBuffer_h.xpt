@@ -1,0 +1,107 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_WufRollingBuffer.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for WUF rolling buffer - time-windowed WUF validity
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef SUM_SPM_WUFROLLINGBUFFER_H_
+#define SUM_SPM_WUFROLLINGBUFFER_H_
+
+#include "Sum_Spm_WakeUp.h"
+#include "Sum_Spm_PwrMgr.h"
+#include "Sum_Common_Algo_Deque.h"
+
+/*
+ * Rolling buffer design: 6 slots x 75 ms = 450 ms max, 375 ms min validity.
+ * A WUF received at the very start of a slot survives at least 5 further rotations
+ * (5 x 75 ms = 375 ms) before its slot is discarded.
+ *
+ * The deque organises the slots so that:
+ *   front (index 0)              = oldest slot - the next one to be discarded
+ *   back  (index NUM_SLOTS - 1)  = write slot  - where newly received WUFs are OR'd in
+ *
+ * On every rotation: PopFront (discard oldest) + PushBack (add fresh write slot).
+ */
+#define SPM_WUF_NUM_SLOTS       (6U)
+#define SPM_WUF_SLOT_PERIOD_MS  (75U)
+/* PM main function period is 5 ms => 75 ms / 5 ms = 15 ticks per slot */
+#define SPM_WUF_SLOT_TICKS      (SPM_WUF_SLOT_PERIOD_MS / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS)
+
+/* One time slot holds the OR-aggregate of all WUFs received during that 75 ms window. */
+typedef struct {
+    uint8 WufA[WAKEUP_FRAME_LEN];
+    uint8 WufB[WAKEUP_FRAME_LEN];
+    uint8 WufC[WAKEUP_FRAME_LEN];
+} Spm_WufSlot_Type;
+
+/*
+ * Rolling buffer: a deque of SPM_WUF_NUM_SLOTS slots with static backing memory.
+ *   deque.front = oldest slot (discarded first on rotation)
+ *   deque.back  = write slot  (OR destination for incoming WUFs)
+ */
+typedef struct {
+    Sum_Algo_Deque   deque;
+    Spm_WufSlot_Type slotMemory[SPM_WUF_NUM_SLOTS]; /* backing memory owned by this buffer */
+} Spm_WufRollingBuffer_Type;
+
+/* Zero-initialises buffer(s) and pre-loads SPM_WUF_NUM_SLOTS empty slots.
+ * Call from SPM_PM_Init_WkUpFrame_Period(). */
+extern void    Sum_Spm_WufRollingBuffer_Init(void);
+
+/* OR the received WUF bytes into the current write slot (deque back) of the appropriate buffer.
+ * Wuf_B / Wuf_C may be NULL_PTR (CAN carries frame A only).
+ * lastByteId: last byte of the sender CAN ID or source IP, stored for E0D7 retrieval. */
+extern void    Sum_Spm_WufRollingBuffer_StoreWuf(const uint8* Wuf_A, const uint8* Wuf_B, const uint8* Wuf_C,
+                     uint8 lastByteId);
+
+/* Periodic slot rotation. Decrements shared tick counter; when it reaches zero,
+ * discards the oldest slot (PopFront) and adds a fresh empty write slot (PushBack).
+ * Call from Runnable_SPM_PowerManager_MainFunction() (5 ms period). */
+extern void    Sum_Spm_WufRollingBuffer_CheckAndShiftWufSlot(void);
+
+/* Returns TRUE if bitPositionX is set in typeOfFrame (SPM_CHK_WKUPFRM_A/B/C)
+ * in any live slot across all buffer sets. */
+extern boolean Sum_Spm_WufRollingBuffer_IsBitXInWufYSet(uint8 bitPositionX, uint8 typeOfFrame);
+
+/* Returns TRUE if own wakeup bit is set in any live slot.
+ * Writes the last byte of the most recent sender's IP/CAN-ID into *Ip. */
+extern boolean Sum_Spm_WufRollingBuffer_RetrievesWUFInfoForE0D7(uint8* Ip, SpmTrgDvcHndlngInfo const* wakeUpFrameInfo);
+
+#endif /* SUM_SPM_WUFROLLINGBUFFER_H_ */
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

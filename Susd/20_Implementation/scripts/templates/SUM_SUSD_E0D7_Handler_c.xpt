@@ -1,0 +1,1558 @@
+«IMPORT bsw»
+«IMPORT bsw::SUSDModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Susd»
+
+«DEFINE SusdE0D7Handler_c FOR Autosar»
+«FILE "SUM_SUSD_E0D7_Handler.c"»/*
+ *****************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SUSD
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description :
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/*
+ ***************************************************************************************************
+ * Includes
+ ***************************************************************************************************
+ */
+/* PRQA S 0380 1 # less than 1024 macros are being used in this file verified  */
+#include "Rte_SUSD.h"
+#include "SUM_SUSD.h"
+#include "SUM_SUSD_Ram.h"
+#include "SUM_Common_Utils.h"
+
+/*
+ ***************************************************************************************************
+ * Defines
+ ***************************************************************************************************
+ */
+/* Maximum admittable value for DID E0D7 TAT field (in ms) */
+#define TAT_MAX_VALUE_MS 0x3E7FFFFFC18u
+/*
+ ***************************************************************************************************
+ * Type definitions
+ ***************************************************************************************************
+ */
+/*
+ ***************************************************************************************************
+ * Variables
+ ***************************************************************************************************
+ */
+ 
+/* Current state for DID 0xE0D7 */
+static Sum_SUSD_AR_StateType SUSD_E0D7_State = Sum_SUSD_AR_State_Wakeup;
+/* Timer variable that measures how long the input voltage is less than 10V (in milliseconds, logic threshold for DID 0xE0D7 is 10s) */
+static uint16 Sum_SUSD_AR_VoltageUnder10_Timer = 0u;
+/* Timer variable that measures how long the input voltage is greater than 12V (in milliseconds, logic threshold for DID 0xE0D7 is 10s) */
+static uint16 Sum_SUSD_AR_VoltageOver12_Timer = 0u;
+/* Timer variable that measures how long the Vehicle Power Mode is equal to "Propulsion" (in milliseconds, logic threshold for DID 0xE0D7 is 60s) */
+static uint32 Sum_SUSD_AR_Propulsion_Timer = 0u;
+/* Timer variable that measures the Active delay timer, i.e. how long the DID 0xE0D7 has been in "Inactive" state (in milliseconds, logic threshold for DID 0xE0D7 is 255s for calibratable value k_AR_Active_Delay) */
+static uint32 Sum_SUSD_AR_ActiveDelay_Timer = 0u;
+/* Variable to hold the last determined Vehicle Power Mode */
+static SUM_VehiclePowerMode_Signal_States LastDeterminedVPM;
+/* Keeps the accumulated Total Activity Timer (TAT) gap in ms, recorded in the DID only when it exceeds one second (TAT is measured in seconds in the DID) */
+static uint64 Sum_SUSD_E0D7_TAT_in_ms = 0u;
+/* RxID cumulative activity timer gaps in ms. These gaps are incremented every time the RxID is currently active.
+   Gaps are needed because the DID timing fields are measured in seconds.
+   When gaps exceed one second, the time increment is recorded in the RxCAT and RxTAT fields of the 
+   corresponding RxID activity record. There is one timer gap for every RxID */
+static uint16 Sum_SUSD_E0D7_Cumulative_Timer_Gaps_in_ms[NUM_RxIDS];
+/* "On-entry" flags to track whether the specific activity record handler has just been entered:
+   Every active RxID handler might have just been invoked ("on_entry" set to TRUE) or be in an iteration
+   of its execution on a specific RxID ("on_entry" set to FALSE, otherwise referred    to as "during" being TRUE) */
+static boolean Sum_SUSD_E0D7_on_entry_flags[NUM_RxIDS] = {TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE};
+
+/* Holds the state of each RxID. Each state can hold the status from different sources at different bit positions. */
+static uint8 Sum_SUSD_RxID_Active[NUM_RxIDS];
+static uint8 Sum_SUSD_RxID_Reason[NUM_RxIDS];
+/* Holds the previous reason for each RxID, used to capture RxLAR at the moment of deactivation */
+static uint8 Sum_SUSD_RxID_PrevReason[NUM_RxIDS];
+/* The calculated active sub-state based on the activity of RxIDs */
+static Sum_SUSD_AR_ActiveSubStateType Sum_SUSD_AR_ActiveSubState;
+/* Lookup table: RxID enum index -> index in Activity_Records[] */ /* PRQA S 3218 1 # This variable will be accessed in other functions */
+static uint8 Susd_RxID_to_Index_Map[NUM_RxIDS];
+/* Holds the active substate to be processed for DID 0xE0D7 "Active" state */
+static Sum_SUSD_AR_ActiveSubStateType Sum_SUSD_E0D7_active_substate_in_process;
+/* Variable tracking the next free position in Activity Records array for DID 0xE0D7 */
+uint8 Susd_Activity_Records_NextFreeIndex = 0u;
+/* Struct for DID E0D7 data */
+Susd_DID_E0D7_Type Susd_DID_E0D7 = {0};
+/*
+ ***************************************************************************************************
+ * Functions
+ ***************************************************************************************************
+ */
+
+static void Sum_SUSD_ActivityRecords_Initialization_WakeUp_Handler(void);
+static void Sum_SUSD_ActivityRecord_ToActive_Handler(void);
+static void Sum_SUSD_ActivityRecords_Active_Handler(void);
+static void Sum_SUSD_ActivityRecords_Disabled_Handler(void);
+static void Sum_SUSD_ActivityRecords_Inactive_Handler(void);
+static void Sum_SUSD_ActivityRecordUpdated(const RecordIdType * RecordId, Sum_SUSD_AR_SourceType Source);
+static void Sum_SUSD_IncrementTWC(void);
+static void Sum_SUSD_IncrementTAT(void);
+static uint32 Sum_SUSD_GetCurrentTAT(void);
+static uint32 Sum_SUSD_GetNvM_TAT(void);
+static uint8 SUSD_GetRxIDEnumIndex(SUSD_RecordIDType rxid);
+static SUSD_RecordIDType Sum_SUSD_Match_0x02_0x03_WakeupSource(void);
+static SUSD_RecordIDType Sum_SUSD_Match_0x20_WakeupSource(void);
+static SUSD_RecordIDType Sum_SUSD_Match_0x21_0x25_WakeupSource(void);
+static void Sum_SUSD_Match_0x26_WakeupSource(uint16 * const initDelayTimer, boolean * const waitingLocalPnApActivation);
+static void Sum_SUSD_UpdateWakeupActivityRecord(SUSD_RecordIDType RxID);
+static Susd_Activity_Record *Sum_SUSD_get_ActivityRecord(SUSD_RecordIDType RxID);
+static void Sum_SUSD_Update_ActivityRecords(void);
+static void Sum_SUSD_flush_E0D7_to_NVRam_Block(void);
+static void Sum_SUSD_AR_Substate_0x21_0x25_Handler(void);
+static void Sum_SUSD_Generic_Active_RxID_Handler(SUSD_RecordIDType RxID);
+static void Sum_SUSD_AR_Substate_OnEntry_Handler(SUSD_RecordIDType RxID);
+static void Sum_SUSD_AR_Substate_During_Handler(SUSD_RecordIDType RxID);
+static void Sum_SUSD_E0D7_FlushOnResetRequest(void);
+
+/***********************************************************************************
+
+  Function name :   RE_Sum_SUSD_ActivityRecords_Handler
+  Description   :   Function Runnable for managing the state of DID 0xE0D7
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 228] [$SDD_SUSD 178] [$SDD_SUSD 179] [$SDD_SUSD 180] [$SDD_SUSD 189] [$SDD_SUSD 190] [$SDD_SUSD 191] [$SDD_SUSD 192] [$SDD_SUSD 214] [$SDD_SUSD 215] [$SDD_SUSD 216] */
+#define SUSD_START_SEC_CODE /* PRQA S 5087 EOF */
+#include "SUSD_MemMap.h"
+/* PRQA S 1503 3 # When the SUSD is integrated, this Runnable will be called by RTE */
+FUNC(void, SUSD_CODE) RE_Sum_SUSD_ActivityRecords_Handler(void)//Scheduled in the OS
+{
+  /* Variable to hold the current Vehicle Battery Voltage (in dV) */
+  Impl_SUSD_VehcleBatryVlg VehicleBatteryVoltage;
+  /* Check SUSD init state */
+  if(SUSD_GetInitState() == E_OK)
+  {
+    /* Read Vehicle Battery Voltage */
+    /* [$Satisfies $SDD_SUSD 248] */
+    (void) Rte_Read_RP_SUSD_VehicleBatteryVoltage_VehicleVoltage(&VehicleBatteryVoltage);
+    /* Retrieve the last determined Vehicle Power Mode */
+    LastDeterminedVPM = SUSD_VehiclePowerMode;
+    /* Apply voltage timers update logic*/
+    if (VehicleBatteryVoltage > (uint16) 120u)
+    {
+      Sum_SUSD_AR_VoltageOver12_Timer += (uint16) SUSD_AR_PERIODICITY;
+      Sum_SUSD_AR_VoltageUnder10_Timer = (uint16) 0u;
+    }
+    else if (VehicleBatteryVoltage >= (uint16) 100u)
+    {
+      Sum_SUSD_AR_VoltageOver12_Timer = (uint16) 0u;
+      Sum_SUSD_AR_VoltageUnder10_Timer = (uint16) 0u;
+    }
+    else
+    {
+      Sum_SUSD_AR_VoltageOver12_Timer = (uint16) 0u;
+      Sum_SUSD_AR_VoltageUnder10_Timer += (uint16) SUSD_AR_PERIODICITY;
+    }
+    /* Apply Vehicle Power Mode timer update logic */
+    if (LastDeterminedVPM == SUM_PMS_PROPULSION)
+    {
+      Sum_SUSD_AR_Propulsion_Timer += (uint32) SUSD_AR_PERIODICITY;
+    }
+    else
+    {
+      Sum_SUSD_AR_Propulsion_Timer = (uint32) 0u;
+    }  
+    /* Run state machine for DID 0xE0D7 */
+    switch (SUSD_E0D7_State) {
+      case Sum_SUSD_AR_State_Wakeup:
+        Sum_SUSD_ActivityRecords_Initialization_WakeUp_Handler();
+        break;
+      case Sum_SUSD_AR_State_ToActive:
+        Sum_SUSD_ActivityRecord_ToActive_Handler();
+        break;
+      case Sum_SUSD_AR_State_Active:
+        Sum_SUSD_ActivityRecords_Active_Handler();
+        break;
+      case Sum_SUSD_AR_State_Disabled:
+        Sum_SUSD_ActivityRecords_Disabled_Handler();
+        break;
+      case Sum_SUSD_AR_State_Inactive:
+        Sum_SUSD_ActivityRecords_Inactive_Handler();
+        break;
+      default:
+        /* Do nothing */
+        break;
+    }  
+    /* Flush DID E0D7 to NvM on diagnostic reset or reprogramming request */
+    Sum_SUSD_E0D7_FlushOnResetRequest();      
+  }
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***************************************************************************************
+
+  Function name :   Sum_SUSD_ActivityRecords_Initialization_WakeUp_Handler
+  Description   :   Handler function for the "Initialization/Wakeup" state of DID 0xE0D7
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ***************************************************************************************/
+/* Satisfies: [$SDD_SUSD 178] [$SDD_SUSD 180] [$SDD_SUSD 181] [$SDD_SUSD 183] [$SDD_SUSD 184] [$SDD_SUSD 185] [$SDD_SUSD 186] */
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_ActivityRecords_Initialization_WakeUp_Handler(void)
+{
+  /* Check if first boot after flash */
+  if (Sum_SUSD_isFirstBootAfterFlash() == TRUE)
+  {
+    /* Clear DID 0xE0D7 */
+    Sum_SUSD_ActivityRecord_Clear();
+    /* Reset Sum_SUSD_AR_ActiveDelay_Timer */
+    Sum_SUSD_AR_ActiveDelay_Timer = 0u;
+    /* Enable monitoring for DID 0xE0D7 */
+    SUSD_MonitorDisabled = FALSE;
+  }
+  /* If monitoring for DID 0xE0D7 is disabled */
+  if (SUSD_MonitorDisabled == TRUE)
+  {
+    /* Transition to "Disabled" state for DID 0xE0D7 */
+    SUSD_E0D7_State = Sum_SUSD_AR_State_Disabled;
+  }
+  else {
+    /* Increment DID Total Wakeup Counter */
+    Sum_SUSD_IncrementTWC();
+    /* If Vehicle Power Mode is not "Propulsion" */
+    if (LastDeterminedVPM != SUM_PMS_PROPULSION)
+    {
+      /* Transition to "Initialization to Active Check" state for the DID 0xE0D7 state machine */
+      SUSD_E0D7_State = Sum_SUSD_AR_State_ToActive;
+    }
+    else {
+      /* Transition to "Inactive" state for the DID 0xE0D7 state machine */
+      SUSD_E0D7_State = Sum_SUSD_AR_State_Inactive;
+    }    
+  }
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_ActivityRecord_ToActive_Handler
+  Description   :   Handler function for the "Initialization to Active Check" state of DID 0xE0D7
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 199] [$SDD_SUSD 200] [$SDD_SUSD 201] [$SDD_SUSD 202] [$SDD_SUSD 203] */
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_ActivityRecord_ToActive_Handler(void)
+{
+  /* Detected wakeup source */
+  SUSD_RecordIDType source;
+  /* Indicates whether we're waiting on local PN/AP activations (assumed false when the wakeup source is not yet known) */
+  static boolean waiting_on_local_PN_AP_WUF_activations  = FALSE;
+  
+  /* If the state machine has just transitioned into the "Initialization to Active Check" state */
+  if (waiting_on_local_PN_AP_WUF_activations  == FALSE)
+  {
+    /* Match wakeup source with RxID 0x02 and 0x03 */
+    source = Sum_SUSD_Match_0x02_0x03_WakeupSource();
+    /* In case of RxID = 0x02 or 0x03, update DID with wakeup information and transition to "Active" state */
+    if ((source == RxID_REMOTE_PN_AP_ACTIVE_NO_LOCAL_PN_AP_ACTIVE) || (source == RxID_PRIVATE_NETWORK_ACTIVE))
+    {
+      Sum_SUSD_UpdateWakeupActivityRecord(source);
+      SUSD_E0D7_State = Sum_SUSD_AR_State_Active;
+      /* Update substate to process */
+      if (source == RxID_REMOTE_PN_AP_ACTIVE_NO_LOCAL_PN_AP_ACTIVE)
+      {
+        Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_SubState_0x02;
+«IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»
+		    /*Inform SPM ActivityRecordCmd*/
+        /* [$Satisfies $SDD_SUSD 249] */
+        (void) Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_UpdateRecord);
+«ENDIF-»
+      }
+      else
+      {
+        Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_SubState_0x03;
+      }      
+       
+    }
+    /* Else, wakeup source = Record 0x01/0x20-0x25 criteria */
+    else
+    {
+      /* We must wait on local PN/AP activations (the Init Delay Timer is implicitly started here) */
+      waiting_on_local_PN_AP_WUF_activations  = TRUE;
+    }
+  }
+  /* Else: we are waiting for local PN/AP activations within k_AR_Init_Delay ms */
+  else
+  {
+    /* Timer variable to measure the init delay for local PN/AP activations (in milliseconds, logic threshold for DID 0xE0D7 is 2550ms for calibratable value k_AR_Init_Delay) */
+    static uint16 Sum_SUSD_AR_InitDelay_Timer = 0u;
+    /* Increment Sum_SUSD_AR_InitDelay_Timer */
+    Sum_SUSD_AR_InitDelay_Timer += (uint16) SUSD_AR_PERIODICITY;
+    /* If the time delay hasn't exceeded the calibratable "init delay" threshold */
+    if (Sum_SUSD_AR_InitDelay_Timer <= Rte_CData_SUSD_PDP_k_AR_Init_Delay())
+    {
+      /* Tracks the appearance of local PNs/APs activations */
+      boolean local_activation = FALSE;
+      /* Counts the local PN activations */
+      uint8 local_PN_activations_ctr = 0u;
+      /* Match a local AP activation */
+      source = Sum_SUSD_Match_0x20_WakeupSource();
+      if (source == RxID_LOCALLY_ACTIVE_AP)
+      {
+        /* Update DID with wakeup information for Record 0x20. In this case, the active substate will be Sum_SUSD_AR_SubState_0x20 */
+        Sum_SUSD_UpdateWakeupActivityRecord(source);
+        local_activation = TRUE;
+        Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_SubState_0x20;
+      }
+      /* Match all possible local PN activations, in order of enumeration (their activation criteria must have been met at the same time) */
+      source = Sum_SUSD_Match_0x21_0x25_WakeupSource();
+      while (source != RxID_NO_RECORD)
+      {
+        local_PN_activations_ctr++;
+        /* Update DID with wakeup information for the locally activated PN */
+        Sum_SUSD_UpdateWakeupActivityRecord(source);
+        /* Get next active local PN (if any) */
+        source = Sum_SUSD_Match_0x21_0x25_WakeupSource();   
+      }
+      /* Remember if there has been a local PN activation */
+      if (local_PN_activations_ctr > 0u)
+      {
+        local_activation = TRUE;
+        /* In this case, the active substate ought to be Sum_SUSD_AR_SubState_0x21-0x25 */
+        Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_SubState_0x21_0x25;
+      }
+      if (local_activation == TRUE)
+      {
+        /* Transition to "Active" state for DID 0xE0D7 */
+        SUSD_E0D7_State = Sum_SUSD_AR_State_Active; 
+		
+«IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»
+		    /*Inform SPM ActivityRecordCmd*/
+        /* [$Satisfies $SDD_SUSD 249] */
+        (void) Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_UpdateRecord);
+«ENDIF-»
+        /* Stop Init Delay Timer */
+        Sum_SUSD_AR_InitDelay_Timer = 0u;
+		
+        /* For next wakeup, restart source analysis from scratch */
+        waiting_on_local_PN_AP_WUF_activations  = FALSE;  
+      }
+      else
+      {
+        Sum_SUSD_Match_0x26_WakeupSource(&Sum_SUSD_AR_InitDelay_Timer, &waiting_on_local_PN_AP_WUF_activations);
+      }
+      /* Implicit "else": return(), keep checking for local activations within k_AR_Init_Delay ms */
+    }
+    /* Else: no local PN/AP activation occurred within k_AR_Init_Delay ms, wakeup source must be Record 0x01 criteria */
+    else
+    {
+      /* Update DID with wakeup information and transition to "Active" state */      
+      Sum_SUSD_UpdateWakeupActivityRecord(RxID_NO_PN_ACTIVE_NO_PRIVATE_NETWORK_ACTIVE);
+      /* In this case, the active substate will be Sum_SUSD_AR_SubState_0x01 */
+      SUSD_E0D7_State = Sum_SUSD_AR_State_Active;
+«IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»
+		  /*Inform SPM ActivityRecordCmd*/
+      /* [$Satisfies $SDD_SUSD 249] */
+      (void) Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_UpdateRecord);
+«ENDIF-»
+      Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_SubState_0x01;
+	  /* Initialize Sum_SUSD_AR_ActiveSubState to sync with Sum_SUSD_E0D7_active_substate_in_process */
+      Sum_SUSD_AR_ActiveSubState = Sum_SUSD_AR_SubState_0x01;
+      /* For next wakeup, restart wakeup source analysis from scratch */
+      waiting_on_local_PN_AP_WUF_activations  = FALSE;
+    }
+  }
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_ActivityRecords_Active_Handler
+  Description   :   Handler function for the "Active" state of DID 0xE0D7
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   See in code comments
+ ************************************************************************************/
+ /* Satisfies: [$SDD_SUSD 212] [$SDD_SUSD 213] [$SDD_SUSD 217] [$SDD_SUSD 218] [$SDD_SUSD 219] [$SDD_SUSD 220] [$SDD_SUSD 221] [$SDD_SUSD 222] [$SDD_SUSD 223] [$SDD_SUSD 224] [$SDD_SUSD 242] */
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_ActivityRecords_Active_Handler(void)
+{
+  /* On entering Active, if in_process == Invalid, initialize it from Sum_SUSD_AR_ActiveSubState */
+  if (Sum_SUSD_E0D7_active_substate_in_process == Sum_SUSD_AR_SubState_Invalid)
+  {
+    Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_ActiveSubState;
+  }
+  /* Update the Activity Records using the substate information */
+  Sum_SUSD_Update_ActivityRecords();
+  /* Increment Total Activity Timer for DID 0xE0D7 */
+  Sum_SUSD_IncrementTAT();
+  /* if the ECU input voltage is below 10V for 10s */
+  if (Sum_SUSD_AR_VoltageUnder10_Timer >= 10000u)
+  {
+    /* Disable monitoring for DID */
+    SUSD_MonitorDisabled = TRUE;
+	
+	/* Transition to "Disabled" state for DID 0xE0D7 */
+	SUSD_E0D7_State = Sum_SUSD_AR_State_Disabled;
+  /* Whenever E0D7 exits Active to Disabled, reset in_process to Invalid */
+  Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_SubState_Invalid;
+
+«IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»
+	/*Inform SPM ActivityRecordCmd*/
+	/* [$Satisfies $SDD_SUSD 249] */
+	(void) Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_StopUpdate);
+«ENDIF-»
+    /* Sync the DID struct with its corresponding NVRam block */
+    Sum_SUSD_flush_E0D7_to_NVRam_Block();
+    /* Write everything to NV RAM: Monitor Disabled + whole DID */
+    /* [$Satisfies $SDD_SUSD 250] */
+    (void) Rte_Call_SUSD_RP_NvMService_E0D7_MonitorDisabled_WriteBlock((const void *) &«sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7_MonitorDisabled_NvMBlockRef.nvMRamBlockDataAddress-»);
+    /* [$Satisfies $SDD_SUSD 250] */
+    (void) Rte_Call_SUSD_RP_NvMService_DID_E0D7_WriteBlock((const void *) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7NvMBlockRef.nvMRamBlockDataAddress-»);
+
+  }
+  else {
+
+    /* If Vehicle Power Mode is equal to "Propulsion" (monitoring for DID must be enabled at this point) */
+    if (LastDeterminedVPM == SUM_PMS_PROPULSION)
+    {
+      /* Transition to "Inactive" state for DID 0xE0D7 */
+      SUSD_E0D7_State = Sum_SUSD_AR_State_Inactive;
+      /* Whenever E0D7 exits Active to Inactive, reset in_process to Invalid */
+      Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_SubState_Invalid;
+«IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»	  
+	  /*Inform SPM ActivityRecordCmd*/
+	  /* [$Satisfies $SDD_SUSD 249] */
+	  (void) Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_StopUpdate);
+«ENDIF-»
+    }
+	/* Update IRV before starting NvM write or DID clear to ensure SPM is aware and prevent interruption during longer SPM operations.*/
+	/* If the ECU has been in the "Active" state continuously for 3600 seconds */
+    if ((Sum_SUSD_GetCurrentTAT() - Sum_SUSD_GetNvM_TAT()) > 3600u)
+    {
+      /* Sync the DID struct with its corresponding NVRam block */
+      Sum_SUSD_flush_E0D7_to_NVRam_Block();
+      /* Write to NvM */
+      /* [$Satisfies $SDD_SUSD 250] */
+      (void) Rte_Call_SUSD_RP_NvMService_DID_E0D7_WriteBlock((const void *) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7NvMBlockRef.nvMRamBlockDataAddress-»);
+    }
+  }
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_ActivityRecords_Disabled_Handler
+  Description   :   Handler function for the "Disabled" state of DID 0xE0D7
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   [$Satisfies $SDD_SUSD 242]
+ ************************************************************************************/
+/* Satisfies:  [$SDD_SUSD 187] [$SDD_SUSD 193] */
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_ActivityRecords_Disabled_Handler(void)
+{
+  /* If (ECU input voltage > 12V for 10s AND Vehicle Power Mode = Propulsion for 60s) */
+  if ((Sum_SUSD_AR_VoltageOver12_Timer >= 10000u)  && (Sum_SUSD_AR_Propulsion_Timer >= 60000u))
+  {
+    SUSD_MonitorDisabled = FALSE;
+    /* Transition to state "Inactive" for the DID 0xE0D7 state machine */
+    SUSD_E0D7_State = Sum_SUSD_AR_State_Inactive;
+«IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»	  
+	  /*Inform SPM ActivityRecordCmd*/
+	  /* [$Satisfies $SDD_SUSD 249] */
+	  (void) Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_StopUpdate);
+«ENDIF-»
+  }
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_ActivityRecords_Inactive_Handler
+  Description   :   Handler function for the "Inactive" state of DID 0xE0D7
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 195] [$SDD_SUSD 196] [$SDD_SUSD 197] [$SDD_SUSD 198] */
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_ActivityRecords_Inactive_Handler(void)
+{
+  const uint32 active_delay_threshold_ms = (uint32)Rte_CData_SUSD_PDP_k_AR_Active_Delay() * (uint32)1000u;
+  /* Check if last determined Vehicle Power Mode is not "Propulsion" */
+  if (LastDeterminedVPM != SUM_PMS_PROPULSION)
+  {
+    /* Increment Sum_SUSD_AR_ActiveDelay_Timer */
+    Sum_SUSD_AR_ActiveDelay_Timer += (uint32) SUSD_AR_PERIODICITY;
+    /* If the delay exceeds the calibratable "active delay" threshold */
+
+    if ((Sum_SUSD_AR_ActiveDelay_Timer > active_delay_threshold_ms)«IF isPNCShutdownConfigured(sUSD.sUSDConfigSet)» ||
+        (SUSD_GaaSUMShutdownPermission[SUM_PNC] == ENABLESHUTDOWN)«ENDIF»)
+    {
+      «IF isPNCShutdownConfigured(sUSD.sUSDConfigSet)»
+      /* Transition to state "Active" only when timer expired */
+      if (Sum_SUSD_AR_ActiveDelay_Timer > active_delay_threshold_ms)
+      {
+        /* Transition to state "Active" for the DID 0xE0D7 state machine */
+        SUSD_E0D7_State = Sum_SUSD_AR_State_Active;
+«IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»        
+        /*Inform SPM ActivityRecordCmd*/
+        /* [$Satisfies $SDD_SUSD 249] */
+        (void) Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_UpdateRecord);
+«ENDIF-»
+      }
+      «ELSE»
+      /* Transition to state "Active" for the DID 0xE0D7 state machine */
+      SUSD_E0D7_State = Sum_SUSD_AR_State_Active;
+«IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»          
+      /*Inform SPM ActivityRecordCmd*/
+      /* [$Satisfies $SDD_SUSD 249] */
+      (void) Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_UpdateRecord);
+«ENDIF-»
+      «ENDIF»
+      /* Clear DID 0xE0D7 */
+      Sum_SUSD_ActivityRecord_Clear();
+    }
+  }
+  else {
+    /* Reset Sum_SUSD_AR_ActiveDelay_Timer */
+    Sum_SUSD_AR_ActiveDelay_Timer = 0u;
+  }
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+  Function name :   SUSD_PNC_UpdateRecord
+  Description   :   Function Runnable for managing the activity record notification from PNC.
+  Parameter in  :   const RecordIdType * RecordId - Activity Record Information
+  Parameter out :   None
+  Return value  :   Std_ReturnType - error code
+  Remarks       :   None
+ ************************************************************************************/
+/* PRQA S 1503 3 # When the SUSD is integrated, this Runnable will be called by RTE */
+/* Satisfies: [$SDD_SUSD 204] */
+FUNC(Std_ReturnType, SUSD_CODE) SUSD_PNC_UpdateRecord(const RecordIdType * RecordId){
+    Sum_SUSD_ActivityRecordUpdated(RecordId, Sum_SUSD_AR_PNC);
+    return E_OK;
+}
+
+/***********************************************************************************
+  Function name :   SUSD_SPM_UpdateRecord
+  Description   :   Function Runnable for managing the activity record notification from SPM.
+  Parameter in  :   const RecordIdType * RecordId - Activity Record Information
+  Parameter out :   None
+  Return value  :   Std_ReturnType - error code
+  Remarks       :   None
+ ************************************************************************************/
+/* PRQA S 1503 3 # When the SUSD is integrated, this Runnable will be called by RTE */
+/* Satisfies: [$SDD_SUSD 204] */
+FUNC(Std_ReturnType, SUSD_CODE) SUSD_SPM_UpdateRecord(const RecordIdType * RecordId){
+    Sum_SUSD_ActivityRecordUpdated(RecordId, Sum_SUSD_AR_SPM);
+    return E_OK;
+}
+
+/***********************************************************************************
+  Function name :   Sum_SUSD_ActivityRecordUpdated
+  Description   :   Function for handling all the activity record notifications from all sources
+  Parameter in  :   const RecordIdType * RecordId - Activity Record Information
+                    Sum_SUSD_AR_SourceType Source - The source of information (SUSD, PNC, SPM)
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 206] [$SDD_SUSD 207] [$SDD_SUSD 208] */
+static void Sum_SUSD_ActivityRecordUpdated(const RecordIdType * RecordId, Sum_SUSD_AR_SourceType Source){
+    /* 
+    Each RxID Active Status may keep information of RxID Active from different sources.
+    If applicable:
+        The 0th bit keeps the activity status of RxID if it comes from SUSD.
+        The 1st bit keeps the activity status of RxID if it comes from PNC.
+        The 2nd bit keeps the activity status of RxID if it comes from SPM.
+    */
+    /* PRQA S 4342 1 # Conversion to enum value range is ok because source contains only values of this type */
+    uint8 RxID_index = SUSD_GetRxIDEnumIndex((SUSD_RecordIDType)RecordId->RID);
+    Sum_SUSD_RxID_Active[RxID_index] = 
+        (Sum_SUSD_RxID_Active[RxID_index] & ~(1u << (uint8)Source)) | 
+        ((uint8)(RecordId->state) << (uint8)Source);
+    
+    /* Save previous reason before updating, for RxLAR capture at deactivation */
+    Sum_SUSD_RxID_PrevReason[RxID_index] = Sum_SUSD_RxID_Reason[RxID_index];
+    Sum_SUSD_RxID_Reason[RxID_index] = RecordId->RWR;
+
+    if(Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_LOCALLY_ACTIVE_AP)] != 0u){
+        Sum_SUSD_AR_ActiveSubState = Sum_SUSD_AR_SubState_0x20;
+    } else if (
+        (
+            Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_SDV2_ALL_NODES)] |
+            Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_SDV2_WIRELESS_CHARGING)] |
+            Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_SDV2_SHORT_DURATION_EVENT)] |
+            Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_SDV2_DIAGNOSE_MECHATRONICS_ETH)] |
+            Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_SDV2_ANY_DIAGNOSE_CAN_PN)]
+        ) != 0u){
+        Sum_SUSD_AR_ActiveSubState = Sum_SUSD_AR_SubState_0x21_0x25;
+    } else if (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_REMOTE_PN_AP_ACTIVE_NO_LOCAL_PN_AP_ACTIVE)] != 0u){
+        Sum_SUSD_AR_ActiveSubState = Sum_SUSD_AR_SubState_0x02;
+    } else if (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_PRIVATE_NETWORK_ACTIVE)] != 0u){
+        Sum_SUSD_AR_ActiveSubState = Sum_SUSD_AR_SubState_0x03;
+    } else if (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_WUF_RECEIVED_NO_PN_AP_ACTIVE)] != 0u){
+        Sum_SUSD_AR_ActiveSubState = Sum_SUSD_AR_SubState_0x26;
+    } else { // RxID_NO_PN_ACTIVE_NO_PRIVATE_NETWORK_ACTIVE
+        Sum_SUSD_AR_ActiveSubState = Sum_SUSD_AR_SubState_0x01;
+    }
+}
+
+/***********************************************************************************
+  Function name :   Sum_SUSD_AR_LINRecord_Handler
+  Description   :   Function for handling activity record notification that may relate to LIN.
+  Parameter in  :   uint32 WakeUpSources - The bitmapped active sources
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+/* PRQA S 1532 3 # Kept here for modularity */
+/* Satisfies: [$SDD_SUSD 205] [$SDD_SUSD 209] [$SDD_SUSD 210] */
+void Sum_SUSD_AR_LINRecord_Handler(uint32 WakeUpSources){
+«IF Susd_NumOfLINWakeUpSources(sUSD.sUSDConfigSet) > 0-»
+    /* List of current active LIN WakeUp Reasons */
+    static uint8 Sum_SUSD_AR_LINActiveReasons[«Susd_NumOfLINWakeUpSources(sUSD.sUSDConfigSet)»u] = {0};
+    /* Number of current active LIN WakeUp Reasons */
+    static uint8 Sum_SUSD_AR_NumOf_LINActiveReasons = 0;
+
+    uint8 i, fill_position = 0u;
+    RecordIdType RecordId;
+    uint32 WakeUpSourcesLocal = WakeUpSources & SUSD_AR_LIN_WAKEUPSOURCES_MASK;
+
+    /* Remove those that are not active anymore */
+    for(i = 0u; i < Sum_SUSD_AR_NumOf_LINActiveReasons; i++){
+        if(((WakeUpSourcesLocal >> Sum_SUSD_AR_LINActiveReasons[i]) % 2u) != 0u){
+            Sum_SUSD_AR_LINActiveReasons[fill_position] = Sum_SUSD_AR_LINActiveReasons[i];
+            fill_position++;
+            /* If the bit is already present in LINActiveReasons, remove it from WakeUpSources as it should not be added to list again. WakeUpSources will contain only the bits that should be added. */
+            WakeUpSourcesLocal &= ~((uint32)1u << Sum_SUSD_AR_LINActiveReasons[i]);
+        }
+    }
+    Sum_SUSD_AR_NumOf_LINActiveReasons = fill_position;
+
+    /* Add WakeUpSources active bits (guaranteed not present in list) to the list. */
+    for(i = 0u; i < 32u; i++){
+        if((WakeUpSourcesLocal % 2u) == 1u){
+            Sum_SUSD_AR_LINActiveReasons[Sum_SUSD_AR_NumOf_LINActiveReasons] = i;
+            Sum_SUSD_AR_NumOf_LINActiveReasons++;  
+        }
+        WakeUpSourcesLocal = WakeUpSourcesLocal >> 1u;
+    }
+
+    /* Inform Sum_SUSD_ActivityRecordUpdated */
+    RecordId.RID = PRIVATE_NETWORK_ACTIVE;
+    RecordId.RWR = Sum_SUSD_AR_LINActiveReasons[0u];
+    RecordId.state = (Sum_SUSD_AR_NumOf_LINActiveReasons != 0u) ? TRUE : FALSE;
+ 
+    Sum_SUSD_ActivityRecordUpdated(&RecordId, Sum_SUSD_AR_SUSD);
+«ENDIF-»
+}
+
+/***********************************************************************************
+  Function name :   Sum_SUSD_AR_ECURecord_Handler
+  Description   :   Function for handling activity record notification that may relate to Record 0x01.
+  Parameter in  :   uint32 WakeUpSources - The bitmapped active sources
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+/* PRQA S 1532 3 # Kept here for modularity */
+/* Satisfies: [$SDD_SUSD 239] [$SDD_SUSD 209] [$SDD_SUSD 210] [$SDD_SUSD 235] [$SDD_SUSD 221] */
+void Sum_SUSD_AR_ECURecord_Handler(uint32 WakeUpSources){
+    uint8 i;
+    RecordIdType RecordId;
+    «IF sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_Record0x01_Type == "BitMapped"-»
+    «LET Susd_NameOfECUWakeUpSourcesSortedByBitID(sUSD.sUSDConfigSet) AS sourceList-»
+    uint8 WakeUpSourceCount = «sourceList.size»u;
+    const uint8 WakeUpSourceBitPosition[«sourceList.size»u] = {«FOREACH Susd_GetECUWakeUpSourceIdsSorted(sUSD.sUSDConfigSet) AS sourceId-»«sourceId»u, «ENDFOREACH-»};
+
+    /*
+      The bitmapped reason, RWR, is populated as follows:
+    «FOREACH sourceList AS Reason ITERATOR i-»
+      bit«i.counter0»: «Reason»
+    «ENDFOREACH-»
+    «ENDLET-»
+    */
+    RecordId.RWR = 0u;
+    for(i = 0u; i < WakeUpSourceCount; i++){
+      // Check if the bit corresponding to the reason is active in WakeUpSources
+      if (((WakeUpSources >> WakeUpSourceBitPosition[i]) & 1u) == 1u) {
+        RecordId.RWR |= (1u << i);
+      } 
+    }
+
+    RecordId.RID = NO_PN_ACTIVE_NO_PRIVATE_NETWORK_ACTIVE;
+    RecordId.state = (RecordId.RWR != 0u) ? TRUE : FALSE;
+    Sum_SUSD_ActivityRecordUpdated(&RecordId, Sum_SUSD_AR_SUSD);
+«ELSE-»
+«IF Susd_NumOfECUWakeUpSources(sUSD.sUSDConfigSet) > 0-»
+    /* List of current active ECU WakeUp Reasons */
+    static uint8 Sum_SUSD_AR_ECUActiveReasons[«Susd_NumOfECUWakeUpSources(sUSD.sUSDConfigSet)»u] = {0};
+    /* Number of current active ECU WakeUp Reasons */
+    static uint8 Sum_SUSD_AR_NumOf_ECUActiveReasons = 0;
+
+    uint8 fill_position = 0u;
+    uint32 WakeUpSourcesLocal = WakeUpSources & SUSD_AR_ECU_WAKEUPSOURCES_MASK;
+
+    /* Remove those that are not active anymore */
+    for(i = 0u; i < Sum_SUSD_AR_NumOf_ECUActiveReasons; i++){
+        if(((WakeUpSourcesLocal >> Sum_SUSD_AR_ECUActiveReasons[i]) % 2u) != 0u){
+            Sum_SUSD_AR_ECUActiveReasons[fill_position] = Sum_SUSD_AR_ECUActiveReasons[i];
+            fill_position++;
+            /* If the bit is already present in ECUActiveReasons, remove it from WakeUpSources as it should not be added to list again. WakeUpSources will contain only the bits that should be added. */
+            WakeUpSourcesLocal &= ~((uint32)1u << Sum_SUSD_AR_ECUActiveReasons[i]);
+        }
+    }
+    Sum_SUSD_AR_NumOf_ECUActiveReasons = fill_position;
+
+    /* Add WakeUpSources active bits (guaranteed not present in list) to the list. */
+    for(i = 0u; i < 32u; i++){
+        if((WakeUpSourcesLocal % 2u) == 1u){
+            Sum_SUSD_AR_ECUActiveReasons[Sum_SUSD_AR_NumOf_ECUActiveReasons] = i;
+            Sum_SUSD_AR_NumOf_ECUActiveReasons++;  
+        }
+        WakeUpSourcesLocal = WakeUpSourcesLocal >> 1u;
+    }
+
+    /* Inform Sum_SUSD_ActivityRecordUpdated */
+    RecordId.RID = NO_PN_ACTIVE_NO_PRIVATE_NETWORK_ACTIVE;
+    RecordId.RWR = Sum_SUSD_AR_ECUActiveReasons[0u];
+    RecordId.state = (Sum_SUSD_AR_NumOf_ECUActiveReasons != 0u) ? TRUE : FALSE;
+
+    Sum_SUSD_ActivityRecordUpdated(&RecordId, Sum_SUSD_AR_SUSD);
+«ENDIF-»
+«ENDIF-»
+}
+
+
+/***********************************************************************************
+  Function name :   SUSD_GetRxIDEnumIndex
+  Description   :   Maps a given RxID (Record ID) to its corresponding index in the
+                    RxID-to-index mapping table. Each known RxID is associated with
+                    a unique index used to store/retrieve its corresponding entry
+                    in the Activity_Records[] array.
+
+                    If the RxID does not match any known entry, the function returns
+                    NUM_RxIDS, which indicates an invalid or unrecognized RxID.
+  Parameter in  :   rxid - The record ID to convert into a mapping table index.
+  Parameter out :   None
+  Return value  :   uint8 - The index corresponding to the given RxID, or NUM_RxIDS
+                    if the RxID is invalid.
+***********************************************************************************/
+static uint8 SUSD_GetRxIDEnumIndex(SUSD_RecordIDType rxid)
+{
+  uint8 retVal = NUM_RxIDS;
+  uint8 itr;
+  static const RxIDMapping mappingTable[] = {
+    { RxID_NO_PN_ACTIVE_NO_PRIVATE_NETWORK_ACTIVE, 0u },
+    { RxID_REMOTE_PN_AP_ACTIVE_NO_LOCAL_PN_AP_ACTIVE, 1u },
+    { RxID_PRIVATE_NETWORK_ACTIVE, 2u },
+    { RxID_LOCALLY_ACTIVE_AP, 3u },
+    { RxID_SDV2_ALL_NODES, 4u },
+    { RxID_SDV2_WIRELESS_CHARGING, 5u },
+    { RxID_SDV2_SHORT_DURATION_EVENT, 6u },
+    { RxID_SDV2_DIAGNOSE_MECHATRONICS_ETH, 7u },
+    { RxID_SDV2_ANY_DIAGNOSE_CAN_PN, 8u },
+    { RxID_WUF_RECEIVED_NO_PN_AP_ACTIVE, 9u }
+  };
+  const uint8 tableSize = sizeof(mappingTable) / sizeof(mappingTable[0]);
+  
+
+  for (itr = 0u; itr < tableSize; itr++)
+  {
+      if (mappingTable[itr].id == rxid)
+      {
+          retVal = mappingTable[itr].index;
+          break;
+      }
+  }
+
+  return retVal;
+}
+
+/***********************************************************************************
+  Function name :   Sum_SUSD_IncrementTWC
+  Description   :   Increments the Total Wakeup Counter (TWC) in the DID 0xE0D7 structure.
+                    This function ensures atomic incrementation of the TWC field, which
+                    tracks the total number of system wakeups.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+***********************************************************************************/
+/* PRQA S 1532 2 # Function defined here for modularity reason */
+static void Sum_SUSD_IncrementTWC(void) 
+{
+  /* If the counter reaches the maximum value, it shall remain at this value and not roll over */
+  if(Susd_DID_E0D7.TWC < 0xFFFFu)
+  {
+      /* Increment the Total Wakeup Counter (TWC) */
+      Susd_DID_E0D7.TWC++; 
+  } 
+}
+
+/* PRQA S 1532 20 # Function defined here for modularity reason */
+/***********************************************************************************
+  Function name :   SUSD_Init_RxID_Index_Map
+  Description   :   Initializes the internal RxID-to-index mapping for Activity_Records[].
+                    This function scans the DID 0xE0D7 structure and updates:
+                    - the index mapping for each known RxID,
+                    - the pointer to the next available record slot.
+                    It is called at system startup to restore the internal
+                    state from the persisted diagnostic data.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   [$Satisfies $SDD_SUSD 178]
+***********************************************************************************/
+void SUSD_Init_RxID_Index_Map(void)
+{
+    uint8 i;
+    SUSD_RecordIDType rxid;
+    uint8 rxidEnumIdx;
+    Susd_Activity_Records_NextFreeIndex = 0u;
+    /* Additionally, set the TAT ms timer to its start value */
+    /* PRQA S 4391 1 # the widening on assignment is controlled */
+    Sum_SUSD_E0D7_TAT_in_ms = (uint64) (Susd_DID_E0D7.TAT * 1000u);
+    
+    /* Initialize mapping table to invalid */
+    for (i = 0u; i < NUM_RxIDS; ++i)
+    {
+        Susd_RxID_to_Index_Map[i] = RxID_INVALID_INDEX;
+    }
+
+    /* Build mapping by scanning Activity_Records */
+    for (i = 0u; i < SUSD_ACTIVITY_RECORDS_MAX_NUMBER; ++i)
+    {
+        rxid = Susd_DID_E0D7.Activity_Records[i].RxID;
+
+        if (rxid != RxID_NO_RECORD)
+        {
+            /* Get a unique index associated with each known RxID*/
+            rxidEnumIdx = SUSD_GetRxIDEnumIndex(rxid);
+            if (rxidEnumIdx < NUM_RxIDS)
+            {
+                Susd_RxID_to_Index_Map[rxidEnumIdx] = i;
+                /* Increment next available position in DID */
+                Susd_Activity_Records_NextFreeIndex++;
+            }
+        }
+    }
+}
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_ActivityRecord_Clear
+  Description   :   Clears all the fields of the Susd_DID_E0D7 structure by setting them to zero.
+                    This includes the Total Activity Timer, Total Wakeup Counter, all entries
+                    in the Activity_Records array and additional variables used for the correct
+                    implementation of the DID state machines
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   void
+  Remarks       :   [$Satisfies $SDD_SUSD 181] [$Satisfies $SDD_SUSD 226]
+ ***********************************************************************************/
+/* PRQA S 1532 2 # Function defined here for modularity reason */
+FUNC(void, SUSD_CODE) Sum_SUSD_ActivityRecord_Clear(void)
+{
+    uint8 i;
+    /* Clear DID 0xE0D7 */
+    (void)Sum_Common_MemSet(&Susd_DID_E0D7, 0u, sizeof(Susd_DID_E0D7));
+    /* Reset the index tracking the next free slot in DID */
+    Susd_Activity_Records_NextFreeIndex = 0u;  
+    /* Additionally, clear the accumulated Total Activity Timer (TAT) gap in ms for the "Active" state management of DID */
+    Sum_SUSD_E0D7_TAT_in_ms = 0u;
+    /* Clear the accumulated timer gaps in ms for every RxID */
+    for (i = 0; i < NUM_RxIDS; i++)
+    {
+      Sum_SUSD_E0D7_Cumulative_Timer_Gaps_in_ms[i] = 0u;
+    }
+    /* Initialize mapping table to invalid */
+    for (i = 0u; i < NUM_RxIDS; ++i)
+    {
+        Susd_RxID_to_Index_Map[i] = RxID_INVALID_INDEX;
+    }
+	      /* Serialize the cleared DID struct into the NvM RAM block buffer */
+    (void) RE_ReadData_DID_E0D7(DCM_INITIAL, SUM_SUSD_E0D7_WakeupOffPwmActRecords);  
+    /* Save E0D7 data to NvM, after is cleared in RAM memory */
+    /* [$Satisfies $SDD_SUSD 250] */
+    (void) Rte_Call_SUSD_RP_NvMService_DID_E0D7_WriteBlock((const void *) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7NvMBlockRef.nvMRamBlockDataAddress-»);
+
+«IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»  	
+    /*Inform SPM ActivityRecordCmd*/
+	/* [$Satisfies $SDD_SUSD 249] */
+	(void)Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_Reset);
+«ENDIF-»
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_E0D7_Init_ActiveSubState
+  Description   :   Initialize the active substate for DID 0xE0D7.
+                    This function must be called during SUSD_Init() to ensure proper initialization.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   void
+ ************************************************************************************/
+/* PRQA S 1532 2 # Function defined here for modularity reason */
+void SUSD_E0D7_Init_ActiveSubState(void)
+{
+    /* Initialize Sum_SUSD_E0D7_active_substate_in_process is Invalid */
+    Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_SubState_Invalid;
+}
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_Match0x02_0x03_WakeupSource
+  Description   :   Matches the ECU Wakeup Source with RxID = 0x02 or 0x03 when DID 0xE0D7 is in the "Initialization to Active Check" state
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   SUSD_RecordIDType (RxID_NO_RECORD for unsuccessful match)
+  Remarks       :   See in code comments
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static SUSD_RecordIDType Sum_SUSD_Match_0x02_0x03_WakeupSource(void)
+{
+  /* Detected wakeup source */
+  SUSD_RecordIDType source;
+  /* Determine possible wakeup sources conditions */
+  boolean no_local_APs_active, no_local_PNs_active, no_remote_APs_PNs_active, at_least_one_remote_AP_PN_active, 
+          at_least_one_LIN_active;
+  /* Check wakeup context */
+  /* PRQA S 4404 EOF # left sides ought to be of _Bool type when code is integrated */
+  no_local_APs_active = (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_LOCALLY_ACTIVE_AP)] == 0u);
+  no_local_PNs_active = (
+                        (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_SDV2_ALL_NODES)] == 0u) &&
+                        (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_SDV2_WIRELESS_CHARGING)] == 0u) &&
+                        (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_SDV2_SHORT_DURATION_EVENT)] == 0u) &&
+                        (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_SDV2_DIAGNOSE_MECHATRONICS_ETH)] == 0u) &&
+                        (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_SDV2_ANY_DIAGNOSE_CAN_PN)] == 0u)
+  );
+  no_remote_APs_PNs_active = (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_REMOTE_PN_AP_ACTIVE_NO_LOCAL_PN_AP_ACTIVE)] == 0u);
+  at_least_one_remote_AP_PN_active = (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_REMOTE_PN_AP_ACTIVE_NO_LOCAL_PN_AP_ACTIVE)] != 0u);
+  at_least_one_LIN_active = (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_PRIVATE_NETWORK_ACTIVE)] != 0u);
+  
+  /* Default: need further elaboration to detect the actual wakeup source (can result in a local PN/AP activation or in ECU internal reasons) */
+  source = RxID_NO_RECORD;
+
+  /* Record ID 0x02 is active when at least one remote PN/AP is active and no local APs/PNs are active 
+     (in SDV-6001 27.27.181.1p0, IDOC-1658 and IDOC-1437 are in conflict regarding the activation criteria
+      of Record ID 0x02. To reconcile them, I think it makes sense to remove, from IDOC-1437, the check, for
+      the Record ID 0x02 activation criteria, on the absence of private LIN network activations
+     ) */
+  /* PRQA S 4558 EOF # boolean expressions ought to be of _Bool type when code is integrated */
+  /* PRQA S 4115 EOF # boolean expressions ought to be of _Bool type when code is integrated */
+  if (at_least_one_remote_AP_PN_active && no_local_APs_active && no_local_PNs_active)
+  {
+    source = RxID_REMOTE_PN_AP_ACTIVE_NO_LOCAL_PN_AP_ACTIVE;
+  }
+  /* Record ID 0x03 is active when a private LIN is active and no APs/PNs (local or remote) are active */
+  if (at_least_one_LIN_active && no_local_APs_active && no_local_PNs_active && no_remote_APs_PNs_active)
+  {
+    source = RxID_PRIVATE_NETWORK_ACTIVE;
+  }
+
+  return source;
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_Match_0x20_WakeupSource
+  Description   :   Matches the ECU Wakeup Source with RxID = 0x20 when DID 0xE0D7 is in the "Initialization to Active Check" state
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   SUSD_RecordIDType (RxID_NO_RECORD for unsuccessful match)
+  Remarks       :   None
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static SUSD_RecordIDType Sum_SUSD_Match_0x20_WakeupSource(void)
+{
+  SUSD_RecordIDType source = RxID_NO_RECORD;
+  if (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_LOCALLY_ACTIVE_AP)] != 0u)
+  {
+    source = RxID_LOCALLY_ACTIVE_AP;
+  }
+  return source;
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_Match_0x21_0x25_WakeupSource
+  Description   :   Matches the ECU Wakeup Source with RxID = 0x21-0x25 when DID 0xE0D7 is in the "Initialization to Active Check" state.
+                    Returns the next local active PN (in order of enumeration) that caused a wakeup of the ECU
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   SUSD_RecordIDType (RxID_NO_RECORD for unsuccessful match)
+  Remarks       :   Should only be present if the ECU doesn't support activation profiles
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static SUSD_RecordIDType Sum_SUSD_Match_0x21_0x25_WakeupSource(void)
+{
+  /* Tracks if there is an active local PN among the remaining ones */
+  boolean found = FALSE;
+  /* Iterator over all possible PNs (assumption: the PN RxIDs are consecutive), must retain its value
+     in order to fully process the PN list */
+  static SUSD_RecordIDType RxID = RxID_SDV2_ALL_NODES;
+  /* Holds the found local active PN (if any) */
+  SUSD_RecordIDType source = RxID_NO_RECORD;
+  /* Scans over the not yet processed PNs until one is found that's locally active */
+  while (RxID <= RxID_SDV2_ANY_DIAGNOSE_CAN_PN)
+  {
+    /* If the actual PN is locally active */
+    if (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID)] != 0u)
+    {
+      found = TRUE;
+      /* Doesn't increment RxID, must be taken care of out of cycle */
+      break;
+    }
+    /* Check next PN */
+    /* PRQA S 4527 1 # The usage of the enum here is strictly controlled for the bounds check */
+    RxID++;
+  }
+  /* If found, return this PN's RxID and make the next scan start from the next one in the enumeration list */
+  if (found == TRUE) {
+    source = RxID;
+    /* PRQA S 4527 1 # The usage of the enum here is strictly controlled for the bounds check */
+    RxID++;
+  }
+  else
+  {
+    /* No more PNs are locally active in the current wakeup, rewind the iterator for the next wakeup and return RxID_NO_RECORD */
+    RxID = RxID_SDV2_ALL_NODES;
+  }
+  return source;
+
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_Match_0x26_WakeupSource
+  Description   :   Matches the ECU Wakeup Source with RxID = 0x26 when DID 0xE0D7 is in the "Initialization to Active Check" state
+  Parameter in  :   pointer to initDelayTimer
+                    pointer to waitingLocalPnApActivation
+  Parameter out :   None
+  Return value  :   SUSD_RecordIDType (RxID_NO_RECORD for unsuccessful match)
+  Remarks       :   None
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_Match_0x26_WakeupSource(uint16 * const initDelayTimer, boolean * const waitingLocalPnApActivation)
+{
+  if((NULL_PTR != initDelayTimer) && (NULL_PTR != waitingLocalPnApActivation))
+  {
+    if (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(RxID_WUF_RECEIVED_NO_PN_AP_ACTIVE)] != 0u)
+    {
+      /* Update DID with wakeup information for Record 0x26. In this case, the active substate will be Sum_SUSD_AR_SubState_0x26 */
+      Sum_SUSD_UpdateWakeupActivityRecord(RxID_WUF_RECEIVED_NO_PN_AP_ACTIVE);
+      SUSD_E0D7_State = Sum_SUSD_AR_State_Active; 
+      Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_SubState_0x26;
+      «IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»
+		    /*Inform SPM ActivityRecordCmd*/
+        /* [$Satisfies $SDD_SUSD 249] */
+        (void) Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_UpdateRecord);
+      «ENDIF-»
+      /* Stop Init Delay Timer */
+      *initDelayTimer = 0u;
+      /*Reset the waiting_on_local_PN_AP_WUF_activations  */
+      *waitingLocalPnApActivation = FALSE;
+    }
+  }
+  return;
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_UpdateWakeupActivityRecord
+  Description   :   Updates the Activity Record wakeup information for record RxID
+  Parameter in  :   RxID
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_UpdateWakeupActivityRecord(SUSD_RecordIDType RxID)
+{
+  /* Pointer to the Activity Record object for record RxID */
+  Susd_Activity_Record *activity_record_ptr;
+  activity_record_ptr = Sum_SUSD_get_ActivityRecord(RxID);
+  /* Increments Record Wakeup Counter (if it hasn't already reached its maximum value) */
+  if ((activity_record_ptr -> RxWC) < 0xFFFFu)
+  {
+    activity_record_ptr -> RxWC++;
+  }
+  /* Updates Record Wakeup Reason */
+  (activity_record_ptr -> RxWR) = Sum_SUSD_RxID_Reason[SUSD_GetRxIDEnumIndex(RxID)];
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_get_ActivityRecord
+  Description   :   Returns (pointer to) the Activity Record for record RxID
+                    If not already in DID, creates it.                    
+  Parameter in  :   RxID
+  Parameter out :   None
+  Return value  :   Susd_Activity_Record *
+  Remarks       :   None
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static Susd_Activity_Record *Sum_SUSD_get_ActivityRecord(SUSD_RecordIDType RxID)
+{
+  /* Index of Activity Record within the Activity Records section of DID 0xE0D7 */
+  uint8 index = Susd_RxID_to_Index_Map[SUSD_GetRxIDEnumIndex(RxID)];
+  /* If record RxID is not yet present in DID */ 
+  if (index == RxID_INVALID_INDEX)
+  {
+    /* Allocate the next free slot for it */
+    index = Susd_Activity_Records_NextFreeIndex;
+    Susd_Activity_Records_NextFreeIndex++;
+    Susd_RxID_to_Index_Map[SUSD_GetRxIDEnumIndex(RxID)] = index;
+    /* Update RxID field */
+    Susd_DID_E0D7.Activity_Records[index].RxID = RxID;
+  }
+  return &(Susd_DID_E0D7.Activity_Records[index]);
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_IncrementTAT
+  Description   :   Increments the Total Activity Timer for DID 0xE0D7                 
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Not rolling over if TAT reaches its maximum value
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_IncrementTAT(void)
+{
+  /* If TAT can still be incremented */
+  /* PRQA S 1840 1 # the right operand is constant but its value depends on configuration */
+  if (Sum_SUSD_E0D7_TAT_in_ms <= (uint64) (TAT_MAX_VALUE_MS - SUSD_AR_PERIODICITY))
+  {
+    Sum_SUSD_E0D7_TAT_in_ms += (uint64) SUSD_AR_PERIODICITY;
+    Susd_DID_E0D7.TAT = (uint32) (Sum_SUSD_E0D7_TAT_in_ms / 1000u);
+  }
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_GetCurrentTAT
+  Description   :   Gets the current Total Activity Timer (TAT) for DID 0xE0D7                 
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   uint32
+  Remarks       :   None
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static uint32 Sum_SUSD_GetCurrentTAT(void)
+{
+  return Susd_DID_E0D7.TAT;
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_GetNvM_TAT
+  Description   :   Returns the NVM-stored Total Activity Timer (TAT) for DID 0xE0D7                 
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   uint32
+  Remarks       :   None
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static uint32 Sum_SUSD_GetNvM_TAT(void)
+{
+  uint32 TAT;
+  /* Convert 4-bytes big-endian TAT to uint32 TAT */
+  TAT = ((uint32) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7NvMBlockRef.nvMRamBlockDataAddress-»[0] << 24) |
+        ((uint32) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7NvMBlockRef.nvMRamBlockDataAddress-»[1] << 16) |
+        ((uint32) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7NvMBlockRef.nvMRamBlockDataAddress-»[2] << 8)  |
+        ((uint32) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7NvMBlockRef.nvMRamBlockDataAddress-»[3]);
+  return TAT;
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_flush_E0D7_to_NVRam_Block
+  Description   :   Flush the current contents of DID 0xE0D7 to corresponding NVRAM block               
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   [$Satisfies $SDD_SUSD 242]
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_flush_E0D7_to_NVRam_Block(void)
+{
+  (void) RE_ReadData_DID_E0D7(DCM_INITIAL, SUM_SUSD_E0D7_WakeupOffPwmActRecords);
+«IF Susd_IsSpmConfigured(sUSD.sUSDConfigSet) -»  
+   /*Inform SPM ActivityRecordCmd*/
+  /* [$Satisfies $SDD_SUSD 249] */
+  (void) Rte_Call_RP_SUSD_SPM_ActivityRecordCmd_ActivityRecordCmd(SUM_ARC_NvMStore);
+«ENDIF-»  
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_Update_ActivityRecords
+  Description   :   Updates the Activity Records based on the active substates evolution                 
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   [$Satisfies $SDD_SUSD 242]
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_Update_ActivityRecords(void)
+{
+  /* There are two types of substates:
+     - the one currently "in process"
+     - the one currently "detected" (may be different from the one "in process" if any wakeup sources have changed in the meantime).
+    This function manages the logic for the former. If the latter is different from the former, invoking this function will terminate
+    the management of the no longer valid substate, and the "in process" substate will be replaced by the "detected" one.
+    This discretization of steps is necessary for the correct processing of the substates'state machines. */
+
+  switch (Sum_SUSD_E0D7_active_substate_in_process)
+  {
+    case Sum_SUSD_AR_SubState_0x01:
+      Sum_SUSD_Generic_Active_RxID_Handler(RxID_NO_PN_ACTIVE_NO_PRIVATE_NETWORK_ACTIVE);
+      break;
+    case Sum_SUSD_AR_SubState_0x02:
+      Sum_SUSD_Generic_Active_RxID_Handler(RxID_REMOTE_PN_AP_ACTIVE_NO_LOCAL_PN_AP_ACTIVE);
+      break;
+    case Sum_SUSD_AR_SubState_0x03:
+      Sum_SUSD_Generic_Active_RxID_Handler(RxID_PRIVATE_NETWORK_ACTIVE);
+      break;
+    case Sum_SUSD_AR_SubState_0x20:
+      Sum_SUSD_Generic_Active_RxID_Handler(RxID_LOCALLY_ACTIVE_AP);
+      break;
+    case Sum_SUSD_AR_SubState_0x21_0x25:
+      /* More complex logic, needs to eventually process multiple locally active PNs */
+      Sum_SUSD_AR_Substate_0x21_0x25_Handler();
+      break;
+    case Sum_SUSD_AR_SubState_0x26:
+      Sum_SUSD_Generic_Active_RxID_Handler(RxID_WUF_RECEIVED_NO_PN_AP_ACTIVE);
+      break;  
+    default:
+      /* Do nothing */
+      break;
+  }
+  
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_Generic_Active_RxID_Handler
+  Description   :   Handles the specific active substate for an RxID                 
+  Parameter in  :   SUSD_RecordIDType - RxID to be handled
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Assumes no wakeup source can become active and then inactive AFTER 1ms
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_Generic_Active_RxID_Handler(SUSD_RecordIDType RxID)
+{
+  /* If we are entering the handler for RxID */
+  if (Sum_SUSD_E0D7_on_entry_flags[SUSD_GetRxIDEnumIndex(RxID)] == TRUE)
+  {
+    /* Handle the "on-entry" activity record update */
+    Sum_SUSD_AR_Substate_OnEntry_Handler(RxID);
+    /* Clear the cumulative timer gap for RxID */
+    Sum_SUSD_E0D7_Cumulative_Timer_Gaps_in_ms[SUSD_GetRxIDEnumIndex(RxID)] = 0u;
+    /* Update for next entry ("during") */
+    Sum_SUSD_E0D7_on_entry_flags[SUSD_GetRxIDEnumIndex(RxID)] = FALSE;
+  }
+  /* Entered this handler earlier for RxID */
+  else
+  {
+    /* Handle the "during" activity record update */
+    Sum_SUSD_AR_Substate_During_Handler(RxID);
+    /* If the active substate has changed */
+    if (Sum_SUSD_AR_ActiveSubState != Sum_SUSD_E0D7_active_substate_in_process)
+    {
+      /* Restore the "on-entry" flag */
+      Sum_SUSD_E0D7_on_entry_flags[SUSD_GetRxIDEnumIndex(RxID)] = TRUE;
+      /* Update substate */
+      Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_ActiveSubState;
+    }
+  }
+}
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_AR_Substate_0x21_0x25_Handler
+  Description   :   Handles the specific active substate for RxIDs 0x21-0x25             
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   Assumes no PN can become active and then inactive AFTER 1ms
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_AR_Substate_0x21_0x25_Handler(void)
+{
+  /* Iterator over PNs IDs */
+  SUSD_RecordIDType i;
+  /* Track whether the substate 0x21-0x25 has just been entered */
+  static boolean just_entered_this_state = TRUE;
+  /* Track which PNs have been (so far) locally active */
+  static boolean locally_active_PNs[5];
+  /* If we just transitioned into this state */
+  if (just_entered_this_state == TRUE)
+  {
+    /* Track the new locally active PNs (if one PN becomes alive right after we exit the "Initialization to Active Check" 
+       state, it is correctly detected as a PN not contributing to the ECU wakeup) */
+    /* PRQA S 4527 1 # The usage of the enum here is strictly controlled for the bounds check */
+    for (i = RxID_SDV2_ALL_NODES; i <= RxID_SDV2_ANY_DIAGNOSE_CAN_PN; i++)
+    {
+      /* If this PN has just been detected locally active (at least, within the last 2 ms) */
+      if (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(i)] != 0u)
+      {
+        /* Track the active status for this PN */
+        locally_active_PNs[SUSD_GetRxIDEnumIndex(i) - SUSD_GetRxIDEnumIndex(RxID_SDV2_ALL_NODES)] = TRUE;
+        /* Process the activity record for the actual PN */
+        Sum_SUSD_Generic_Active_RxID_Handler(i);
+      }
+    }
+    /* Update for next entry */
+    just_entered_this_state = FALSE;
+  }
+  /* Entered this state earlier */
+  else
+  {
+    /* If the substate has not changed (implies there still are locally active PNs) */
+    if (Sum_SUSD_AR_ActiveSubState == Sum_SUSD_E0D7_active_substate_in_process)
+    {
+      /* Track the locally active PNs */
+      /* PRQA S 4527 1 # The usage of the enum here is strictly controlled for the bounds check */
+      for (i = RxID_SDV2_ALL_NODES; i <= RxID_SDV2_ANY_DIAGNOSE_CAN_PN; i++)
+      {
+        /* If the PN is locally active */
+        if (Sum_SUSD_RxID_Active[SUSD_GetRxIDEnumIndex(i)] != 0u)
+        {
+          /* Track the active status for this PN */
+          locally_active_PNs[SUSD_GetRxIDEnumIndex(i) - SUSD_GetRxIDEnumIndex(RxID_SDV2_ALL_NODES)] = TRUE;
+          /* Process the activity record for the actual PN */
+          Sum_SUSD_Generic_Active_RxID_Handler(i);
+        }
+        /* If the PN is not locally active */
+        else
+        { 
+          /* If it's JUST become locally inactive */
+          if (locally_active_PNs[SUSD_GetRxIDEnumIndex(i) - SUSD_GetRxIDEnumIndex(RxID_SDV2_ALL_NODES)] == TRUE)
+          {
+            /* Track the active status for this PN */
+            locally_active_PNs[SUSD_GetRxIDEnumIndex(i) - SUSD_GetRxIDEnumIndex(RxID_SDV2_ALL_NODES)] = FALSE;
+            /* Process the activity record for the actual PN to terminate its handling: must restore the "on-entry" flag to TRUE */
+            Sum_SUSD_Generic_Active_RxID_Handler(i);
+            /* Restore the "on-entry" flag for next run, as the generic handler updates it only when the detected active substate changes */
+            Sum_SUSD_E0D7_on_entry_flags[SUSD_GetRxIDEnumIndex(i)] = TRUE;
+          }
+        }
+      }
+    }
+    /* If the substate has changed */
+    else 
+    {
+      /* Track the previously active PNs */
+      /* PRQA S 4527 1 # The usage of the enum here is strictly controlled for the bounds check */
+      for (i = RxID_SDV2_ALL_NODES; i <= RxID_SDV2_ANY_DIAGNOSE_CAN_PN; i++)
+      {
+        /* If it's JUST become locally inactive */
+        if (locally_active_PNs[SUSD_GetRxIDEnumIndex(i) - SUSD_GetRxIDEnumIndex(RxID_SDV2_ALL_NODES)] == TRUE)
+        {
+          /* Track the active status for this PN */
+          locally_active_PNs[SUSD_GetRxIDEnumIndex(i) - SUSD_GetRxIDEnumIndex(RxID_SDV2_ALL_NODES)] = FALSE;
+          /* Process the activity record for the actual PN, terminate its handling */
+          Sum_SUSD_Generic_Active_RxID_Handler(i);
+        }
+      }
+      /* Update for next entry */
+      just_entered_this_state = TRUE;
+      /* Update next active substate to serve */
+      Sum_SUSD_E0D7_active_substate_in_process = Sum_SUSD_AR_ActiveSubState;
+    }
+  }
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_AR_Substate_OnEntry_Handler
+  Description   :   Handles the "on-entry" activity record update for an active RxID          
+  Parameter in  :   SUSD_RecordIDType - RxID
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_AR_Substate_OnEntry_Handler(SUSD_RecordIDType RxID)
+{
+  /* Get (pointer to) actual activity record to update */
+  Susd_Activity_Record *activity_record_ptr = Sum_SUSD_get_ActivityRecord(RxID);
+  /* Clear RxID Current Activity Timer (RxCAT) */
+  (activity_record_ptr -> RxCAT) = 0u;
+  /* RxLAR is NOT updated on entry - per SDV-6001, RxLAR shall only be updated
+     when the record transitions from active to inactive (all sources off) */
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_AR_Substate_During_Handler
+  Description   :   Handles the "during" activity record update for an active RxID          
+  Parameter in  :   SUSD_RecordIDType - RxID
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   [$Satisfies $SDD_SUSD 221]
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_AR_Substate_During_Handler(SUSD_RecordIDType RxID)
+{
+  /* Get (pointer to) actual activity record to update */
+  Susd_Activity_Record *activity_record_ptr = Sum_SUSD_get_ActivityRecord(RxID);
+  uint8 RxID_index = SUSD_GetRxIDEnumIndex(RxID);
+
+  /* Check if the RxID is still active (any source keeping it active) */
+  if (Sum_SUSD_RxID_Active[RxID_index] != 0u)
+  {
+    /* RxID is still active: increment timers, do NOT update RxLAR */
+    /* Increment gap timer value of periodicity */
+    Sum_SUSD_E0D7_Cumulative_Timer_Gaps_in_ms[RxID_index] += (uint16) SUSD_AR_PERIODICITY;
+    /* If it exceeds one second */
+    if (Sum_SUSD_E0D7_Cumulative_Timer_Gaps_in_ms[RxID_index] >= 1000u)
+    {
+        /* Flush the accumulated second into RxCAT and RxTAT for this activity record */
+        Sum_SUSD_E0D7_Cumulative_Timer_Gaps_in_ms[RxID_index] %= 1000u;
+        if (activity_record_ptr -> RxCAT < 0xFFFFu){
+          (activity_record_ptr -> RxCAT)++;
+        }
+        if (activity_record_ptr -> RxTAT < 0xFFFFFFFFu){
+          (activity_record_ptr -> RxTAT)++;
+        }
+    }
+  }
+  else
+  {
+    /* RxID has transitioned from active to inactive (all sources off).
+       Per SDV-6001: Update RxLAR with the last active reason that was driving
+       the activation criteria before it transitioned to FALSE.
+       Use PrevReason which holds the reason value from before the deactivation. */
+    (activity_record_ptr -> RxLAR) = Sum_SUSD_RxID_PrevReason[RxID_index];
+    /* Timers (RxCAT, RxTAT) stop counting when the record is inactive */
+  }
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_E0D7_FlushOnResetRequest
+  Description   :   If a diagnostic reset or reprogramming request is active,
+                     flush DID 0xE0D7 to NvM before the ECU resets.
+                     This ensures that all DID 0xE0D7 data required to remain
+                     persistent across ECU resets within the same key cycle are
+                     properly saved and correctly restored on startup.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"
+static void Sum_SUSD_E0D7_FlushOnResetRequest(void)
+{
+  /* Flag to ensure DID 0xE0D7 is flushed to NvM only once per reset/reprogramming event */
+  static boolean E0D7_ResetFlushDone = FALSE;
+
+  if ((E0D7_ResetFlushDone == FALSE) &&
+      ((SUM_RESREQ_ACTIVE == SUSD_GblDiagResetRequest) ||
+        (SUM_REPREQ_ACTIVE == SUSD_GblDiagReprgRequest)))
+  {
+      Sum_SUSD_flush_E0D7_to_NVRam_Block();
+      /* [$Satisfies $SDD_SUSD 250] */
+      (void) Rte_Call_SUSD_RP_NvMService_DID_E0D7_WriteBlock((const void *) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7NvMBlockRef.nvMRamBlockDataAddress-»);
+      E0D7_ResetFlushDone = TRUE;
+  }
+}
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+/********************************** END OF FILE ******************************************************/
+«ENDFILE»
+«ENDDEFINE»

@@ -1,0 +1,85 @@
+@startuml Sum_Ssfm_Execution_Manager
+top to bottom direction
+skinparam linetype ortho
+
+skinparam interface {
+    BackgroundColor<<ExtIF>> White
+    BorderColor<<ExtIF>> White
+}
+
+skinparam interface {
+    BackgroundColor<<IntIF>> White
+    BorderColor<<IntIF>> White
+}
+
+legend top left
+    "Sum_Ssfm_Execution_Manager"
+
+**Interfaces Legend**
+    //ri100 //: Sum_Ssfm_BatteryVoltageRange_Min_To_MaxV
+    //ri108 //: SUSD_PermitExecution
+	//ri109 //: Sum_Ssfm_ProjectSpecificConditions
+	//ri110 //: Sum_Ssfm_SUSD_SSM_PermitExecution
+	//pi119 //: Sum_Ssfm_ERRH_SUSD_ShutdownPermission
+	//pi123 //: Sum_Ssfm_OperationCycle
+	//pi124 //: SSM_ShutdownPermission
+	//II150 //: Sum_Ssfm_BatteryVoltage
+	//II151 //: Sum_Ssfm_SsmFuncPermitExec
+	//II154 //: Sum_Ssfm_batteryVoltage_RecoveryTimer
+    //II153 //: Sum_Ssfm_reset_RecoveryTimer
+	//II152 //: Sum_Ssfm_ErrhFuncPermitExec
+endlegend
+
+interface ext1<<ExtIF>>
+interface ext2<<ExtIF>>
+interface ext3<<ExtIF>>
+interface ext4<<ExtIF>>
+
+component [SSFM::Execution_Manager] as ET{
+    portin ri100
+    portin ri108
+    portin ri109
+	portin ri110
+	portout pi119
+	portout pi123
+	portout pi124
+
+    [Sum_Ssfm_Errh_Execution_Manager]  as E
+	[Sum_Ssfm_Ssm_Execution_Manager]  as T
+}
+
+interface ext5<<ExtIF>>
+interface ext6<<ExtIF>>
+interface ext7<<ExtIF>>
+
+interface II150<<IntIF>>
+interface II154<<IntIF>>
+interface II153<<IntIF>>
+interface II152<<IntIF>>
+interface II151<<IntIF>>
+
+ext1 )-d- ri100
+ext2 )-d- ri108
+ext3 )-d- ri109
+ext4 )-d- ri110
+
+ri100 -0)- E
+ri108 -0)- E
+ri109 -0)- E
+E -0)- pi119
+E --r0 II150
+E --r0 II154
+E --r0 II153
+E --r0 II152
+T --r0 II151
+E -0)- pi123
+ri110 -0)- T
+T -0)- pi124
+
+pi119 -d-0 ext5
+pi123 -d-0 ext6
+pi124 -d-0 ext7
+    
+
+
+@enduml

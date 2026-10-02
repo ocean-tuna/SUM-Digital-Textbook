@@ -1,0 +1,41 @@
+@startuml sd_TCSProvideDcmInfo
+skinparam ParticipantPadding 10
+
+mainframe SUM_TCS TotalVehicleTimeValue (0xF129)
+
+participant Dcm
+participant SUM_SUSD as susd
+
+box SUM_TCS
+    participant IRVs as rte
+    participant Runnable_TotalVehicleTimeRead as read
+    participant Runnable_TotalVehicleTimeCheckRead as check
+    participant Runnable_TCS_PermitExecutionShutdown as shutter
+end box
+
+== Pre-condition ==
+
+susd -> shutter: request TCS functionalities from interface //SUSD_PermitExecution//
+activate shutter
+shutter -> rte: set TCS_permit_execution = TRUE
+deactivate shutter
+
+== Sequence fulfill ==
+
+note over read: Read service operation
+
+Dcm -> read: //ReadData()// from by interface //DataServices_<Configurable>// 
+activate read
+read -> read: read TCS_TotalVehicleTimeValue
+read --> Dcm: return the value of TCS_TotalVehicleTimeValue
+deactivate read
+
+note over check: Operation check service operation
+
+Dcm -> check: //ConditionCheckRead()// from by interface //DataServices_<Configurable>//
+activate check
+check -> check: Set Error status
+check --> Dcm: return the value of Error
+deactivate check
+
+@enduml

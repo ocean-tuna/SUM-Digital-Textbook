@@ -1,0 +1,91 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DID_E0BA_Handler.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Header file for SSFM DID E0BA Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_DID_E0BA_HANDLER_H
+#define SUM_SSFM_DID_E0BA_HANDLER_H
+
+
+/* Local constants for DID E0BA */
+#define SSFM_DID_E0BA_FIXED_LENGTH 				96u
+#define SSFM_DID_E0BA_MSG_ENTRY_SIZE 			6u  	/* 4 bytes ID + 1 byte FoI + 1 byte FPI */
+#define SSFM_DID_E0BA_MAX_ENTRIES 				16u     /* 96/6 = 16 entries */
+
+/* Data field offset constants */
+#define SSFM_DID_E0BA_FOI_COUNT_OFFSET     		4u
+#define SSFM_DID_E0BA_FPI_COUNT_OFFSET      	5u
+#define SSFM_DID_E0BA_MAX_COUNT_VALUE       	255u
+
+/* Comparison function return values for auto-sorting */
+#define FIRST_ENTRY_IS_SMALLER    (0u)
+#define ENTRIES_ARE_EQUAL         (1u) 
+#define FIRST_ENTRY_IS_LARGER     (2u)
+	 
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+
+ *********************************************************************************************************************************************************
+*/
+/* Data structure for E0BA entries */
+typedef struct
+{
+    uint32 messageId;
+    uint8 foiCount;
+    uint8 fpiCount;
+    uint16 totalCount;  /* For sorting - lowest first for easy removal */
+}Sum_Ssfm_DID_E0BA_Entry;
+
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+ 
+extern FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_Update_Message_Protection(const Sum_Ssfm_SerialData *serial_data);
+extern FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_RestoreData(void); 
+extern FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_SaveData(void); 
+extern FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0BA_ResetData(void);
+#endif
+/* EOF */
+
+«ENDFILE»
+«ENDDEFINE»

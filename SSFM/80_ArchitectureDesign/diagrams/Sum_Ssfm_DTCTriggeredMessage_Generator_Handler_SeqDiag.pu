@@ -1,0 +1,40 @@
+@startuml Sum_Ssfm_DTCTriggeredMessage_Generator_Handler_SeqDiag
+
+participant DEM as DEM
+participant RTE as RTE
+box "SUM_SSFM::Sum_Ssfm_DTCTriggeredMessage_Generator_Handler_SeqDiag"
+    participant Sum_Ssfm_Errh_CheckDTCStatus_And_Enqueue_SeqDiag as SSFM_ERRH
+    participant Runnable_SSFM_DTCTriggeredMessage_Handler as SSFM_ERRH1
+end box
+
+
+activate SSFM_ERRH
+
+DEM -> SSFM_ERRH: Event Status changed
+SSFM_ERRH -> SSFM_ERRH: Check TestFailedBit and ConfirmDTCBit
+alt The testFailedBit transition from 0 to 1 OR There is a warning indication satisfied. 
+    SSFM_ERRH -> QUEUE: Add the DTCNotificationStatus to queue
+end
+
+activate SSFM_ERRH1
+SSFM_ERRH1 -> SSFM_ERRH1:Check operation cycle or service 0x14
+alt operation cycle is started or service 0x14 requested
+    SSFM_ERRH1 -> SSFM_ERRH1:Check the communication 
+    alt If communication is active
+        SSFM_ERRH1 -> RTE:Transmission DTC Trigger Message with default value
+        SSFM_ERRH1 -> SSFM_ERRH1:Waits 1000ms
+        alt Timer 1000ms expired
+            SSFM_ERRH1 -> RTE:Transmission DTC Trigger Message and Reset Timer
+        else
+            SSFM_ERRH1 -> SSFM_ERRH1:Increment Timer
+        end
+        SSFM_ERRH1 -> SSFM_ERRH1:Waits 1500ms
+        alt Timer 1500ms expired
+            SSFM_ERRH1 -> SSFM_ERRH1:Dequeue, Update DTC+FTB and Reset Timer
+        else  
+            SSFM_ERRH1 -> SSFM_ERRH1:Increment Timer
+        end
+    end
+end
+
+@enduml 

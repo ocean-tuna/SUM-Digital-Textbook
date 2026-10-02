@@ -1,0 +1,5 @@
+3;15
+\cellcolor{ETASlightgray}\textbf{Port Name};SUSD_DIAG_PermitExecution
+\cellcolor{ETASlightgray}\textbf{Port Interface};SUSD_PermitExecution
+\cellcolor{ETASlightgray}\textbf{Port Type};Sender Receiver Interface
+\cellcolor{ETASlightgray}\textbf{Description};The port is connected to SUM_SUSD. The port will receive notification from SUM_SUSD whether the SUM_SSC should be executing or shutdown.

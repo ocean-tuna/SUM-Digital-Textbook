@@ -1,0 +1,6 @@
+3;2;6
+\textbf{Name};\textbf{Multiplicity};\textbf{Scope / Dependency}
+SUSDGeneral;1..1;General configuration parameters of the SUSD
+SUSDWakeUpRelation;1..1;This container contains a list of Wakeup Source identifiers that are needed to refer to indicate the Permit Execution to SUMs.
+SUSDSUMInterfaces;1..1;This container contains a list of interfaces that are needed to indicate the Permit Execution to SUMs
+SUSDConfigSet;1..1;This container contains the configuration parameters and sub containers of the SUSD module supporting multiple SWC configuration sets

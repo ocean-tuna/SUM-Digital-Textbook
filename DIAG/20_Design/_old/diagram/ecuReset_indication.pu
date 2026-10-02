@@ -1,0 +1,30 @@
+@startuml ecuReset_indication
+
+start
+
+:EcuReset Indication}
+
+if (Service ID is EcuReset) then (false)
+    :return E_OK;
+    kill
+else (true)
+    if (Sub_function is 00) then (true)
+        :return E_OK;
+        kill
+    else (false)
+        :Send Reset notification to SOH;
+        if (Sub_function is 01) then (false)
+            :return E_OK;
+            kill
+        elseif (Off_power_mode == TRUE) then (true)
+            :return E_OK;
+            kill
+        else (false)
+            :ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+            :return E_NOT_OK;
+            kill
+        endif
+    endif
+endif
+
+@enduml

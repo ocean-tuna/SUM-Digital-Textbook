@@ -1,0 +1,3155 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detailed Requirements Paramdef &mdash; RTA-SUM SPM 8.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/assets/jsonview.bundle.css?v=f6ef2277" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/common.css?v=bd9ab754" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/layouts.css?v=448c382f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/modern.css?v=ffa536d2" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/styles.css?v=6c8eb985" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=e1f95d0e" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=87b6a113"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/assets/jsonview.bundle.js?v=18cd53c5"></script>
+        <script src="../../_static/assets/jsonview_loader.js?v=f7ff7e7d"></script>
+        <script src="../../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+        <script src="../../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+        <script src="../../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=f783d6a5"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="RTA-SUM SPM Design Notes" href="design_notes.html" />
+    <link rel="prev" title="RTA-SUM SPM Software Requirements Specification Document" href="../Requirements/10_Requirements.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(to right, #164293, #89037A)" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            RTA-SUM SPM
+              <img src="../../_static/ETAS_Logo_White.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Software Requirements Specification:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Requirements/10_Requirements.html">RTA-SUM SPM Software Requirements Specification Document</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Detailed Requirements Paramdef:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Detailed Requirements Paramdef</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#component-architecture">Component Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-data-interaction">API/Data Interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-configuration-overview">Module Configuration Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmgeneral">SpmGeneral</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmgeneral-spmdiagnostic">SpmGeneral/SpmDiagnostic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmgeneral-spmcanwkupfrmref">SpmGeneral/SpmCANWkUpFrmRef</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmgeneral-spmvlancom-spmvlancompwrmgrheartbeat">SpmGeneral/SpmVLANCom/SpmVLANComPwrMgrHeartbeat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmgeneral-spmvlancom-spmvlancompwrmgrwakeupframes">SpmGeneral/SpmVLANCom/SpmVLANComPwrMgrWakeupFrames</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmgeneral-spmvlancom-spmvlancompwrmgrwakeupframesmulticast">SpmGeneral/SpmVLANCom/SpmVLANComPwrMgrWakeupFramesMulticast</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmgeneral-spmvlancom-spmvlancomswrmgrinfo">SpmGeneral/SpmVLANCom/SpmVLANComSwrMgrInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmconfigset-spmpowprf">SpmConfigSet/SpmPowPrf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmconfigset-spmpowprf-spmporfileswdep">SpmConfigSet/SpmPowPrf/SpmPorfileSwDep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmconfigset-spmpgttentries-spmtrgdvc">SpmConfigSet/SpmPgttEntries/SpmTrgDvc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmconfigset-spmpgttentries-spmtrgdvc-spmtrgdvchndlnginfo">SpmConfigSet/SpmPgttEntries/SpmTrgDvc/SpmTrgDvcHndlngInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmconfigset-spmpgttentries-spmwkngdvc">SpmConfigSet/SpmPgttEntries/SpmWkngDvc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmconfigset-spmpgttentries-spmwkngdvc-spmtrgdvcinfo">SpmConfigSet/SpmPgttEntries/SpmWkngDvc/SpmTrgDvcInfo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmconfigset-spmpgttentries-spmwkupseq-spmwkupstep">SpmConfigSet/SpmPgttEntries/SpmWkUpSeq/SpmWkUpStep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spmconfigset-spmlowvoltagepowerinfo">SpmConfigSet/SpmLowVoltagePowerInfo</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Design Document:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="design_notes.html">RTA-SUM SPM Design Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM Release Notes:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../ReleaseNotes/release_notes.html">RTA-SUM SPM Release Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM User Guide:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../UserGuide/user_guide.html">RTA-SUM SPM User Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(to right, #164293, #89037A)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">RTA-SUM SPM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Detailed Requirements Paramdef</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/doc/DesignNotes/25_Detailed_Req_Paramdef.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="detailed-requirements-paramdef">
+<h1>Detailed Requirements Paramdef<a class="headerlink" href="#detailed-requirements-paramdef" title="Link to this heading"></a></h1>
+<section id="component-architecture">
+<span id="id1"></span><h2>Component Architecture<a class="headerlink" href="#component-architecture" title="Link to this heading"></a></h2>
+<p>The RTA-SUM SPM architecture satisfies the AUTOSAR requirements of a Complex-Device Driver. The RTA-SUM SPM architecture is the following:</p>
+</section>
+<section id="api-data-interaction">
+<span id="id2"></span><h2>API/Data Interaction<a class="headerlink" href="#api-data-interaction" title="Link to this heading"></a></h2>
+<p>The RTA-SUM_SPM provides the following scheduled functions:</p>
+<ul class="simple">
+<li><p>Spm_SoftMgr_MainFunction</p></li>
+<li><p>Spm_PowrMgr_MainFunction</p></li>
+</ul>
+<p>The RTA-SUM_SPM is the <em>provider</em> of the following SERVICE APIs:</p>
+<ul class="simple">
+<li><p>To <strong>SWC</strong>: Spm_ActivateProfile</p></li>
+<li><p>To <strong>SWC</strong>: Spm_DeactivateProfile</p></li>
+<li><p>To <strong>SWC</strong>: Spm_GetDTCIdentifier</p></li>
+</ul>
+<p>The RTA-SUM SPM is the <em>consumer</em> of the following SERVICE APIs:</p>
+<ul class="simple">
+<li><p>From <strong>CanIf</strong> : CanIf_Transmit</p></li>
+<li><p>From <strong>EthSM</strong> : EthSM_RequestComMode</p></li>
+</ul>
+<p>The RTA-SUM_SPM exchanges the following DATA by RTE APIs:</p>
+<ul class="simple">
+<li><p>RTA-SUM_SUSD -&gt; RTA-SUM_SPM: Spm_PermitExecution</p></li>
+<li><p>RTA-SUM_SPM -&gt; RTA-SUM_SUSD: Spm_ShutdownPermission</p></li>
+<li><p>RTA-SUM_SPM -&gt; RTA_SUM_SSFM: Spm_LossOfNodeIndication_lfc</p></li>
+<li><p>RTA-SUM_SPM -&gt; RTA-SUM_SrvcMngr: Spm_ServiceActivationStatusNotification_Ifc</p></li>
+<li><p>RTA-SUM_SPM -&gt; BswM: Spm_BswMGroupSwitchTxReq</p></li>
+<li><p>RTA-SUM_SPM -&gt; BswM: Spm_BswMGroupSwitchRxReq</p></li>
+</ul>
+</section>
+<section id="module-configuration-overview">
+<h2>Module Configuration Overview<a class="headerlink" href="#module-configuration-overview" title="Link to this heading"></a></h2>
+<p>The RTA-SUM_SPM is deployed as a configurable software to address multiple project specific needs by the same implementation instance.</p>
+<p>The Configuration of the RTA-SUM_SPM module follows the AUTOSAR guidelines for a Complex Device Driver.</p>
+<p>RTA-SUM_SPM SHALL appear as single own instance for each ECU: No multiple RTA-SUM_SPM instances are allowed for the same ECU.</p>
+<p>The configuration of RTA-SUM_SPM appears as follows:</p>
+<ul class="simple">
+<li><p><strong>SPM</strong>: main root configuration container of the module</p>
+<ul>
+<li><p><strong>SpmConfigSet</strong>: project specific configuration set</p>
+<ul>
+<li><p><strong>SpmLowVoltagePowerInfo</strong>: Container for the configuration of LowVoltageSoftwareActivationPriorityRequest service</p></li>
+<li><p><strong>SpmPowPrf</strong>: Container to configure the power profile and their attributes</p>
+<ul>
+<li><p><strong>SpmProfileSwDep</strong> : Container defines the Software Dependencies for the current profile</p></li>
+</ul>
+</li>
+<li><p><strong>SpmPgttEntries</strong>: Container to configure the Power Graph and its attributes</p>
+<ul>
+<li><p><strong>SpmTrgDvc</strong>: Container defines all the Device can be reached by the current instance of the SPM</p>
+<ul>
+<li><p><strong>SpmTrgDvcHndlngInfo</strong> : The current container addresses (if configured) how the current SPM shall manage the target device. Not all the target device are directly managed by the current SPM instance. In case the current SPM runs on a INTERMEDIATE node and the Target Device is an EDGE, then whether SPM handles this edge node, this container reports the useful information on how to consume the wake-up frame information for the current device.</p></li>
+</ul>
+</li>
+<li><p><strong>SpmWkngDvc</strong>: Container defines all the IP configurations as Source Node of the current instance of the SPM</p>
+<ul>
+<li><p><strong>SpmTrgDvcInfo</strong> : Container defines the mapping between the Target device to be reached and the wake-up sequence to use</p></li>
+</ul>
+</li>
+<li><p><strong>SpmWkUpSeq</strong>: Container defines a Wake-up sequence and its related steps</p>
+<ul>
+<li><p><strong>SpmWkUpSeqStep</strong> : Container defines the parameters to define a wake-up step to be used in a sequence</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>SpmGeneral</strong>: general parameters that are common for using the SPM within an ECU</p>
+<ul>
+<li><p><strong>SpmCANWkUpFrmRef</strong>: Container to reference all the wake-up frame ON CAN bus in scope to the SPM instance</p></li>
+<li><p><strong>SpmETHWkUpFrmRef</strong>: Container to reference all the wake-up frame ON ETHERNET bus in scope to the SPM instance</p></li>
+<li><p><strong>SpmVLANCom</strong>: Container for the configuration of VLAN communication for configurable interfaces.</p>
+<ul>
+<li><p><strong>SpmVLANComPwrMgrHeartbeat</strong>: Container for the configuration of VLAN communication for configurable interfaces.</p></li>
+<li><p><strong>SpmVLANComPwrMgrWakeupFrames</strong>: Container for the configuration of VLAN communication for configurable interfaces.</p></li>
+<li><p><strong>SpmVLANComPwrMgrWakeupFramesMulticast</strong>: Container for the configuration of VLAN communication for configurable interfaces.</p></li>
+<li><p><strong>SpmVLANComSwrMgrInfo</strong>: Container for the configuration of VLAN communication for configurable interfaces.</p></li>
+</ul>
+</li>
+<li><p><strong>SpmGenerateInitRunnable</strong>: A parameter that shall generate SPM init runnable if it.. list-table:: Configuration Containers</p></li>
+<li><p><strong>SpmActDeactRetryPeriodicity</strong>: Period in milliseconds for retries of activation/deactivation requests.</p></li>
+<li><p><strong>SpmInitFuncPeriodicity</strong>: Period in milliseconds that configures the runnable init function periodicity. This parameter is required when SpmGenerateInitRunnable is set to TRUE.</p></li>
+<li><p><strong>SpmWkUpHelperFunction</strong>: The parameter defines the name of the wake-up helper function to be used by SPM, in case the ECU support the SDV-8217 defined Custom wake-up mechanism. The support of this function is valid only for intermediate nodes as CHM MCU.</p></li>
+<li><p><strong>SpmPermitExecutionMask</strong>: The parameter is a bitmap (1 Byte length) that defines the DON’T CARE wake-up sources that trigger the SPM execution. The DON’T CARE wake-up sources needs to be configured as 1.</p></li>
+<li><p><strong>SpmBurstPhsPeriodicity</strong>: BurstPhsPeriodicity is a period less than the usual one, that happens as soon as SPM starts counting and sharing its heartbeat and the wake-up frame. This period is maintained for the first 3 counts. The parameter configures the message periodicity in milliseconds for this phase before switching to the normal one.</p></li>
+<li><p><strong>SpmSMMainFuncPeriodicity</strong>: Periodicity in milliseconds for the execution of SPM Software Manager functionalities.</p></li>
+<li><p><strong>SpmWakeupFrame</strong>: Wake up frame for the device.</p></li>
+<li><p><strong>SpmWakeupBit</strong>: Indicates the related bit for wake up in the frame.</p></li>
+<li><p><strong>SpmHBShutdownDelayMs</strong>: Initial value for the calibration parameter indicating the time (in ms) the PM has to wait, after the last burst HeartBeat has been sent, before allowing the shutdown (Keep-Awake Timer).</p></li>
+<li><p><strong>SpmDiagnostic</strong>: Container with the reference needed for DIDs.</p></li>
+<li><p><strong>Spm_SmFrame_QueueLength</strong>: Maximum queue length of SM Frame Rx messages.</p></li>
+<li><p><strong>Spm_PmETHwakeUpMULTIC_QueueLength</strong>: Maximum queue length of PM eth wakeup Multicast Rx messages.</p></li>
+<li><p><strong>Spm_LocalRequests_QueueLength</strong>: Maximum queue length of local activation/deactivatino requests as well as diagnostic requests.</p></li>
+<li><p><strong>Spm_PmETHwakeUpUNIC_QueueLength</strong>: Maximum queue length of PM eth wakeup Unicast Rx messages.</p></li>
+<li><p><strong>Spm_PmHeartbeat_QueueLength</strong>: Maximum queue length of PM eth wakeup Multicast Rx messages.</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-text">Configuration Containers</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 16.7%" />
+<col style="width: 8.3%" />
+<col style="width: 58.3%" />
+<col style="width: 8.3%" />
+<col style="width: 8.3%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>SpmConfigSet</p></th>
+<th class="head"><p>1 .. 1</p></th>
+<th class="head"><p>Container for the configuration of module instance specific set</p></th>
+<th class="head"><p>Define Detailed Requirement: N/A</p></th>
+<th class="head"><p>Satisfies Software Requirement: N/A</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmGeneral</p></td>
+<td><p>1 .. 1</p></td>
+<td><p>Container for the Configuration of project specific settings</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmDiagnostic</p></td>
+<td><p>0 .. 1</p></td>
+<td><p>Container with the reference needed for DIDs.</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmCANWkUpFrmRef</p></td>
+<td><p>0 .. 1</p></td>
+<td><p>Container for the configuration of the SPM used CAN wake-up frames</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmPowPrf</p></td>
+<td><p>1 .. Inf</p></td>
+<td><p>Container for the configuration of Power Profile. At least one power profile needs to be configured for the ECU.</p></td>
+<td><p>Define Detailed Requirement: [$DDS_SPM 0529]</p></td>
+<td><p>Satisfies Software Requirement: [$Satisfies $SRS_SPM 0064]</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmProfileSwDep</p></td>
+<td><p>0 .. Inf</p></td>
+<td><p>Container for the configuration of Power Profile Software Dependency</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmPgttEntries</p></td>
+<td><p>1 .. 1</p></td>
+<td><p>Container for the configuration of Power Graph. SPM uses it for getting network information for its inter-ECU communication. Mandatory container.</p></td>
+<td><p>Define Detailed Requirement: [$DDS_SPM 0528]</p></td>
+<td><p>Satisfies Software Requirement: [$Satisfies $SRS_SPM 0186][$Satisfies $SRS_SPM 0130]</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmTrgDvc</p></td>
+<td><p>1 .. Inf</p></td>
+<td><p>Container for the configuration of Remote device information. At least one target device needs to be in communication with the current SPM instance.</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmTrgDvcHndlngInfo</p></td>
+<td><p>0 .. 1</p></td>
+<td><p>The current container addresses (if configured) how the current SPM shall manage the target device. Not all the target device are directly managed by the current SPM instance. In case the current SPM runs on a INTERMEDIATE node and the Target Device is an EDGE, then whether SPM handles this edge node, this container reports the useful information on how to consume the wake-up frame information for the current device.</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmWkngDvc</p></td>
+<td><p>1 .. 1</p></td>
+<td><p>Container for the configuration of local node network configurations.</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmTrgDvcInfo</p></td>
+<td><p>1 .. Inf</p></td>
+<td><p>Container for the configuration of Power Profile</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmWkUpSeq</p></td>
+<td><p>0 .. Inf</p></td>
+<td><p>Container for the configuration of a wake-up sequence.</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmWkUpStep</p></td>
+<td><p>1 .. Inf</p></td>
+<td><p>Container for the configuration of a specific step for a wake-up sequence.</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmVLANCom</p></td>
+<td><p>1 .. Inf</p></td>
+<td><p>Container for the configuration of VLAN communication for configurable interfaces and data types.</p></td>
+<td><p>Define Detailed Requirement: [$DDS_SPM 0607]</p></td>
+<td><p>Satisfies Software Requirement: [$Satisfies $SRS_SPM 0222][$Satisfies $SRS_SPM 0223]</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmVLANComPwrMgrHeartbeat</p></td>
+<td><p>1 .. 1</p></td>
+<td><p>Container for the configuration of VLAN communication items for heartbeat frames.</p></td>
+<td><p>Define Detailed Requirement: [$DDS_SPM 0608]</p></td>
+<td><p>Satisfies Software Requirement: [$Satisfies $SRS_SPM 0222][$Satisfies $SRS_SPM 0223]</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmVLANComPwrMgrWakeupFrames</p></td>
+<td><p>1 .. 1</p></td>
+<td><p>Container for the configuration of VLAN communication items for wake-up frames.</p></td>
+<td><p>Define Detailed Requirement: [$DDS_SPM 0615]</p></td>
+<td><p>Satisfies Software Requirement: [$Satisfies $SRS_SPM 0222][$Satisfies $SRS_SPM 0223]</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmVLANComPwrMgrWakeupFramesMulticast</p></td>
+<td><p>1 .. 1</p></td>
+<td><p>Container for the configuration of VLAN communication items for wake-up frames multicast.</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmVLANComSwrMgrInfo</p></td>
+<td><p>1 .. 1</p></td>
+<td><p>Container for the configuration of VLAN communication items for software manager info frames</p></td>
+<td><p>Define Detailed Requirement: [$DDS_SPM 0620]</p></td>
+<td><p>Satisfies Software Requirement: [$Satisfies $SRS_SPM 0222][$Satisfies $SRS_SPM 0223]</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmLowVoltagePowerInfo</p></td>
+<td><p>0 .. 1</p></td>
+<td><p>Container for the configuration of LowVoltageSoftwareActivationPriorityRequest.</p></td>
+<td><p>Define Detailed Requirement: N/A</p></td>
+<td><p>Satisfies Software Requirement: N/A</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmgeneral">
+<h2>SpmGeneral<a class="headerlink" href="#spmgeneral" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSMMainFuncPeriodicity</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Periodicity in milliseconds for the execution of SPM Software Manager functionalities.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>FLOAT</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>5.0</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>10.0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPMMainFuncPeriodicity</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>(CURRENTLY NOT SUPPORTED. VALUE Fixed to 5ms) Periodicity in milliseconds for the execution of the SPM Power manager functionalities.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>FLOAT</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>5.0</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>5.0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmBurstPhsPeriodicity</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>BurstPhsPeriodicity is a period less than the usual one, that happens as soon as SPM starts counting and sharing its heartbeat and the wake-up frame. This period is maintained for the first 3 counts. The parameter configures the message periodicity in milliseconds for this phase before switching to the normal one.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>5</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>5</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPermitExecutionMask</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter is a bitmap (1 Byte length) that defines the DON'T CARE wake-up sources that trigger the SPM execution. The DON'T CARE wake-up sources needs to be configured as 1.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>255</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>254</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmWkUpHelperFunction</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the name of the wake-up helper function to be used by SPM, in case the ECU support the SDV-8217 defined Custom wake-up mechanism. The support of this function is valid only for intermediate nodes as CHM MCU.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>NO_SPACE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmInitFuncPeriodicity</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Period in milliseconds that configures the runnable init function periodicity. This parameter is required when SpmGenerateInitRunnable is set to TRUE.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>FLOAT</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>1.0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>5000.0</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>1000.0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmActDeactRetryPeriodicity</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Period in milliseconds for retries of activation/deactivation requests.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65535</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>1000</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmGenerateInitRunnable</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter shall generate SPM init runnable if it is configured as TRUE. Otherwise the SPM_Init() function shall be called by a BswM action list during startup</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>BOOLEAN</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>False</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>Spm_SmFrame_QueueLength</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Maximum queue length of SM Frame Rx messages. If the parameter is not configured it takes the number of target devices * number of local profiles as default value.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>Spm_PmHeartbeat_QueueLength</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Maximum queue length of PM heartbeat Rx messages. If the parameter is not configured it takes the number of target devices as default value.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>Spm_PmETHwakeUpUNIC_QueueLength</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Maximum queue length of PM eth wakeup Unicast Rx messages. If the parameter is not configured it takes the number of target devices as default value.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>Spm_PmETHwakeUpMULTIC_QueueLength</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Maximum queue length of PM eth wakeup Multicast Rx messages. If the parameter is not configured it takes the following as a default value ((SM main function periodicity / 5) + 1) SM main function periodicity.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>Spm_LocalRequests_QueueLength</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Maximum queue length of local activation/deactivatino requests as well as diagnostic requests. If the parameter is not configured it take the number of active profiles * 2 as default value.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmWakeupFrame</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Wake up frame for the device.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>ENUMERATION</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0635]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0231]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmWakeupBit</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Indicates the related bit for wake up in the frame.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>63</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0636]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0231]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmHBShutdownDelayMs</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Initial value for the calibration parameter indicating the time (in ms) the PM has to wait, after the last burst HeartBeat has been sent, before allowing the shutdown (Keep-Awake Timer)</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65000</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>2000</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0640]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0054]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSMStayAwakeTimeMs</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Calibration parameter value indicating the time (in ms) during which the SM should stay awake if the only requester is in fault or restart state, before allowing shutdown.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65000</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>2000</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0646]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0252]</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmgeneral-spmdiagnostic">
+<h2>SpmGeneral/SpmDiagnostic<a class="headerlink" href="#spmgeneral-spmdiagnostic" title="Link to this heading"></a></h2>
+<blockquote>
+<div><table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Reference to the DcmDspDid for supporting DID 0xE0DD Activation Profile Activation Status</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmDID0xE0DEDcmRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Reference to the DcmDspDid for supporting DID 0xE0DE Locally Activated Activation Profile Off Power Mode Activity Records</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0627]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0227]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmDID0xE0DFDcmRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Reference to the DcmDspDid for supporting DID 0xE0DF Remotely Activated Activation Profile Off Power Mode Activity Records</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0628]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0228]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmDID0xE0DENvmRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Reference to the NvM block for DID 0xE0DE Locally Activated Activation Profile Off Power Mode Activity Records</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmDID0xE0DFNvmRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Reference to the NvM block for DID 0xE0DF Remotely Activated Activation Profile Off Power Mode Activity Records</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br></div></blockquote>
+</section>
+<section id="spmgeneral-spmcanwkupfrmref">
+<h2>SpmGeneral/SpmCANWkUpFrmRef<a class="headerlink" href="#spmgeneral-spmcanwkupfrmref" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmCANWkUpFrmTxRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to CanIfPdu in Tx side for SPM CAN wake-up frames</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 3</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_CanIf/EcucModuleDefs/CanIf/CanIfInitCfg/CanIfTxPduCfg</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmCANWkUpFrmRxRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to CanIfPdu in Rx side for SPM CAN wake-up frames</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. Inf</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_CanIf/EcucModuleDefs/CanIf/CanIfInitCfg/CanIfRxPduCfg</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmgeneral-spmvlancom-spmvlancompwrmgrheartbeat">
+<h2>SpmGeneral/SpmVLANCom/SpmVLANComPwrMgrHeartbeat<a class="headerlink" href="#spmgeneral-spmvlancom-spmvlancompwrmgrheartbeat" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmHbTxAbsPth</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface is defined.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>PATH_REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmHbRxAbsPth</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>PATH_REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPwrMgrHeartbeatTxImpDataTypeRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to PwrMgrHeartbeat Tx Implementation Data Type</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>IMPLEMENTATION-DATA-TYPE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0611]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0223]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPwrMgrHeartbeatRxImpDataTypeRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to PwrMgrHeartbeat Rx Implementation Data Type</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>IMPLEMENTATION-DATA-TYPE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0612]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0223]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPwrMgrHeartbeatTxSendRecvIntRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to PwrMgrHeartbeat Tx Sender Receiver Interface</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>SENDER-RECEIVER-INTERFACE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0613]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0222]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPwrMgrHeartbeatRxSendRecvIntRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to PwrMgrHeartbeat Rx Sender Receiver Interface</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>SENDER-RECEIVER-INTERFACE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0614]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0222]</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmgeneral-spmvlancom-spmvlancompwrmgrwakeupframes">
+<h2>SpmGeneral/SpmVLANCom/SpmVLANComPwrMgrWakeupFrames<a class="headerlink" href="#spmgeneral-spmvlancom-spmvlancompwrmgrwakeupframes" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmWkupTxAbsPth</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface is defined.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>PATH_REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmWkupRxAbsPth</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>PATH_REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPwrMgrWakeupTxImpDataTypeRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to PwrMgrWakeup Tx Implementation Data Type</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>IMPLEMENTATION-DATA-TYPE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0616]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0223]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPwrMgrWakeupRxImpDataTypeRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to PwrMgrWakeup Rx Implementation Data Type</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>IMPLEMENTATION-DATA-TYPE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0617]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0223]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPwrMgrWakeupTxSendRecvIntRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to PwrMgrWakeup Tx Sender Receiver Interface</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>SENDER-RECEIVER-INTERFACE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0618]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0222]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPwrMgrWakeupRxSendRecvIntRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to PwrMgrWakeup Rx Sender Receiver Interface</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>SENDER-RECEIVER-INTERFACE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0619]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0222]</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmgeneral-spmvlancom-spmvlancompwrmgrwakeupframesmulticast">
+<h2>SpmGeneral/SpmVLANCom/SpmVLANComPwrMgrWakeupFramesMulticast<a class="headerlink" href="#spmgeneral-spmvlancom-spmvlancompwrmgrwakeupframesmulticast" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmWkupRxAbsPthMulticast</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>PATH_REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPwrMgrWakeupRxImpDataTypeMulticastRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to PwrMgrWakeup Rx Multicast Implementation Data Type</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>IMPLEMENTATION-DATA-TYPE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0642]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0223]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmPwrMgrWakeupRxSendRecvIntMulticastRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to PwrMgrWakeup Rx Multicast Sender Receiver Interface</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>SENDER-RECEIVER-INTERFACE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0643]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0222]</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmgeneral-spmvlancom-spmvlancomswrmgrinfo">
+<h2>SpmGeneral/SpmVLANCom/SpmVLANComSwrMgrInfo<a class="headerlink" href="#spmgeneral-spmvlancom-spmvlancomswrmgrinfo" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSmTxAbsPth</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface is defined.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>PATH_REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSmRxAbsPth</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>PATH_REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSwMgrInfoTxImpDataTypeRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to SwMgrInfo Tx Implementation Data Type</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>IMPLEMENTATION-DATA-TYPE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0621]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0223]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSwMgrInfoRxImpDataTypeRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to SwMgrInfo Rx Implementation Data Type</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>IMPLEMENTATION-DATA-TYPE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0622]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0223]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSwMgrInfoTxSendRecvIntRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to SwMgrInfo Tx Sender Receiver Interface</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>SENDER-RECEIVER-INTERFACE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0623]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0222]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSwMgrInfoRxSendRecvIntRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to SwMgrInfo Rx Sender Receiver Interface</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>SENDER-RECEIVER-INTERFACE</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0624]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0222]</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmconfigset-spmpowprf">
+<h2>SpmConfigSet/SpmPowPrf<a class="headerlink" href="#spmconfigset-spmpowprf" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSrvcAndInstID</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the Profile associated software service identifier and the service instance number. Software service represents the 16 most significant bits of the configured number. The instance number the 16 less significant ones. It is assumed at least one profile is managed by the current node.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>4294967291</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0514]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0063]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmProfNumber</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the Profile number.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>255</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmProfileIsLocal</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter addresses if the current Power Profile is Local to the ECU or it is a remote service. For Local profile the value is TRUE.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>BOOLEAN</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>False</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0515]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0063]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmLocActivationAllowed</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines if the profile can be locally activated. This means that the activation request can be done by an ECU-local SWC using CLIENT/SERVER operation. Only local profile can be activated from a local SWC. So the default value is FALSE.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>BOOLEAN</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>False</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0516]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0063]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmApplIntfID</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the profile enumeration value to be used for asking the profile activation locally. This parameter is configured only in case SpmLocActivationAllowed is TRUE. Lower multiplicity is 0 because it is valid only for local profiles</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65535</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0517]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0063]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmProfBitMapIndex</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter maps the profile status as a specific bit of value. This value is reported by the DID E0DD and specified in SDV-6001.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>511</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0518]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0063]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmProfActivationTimeOutVehOff</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the duration in Seconds of a valid timing-window before deactivating the profile automatically. Valid only for local profiles. The default value is 0, meaning that the profile is automatically deactivated when VehiclePowerMode is OFF.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65535</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0049]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0149] [$Satisfies $SRS_SPM 0187] [$Satisfies $SRS_SPM 0197]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmVehDefActPriorON</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the profile activation priority when vehicle is going to ON. The Lower multiplicity  is 0 because it is valid only for local profiles, while the Upper multiplicity is 1 because it is unique for each profile. Default value is SPM_PRF_AP_NOTAPP.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>ENUMERATION</td>
+      </tr>
+      <tr>
+          <th>Range</th>
+          <td><ol><li>SPM_PRF_AP_NOTAPP</li><li>SPM_PRF_AP_LOW</li><li>SPM_PRF_AP_MEDIUM_LOW</li><li>SPM_PRF_AP_MEDIUM</li><li>SPM_PRF_AP_MEDIUM_HIGH</li><li>SPM_PRF_AP_HIGH</li><li>SPM_PRF_AP_CRITICAL</li><li>SPM_PRF_AP_EMERGENCY</li><li>SPM_PRF_AP_ACCESS</li></ol></td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td></td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0501]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0131] [$Satisfies $SRS_SPM 0197] [$Satisfies $SRS_SPM 0208]</td>
+      </tr>
+  </table>
+  <br>
+
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmVehDefActPriorOFF</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the profile activation priority when vehicle is going to OFF. The Lower multiplicity is 0 because it is valid only for local profiles, while the Upper multiplicity is 1 because it is unique for each profile. The default value is SPM_PRF_AP_NOTAPP.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>ENUMERATION</td>
+      </tr>
+      <tr>
+          <th>Range</th>
+          <td><ol><li>SPM_PRF_AP_NOTAPP</li><li>SPM_PRF_AP_LOW</li><li>SPM_PRF_AP_MEDIUM_LOW</li><li>SPM_PRF_AP_MEDIUM</li><li>SPM_PRF_AP_MEDIUM_HIGH</li><li>SPM_PRF_AP_HIGH</li><li>SPM_PRF_AP_CRITICAL</li><li>SPM_PRF_AP_EMERGENCY</li><li>SPM_PRF_AP_ACCESS</li></ol></td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td></td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0502]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0131] [$Satisfies $SRS_SPM 0197] [$Satisfies $SRS_SPM 0208]</td>
+      </tr>
+  </table>
+  <br>
+
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmComIPduGroupEvnt_Tx</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the reference to data PDU to enable/disable in Tx once a profile request has been satisfied if the configuration requires profile to be consumed.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. Inf</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_Com/EcucModuleDefs/Com/ComConfig/ComIPduGroup</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmComIPduGroupEvnt_Rx</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the references to data PDU to enable/disable in Rx once a profile request has been satisfied if the configuration requires profile to be consumed.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. Inf</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_Com/EcucModuleDefs/Com/ComConfig/ComIPduGroup</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmconfigset-spmpowprf-spmporfileswdep">
+<h2>SpmConfigSet/SpmPowPrf/SpmPorfileSwDep<a class="headerlink" href="#spmconfigset-spmpowprf-spmporfileswdep" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmProfDepType</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the type of dependency for the power profile. If SPM_PRF_DEP_ACT_AND_CONS then the profile is activated as services and services-data PDU are switched ON in RX by the current ECU instance. If SPM_PRF_ACTIVATED only service is activated. If SPM_PRF_CONSUMED only service-data pdu are switched ON in RX for the current ECU instance. All the dependencies need to be identified by this parameter (mandatory).</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>ENUMERATION</td>
+      </tr>
+      <tr>
+          <th>Range</th>
+          <td><ol><li>SPM_PRF_DEP_ACT_AND_CONS</li><li>SPM_PRF_ACTIVATED</li><li>SPM_PRF_CONSUMED</li></ol></td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td></td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0503]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0216]</td>
+      </tr>
+  </table>
+  <br>
+
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmProfRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the reference to configured profile that acts as current profile dependency.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPowPrf</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0519]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0014]</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmconfigset-spmpgttentries-spmtrgdvc">
+<h2>SpmConfigSet/SpmPgttEntries/SpmTrgDvc<a class="headerlink" href="#spmconfigset-spmpgttentries-spmtrgdvc" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmTrgDvcID</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines all the IPv4 address for the target device. Each Target device could have more IP addresses since it can be reached from different VLAN.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. Inf</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>IPV4</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0419]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmTrgDvcDtcBaseID</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the base DTC (2 bytes) to set when the target communication is lost.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65535</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmTrgDvcDtcTimeOut</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the maturation time to set when the target communication is lost.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65535</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmTrgDvcPowerOnDeviceRetryPeriodicity</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>This parameter defines the periodicity of the PowerOnDevice retry. Please, configure a value that it is greater than the sum of the SpmSeqStepDly of the wake-up sequence steps PLUS the value of SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence PLUS the sum of the delay values between steps in the sequence PLUS the SpmTrgDvcDtcTimeOut of this TargetDevice. The value is in milliseconds.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65535</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>10000</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the time in milliseconds to wait between the OFF and ON sequence of the target device during the PowerOnDevice retry. Please, configure a value that it is greater than 250 ms to see changes in the WUF. The value it is in milliseconds.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65535</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>1000</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmTrgDvcDiagAddr</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the diagnostic address associated to the target for the diagnostic sessions.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>255</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmconfigset-spmpgttentries-spmtrgdvc-spmtrgdvchndlnginfo">
+<h2>SpmConfigSet/SpmPgttEntries/SpmTrgDvc/SpmTrgDvcHndlngInfo<a class="headerlink" href="#spmconfigset-spmpgttentries-spmtrgdvc-spmtrgdvchndlnginfo" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmTrgAssocWkUpFrm</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter addresses which wake-up frame contains the information for waking it. The possibilities are wake-up frame A, B or C. Mandatory parameters so no default value is provided.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>ENUMERATION</td>
+      </tr>
+      <tr>
+          <th>Range</th>
+          <td><ol><li>WKUP_FRM_A</li><li>WKUP_FRM_B</li><li>WKUP_FRM_C</li></ol></td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0526]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0017]</td>
+      </tr>
+  </table>
+  <br>
+
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmTrgAssocWkupBit</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter addresses which bit shall be asserted in the previous wake-up frame so that SPM shall activate the target device. Mandatory parameter.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>63</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0525]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0017]</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmconfigset-spmpgttentries-spmwkngdvc">
+<h2>SpmConfigSet/SpmPgttEntries/SpmWkngDvc<a class="headerlink" href="#spmconfigset-spmpgttentries-spmwkngdvc" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmNodeType</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>(IMPLEMENTATION NOT-SUPPORTED YET) The parameter defines the type of dependency for the power profile. The possibilities are SPM_NODE_EDGE and SPM_NODE_INTERMEDIATE. The default value is considering the node as an intermediate. Mandatory parameter.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>ENUMERATION</td>
+      </tr>
+      <tr>
+          <th>Range</th>
+          <td><ol><li>SPM_NODE_EDGE</li><li>SPM_NODE_INTERMEDIATE</li></ol></td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td></td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0504]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br>
+
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmIntermediateDstAddrs</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines list of IP address(es) of destination nodes that receive the wake-up commands and frames. For SPM_NODE_EDGE, this contains the intermediate node addresses. For SPM_NODE_INTERMEDIATE with ETH WUF support, this contains the target edge node addresses.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. Inf</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>IPV4</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSrcIp</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines all the IPv4 configuration of the Source Node to communicate over the network. A single SPM instance can communicate on different VLAN, so that more source addresses can be configured and supported by one single SPM.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. Inf</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>IPV4</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0505]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmDstIp</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines all the IPv4 configuration for the Destination Node in order to communicate over the network.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. Inf</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <th>Format</th>
+          <td>IPV4</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0506]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmVLANId</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameter defines the destination address VLAN identifier</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. Inf</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65535</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0507]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmVLANComRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the reference to the container in which all the communication interfaces and datat types information are reported.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. Inf</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_Spm/EcucModuleDefs/Spm/SpmGeneral/SpmVLANCom</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmconfigset-spmpgttentries-spmwkngdvc-spmtrgdvcinfo">
+<h2>SpmConfigSet/SpmPgttEntries/SpmWkngDvc/SpmTrgDvcInfo<a class="headerlink" href="#spmconfigset-spmpgttentries-spmwkngdvc-spmtrgdvcinfo" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmTrgDvcRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameters defines the references to the target device to reach</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmTrgDvc</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0508]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmWkUpSeqRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the reference to the wake-up sequence to use. In case this value is not configured, then it means the target device is a requester for the current SPM.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmWkUpSeq</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0509]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmconfigset-spmpgttentries-spmwkupseq-spmwkupstep">
+<h2>SpmConfigSet/SpmPgttEntries/SpmWkUpSeq/SpmWkUpStep<a class="headerlink" href="#spmconfigset-spmpgttentries-spmwkupseq-spmwkupstep" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmStepID</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameter defines the type of command in the step</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>1</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>255</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0511]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmCommandType</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the type of command in the step. Each command type will address a different way to wake-up a target device.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>ENUMERATION</td>
+      </tr>
+      <tr>
+          <th>Range</th>
+          <td><ol><li>SEND_TC10_SWTCH_1</li><li>SEND_TC10_SWTCH_2</li><li>SEND_ETH_WKUP_FRM_A</li><li>SEND_ETH_WKUP_FRM_B</li><li>SEND_ETH_WKUP_FRM_C</li><li>SEND_CAN_WKUP_FRM_A</li><li>SEND_CAN_WKUP_FRM_B</li><li>SEND_CAN_WKUP_FRM_C</li><li>SEND_BOARD_LV_WKUP_GPIO</li></ol></td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0512]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br>
+
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmCommandValue</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>parameter defines the value for the command step</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>255</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0513]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmSeqStepDly</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>The parameter defines the delay in milliseconds to spend before executing the next step in the sequence. The value is mandatory but it is assumed 0 as default value.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>1 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65535</td>
+      </tr>
+      <tr>
+          <th>Default</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>[$DDS_SPM 0510]</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>[$Satisfies $SRS_SPM 0164]</td>
+      </tr>
+  </table>
+  <br></section>
+<section id="spmconfigset-spmlowvoltagepowerinfo">
+<h2>SpmConfigSet/SpmLowVoltagePowerInfo<a class="headerlink" href="#spmconfigset-spmlowvoltagepowerinfo" title="Link to this heading"></a></h2>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmLowVoltSwActPrioReqSignal</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Reference to the ComSignal (Service Based) that carries the LowVoltageSoftwareActivationPriorityRequest information.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR/EcucDefs/Com/ComConfig/ComSignal</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmLowVoltSwActPrioReqDataServiceBased</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Reference to the implementation data type element for service based LowVoltageSoftwareActivationPriorityRequest.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>IMPLEMENTATION-DATA-TYPE-ELEMENT</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmLowVoltSwActPrioReqDataTypeMappingSet</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Reference to the DATA-TYPE-MAPPING-SET in the system extract for service-based operations.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>DATA-TYPE-MAPPING-SET</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmLowVoltSwActPrioNvmRef</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>Reference to NvM LowVoltageSoftwareActivationPriorityRequest NvMBlockDescriptor.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>REFERENCE</td>
+      </tr>
+      <tr>
+          <th>Destination</th>
+          <td>/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br>
+<table class="table_custom">
+      <tr>
+          <th>Name</th>
+          <td>SpmLowVoltLVOptmzerChkApplicationInterfaceID</td>
+      </tr>
+      <tr>
+          <th>Description</th>
+          <td>LVOptmzerChk Application Interface ID of the power profile associated with the LV Energy Optimizer.</td>
+      </tr>
+      <tr>
+          <th>Multiplicity</th>
+          <td>0 .. 1</td>
+      </tr>
+      <tr>
+          <th>Type</th>
+          <td>INTEGER</td>
+      </tr>
+      <tr>
+          <th>Min</th>
+          <td>0</td>
+      </tr>
+      <tr>
+          <th>Max</th>
+          <td>65535</td>
+      </tr>
+      <tr>
+          <th>Define Detailed Requirement</th>
+          <td>N/A</td>
+      </tr>
+      <tr>
+          <th>Satisfies Software Requirement</th>
+          <td>N/A</td>
+      </tr>
+  </table>
+  <br></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../Requirements/10_Requirements.html" class="btn btn-neutral float-left" title="RTA-SUM SPM Software Requirements Specification Document" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="design_notes.html" class="btn btn-neutral float-right" title="RTA-SUM SPM Design Notes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, ETAS GmbH.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

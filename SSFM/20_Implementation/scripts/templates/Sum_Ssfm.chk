@@ -1,0 +1,1396 @@
+import bsw;
+import AUTOSAR::SSFM;
+import bsw::SscModule;
+import bsw::ComMModule;
+import bsw::ComMModule::ComMConfigSet;
+import bsw::ComMModule::ComMConfigSet::ComMChannel;
+extension org::eclipse::xtend::util::stdlib::io;
+extension org::eclipse::xtend::util::stdlib::elementprops;
+extension templates::mathlib;
+extension Util::SSFM_Utils;
+extension Util::Sum_Ssfm_DID_Utils;
+extension Util::U_Code_Utils;
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : RTA SUM
+ * Component   : SUM_SSFM
+ * Date        : Feb 27, 2023
+ * Revision    : 8.0.0_TP1
+ * Description : Validation script for SFM
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+
+/* Check the configuration of the execution mask */
+context Sum_Ssfm_General ERROR "Parameter Sum_Ssfm_SsmPermitExecutionMask has not a valid value." :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_SsmPermitExecutionMask >= 0 && this.sum_Ssfm_SsmPermitExecutionMask <= 255)
+;
+
+/* Check the configuration of the execution mask */
+context Sum_Ssfm_General ERROR "Parameter Sum_Ssfm_ErrhPermitExecutionMask has not a valid value!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_ErrhPermitExecutionMask >= 0 && this.sum_Ssfm_ErrhPermitExecutionMask <= 255)
+;
+
+/* Check the configuration of the execution mask */
+context Sum_Ssfm_General ERROR "Parameter Sum_Ssfm_FxI_FxFA_SinglePortsSupport is not configured in " + this.shortName + "!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_FxI_FxFA_SinglePortsSupport != null)
+;
+
+/* Check the configuration of the Execution Manager period */
+context Sum_Ssfm_General ERROR "Parameter Sum_Ssfm_ExecutionManagerPeriodicity is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_ExecutionManagerPeriodicity != null)
+;
+
+/* Check the configuration of the DTCTriggeredRunnablePeriodicity */
+context Sum_Ssfm_General
+	if(this.sum_Ssfm_DtcTriggerMessageSupport == true)
+	ERROR "Parameter sum_Ssfm_DTCTriggeredRunnablePeriodicity is mandatory when sum_Ssfm_DtcTriggerMessageSupport enabled !" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_DTCTriggeredRunnablePeriodicity != null)
+;
+
+/* Check the configuration of the SSFM Os Counter */
+context Sum_Ssfm_General ERROR "Parameter Sum_Ssfm_Os_Counter_1ms_Ref is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_Os_Counter_1ms_Ref != null)
+;
+
+/* Check the configuration of the sum_Ssfm_ComMPNCRef */
+context Sum_Ssfm_General
+	if(this.sum_Ssfm_DtcTriggerMessageSupport == true)
+	ERROR "Parameter sum_Ssfm_ComMPNCRef is mandatory when sum_Ssfm_DtcTriggerMessageSupport enabled !" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_ComMPNCRef.size != 0)
+;
+
+/* Check the configuration of the sum_Ssfm_Errh_C_DTC_ControlModule_InvalidIncompatibleConfiguration parameter */
+context Sum_Ssfm_Errh_C_Params ERROR "Parameter sum_Ssfm_Errh_C_DTC_ControlModule_InvalidIncompatibleConfiguration is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_Errh_C_DTC_ControlModule_InvalidIncompatibleConfiguration != null)
+;
+
+/* Check the configuration of the sum_Ssfm_Errh_C_DTC_SecurityPeripheral_PerformanceIncorrectOperation parameter */
+context Sum_Ssfm_Errh_C_Params ERROR "Parameter sum_Ssfm_Errh_C_DTC_SecurityPeripheral_PerformanceIncorrectOperation is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_Errh_C_DTC_SecurityPeripheral_PerformanceIncorrectOperation != null)
+;
+
+/* Check the configuration of the sum_Ssfm_Errh_C_DTC_SecurityPeripheral_MissingSetup parameter */
+context Sum_Ssfm_Errh_C_Params ERROR "Parameter sum_Ssfm_Errh_C_DTC_SecurityPeripheral_MissingSetup is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_Errh_C_DTC_SecurityPeripheral_MissingSetup != null)
+;
+
+/* Check the configuration of the Sum_Ssfm_Channel_ID_Ref */
+// context SSFM
+//     if(this.sum_Ssfm_Channel.size > 0)
+//     ERROR "SUM_SSFM: Parameter Sum_Ssfm_Channel_ID_Ref should be configured for available Sum_Ssfm Channel!" :
+// 	/* Exception handling if the next condition is not verified */
+// 	(this.sum_Ssfm_Channel.select(e|e.sum_Ssfm_Channel_ID_Ref  == null).size == 0)
+// ;
+
+context Sum_Ssfm_ConfigSet
+    if((this.sum_Ssfm_SerialData.size > 0)&&(this.sum_Ssfm_SerialData.select(e|e.sum_Ssfm_SecOCRxPdu_Ref != null).size > 0))
+    ERROR "SSFM_Verification_Status_Callout should be included in the SecOC/SecOCGeneral/SecOCVerificationStatusCallout list" :
+	(this.sum_Ssfm_SerialData.select(e|e.sum_Ssfm_SecOCRxPdu_Ref != null).first().sum_Ssfm_SecOCRxPdu_Ref.parent.secOCGeneral.secOCVerificationStatusCallout.select(e|e == "SSFM_Verification_Status_Callout").size != 0)
+;
+
+context Sum_Ssfm_ConfigSet
+	ERROR "SUM_SSFM: Please configure Error Filter container in SSFM" :
+	this.sum_Ssfm_ErrorFilter != null
+;
+
+context Sum_Ssfm_RteSerialData
+    ERROR "SUM_SSFM: Parameter RteSignal and RteSignalChoice should be configured for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(this.rteSignal != null && this.rteSignal.rteSignalChoice != null)
+;
+/* Check the configuration of the RTEISignalGroupRefChoice */
+context Sum_Ssfm_RteSerialData
+    ERROR "SUM_SSFM: Parameter RteISignalGroupRefChoice or RteISignalRefChoice should be configured for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(this.rteSignal.rteSignalChoice.rteISignalGroupRefChoice != null || this.rteSignal.rteSignalChoice.rteISignalRefChoice != null)
+;
+/* Check the configuration of the RteISignalGroupRef */
+context Sum_Ssfm_RteSerialData
+    if(this.rteSignal.rteSignalChoice.rteISignalGroupRefChoice != null)
+    ERROR "SUM_SSFM: Parameter rteISignalGroupRef should be configured for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(this.rteSignal.rteSignalChoice.rteISignalGroupRefChoice.rteISignalGroupRef != null)
+;
+/* Check the configuration of the RteISignalRef */
+context Sum_Ssfm_RteSerialData
+    if(this.rteSignal.rteSignalChoice.rteISignalRefChoice != null)
+    ERROR "SUM_SSFM: Parameter rteISignalRef should be configured for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(this.rteSignal.rteSignalChoice.rteISignalRefChoice.rteISignalRef != null)
+;
+
+context Sum_Ssfm_SerialData
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_RteSerialData_Ref should reference to a RteSerialData object for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_RteSerialData_Ref != null)
+;
+
+/* Check the configuration of the Sum_Ssfm_Channel_Ref
+But for the case the Serial Data is service based, we don't need to configure the Sum_Ssfm_Channel_Ref*/
+context Sum_Ssfm_SerialData
+    ERROR "SUM_SSFM: Parameter sum_Ssfm_Channel_Ref should reference to a Channel object for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	((this.sum_Ssfm_SDService_Ref != null) || (this.sum_Ssfm_Channel_Ref != null))
+;
+
+
+context Sum_Ssfm_ConfigSet
+if (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null)
+	ERROR "SUM_SSFM: The SUSD error handler is configured with no child. Please configure the children or remove the head of SUSD Error Handler":
+	(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus != null || this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus != null)
+;
+
+/* Check the configuration of the sum_Ssfm_Errh_C_DTCProcess_RCHigh parameter */
+context Sum_Ssfm_ConfigSet
+	if ((this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null) && (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus != null))
+	ERROR "Parameter Sum_Ssfm_Errh_C_DTCProcess_RCHigh is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_C_DTCProcess_RCHigh != null)
+;
+
+/* Check the configuration of the sum_Ssfm_Errh_C_DTCProcess_RCLow parameter */
+context Sum_Ssfm_ConfigSet
+	if ((this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null) && (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus != null))
+	ERROR "Parameter Sum_Ssfm_Errh_C_DTCProcess_RCLow is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_C_DTCProcess_RCLow != null)
+;
+
+/* Check the configuration of the sum_Ssfm_Errh_C_DTC_UXXXX_83_SignalProtectionIncorrect parameter */
+context Sum_Ssfm_ConfigSet
+	if ((this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors != null) && (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors.sum_Ssfm_Errh_UXXXX_83_SignalProtectionIncorrect != null))
+	ERROR "Parameter sum_Ssfm_Errh_C_DTC_UXXXX_83_SignalProtectionIncorrect is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors.sum_Ssfm_Errh_UXXXX_83_SignalProtectionIncorrect.sum_Ssfm_Errh_C_DTC_UXXXX_83_SignalProtectionIncorrect != null)
+;
+
+/* Check the configuration of the sum_Ssfm_Errh_C_DTC_UXXXX_87_MissingMessage parameter */
+context Sum_Ssfm_ConfigSet
+	if ((this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors != null) && (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors.sum_Ssfm_Errh_UXXXX_87_MissingMessage != null))
+	ERROR "Parameter sum_Ssfm_Errh_C_DTC_UXXXX_87_MissingMessage is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors.sum_Ssfm_Errh_UXXXX_87_MissingMessage.sum_Ssfm_Errh_C_DTC_UXXXX_87_MissingMessage != null)
+;
+
+context Sum_Ssfm_ConfigSet
+if (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors != null)
+	ERROR "SUM_SSFM: The SafetySecurity error handler is configured with no child. Please configure the children or remove the head of SafetySecurity Error Handler":
+	(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors.sum_Ssfm_Errh_UXXXX_83_SignalProtectionIncorrect != null || this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors.sum_Ssfm_Errh_UXXXX_87_MissingMessage != null)
+;
+
+context Sum_Ssfm_ConfigSet
+	if ((this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null) && (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus != null))
+	ERROR "Parameter Sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref is mandatory" :
+	(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref != null)
+;
+
+context Sum_Ssfm_ConfigSet
+	if ((this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null) && (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus != null))
+	ERROR "Parameter Sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref is mandatory" :
+	(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref != null)
+;
+
+/*
+context Sum_Ssfm_ConfigSet
+if (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus != null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus != null)
+	ERROR "SUM_SSFM: The number of configured filters with XofY type and the numbers of referenced ones from Handlers don't match. Please removed unused filter, or check if you referenced the same XofY filter in more than one handler":
+	this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y")).size == ((this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")? 1:0) + (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")? 1:0))
+;
+
+context Sum_Ssfm_ConfigSet
+if (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus != null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus == null)
+	ERROR "SUM_SSFM: The number of configured filters with XofY type and the numbers of referenced ones from Handlers don't match. Please removed unused filter, or check if you referenced the same XofY filter in more than one handler":
+	this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y")).size == ((this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")? 1:0))
+;
+
+context Sum_Ssfm_ConfigSet
+if (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus != null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus == null)
+	ERROR "SUM_SSFM: The number of configured filters with XofY type and the numbers of referenced ones from Handlers don't match. Please removed unused filter, or check if you referenced the same XofY filter in more than one handler":
+	this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y")).size == ((this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")? 1:0))
+;
+*/
+
+// TODO: General Event Checks
+// TODO: Run Crank Filters Checks: Event should be XofY
+
+context Sum_Ssfm_ConfigSet
+	ERROR "SUM_SSFM: Please configure Error Handler container in SSFM" :
+	this.sum_Ssfm_ErrorsHandlers != null
+;
+
+context Sum_Ssfm_ConfigSet
+	if ((this.sum_Ssfm_ErrorFilter != null) && (this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter != null))
+	ERROR "SUM_SSFM : Parameter Sum_Ssfm_Errh_C_DTC_KeySlotVerify is mandatory.":
+	this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_Errh_C_DTC_KeySlotVerify != null
+;
+
+context Sum_Ssfm_ConfigSet
+	if ((this.sum_Ssfm_ErrorFilter != null) && (this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter != null))
+	ERROR "SUM_SSFM : Parameter Sum_Ssfm_Errh_C_FailedAuthenticationTimer is mandatory.":
+	this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_Errh_KeySlotNumber.sum_Ssfm_Errh_C_FailedAuthenticationTimer != null
+;
+
+context Sum_Ssfm_Errh_KeySlotVerifyFilter
+	if(this != null)
+	ERROR "SUM_SSFM: Please configure Sum_Ssfm_KeySlotVerify_RunnablePeriodicity under Sum_Ssfm_General.":
+	this.eRootContainer.sSFM.sum_Ssfm_General.sum_Ssfm_KeySlotVerify_RunnablePeriodicity != null
+;
+
+context Sum_Ssfm_Errh_KeySlotNumber
+	if(this != null)
+	ERROR "SUM_SSFM: The Sum_Ssfm_Errh_C_FailedAuthenticationTimer must be divisible by Sum_Ssfm_KeySlotVerify_RunnablePeriodicity for an accurate timing.":
+	(
+		let timer = 1000 * this.sum_Ssfm_Errh_C_FailedAuthenticationTimer:
+		let period = (1000 * this.eRootContainer.sSFM.sum_Ssfm_General.sum_Ssfm_KeySlotVerify_RunnablePeriodicity).extractMantissaFrmFloatValue():
+			(timer/period).extractMantissaFrmFloatValue() * period == timer
+	)
+;
+
+// Checking that provided value (expressed in ms) has a resolution of 50ms
+context Sum_Ssfm_Errh_KeySlotNumber
+	if(this != null)
+	ERROR "SUM_SSFM: The Sum_Ssfm_Errh_C_SlowestPDU_RateTimer must be a multiple of 50ms (resolution is 50ms).":
+	(
+		let timer = (this.sum_Ssfm_Errh_C_SlowestPDU_RateTimer).extractMantissaFrmFloatValue():
+			(timer / 50).extractMantissaFrmFloatValue() * 50 == timer
+	)
+;
+
+context Sum_Ssfm_Errh_KeySlotNumber
+	if(this != null)
+	ERROR "SUM_SSFM: The Sum_Ssfm_Errh_C_SlowestPDU_RateTimer must be divisible by Sum_Ssfm_KeySlotVerify_RunnablePeriodicity for an accurate timing.":
+	(
+		let timer = 1000 * this.sum_Ssfm_Errh_C_SlowestPDU_RateTimer:
+		let period = (1000 * this.eRootContainer.sSFM.sum_Ssfm_General.sum_Ssfm_KeySlotVerify_RunnablePeriodicity).extractMantissaFrmFloatValue():
+			(timer/period).extractMantissaFrmFloatValue() * period == timer
+	)
+;
+
+context Sum_Ssfm_Errh_KeySlotNumber
+	ERROR "SUM_SSFM : Parameter Sum_Ssfm_Errh_C_SlowestPDU_RateTimer is mandatory.":
+	this.sum_Ssfm_Errh_C_SlowestPDU_RateTimer != null
+;
+
+context Sum_Ssfm_Errh_KeySlotNumber
+	ERROR "SUM_SSFM : Parameter sum_Ssfm_Errh_KeySlotVerify_QueueLength is mandatory.":
+	this.sum_Ssfm_Errh_KeySlotVerify_QueueLength != null
+;
+/*
+context Sum_Ssfm_ConfigSet
+if this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors != null
+	ERROR "SUM_SSFM: You configure the head of LNM error handler but nochild. Please configure the children or remove the head of LNM Error Handler":
+	(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_NetworkError.size > 0 || this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError.size > 0)
+;
+
+
+context Sum_Ssfm_ConfigSet
+	ERROR "SUM_SSFM: You need to configure Sum_Ssfm_Errh_SSMInternalFIErrors for generating.":
+	this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSMInternalFIErrors != null
+;
+// Add Ssc once it has been defined
+
+
+// Case 1: susd, lnm, ssm present
+context Sum_Ssfm_ConfigSet
+if this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors != null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null && this.sum_Ssfm_ErrorsHandlers.Sum_Ssfm_Errh_SSMInternalFIErrors != null
+	ERROR "SUM_SSFM: The number of configured filters with XofY type and the numbers of referenced ones from Handlers don't match. Please removed unused filter, or check if you referenced the same XofY filter in more than one handler." :
+	((this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y")).size) == (
+	 (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.select(e|e.sum_Ssfm_Errh_BSWErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size) +
+	 (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_NetworkError.select(e|e.sum_Ssfm_Errh_LNMNetworkErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size) +
+	 (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError.select(e|e.sum_Ssfm_LNMResponderErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size) +
+	 ((Integer)(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.Sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y"))) +
+	 ((Integer)(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y"))) +
+	 (this.sum_Ssfm_ErrorsHandlers.Sum_Ssfm_Errh_SSMInternalFIErrors.sum_Ssfm_SsmMeasureFailed.select(e|e.sum_Ssfm_SsmMeasureFailed_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size)
+	))
+;
+// Case 2: lnm not present; susd, ssm present
+context Sum_Ssfm_ConfigSet
+if this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors == null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null && this.sum_Ssfm_ErrorsHandlers.Sum_Ssfm_Errh_SSMInternalFIErrors != null
+	ERROR "SUM_SSFM: The number of configured filters with XofY type and the numbers of referenced ones from Handlers don't match. Please removed unused filter, or check if you referenced the same XofY filter in more than one handler." :
+	((this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y")).size) == (
+	 (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.select(e|e.sum_Ssfm_Errh_BSWErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size) +
+	 ((Integer)(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.Sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y"))) +
+	 ((Integer)(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y"))) +
+	 (this.sum_Ssfm_ErrorsHandlers.Sum_Ssfm_Errh_SSMInternalFIErrors.sum_Ssfm_SsmMeasureFailed.select(e|e.sum_Ssfm_SsmMeasureFailed_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size)
+	))
+;
+// Case 3: susd not present; lnm, ssm present
+context Sum_Ssfm_ConfigSet
+if this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors != null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors == null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSMInternalFIErrors != null
+	ERROR "SUM_SSFM: The number of configured filters with XofY type and the numbers of referenced ones from Handlers don't match. Please removed unused filter, or check if you referenced the same XofY filter in more than one handler." :
+	((this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y")).size) == (
+	 (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.select(e|e.sum_Ssfm_Errh_BSWErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size) +
+	 (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_NetworkError.select(e|e.sum_Ssfm_Errh_LNMNetworkErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size) +
+	 (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError.select(e|e.sum_Ssfm_LNMResponderErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size) +
+	 (this.sum_Ssfm_ErrorsHandlers.Sum_Ssfm_Errh_SSMInternalFIErrors.sum_Ssfm_SsmMeasureFailed.select(e|e.sum_Ssfm_SsmMeasureFailed_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size)
+	))
+;
+// Case 4: only ssm present
+context Sum_Ssfm_ConfigSet
+if this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors == null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors == null && this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSMInternalFIErrors != null
+	ERROR "SUM_SSFM: The number of configured filters with XofY type and the numbers of referenced ones from Handlers don't match. Please removed unused filter, or check if you referenced the same XofY filter in more than one handler." :
+	((this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y")).size) == (
+	 (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.select(e|e.sum_Ssfm_Errh_BSWErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size) +
+	 (this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSMInternalFIErrors.sum_Ssfm_SsmMeasureFailed.select(e|e.sum_Ssfm_SsmMeasureFailed_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size)
+	))
+;
+
+context Sum_Ssfm_ConfigSet
+	ERROR "SUM_SSFM: You have configured some Bsw Error Handler without reference to an Error filter. Please add the reference" :
+	this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.select(e|e.sum_Ssfm_Errh_BSWErr_EventFilter_Ref == null).size == 0
+;
+*/
+
+context Sum_Ssfm_ConfigSet
+	ERROR "SUM_SSFM: Please add X and Y initialization value for X_OF_Y filters" :
+	this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y") && (e.sum_Ssfm_Errh_C_ThrX == null || e.sum_Ssfm_Errh_C_ThrY == null)).size == 0
+;
+
+context Sum_Ssfm_ConfigSet
+	ERROR "SUM_SSFM: X > Y for a X_OF_Y Filter. Filter will never detect a fail. If you want to bypass the filter please configure it as BLOCK" :
+	this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y") && (e.sum_Ssfm_Errh_C_ThrX > e.sum_Ssfm_Errh_C_ThrY) ).size == 0
+;
+
+context Sum_Ssfm_ConfigSet
+	ERROR "SUM_SSFM: You configured an X_OF_Y_* filter with X,Y to 1s. If you need this configuration please change the Filter Type to NONE" :
+	this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y") && ((e.sum_Ssfm_Errh_C_ThrX == 1) && (e.sum_Ssfm_Errh_C_ThrY == 1))).size == 0
+;
+
+context Sum_Ssfm_ConfigSet
+	ERROR "SUM_SSFM: You configured an X_OF_Y_MOVING_WINDOW_TIMEBASED filter. If you need this configuration please set value for Sum_Ssfm_Errh_MovingWindow_XofY_Periodicity" :
+	this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.select(e|e.sum_Ssfm_FilterType.contains("X_OF_Y_MOVING_WINDOW_TIMEBASED") && (this.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_MovingWindow_XofY_Periodicity == null)).size == 0
+;
+
+context Sum_Ssfm_ECUInfo ERROR "Parameter Sum_Ssfm_Errh_C_DTCProcess_SsmNodeLoss is mandatory for " + this.shortName + "!" :
+	(this.sum_Ssfm_Errh_C_DTCProcess_SsmNodeLoss != null)
+;
+
+context Sum_Ssfm_ECUInfo ERROR "Parameter Sum_Ssfm_LC_ECU_Timer_Ref is mandatory for " + this.shortName + "!" :
+	(this.sum_Ssfm_LC_ECU_Timer_Ref != null)
+;
+
+context Sum_Ssfm_ECUInfo
+	ERROR "SUM_SSFM: The parameter Sum_Ssfm_NodeLossError_RunnablePeriodicity must be configured under Sum_Ssfm_General.":
+	this.eRootContainer.sSFM.sum_Ssfm_General.sum_Ssfm_NodeLossError_RunnablePeriodicity != null
+;
+
+context Sum_Ssfm_ECUInfo
+	ERROR "SUM_SSFM: The Sum_Ssfm_LC_ECU_Timer_Ref must be divisible by Sum_Ssfm_NodeLossError_RunnablePeriodicity for an accurate timing.":
+	(
+		let timer = 1000 * this.sum_Ssfm_LC_ECU_Timer_Ref:
+		let period = (1000 * this.eRootContainer.sSFM.sum_Ssfm_General.sum_Ssfm_NodeLossError_RunnablePeriodicity).extractMantissaFrmFloatValue():
+			(timer/period).extractMantissaFrmFloatValue() * period == timer
+	)
+;
+
+context Sum_Ssfm_ECUInfo_SerialData ERROR "Parameter Sum_Ssfm_RoutingMethod is mandatory for " + this.shortName + "!" :
+	(this.sum_Ssfm_RoutingMethod != null)
+;
+
+context Sum_Ssfm_ECUInfo_SerialData ERROR "Parameter Sum_Ssfm_FaultDetectionUsage is mandatory for " + this.shortName + "!" :
+	(this.sum_Ssfm_FaultDetectionUsage != null)
+;
+
+/* Non-discoverable SerialData must have FaultDetectionUsage = None (no timeout monitoring) */
+context Sum_Ssfm_ECUInfo_SerialData
+	if this.sum_Ssfm_SerialData_Ref.Ssfm_IsNonDiscoverableService()
+	ERROR "SerialData '" + this.sum_Ssfm_SerialData_Ref.shortName + "' is non-discoverable but has FaultDetectionUsage = '" + this.sum_Ssfm_FaultDetectionUsage + "' under ECU '" + this.parent.shortName + "'. Non-discoverable services are always available and must have FaultDetectionUsage = 'None' (no timeout monitoring)." :
+	this.sum_Ssfm_FaultDetectionUsage == "None"
+;
+
+context Sum_Ssfm_ECUInfo ERROR "Parameter Sum_Ssfm_IsGateway is mandatory for " + this.shortName + "!" :
+	(this.sum_Ssfm_IsGateway != null)
+;
+
+/*Check if Sum_Ssfm_Channel_Ref is configured for Sum_Ssfm_ECUInfo_Event*/
+context Sum_Ssfm_ECUInfo_Event
+	ERROR "SUM_SSFM: Parameter Sum_Ssfm_Channel_Ref should be configured in the Sum_Ssfm_ECUInfo_Event subcontainer of "+this.parent.shortName+"!":
+	this.sum_Ssfm_Channel_Ref != null
+;
+
+/*Check if Sum_Ssfm_SerialData_Ref is configured for Sum_Ssfm_ECUInfo_SerialData*/
+context Sum_Ssfm_ECUInfo_SerialData
+	ERROR "SUM_SSFM: Parameter Sum_Ssfm_SerialData_Ref should be configured in the Sum_Ssfm_ECUInfo_SerialData subcontainer of "+this.parent.shortName+"!":
+	this.sum_Ssfm_SerialData_Ref != null
+;
+
+/*No Sum_Ssfm_ECUInfo_SerialData should be service based*/
+context Sum_Ssfm_ECUInfo_SerialData
+	ERROR "SUM_SSFM: The the Sum_Ssfm_ECUInfo_SerialData should not be related to a service based serial data " + this.shortName + " assigned to " + this.parent.shortName + "!":
+	(this.sum_Ssfm_SerialData_Ref.Ssfm_IsServiceBased() == false)
+;
+
+/* All target devices should have Sum_Ssfm_SpmTargetDevice_Ref configured */
+context Sum_Ssfm_TrgDvcInfo
+	ERROR "SUM_SSFM: The target device should have a reference to a SPM TrgDvc. Please configure Sum_Ssfm_SpmTargetDevice_Ref for " + this.shortName + "!":
+	(this.sum_Ssfm_SpmTargetDevice_Ref != null)
+;
+
+context Sum_Ssfm_TrgDvcInfo
+	if this.parent.sum_Ssfm_TrgDvcInfo.size > 1
+	ERROR "SUM_SSFM: The configured Sum_Ssfm_SpmTargetDevice_Ref for " + this.shortName +
+	" has been used by the following Sum_Ssfm_TrgDvcInfo instances: " +
+	(this.parent.sum_Ssfm_TrgDvcInfo.without({this}).select(e | e.sum_Ssfm_SpmTargetDevice_Ref == this.sum_Ssfm_SpmTargetDevice_Ref).shortName).toString() +
+	". The Sum_Ssfm_SpmTargetDevice_Ref must be unique among Sum_Ssfm_TrgDvcInfo instances!":
+	(this.parent.sum_Ssfm_TrgDvcInfo.without({this}).sum_Ssfm_SpmTargetDevice_Ref.contains(this.sum_Ssfm_SpmTargetDevice_Ref) == false)
+;
+
+context Sum_Ssfm_TrgDvcInfo ERROR "Parameter Sum_Ssfm_Errh_C_DTCProcess_TrgDvc_SsmNodeLoss is mandatory for " + this.shortName + "!" :
+	(this.sum_Ssfm_Errh_C_DTCProcess_TrgDvc_SsmNodeLoss != null)
+;
+
+context Sum_Ssfm_TrgDvcInfo ERROR "Parameter Sum_Ssfm_LF_TrgDvc_Timer is mandatory for " + this.shortName + "!" :
+	(this.sum_Ssfm_LF_TrgDvc_Timer != null)
+;
+
+context Sum_Ssfm_ConfigSet
+	if this.sum_Ssfm_GroupInfo != null
+	ERROR "Parameter Sum_Ssfm_IsGateway should be set to True not for more than one ECUInfo!" :
+	(this.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo.select(ecu | ecu.sum_Ssfm_IsGateway == true).size <= 1)
+;
+
+context Sum_Ssfm_ConfigSet
+	if(this.sum_Ssfm_GroupInfo != null && this.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo.sum_Ssfm_ECUInfo_SerialData.exists(e | e.sum_Ssfm_RoutingMethod == 'SignalRouted'))
+	ERROR "There is a SerialData configured with signal routing, but there is no gateway configured!" :
+	(this.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo.exists(ecu | ecu.sum_Ssfm_IsGateway == true))
+;
+
+context Sum_Ssfm_ConfigSet
+	if(this.sum_Ssfm_GroupInfo != null && this.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo.sum_Ssfm_ECUInfo_SerialData.exists(e | e.sum_Ssfm_RoutingMethod == 'PDURouted'))
+	ERROR "There is a SerialData configured with PDU routing, but there is no gateway configured!" :
+	(this.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo.exists(ecu | ecu.sum_Ssfm_IsGateway == true))
+;
+
+context Sum_Ssfm_General ERROR "Setting parameter Sum_Ssfm_IsThisECUGateway is mandatory for Sum_Ssfm_General." :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_IsThisECUGateway != null)
+;
+
+context Sum_Ssfm_General ERROR "Setting parameter Sum_Ssfm_DtcTriggerMessageSupport is mandatory for Sum_Ssfm_General." :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_DtcTriggerMessageSupport != null)
+;
+
+/* Implementation of the queue size will consider the value as a sint16/int16_t (2Bytes-signed) */
+context Sum_Ssfm_General
+     if(this.sum_Ssfm_DtcTriggerMessageSupport == true)
+	 ERROR "SSFM: DTC notification queue size is out-of-boundaries." :
+	(this.sum_Ssfm_DTCNotificationQueueSize >= 0) && (this.sum_Ssfm_DTCNotificationQueueSize < 32746)
+;
+
+context SSFM
+	if(this.sum_Ssfm_General.sum_Ssfm_IsThisECUGateway == true)
+	ERROR "When the current ECU is the gateway, all 'the sum_Ssfm_RoutingMethod's should be 'Direct'" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo.sum_Ssfm_ECUInfo_SerialData.exists(e | e.sum_Ssfm_RoutingMethod != 'Direct') == false)
+;
+
+context SSFM
+	if(this.sum_Ssfm_General.sum_Ssfm_IsThisECUGateway == true)
+	ERROR "When the current ECU is the gateway, no Sum_Ssfm_ECUInfo should be configured as gateway" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo.exists(e | e.sum_Ssfm_IsGateway == true) == false)
+;
+
+context Sum_Ssfm_ECUInfo
+	if(this.sum_Ssfm_IsGateway == true)
+	ERROR "When the ECU is a gateway it cannot have any SerialDatas other than a 'Direct' routed one." :
+	(this.sum_Ssfm_ECUInfo_SerialData.select(e | e.sum_Ssfm_RoutingMethod != 'Direct').size == 0)
+;
+
+/* Check the RteCallBackFunction */
+context Sum_Ssfm_RteSerialData
+    ERROR "SUM_SSFM: Parameter RteCallBackFunction should be defined for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(this.rteCallBackFunction != null && this.rteCallBackFunction != "")
+;
+/* Check the RteSerialDataHeaderInclude */
+context Sum_Ssfm_RteSerialData
+    ERROR "SUM_SSFM: Parameter RteSerialDataHeaderInclude should be defined for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(this.rteSerialDataHeaderInclude != null && this.rteSerialDataHeaderInclude != "")
+;
+
+/*Non-discoverable services do not require PN or ECU association */
+context Sum_Ssfm_SerialData
+	if(Ssfm_IsNonDiscoverableService(this))
+	    WARNING "SUM_SSFM: Non-discoverable SerialData '"+this.shortName+"' will bypass PN conditions and always be Available." :
+		/* Non-discoverable is valid, just inform the user */
+		(true)
+;
+
+/* Check for having at most one reference among PN and SD references */
+context Sum_Ssfm_SerialData
+	if(this.sum_Ssfm_SDService_Ref != null && !this.Ssfm_IsLINChannelCfg() && !Ssfm_IsNonDiscoverableService(this))
+	    ERROR "SUM_SSFM: Whenever the Sum_Ssfm_SDService_Ref is defined there should be no Sum_Ssfm_Partial_Network_Ref defined; for the "+this.shortName+"!" :
+		/* Exception handling if the next condition is not verified */
+		(this.sum_Ssfm_Partial_Network_Ref.size == 0)
+;
+
+/* Check for having a reference in the RteSerialData */
+context Sum_Ssfm_SerialData
+	ERROR "SUM_SSFM: The Sum_Ssfm_RteSerialData_Ref for this serial data do not point to an RteSerialData with a valid RteISignalGroupRefChoice or RteISignalRefChoice ; for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(
+		(this.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalGroupRefChoice != null) ||
+		(this.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalRefChoice != null)
+	)
+;
+
+/* Check for having the correct reference in the RteSerialData */
+context Sum_Ssfm_SerialData
+	if(this.Ssfm_IsSignalGroup())
+	ERROR "SUM_SSFM: The Sum_Ssfm_RteSerialData_Ref for this serial data (Signal Group) do not point to an RteSerialData with a SignalGroup reference ; for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(
+		(this.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalGroupRefChoice != null) &&
+		(this.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalGroupRefChoice.rteISignalGroupRef != null)
+	)
+;
+
+/* Check for having the correct reference in the RteSerialData */
+context Sum_Ssfm_SerialData
+	if(!this.Ssfm_IsSignalGroup())
+	ERROR "SUM_SSFM: The Sum_Ssfm_RteSerialData_Ref for this serial data (Signal) do not point to an RteSerialData with a Signal reference ; for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(
+		(this.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalRefChoice != null) &&
+		(this.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalRefChoice.rteISignalRef != null)
+	)
+;
+
+/* Check for having the message id reference whenever the serial data has the message info */
+context Sum_Ssfm_SerialData
+	if(!this.Ssfm_IsLINChannelCfg())
+	ERROR "SUM_SSFM: The Sum_Ssfm_MessageID_Ref should be configured when the message is CAN/ETH; for the "+this.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(
+		(this.sum_Ssfm_MessageID_Ref != null)
+	)
+;
+
+
+////////////// FxI Debouncing //////////////
+context Sum_Ssfm_SerialData
+	if(this.Ssfm_IsAuthenticated() == true)
+	    ERROR "SUM_SSFM: Whenever the Sum_Ssfm_SerialData is an Authenticated SerialData the Sum_Ssfm_FcI_Debouncer should be defined; for the "+this.shortName+"!" :
+		/* Exception handling if the next condition is not verified */
+		(this.sum_Ssfm_FcI_Debouncer != null)
+;
+context Sum_Ssfm_SerialData
+	if(this.Ssfm_IsContOp() == true)
+	    ERROR "SUM_SSFM: Whenever the Sum_Ssfm_SerialData is a ContOp SerialData the Sum_Ssfm_FoI_Debouncer should be defined; for the "+this.shortName+"!" :
+		/* Exception handling if the next condition is not verified */
+		(this.sum_Ssfm_FoI_Debouncer != null)
+;
+context Sum_Ssfm_SerialData
+	if(this.Ssfm_IsProtected() == true)
+	    ERROR "SUM_SSFM: Whenever the Sum_Ssfm_SerialData is a Protected SerialData the Sum_Ssfm_FpI_Debouncer should be defined; for the "+this.shortName+"!" :
+		/* Exception handling if the next condition is not verified */
+		(this.sum_Ssfm_FpI_Debouncer != null)
+;
+context Sum_Ssfm_SerialData
+	if(this.Ssfm_IsSafety() == true)
+	    ERROR "SUM_SSFM: Whenever the Sum_Ssfm_SerialData is a Safety SerialData the Sum_Ssfm_FsI_Debouncer should be defined; for the "+this.shortName+"!" :
+		/* Exception handling if the next condition is not verified */
+		(this.sum_Ssfm_FsI_Debouncer != null)
+;
+
+context DemClient
+    ERROR "SUM_SSFM: The DemClient container should contain a DemCallbackDTCStatusChanged with function callback name set to Ssfm_Dem_CB_DTCStatusChanged!" :
+	/* Exception handling if the next condition is not verified */
+	(this.demCallbackDTCStatusChanged.exists(e | e.demCallbackDTCStatusChangedFnc == "Ssfm_Dem_CB_DTCStatusChanged"))
+;
+
+/* Check if all serial datas are assigned to at least one ECU (for signal based serial data) */
+/*Non-discoverable services do not require ECU assignment */
+context Sum_Ssfm_SerialData
+	if(!Ssfm_IsLINChannelCfg(this) && !Ssfm_IsServiceBased(this) && !Ssfm_IsNonDiscoverableService(this))
+		ERROR "SUM_SSFM: The serial data is not assigned to any ECU. Consider adding the serial data to the corresponding ECU_Info; for the "+this.shortName+"!" :
+		/* Exception handling if the next condition is not verified */
+		(this.parent.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo.exists(e|e.sum_Ssfm_ECUInfo_SerialData.sum_Ssfm_SerialData_Ref.contains(this)))
+;
+
+////////////// LossOfCommunication Dem events configuration //////////////
+
+/*!
+ * Check for all configured ECUInfos that a proper binding between SerialDatas and channels
+ * has been defined inside the sum_Ssfm_ECUInfo_Event container, to be able to
+ * report LossOfCommunication events to the Dem for all pairs of ECU-channel
+ */
+context Sum_Ssfm_ECUInfo
+	ERROR "SUM_SSFM: "+this.shortName+" is missing a reference to a Dem event for a linked SerialData channel. See the Sum_Ssfm_ECUInfo_Event subcontainer." :
+	Ssfm_GetControllerECUInfos(this.parent.sum_Ssfm_ECUInfo, false)                  // ...for all ECU/channel bindings ...
+	.forAll(binding |
+					  ((binding.getProperty("ecu_name") != this.shortName)          // ...filter the bindings to the current ECU ...
+	                  || this.sum_Ssfm_ECUInfo_Event
+	                         .collect(ch | if(ch.sum_Ssfm_Channel_Ref != null) then ch.sum_Ssfm_Channel_Ref.shortName)        // ...collect names of bound channels ...
+	                         .exists(ch | ch == binding.getProperty("channel_name") ) // ...and check if the required binding's channel is part of the bound channels
+	                  )
+	       )
+;
+
+/*!
+ * Check that there are no duplicate channels' binding in
+ * Sum_Ssfm_ECUInfo_Event containers
+ */
+context Sum_Ssfm_ECUInfo_Event
+	ERROR "SUM_SSFM: multiple bindings for the "+this.sum_Ssfm_Channel_Ref.shortName+" SSFM channel are present in the current sum_Ssfm_ECUInfo_Events container. At most one binding per channel per ECU shall be present." :
+	!this.parent.sum_Ssfm_ECUInfo_Event.exists(binding | (binding != this) && (binding.sum_Ssfm_Channel_Ref == this.sum_Ssfm_Channel_Ref))
+;
+
+context Sum_Ssfm_ECUInfo
+	ERROR "Parameter Sum_Ssfm_LossCommID is mandatory for " + this.shortName:
+	Ssfm_GetControllerECUInfos(this.parent.sum_Ssfm_ECUInfo, false)
+	.select(controller | controller.getProperty("ecu_name") == this.shortName)
+	.toSet().contains(false) ? (this.sum_Ssfm_LossCommID != null) : true
+;
+////////////// LIN Fault Indications configuration //////////////
+/*!
+ * Check that there are no sum_Ssfm_SecOCRxPdu_Ref when LIN serial data is configured
+ */
+context Sum_Ssfm_SerialData
+	if(this.sum_Ssfm_Channel_Ref != null &&
+	this.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref != null && 	this.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMBusType == "COMM_BUS_TYPE_LIN")
+	    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Channel_ID_Ref of "+this.shortName+" is refered to LIN communication so we shall not configure sum_Ssfm_SecOCRxPdu_Ref for "+this.shortName+"!":
+		/* Exception handling if the next condition is not verified */
+		(this.sum_Ssfm_SecOCRxPdu_Ref == null)
+;
+
+/*!
+ * Check that there are no sum_Ssfm_SDService_Ref when LIN serial data is configured
+ */
+context Sum_Ssfm_SerialData
+	if(Ssfm_IsLINChannelCfg(this))
+	    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Channel_ID_Ref of "+this.shortName+" is refered to LIN communication so we shall not configure sum_Ssfm_SDService_Ref for "+this.shortName+"!":
+		/* Exception handling if the next condition is not verified */
+		(this.sum_Ssfm_SDService_Ref == null)
+;
+
+/* Check that there are no partial network when LIN serial data is configured */
+context Sum_Ssfm_SerialData
+	if(Ssfm_IsLINChannelCfg(this))
+	    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Channel_ID_Ref of "+this.shortName+" is refered to LIN communication so we shall not configure sum_Ssfm_Partial_Network_Ref for "+this.shortName+"!":
+		/* Exception handling if the next condition is not verified */
+		(this.sum_Ssfm_Partial_Network_Ref.size == 0)
+;
+
+
+/* Check that there are no security debouncer when LIN serial data is configured */
+context Sum_Ssfm_SerialData
+	if(this.sum_Ssfm_Channel_Ref != null && this.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref != null && this.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMBusType == "COMM_BUS_TYPE_LIN")
+	    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Channel_ID_Ref of "+this.shortName+" is refered to LIN communication so we shall not configure sum_Ssfm_FcI_Debouncer for "+this.shortName+"!":
+		/* Exception handling if the next condition is not verified */
+		(this.sum_Ssfm_FcI_Debouncer == null)
+;
+
+
+/* Check if LIN serial datas are assigned to any Sum_Ssfm_LINInfo container */
+context Sum_Ssfm_LINInfo_SerialData
+	ERROR "SUM_SSFM: Parameter "+this.shortName+" shall be configured in the "+this.parent.shortName+" container.":
+	this != null && this.sum_Ssfm_SerialData_Ref != null && Ssfm_IsLINChannelCfg(this.sum_Ssfm_SerialData_Ref)
+
+;
+
+/* Check if LIN serial datas are not assigned to any Sum_Ssfm_LINInfo */
+context Sum_Ssfm_SerialData
+	if(Ssfm_IsLINChannelCfg(this) && this.parent.sum_Ssfm_GroupInfo != null)
+	    ERROR "SUM_SSFM: The "+this.shortName+" is not assigned to any Sum_Ssfm_LINInfo.!" :
+		/* Exception handling if the next condition is not verified */
+		(this.parent.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo.sum_Ssfm_LINInfo_SerialData.exists(e|e.sum_Ssfm_SerialData_Ref == this))
+;
+
+/* Check if Sum_Ssfm_LNMResponderErr_EventFilter_Ref configured */
+context Sum_Ssfm_LNM_ResponderInfoError
+	if (this.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_IEF")
+		ERROR "SUM_SSFM: Parameter Sum_Ssfm_LNMResponderErr_EventFilter_Ref of "+this.shortName+" is mandatory when sum_Ssfm_LNMResponderErr_EventFilter_Ref is configured as SSFM_LNM_RESPONDER_IEF" :
+		this.sum_Ssfm_LNMResponderErr_EventFilter_Ref != null
+;
+
+/* Check if Sum_Ssfm_LNM_ResponderInfoErrorType configured */
+context Sum_Ssfm_LNM_ResponderInfoError
+	ERROR "SUM_SSFM: Parameter Sum_Ssfm_LNM_ResponderInfoErrorType of "+this.shortName+" is mandatory" :
+	this.sum_Ssfm_LNM_ResponderInfoErrorType != null
+;
+
+context Sum_Ssfm_LNM_ResponderInfoError
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_LINInfo_Ref of "+this.shortName+" is mandatory" :
+	/* Exception handling if the next condition is not verified */
+	this.sum_Ssfm_LINInfo_Ref != null
+;
+
+/* Check if Sum_Ssfm_Channel_Ref of each Sum_Ssfm_SerialData_Ref should be configured as LIN type the same as Sum_Ssfm_LINInfo */
+context Sum_Ssfm_LINInfo_SerialData
+	if(this.parent.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMBusType == "COMM_BUS_TYPE_LIN" && this.sum_Ssfm_SerialData_Ref != null)
+	ERROR "SUM_SSFM: Parameter Sum_Ssfm_Channel_Ref of "+this.sum_Ssfm_SerialData_Ref.shortName+" of "+this.shortName+" is "+this.sum_Ssfm_SerialData_Ref.sum_Ssfm_Channel_Ref.shortName+" should be configured the same as Sum_Ssfm_Channel_Ref of "+this.parent.shortName+" is "+this.parent.sum_Ssfm_Channel_Ref.shortName+".":
+	this.parent.sum_Ssfm_Channel_Ref.shortName == this.sum_Ssfm_SerialData_Ref.sum_Ssfm_Channel_Ref.shortName
+;
+
+/* Check if Sum_Ssfm_Channel_Ref is configured as LIN type for each of Sum_Ssfm_LINInfo */
+context Sum_Ssfm_LINInfo
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Channel_Ref of "+this.shortName+" shall be LIN communication!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMBusType == "COMM_BUS_TYPE_LIN")
+;
+
+/* Check if Sum_Ssfm_Channel_Ref is configured for each of Sum_Ssfm_LINInfo */
+context Sum_Ssfm_LINInfo
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Channel_Ref of "+this.shortName+" is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_Channel_Ref != null)
+;
+
+/* Check if Sum_Ssfm_LNM_ResponderInfo_Ref is configured for each of Sum_Ssfm_LINInfo */
+context Sum_Ssfm_LINInfo
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_LNM_ResponderInfo_Ref of "+this.shortName+" is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_LNM_ResponderInfo_Ref != null)
+;
+
+/* Check if Sum_Ssfm_IeF_DemEvent_Ref is configured for each of Sum_Ssfm_LINInfo */
+context Sum_Ssfm_LINInfo_Event
+	if(this.parent.parent.parent.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors != null
+	&& this.parent.sum_Ssfm_LNM_ResponderInfo_Ref != null
+	&& Ssfm_IsAnyRefToLINInfo(this.parent.parent.parent.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError,this.parent)
+	&& this.parent.sum_Ssfm_LNM_ResponderInfo_Ref.lNM_Internal_Electronic_Failure_Supported)
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_IeF_DemEvent_Ref of "+this.shortName+" shall be configured whenever IeF feature is supported!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_IeF_DemEvent_Ref != null)
+;
+
+/* Check if any instance of Sum_Ssfm_LNM_ResponderInfoError configured to reference Sum_Ssfm_LINInfo configured the Sum_Ssfm_IeF_DemEvent_Ref */
+context Sum_Ssfm_LINInfo_Event
+	if(this.parent.parent.parent.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors != null
+	&& this.parent.sum_Ssfm_LNM_ResponderInfo_Ref != null
+	&& this.sum_Ssfm_IeF_DemEvent_Ref !=null
+	&& this.parent.sum_Ssfm_LNM_ResponderInfo_Ref.lNM_Internal_Electronic_Failure_Supported)
+    ERROR "SUM_SSFM: An instance of Sum_Ssfm_LNM_ResponderInfoError with ErrorType is SSFM_LNM_RESPONDER_IEF shall be configured to reference "+this.parent.shortName+" whenever Sum_Ssfm_IeF_DemEvent_Ref of "+this.parent.shortName+" is configured.!" :
+	/* Exception handling if the next condition is not verified */
+	(this.parent.parent.parent.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError.exists(e|e.sum_Ssfm_LINInfo_Ref == this.parent))
+;
+
+
+/* Check if LNM_Internal_Electronic_Failure_Supported is configured as support for each of internal electronic failure of  Sum_Ssfm_LNM_ResponderInfoError */
+context Sum_Ssfm_LNM_ResponderInfoError
+	if(this.sum_Ssfm_LINInfo_Ref !=null
+	&& this.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_IEF"
+	&& this.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref !=null)
+    ERROR "SUM_SSFM: Parameter LNM_Internal_Electronic_Failure_Supported is configured as no support for parameter Sum_Ssfm_LNM_ResponderInfo_Ref of "+this.sum_Ssfm_LINInfo_Ref.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.lNM_Internal_Electronic_Failure_Supported == true)
+;
+
+/* Check if multiple duplicate reference to the same Sum_Ssfm_LINInfo_SerialData */
+context Sum_Ssfm_LINInfo_SerialData
+	ERROR "SUM_SSFM: Multiple reference to the same "+this.sum_Ssfm_SerialData_Ref.shortName+" in container Sum_Ssfm_LINInfo." :
+	!this.parent.parent.sum_Ssfm_LINInfo.sum_Ssfm_LINInfo_SerialData.exists(binding | (binding != this) && (binding.sum_Ssfm_SerialData_Ref == this.sum_Ssfm_SerialData_Ref))
+;
+
+/* Check if multiple duplicate reference to the same Sum_Ssfm_LNM_ResponderInfo_Ref */
+context Sum_Ssfm_LINInfo
+	if (this.sum_Ssfm_LNM_ResponderInfo_Ref != null)
+	ERROR "SUM_SSFM: Multiple sum_Ssfm_LNM_ResponderInfo_Ref reference to the same "+this.sum_Ssfm_LNM_ResponderInfo_Ref.shortName+" in container Sum_Ssfm_LINInfo." :
+	!this.parent.sum_Ssfm_LINInfo.exists(binding | (binding != this) && (binding.sum_Ssfm_LNM_ResponderInfo_Ref == this.sum_Ssfm_LNM_ResponderInfo_Ref))
+;
+
+/* Check if multiple duplicate reference to the same Sum_Ssfm_LINInfo_Ref with error type is SSFM_LNM_RESPONDER_IEF */
+context Sum_Ssfm_LNM_ResponderInfoError
+	if(this.sum_Ssfm_LINInfo_Ref !=null && this.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_IEF")
+	ERROR "SUM_SSFM: Multiple Sum_Ssfm_LINInfo_Ref reference to the same "+this.sum_Ssfm_LINInfo_Ref.shortName+" with error type is SSFM_LNM_RESPONDER_IEF in container Sum_Ssfm_LNM_ResponderInfoError." :
+	!this.parent.sum_Ssfm_LNM_ResponderInfoError.exists(binding | (binding.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_IEF") && (binding != this) && (binding.sum_Ssfm_LINInfo_Ref == this.sum_Ssfm_LINInfo_Ref))
+;
+
+/* Check that there are no Disable_Rx_PDU when LIN serial data is configured */
+context Sum_Ssfm_SerialData
+	if(Ssfm_IsLINChannelCfg(this))
+	    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Channel_ID_Ref of "+this.shortName+" is refered to LIN communication so we shall not configure Sum_Ssfm_C_SsmDisable_Rx_PDURef for "+this.shortName+"!":
+		/* Exception handling if the next condition is not verified */
+		(this.sum_Ssfm_C_SsmDisable_Rx_PDURef == null)
+;
+
+/* Check if multiple reference to the same Sum_Ssfm_Channel_ID_Ref */
+context Sum_Ssfm_Channel
+	ERROR "SUM_SSFM: Multiple reference to the same "+this.sum_Ssfm_Channel_ID_Ref.shortName+" in container Sum_Ssfm_Channel_Ref." :
+	!this.parent.sum_Ssfm_Channel.exists(binding | (binding != this) && (binding.sum_Ssfm_Channel_ID_Ref == this.sum_Ssfm_Channel_ID_Ref))
+;
+
+/* Check if Sum_Ssfm_InvalidData_DemEvent_Ref is configured for LIN serial datas */
+context Sum_Ssfm_LINInfo
+    if(this.sum_Ssfm_LINInfo_SerialData.sum_Ssfm_SerialData_Ref
+                // the serialData has a FpI or FoI ?
+        .exists(serData|(serData.Ssfm_IsSafety()) &&
+                // does serialData belong to the same channel as LINInfo_Event Channel?
+                (this.sum_Ssfm_Channel_Ref.shortName == serData.sum_Ssfm_Channel_Ref.shortName)))
+	ERROR "SUM_SSFM: Parameter Sum_Ssfm_InvalidData_DemEvent_Ref should be configured in the "+this.shortName+" container.":
+	this.sum_Ssfm_LINInfo_Event != null && this.sum_Ssfm_LINInfo_Event.sum_Ssfm_InvalidData_DemEvent_Ref != null
+;
+
+/* Check if Sum_Ssfm_LINResponderOBD_Supported is configured for Sum_Ssfm_LINInfo whenever Sum_Ssfm_LNM_ResponderInfoError has the associated sum_Ssfm_LINInfo_Ref */
+context Sum_Ssfm_LINInfo
+	if (this.parent.parent.sum_Ssfm_ErrorsHandlers != null && this.parent.parent.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors != null && this.parent.parent.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError != null)
+	ERROR "SUM_SSFM: Parameter Sum_Ssfm_LINResponderOBD_Supported shall be configured in the "+this.shortName+" container.":
+	!this.parent.parent
+	.sum_Ssfm_ErrorsHandlers
+	.sum_Ssfm_Errh_LNMErrors
+	.sum_Ssfm_LNM_ResponderInfoError
+	.exists(binding|(binding.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_IEF")
+	&& (binding.sum_Ssfm_LINInfo_Ref == this)
+	&& (this.sum_Ssfm_LINResponderOBD_Supported == null))
+;
+
+/*!
+ * Check that there are no duplicate channels' binding in
+ * Sum_Ssfm_Errh_BswError containers
+ */
+context Sum_Ssfm_Errh_BswError
+	ERROR "SUM_SSFM: multiple bindings for the "+this.sum_Ssfm_Channel_Ref.shortName+" SSFM channel are present in the current sum_Ssfm_Errh_BswError container. At most one binding per channel per ECU shall be present." :
+	!this.parent.sum_Ssfm_Errh_BswError.exists(binding | (binding != this) && (binding.sum_Ssfm_Channel_Ref != null) && (binding.sum_Ssfm_Channel_Ref == this.sum_Ssfm_Channel_Ref))
+;
+
+/* Check the configuration of the SSFM Bsw Error Manager Sum_Ssfm_Errh_BSWErr_EventFilter_Ref parameter */
+context Sum_Ssfm_Errh_BswError ERROR "Parameter Sum_Ssfm_Errh_BSWErr_EventFilter_Ref is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_Errh_BSWErr_EventFilter_Ref != null)
+;
+
+/* Check the configuration of the SSFM Bsw Error Manager Sum_Ssfm_EventIdForSettingDTC_ref parameter */
+context Sum_Ssfm_Errh_BswError ERROR "For BSW Error type " + this.shortName + " The parameter Sum_Ssfm_EventIdForSettingDTC_ref is needed when the ErrorType is not in the list of ERRH_E_BswEvent errors that are notified to SOH.
+If the ErrorType is in that list, then configure sum_Ssfm_BswEventType instead." :
+	/* Exception handling if the next condition is not verified */
+	(((this.sum_Ssfm_BswEventType != null)&& (this.sum_Ssfm_EventIdForSettingDTC_ref == null)) || ((this.sum_Ssfm_BswEventType == null)&& (this.sum_Ssfm_EventIdForSettingDTC_ref != null)))
+;
+
+/* Check the configuration of the SSFM Bsw Error Manager Sum_Ssfm_EventIdToUpdateError_ref parameter */
+context Sum_Ssfm_Errh_BswError ERROR "Parameter Sum_Ssfm_EventIdToUpdateError_ref is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_EventIdToUpdateError_ref != null)
+;
+
+/* Check the configuration of the SSFM Bsw Error Manager Sum_Ssfm_Errh_C_BswDTCProcess parameter */
+context Sum_Ssfm_Errh_BswError ERROR "Parameter Sum_Ssfm_Errh_C_BswDTCProcess is mandatory!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_Errh_C_BswDTCProcess != null)
+;
+
+
+/* Check the conditions of DID E0B8 */
+context SSFM ERROR "The DCM is not present in the project" :
+	/* Exception handling if the next condition is not verified */
+	(this.eRootContainer.dcm != null)
+;
+context SSFM ERROR "The DCM is not configured for this DID" :
+	/* Exception handling if the next condition is not verified */
+	(Ssfm_DID_E0B8_IsConfigured(this))
+;
+
+
+/* Check E0B8 DCM DID length format: must be 1 + N*10 */
+context SSFM
+    if (Ssfm_DID_E0B8_IsConfigured(this))
+    ERROR "SUM_SSFM: DCM DcmDspDataByteSize for DID 0xE0B8 is invalid: (length-1) must be divisible by 10 (required format: 1 + N*10)." :
+    (Ssfm_DID_E0B8_IsDcmLengthFormatValid(this))
+;
+
+/* Check E0B8 DCM DID length range: N = (length-1)/10 must be within [1, 255] */
+context SSFM
+    if (Ssfm_DID_E0B8_IsConfigured(this))
+    ERROR "SUM_SSFM: DCM DcmDspDataByteSize for DID 0xE0B8 derives an entry count N out of valid range [1, 255] (required format: 1 + N*10)." :
+    (Ssfm_DID_E0B8_IsDcmLengthRangeValid(this))
+;
+
+/* Check E0B8 NvM block length is consistent with DCM-derived capacity */
+context SSFM
+    if (Ssfm_DID_E0B8_IsConfigured(this))
+    ERROR "SUM_SSFM: NvM NvMNvBlockLength for DID 0xE0B8 does not match DCM DcmDspDataByteSize (both must equal 1 + N*10)." :
+    (Ssfm_DID_E0B8_IsNvmLengthConsistent(this))
+;
+context SSFM ERROR "The DCM is not configured for DID E0BA" :
+	/* Exception handling if the next condition is not verified */
+	(Ssfm_DID_E0BA_IsConfigured(this))
+;
+/******** Check for DID 0xF094 configuration ********************/
+/*Check if the SOH module is configured, then the sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH  must be configured*/
+context SSFM
+	if (this.eRootContainer.sOH != null)
+    ERROR "SUM_SSFM: Sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH must be configured if the SOH module is configured!" :
+    ((this.sum_Ssfm_Errh_DID != null) &&
+    (this.sum_Ssfm_Errh_DID.sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH != null)
+    )
+;
+
+/*Check if the SOH module is configured, then the Sum_Ssfm_Errh_F094_Ref reference must be configured*/
+context Sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH
+	if (this.eRootContainer.sOH != null)
+    ERROR "SUM_SSFM: Parameter sum_Ssfm_Errh_F094_Ref is mandatory if the SOH module is configured!" :
+    (this.sum_Ssfm_Errh_F094_Ref != null)
+;
+
+/*Check if the SOH_LocalSupervisionFailures_SupportEnabled parameter is true the parameter SUM_ERRH_SOHSupFail_Thresh_Init must be configured */
+context Sum_Ssfm_Errh_DID
+	if (Ssfm_isEnableERRHLocalSupervision(this.parent.sum_Ssfm_General) == true && this.sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH != null)
+    ERROR "SUM_SSFM: Parameter SUM_ERRH_SOHSupFail_Thresh_Init is mandatory if SOH_LocalSupervisionFailures_SupportEnabled is true!" :
+    ((this.sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH.sUM_ERRH_SOHSupFail_Thresh_Init >= 0) && (this.sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH.sUM_ERRH_SOHSupFail_Thresh_Init <= 65535))
+;
+
+/* Check the configuration of SUM_ERRH_SOHSupFail_TW_Thresh_Init supports the DID 0xF094 */
+context Sum_Ssfm_Errh_DID
+	if (Ssfm_isEnableERRHLocalSupervision(this.parent.sum_Ssfm_General) == true && this.sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH != null)
+    ERROR "SUM_SSFM: Parameter SUM_ERRH_SOHSupFail_TW_Thresh_Init is mandatory if SOH_LocalSupervisionFailures_SupportEnabled is true!" :
+    ((this.sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH.sUM_ERRH_SOHSupFail_TW_Thresh_Init >= 0) && (this.sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH.sUM_ERRH_SOHSupFail_TW_Thresh_Init <= 16777215))
+;
+
+/* Check the configuration of Sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef supports the DID 0xF094 */
+context Sum_Ssfm_Errh_DID
+	if (Ssfm_isEnableERRHLocalSupervision(this.parent.sum_Ssfm_General) == true && this.sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH != null)
+    ERROR "SUM_SSFM: The parameter Sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef needs to be configured to support the DID 0xF094.!" :
+    (this.eRootContainer.sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef != null)
+;
+
+/******** Check for DID 0xE0BB configuration ********************/
+context Sum_Ssfm_Errh_DID
+	if(Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(this.parent.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(this.parent.sum_Ssfm_ConfigSet) == true)
+    ERROR "SUM_SSFM: The AUTOSAR DCM module must be present in project!" :
+    /* Exception handling if the next condition is not verified */
+    (this.eRootContainer.dcm != null)
+;
+
+context Sum_Ssfm_ConfigSet
+	if(Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(this) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(this) == true)
+    ERROR "SUM_SSFM: The DID 0xE0BB must be confgured in AUTOSAR DCM module!" :
+    /* Exception handling if the next condition is not verified */
+    (Ssfm_DID_E0BB_IsConfigured(this.eRootContainer.sSFM))
+;
+
+context Sum_Ssfm_ConfigSet
+	if(Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(this) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(this) == true) && (Ssfm_DID_E0BB_IsConfigured(this.eRootContainer.sSFM) == true)
+	ERROR "SUM_SSFM: The parameter nvMNvBlockLength must be configured and greater than 0 for Sum_Ssfm_MACVerPerKSNvmRef to support DID 0xE0BB!" :
+    /* Exception handling if the next condition is not verified */
+	(this.eRootContainer.sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef != null && this.eRootContainer.sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMNvBlockLength != null && this.eRootContainer.sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMNvBlockLength > 0)
+;
+
+/******************** Checks for DTCs configurations ********************/
+/*Raising an error if Sum_Ssfm_Errh_U19A3_57 parameter is true and if inVehicleMessageAuthentictnSupprted parameter is 0 (KP and AUTH not supported). */
+context Sum_Ssfm_Errh_SSCError
+   if((this.eRootContainer.ssc != null) && (Sum_Ssfm_Errh_U19A3_57_PreCondition_IsValid(this.parent.parent) == true))
+    ERROR "If Sum_Ssfm_Errh_U19A3_57 parameter is true, the parameter InVehicleMessageAuthentictnSupprted must be configured to a non-zero value, "+this.eRootContainer.ssc.sscGeneral.shortName+"!" :
+	/* Exception handling if the next condition is not verified */
+	(
+	(this.eRootContainer.ssc.sscGeneral.inVehicleMessageAuthentictnSupprted != null ) &&
+	(this.eRootContainer.ssc.sscGeneral.inVehicleMessageAuthentictnSupprted != 0)
+	)
+;
+/*Raising a warning if Sum_Ssfm_Errh_U19A3_57 is false and inVehicleMessageAuthentictnSupprted parameter is non-zero. */
+context Sum_Ssfm_Errh_SSCError
+   if ((this.eRootContainer.ssc != null) && (this.eRootContainer.ssc.sscGeneral.inVehicleMessageAuthentictnSupprted != 0))
+   WARNING "SUM_SSFM: Parameter Sum_Ssfm_Errh_U19A3_57 should be configured to true, "+this.shortName+"!":
+   (Sum_Ssfm_Errh_U19A3_57_PreCondition_IsValid(this.parent.parent) == true)
+;
+
+/*Raising an error if Sum_Ssfm_Errh_U19A3_92 parameter is true and intgrtedSecrtyPeriphrlKeyStrgPresent parameter is not true. */
+context Sum_Ssfm_Errh_SSCError
+   if((this.eRootContainer.ssc != null) && (Sum_Ssfm_Errh_U19A3_92_PreCondition_IsValid(this.parent.parent) == true))
+    ERROR "If Sum_Ssfm_Errh_U19A3_92 parameter is true, the parameter IntgrtedSecrtyPeriphrlKeyStrgPresent must be configured to true, "+this.eRootContainer.ssc.sscGeneral.shortName+" !" :
+	/* Exception handling if the next condition is not verified */
+	(
+	(this.eRootContainer.ssc.sscGeneral.intgrtedSecrtyPeriphrlKeyStrgPresent != null ) &&
+	(this.eRootContainer.ssc.sscGeneral.intgrtedSecrtyPeriphrlKeyStrgPresent != false)
+	)
+;
+/*Raising a warning if Sum_Ssfm_Errh_U19A3_92 is false and intgrtedSecrtyPeriphrlKeyStrgPresent parameter is true. */
+context Sum_Ssfm_Errh_SSCError
+   if ((this.eRootContainer.ssc != null) && (this.eRootContainer.ssc.sscGeneral.intgrtedSecrtyPeriphrlKeyStrgPresent == true))
+   WARNING "SUM_SSFM: Parameter Sum_Ssfm_Errh_U19A3_92 should be configured to true, "+this.shortName+"!":
+   (Sum_Ssfm_Errh_U19A3_92_PreCondition_IsValid(this.parent.parent) == true)
+;
+
+/*Raising an error if Sum_Ssfm_Errh_U19A3_8A parameter is true and inVehicleMessageAuthentictnSupprted parameter is 0 (KP and AUTH not supported).*/
+context Sum_Ssfm_Errh_SSCError
+   if((this.eRootContainer.ssc != null) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(this.parent.parent) == true))
+    ERROR "If Sum_Ssfm_Errh_U19A3_8A parameter is true, the parameter InVehicleMessageAuthentictnSupprted must be configured to a non-zero value, "+this.eRootContainer.ssc.sscGeneral.shortName+"!":
+	/* Exception handling if the next condition is not verified */
+	(
+	(this.eRootContainer.ssc.sscGeneral.inVehicleMessageAuthentictnSupprted != null ) &&
+	(this.eRootContainer.ssc.sscGeneral.inVehicleMessageAuthentictnSupprted != 0)
+	)
+;
+/*Raising a warning if inVehicleMessageAuthentictnSupprted parameter is non-zero and Sum_Ssfm_Errh_U19A3_8A is false.*/
+context Sum_Ssfm_Errh_SSCError
+   if ((this.eRootContainer.ssc != null) && (this.eRootContainer.ssc.sscGeneral.inVehicleMessageAuthentictnSupprted != 0))
+   WARNING "SUM_SSFM: Parameter Sum_Ssfm_Errh_U19A3_8A should be configured to true, "+this.shortName+"!":
+   (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(this.parent.parent) == true)
+;
+
+/*Checks for each enabled container, inherent to the DTC, whether the parameters are not null*/
+context Sum_Ssfm_Errh_U19A3_54_SecPer_MissSetup
+	if (this != null)
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Errh_C_DTC_U19A3_54_SecPer_MissSetup must be configured if "+this.shortName+" is enabled!":
+	this.sum_Ssfm_Errh_C_DTC_U19A3_54_SecPer_MissSetup != null
+;
+context Sum_Ssfm_Errh_U19A3_8A_CntrlModSecPer_AuthFailure
+	if (this != null)
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Errh_CodeGen_Enabled must be configured if "+this.shortName+" is enabled!":
+	this.sum_Ssfm_Errh_CodeGen_Enabled != null
+;
+context Sum_Ssfm_Errh_U19A3_92_SecPer_PerIncOp
+	if (this != null)
+    ERROR "SUM_SSFM: Parameters must be configured if "+this.shortName+" is enabled!":
+	((this.sum_Ssfm_Errh_CodeGen_Enabled != null) &&
+	(this.sum_Ssfm_Errh_C_DTC_U19A3_92_SecPer_PerIncOp != null)
+	)
+;
+context Sum_Ssfm_Errh_U19A3_57_InvIncCfg
+	if (this != null)
+    ERROR "SUM_SSFM: Parameters must be configured if "+this.shortName+" is enabled!":
+	((this.sum_Ssfm_Errh_CodeGen_Enabled != null) &&
+	(this.sum_Ssfm_Errh_C_DTC_U19A3_57_InvIncCfg != null)
+	)
+;
+context Sum_Ssfm_Errh_U19A6_54_MissSetup
+	if (this != null)
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Errh_C_DTC_U19A6_54_MissSetup must be configured if "+this.shortName+" is enabled!":
+	this.sum_Ssfm_Errh_C_DTC_U19A6_54_MissSetup != null
+;
+
+context Sum_Ssfm_Errh_U19A6_57_PhyECUInvIncComp
+	if (this != null)
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Errh_U19A6_57_PhyECUInvIncComp must be configured if "+this.shortName+" is enabled!":
+	this.sum_Ssfm_Errh_U19A6_57_DTCProcess != null
+;
+
+context Sum_Ssfm_Errh_U19A6_57_PhyECUInvIncComp
+	if(this.sum_Ssfm_Errh_U19A6_57_DTCProcess == true)
+    ERROR "Parameter Sum_Ssfm_Errh_SSC_U19A6_57_Filter_Ref shall be configured if sum_Ssfm_Errh_U19A6_57_DTCProcess is set to TRUE!" :
+    (this.sum_Ssfm_Errh_SrvcMgr_U19A6_57_Filter_Ref != null) 
+;
+
+/*Raising an error if the Sum_Ssfm_Errh_CodeGen_Enabled is true and Sum_Ssfm_Errh_C_DTC_U19A3_92_SecPer_PerIncOp is false*/
+context Sum_Ssfm_Errh_U19A3_92_SecPer_PerIncOp
+   if (Sum_Ssfm_Errh_U19A3_92_PreCondition_IsValid(this.parent.parent.parent) == true)
+   ERROR "SUM_SSFM: Parameter Sum_Ssfm_Errh_C_DTC_U19A3_92_SecPer_PerIncOp should be true for the "+this.shortName+"!":
+	/* Exception handling if the next condition is not verified */
+	 (this.sum_Ssfm_Errh_C_DTC_U19A3_92_SecPer_PerIncOp != false)
+;
+
+/*Raising an error if the Sum_Ssfm_Errh_CodeGen_Enabled is true and Sum_Ssfm_Errh_C_DTC_U19A3_57_InvIncCfg is false*/
+context Sum_Ssfm_Errh_U19A3_57_InvIncCfg
+   if (Sum_Ssfm_Errh_U19A3_57_PreCondition_IsValid(this.parent.parent.parent) == true)
+   ERROR "SUM_SSFM: Parameter Sum_Ssfm_Errh_C_DTC_U19A3_57_InvIncCfg should be true for the "+this.shortName+"!":
+	/* Exception handling if the next condition is not verified */
+	 (this.sum_Ssfm_Errh_C_DTC_U19A3_57_InvIncCfg != false)
+;
+
+
+/* If the Sum_Ssfm_Errh_U198C_54_MissSetup Code Gen is disabled the init value of its calibarion parameter cannot be true rationally. */
+context Sum_Ssfm_Errh_U198C_54_MissSetup
+	if(!this.sum_Ssfm_Errh_CodeGen_Enabled)
+	ERROR "SUM_SSFM: When the Sum_Ssfm_Errh_U198C_54_MissSetup code gen is disabled, the initial value of the calibration parameter cannot be true.":
+	(this.sum_Ssfm_Errh_C_DTC_U198C_54_MissSetup == false)
+;
+
+/*Raising a warning if SSC module isn't configured */
+context SSFM
+   WARNING "SUM_SSC: The module SSC should be configured! ":
+   (this.eRootContainer.ssc != null)
+;
+
+/*Raising a warning if the Sum_Ssfm_Errh_SSCError is not configured*/
+context Sum_Ssfm_ErrorsHandlers
+	 WARNING "SUM_SSFM: The container Sum_Ssfm_Errh_SSCError should  be configured! ":
+   	 (this.sum_Ssfm_Errh_SSCError != null)
+;
+
+/* If the APSKRP is disabled, the DTC U198C 54 shall be disabled. */
+context Sum_Ssfm_Errh_U198C_54_MissSetup
+	if ((this.eRootContainer.ssc != null) && (this.eRootContainer.ssc.sscGeneral.sscAPSRKP_Support == false))
+	ERROR "DTC U198C 54 can not be processed if the SSC's parameter SscAPSRKP_Support is false. Please, set the sum_Ssfm_Errh_C_DTC_U198C_54_MissSetup to false.":
+	(this.sum_Ssfm_Errh_C_DTC_U198C_54_MissSetup == false)
+;
+
+
+/* Check the configuration of sum_Ssfm_GetDTCStatus_DemEvent_Ref for Run Crank Input Stuck High */
+context Sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus
+	if (Ssfm_IsRunCrankHighDiagStatus_Configured (this.parent.parent.parent) == true)
+	ERROR "SUM_SSFM: Parameter sum_Ssfm_GetDTCStatus_DemEvent_Ref should be configured for the "+this.shortName+"!":
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_GetDTCStatus_DemEvent_Ref != null)
+;
+
+/* Check the configuration of sum_Ssfm_GetDTCStatus_DemEvent_Ref for Run Crank Input Stuck Low */
+context Sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus
+	if (Ssfm_IsRunCrankLowDiagStatus_Configured(this.parent.parent.parent) == true)
+	ERROR "SUM_SSFM: Parameter sum_Ssfm_GetDTCStatus_DemEvent_Ref should be configured for the "+this.shortName+"!":
+	/* Exception handling if the next condition is not verified */
+	 (this.sum_Ssfm_GetDTCStatus_DemEvent_Ref != null)
+;
+
+/*Check if the Sum_Ssfm_LossOfComm_DemEvent_Ref is configured for Sum_Ssfm_ECUInfo_Event*/
+context Sum_Ssfm_ECUInfo_Event
+	ERROR "SUM_SSFM: Parameter Sum_Ssfm_LossOfComm_DemEvent_Ref should be configured in the Sum_Ssfm_ECUInfo_Event subcontainer of "+this.parent.shortName+"!":
+	this.sum_Ssfm_LossOfComm_DemEvent_Ref != null
+;
+
+/*Check if the Sum_Ssfm_InvalidData_DemEvent_Ref is configured for Sum_Ssfm_ECUInfo_Event when safety or security signals exist*/
+context Sum_Ssfm_ECUInfo_Event
+    if(this.parent.sum_Ssfm_ECUInfo_SerialData.sum_Ssfm_SerialData_Ref
+                // the serialData has a FpI or FoI?
+        .exists(serData|(serData.Ssfm_IsSafety() ||
+                // the serialData has a FcI ?
+                serData.sum_Ssfm_SecOCRxPdu_Ref != null) &&
+                // does serialData belong to the same channel as ECUInfo_Event Channel?
+                (this.sum_Ssfm_Channel_Ref.shortName == serData.sum_Ssfm_Channel_Ref.shortName)))
+	ERROR "SUM_SSFM: Parameter Sum_Ssfm_InvalidData_DemEvent_Ref should be configured in the "+this.shortName+" container when safety or security signals are present.":
+	this.sum_Ssfm_InvalidData_DemEvent_Ref != null
+;
+
+/*Check if the Sum_Ssfm_Channel_Ref of the serial data referenced in Sum_Ssfm_ECUInfo_SerialData is CAN or ETH */
+context Sum_Ssfm_ECUInfo_SerialData
+	if ((this != null) && (this.sum_Ssfm_SerialData_Ref != null) && (this.sum_Ssfm_SerialData_Ref.sum_Ssfm_Channel_Ref != null) && (this.sum_Ssfm_SerialData_Ref.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref != null))
+	ERROR "SUM_SSFM: the serial data referenced in "+ this.shortName +" must have the CAN or ETH channel type!":
+	(
+	(this.sum_Ssfm_SerialData_Ref.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMBusType == "COMM_BUS_TYPE_CAN") ||
+	(this.sum_Ssfm_SerialData_Ref.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMBusType == "COMM_BUS_TYPE_ETH")
+	)
+;
+
+/*********/
+/*Check if Sum_Ssfm_ECUInfo_SerialData container is enabled, then all parameters must be configured*/
+context Sum_Ssfm_ECUInfo_SerialData
+	if ( this != null)
+	ERROR "SUM_SSFM: Parameters of the enabled "+ this.shortName +" container must be configured!":
+	((this.sum_Ssfm_FaultDetectionUsage != null) &&
+	(this.sum_Ssfm_RoutingMethod != null ) &&
+	(this.sum_Ssfm_SerialData_Ref != null )
+	)
+;
+
+/* Check the configuration of the Sum_Ssfm_GetDTCStatus_DemEvent_Ref  parameter for Key Slot Verify Error */
+context Sum_Ssfm_Errh_KeySlotVerifyFilter
+	if ( Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(this.parent.parent) != 0 )
+	ERROR "SUM_SSFM : Parameter Sum_Ssfm_GetDTCStatus_DemEvent_Ref  should be configured! "+this.shortName+"!":
+	this.sum_Ssfm_GetDTCStatus_DemEvent_Ref != null
+;
+
+/* Check the configuration of Sum_Ssfm_LossCommID should be unique for all the instances of Sum_Ssfm_ECUInfo*/
+context Sum_Ssfm_ConfigSet
+	if this.sum_Ssfm_GroupInfo != null
+	ERROR "Parameter Sum_Ssfm_LossCommID should be unique for all the instances of Sum_Ssfm_ECUInfo!":
+	(this.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo.sum_Ssfm_LossCommID.select(e|e != null).size == this.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo.sum_Ssfm_LossCommID.select(e|e != null).toSet().size)
+;
+
+/* Check if Sum_Ssfm_IeF_DemEvent_Ref is configured for each of Sum_Ssfm_LINInfo */
+context Sum_Ssfm_LINInfo_Event
+	if(this.parent.parent.parent.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors != null
+	&& this.parent.sum_Ssfm_LNM_ResponderInfo_Ref != null
+	&& Ssfm_IsAnyRefToLINInfo(this.parent.parent.parent.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError,this.parent))
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_MissingMsg_DemEvent_Ref of "+this.shortName+" shall be configured whenever missing message error feature is supported!" :
+	/* Exception handling if the next condition is not verified */
+	(this.sum_Ssfm_MissingMsg_DemEvent_Ref != null)
+;
+
+/* Check if multiple duplicate reference to the same Sum_Ssfm_LINInfo_Ref with error type is SSFM_LNM_RESPONDER_MISSING_MSG*/
+context Sum_Ssfm_LNM_ResponderInfoError
+	if(this.sum_Ssfm_LINInfo_Ref !=null && this.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_MISSING_MSG")
+	ERROR "SUM_SSFM: Multiple Sum_Ssfm_LINInfo_Ref reference to the same "+this.sum_Ssfm_LINInfo_Ref.shortName+" with error type is SSFM_LNM_RESPONDER_MISSING_MSG in container Sum_Ssfm_LNM_ResponderInfoError." :
+	!this.parent.sum_Ssfm_LNM_ResponderInfoError.exists(binding | (binding.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_MISSING_MSG") && (binding != this) && (binding.sum_Ssfm_LINInfo_Ref == this.sum_Ssfm_LINInfo_Ref))
+;
+
+/* Check BSW production errors that are reported to Dem are configured to not set DTCs*/
+context Sum_Ssfm_Errh_BswError
+	if (this.sum_Ssfm_EventIdToUpdateError_ref !=null)
+	ERROR "SUM_SSFM: The DemEventParameter: " + this.sum_Ssfm_EventIdToUpdateError_ref.shortName + " requires the DemCallbackEventUdsStatusChanged configuration, as it maps to a BSW Error.":
+	(this.sum_Ssfm_EventIdToUpdateError_ref.demCallbackEventUdsStatusChanged.first().demCallbackEventUdsStatusChangedFnc != null)
+;
+
+context Sum_Ssfm_General
+	if(this.ssfmGenerateInitRunnable == true)
+    ERROR "Parameter SsfmInitFuncPeriodicity shall be configured if SsfmGenerateInitRunnable is set to TRUE!" :
+    (this.ssfmInitFuncPeriodicity != null)
+;
+
+context Sum_Ssfm_Channel
+	if(this.sum_Ssfm_Channel_ID_Ref!=null && (this.sum_Ssfm_Channel_ID_Ref.comMBusType != "COMM_BUS_TYPE_CAN"))
+    ERROR "SUM_SSFM: Parameter Sum_Ssfm_Ssm_C_UsageOfCanBusOffDTC in " + this.shortName +  " must be set to FALSE!" :
+    (this.sum_Ssfm_Ssm_C_UsageOfCanBusOffDTC == false)
+;
+
+context Sum_Ssfm_GroupInfo
+	if (IsDemFF_UXXXX_87_Required(this))
+	ERROR "Parameter sum_Ssfm_DemDataElementClass_XXXX87_Ref must be configured in Sum_Ssfm_GroupInfo since the number of DemEvent for the ECUinfo is > 0 ! ":
+	(this.sum_Ssfm_DemDataElementClass_XXXX87_Ref != null)
+;
+
+context sum_Ssfm_Errh_KeySlotVerifyFilter
+	if (IsDemFF_U19A3_8A_Required(this.parent))
+	ERROR "Parameter Sum_Ssfm_DemDataElementClass_U19A3_8A_Ref must be configured in Sum_Ssfm_Errh_KeySlotVerifyFilter since the number of KeySlotNumber is > 0 ! ":
+	(this.sum_Ssfm_DemDataElementClass_U19A3_8A_Ref != null)
+;
+
+/* If the APSKRP is disabled, the DTC U198C 49 shall be disabled. */
+context Sum_Ssfm_Errh_U198C_49_PrimSec_IntElecFail
+	if ((this.eRootContainer.ssc != null) && (this.eRootContainer.ssc.sscGeneral.sscAPSRKP_Support == false))
+	ERROR "DTC U198C 49 can not be processed if the SSC's parameter SscAPSRKP_Support is false. Please, set the sum_Ssfm_Errh_U198C_49_DTCProcess to false.":
+	(this.sum_Ssfm_Errh_U198C_49_DTCProcess == false)
+;
+
+context Sum_Ssfm_Errh_U198C_49_PrimSec_IntElecFail
+	if(this.sum_Ssfm_Errh_U198C_49_DTCProcess == true)
+    ERROR "Parameter Sum_Ssfm_Errh_SSC_U198C_49_Filter_Ref shall be configured if sum_Ssfm_Errh_U198C_49_DTCProcess is set to TRUE!" :
+    (this.sum_Ssfm_Errh_SSC_U198C_49_Filter_Ref != null)
+;
+
+context Sum_Ssfm_Errh_U198C_54_MissSetup
+    if(this.sum_Ssfm_Errh_C_DTC_U198C_54_MissSetup == true)
+    ERROR "Only X/Y debouncing method is allowed for U198C 54. Please configure sum_Ssfm_Errh_SSC_U198C_54_EventFilter_Ref with X_OF_Y type." :
+    (
+        this.sum_Ssfm_Errh_SSC_U198C_54_EventFilter_Ref != null &&
+        this.sum_Ssfm_Errh_SSC_U198C_54_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")
+    )
+;
+
+
+context Sum_Ssfm_Errh_U198C_8A_FailedAuth
+    ERROR "Only X/Y debouncing method is allowed for U198C 8A. Please configure sum_Ssfm_Errh_SSC_U198C_8A_EventFilter_Ref with X_OF_Y type." :
+    (
+        this.sum_Ssfm_Errh_SSC_U198C_8A_EventFilter_Ref != null &&
+        this.sum_Ssfm_Errh_SSC_U198C_8A_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")
+    )
+;
+
+/*Check if the Sum_Ssfm_SerialData needs the transformer error and the RteSerialData configuration is done accordingly */
+context Sum_Ssfm_SerialData
+	if (this.sum_Ssfm_RteSerialData_Ref != null)
+	ERROR "SUM_SSFM: Ssfm_RteSerialData_Ref of  "+ this.shortName +" must have the RteSerialDataE2EInTransformerChain set to " + Ssfm_IsE2EConfigured(this):
+	(this.sum_Ssfm_RteSerialData_Ref.rteSerialDataE2EInTransformerChain == Ssfm_IsE2EConfigured(this))
+;
+
+/******** Check for NvM RAM Block Length Configuration ********************/
+/* Check the configuration of nvMNvBlockLength for DID 0xE0B8 */
+context Sum_Ssfm_NvM_References
+    ERROR "SUM_SSFM: The parameter nvMNvBlockLength must be configured and greater than 0 for Sum_Ssfm_CommFigureOfMeritNvmRef to support DID 0xE0B8!" :
+    (this.sum_Ssfm_CommFigureOfMeritNvmRef != null && this.sum_Ssfm_CommFigureOfMeritNvmRef.nvMNvBlockLength != null && this.sum_Ssfm_CommFigureOfMeritNvmRef.nvMNvBlockLength > 0)
+;
+
+/* Check the configuration of nvMNvBlockLength for DID 0xE0B9 */
+context Sum_Ssfm_NvM_References
+    ERROR "SUM_SSFM: The parameter nvMNvBlockLength must be configured and greater than 0 for Sum_Ssfm_SigStsInfoLossOfCommNvmRef to support DID 0xE0B9!" :
+    (this.sum_Ssfm_SigStsInfoLossOfCommNvmRef != null && this.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMNvBlockLength != null && this.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMNvBlockLength > 0)
+;
+
+/* Check the configuration of nvMNvBlockLength for DID 0xE0BA */
+context Sum_Ssfm_NvM_References
+    ERROR "SUM_SSFM: The parameter nvMNvBlockLength must be configured and greater than 0 for Sum_Ssfm_SigProtectionCalcIncorrectNvmRef  to support DID 0xE0BA!" :
+    (this.sum_Ssfm_SigProtectionCalcIncorrectNvmRef  != null && this.sum_Ssfm_SigProtectionCalcIncorrectNvmRef.nvMNvBlockLength != null && this.sum_Ssfm_SigProtectionCalcIncorrectNvmRef.nvMNvBlockLength > 0)
+;
+
+/* Check the configuration of nvMNvBlockLength for DID 0xF094 */
+context Sum_Ssfm_NvM_References
+	if (Ssfm_isEnableERRHLocalSupervision(this.parent.parent.sum_Ssfm_General) == true)
+    ERROR "SUM_SSFM: The parameter nvMNvBlockLength must be configured and greater than 0 for Sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef to support DID 0xF094!" :
+    (this.sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef != null && this.sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef.nvMNvBlockLength != null && this.sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef.nvMNvBlockLength > 0)
+;
+
+/* Check the configuration of nvMRamBlockDataAddress for DID 0xE0B8 */
+context Sum_Ssfm_NvM_References
+    ERROR "SUM_SSFM: The parameter nvMRamBlockDataAddress must be configured for Sum_Ssfm_CommFigureOfMeritNvmRef to support DID 0xE0B8!" :
+    (this.sum_Ssfm_CommFigureOfMeritNvmRef != null && this.sum_Ssfm_CommFigureOfMeritNvmRef.nvMRamBlockDataAddress != null)
+;
+
+/* Check the configuration of nvMRamBlockDataAddress for DID 0xE0B9 */
+context Sum_Ssfm_NvM_References
+    ERROR "SUM_SSFM: The parameter nvMRamBlockDataAddress must be configured for Sum_Ssfm_SigStsInfoLossOfCommNvmRef to support DID 0xE0B9!" :
+    (this.sum_Ssfm_SigStsInfoLossOfCommNvmRef != null && this.sum_Ssfm_SigStsInfoLossOfCommNvmRef.nvMRamBlockDataAddress != null)
+;
+
+/* Check the configuration of nvMRamBlockDataAddress for DID 0xE0BA */
+context Sum_Ssfm_NvM_References
+    ERROR "SUM_SSFM: The parameter nvMRamBlockDataAddress must be configured for Sum_Ssfm_SigProtectionCalcIncorrectNvmRef  to support DID 0xE0BA!" :
+    (this.sum_Ssfm_SigProtectionCalcIncorrectNvmRef  != null && this.sum_Ssfm_SigProtectionCalcIncorrectNvmRef.nvMRamBlockDataAddress != null)
+;
+
+/* Check the configuration of nvMRamBlockDataAddress for DID 0xF094 */
+context Sum_Ssfm_NvM_References
+	if (Ssfm_isEnableERRHLocalSupervision(this.parent.parent.sum_Ssfm_General) == true)
+    ERROR "SUM_SSFM: The parameter nvMRamBlockDataAddress must be configured for Sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef to support DID 0xF094!" :
+    (this.sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef != null && this.sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef.nvMRamBlockDataAddress != null)
+;
+
+/* Check if QoS is enabled but no Sum_Ssfm_QoS_Ref is configured in any SerialData */
+context Sum_Ssfm_General
+    if (this.sSFM_QoS_Enabled == true)
+    WARNING "SUM_SSFM: Parameter sSFM_QoS_Enabled is set to TRUE, but no Sum_Ssfm_QoS_Ref is configured in any Sum_Ssfm_SerialData." :
+    (
+        this.parent.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.exists(sd | sd.sum_Ssfm_QoS_Ref != null && sd.sum_Ssfm_QoS_Ref.size > 0)
+    )
+;
+
+context Sum_Ssfm_General 
+	if (this.sSFM_QoS_Enabled == true) 
+	ERROR "SUM_SSFM: Sum_Ssfm_QoS_DataTypeMappingSet must be configured when SSFM_QoS_Enabled is set to true." :
+	(this.sum_Ssfm_QoS_DataTypeMappingSet != null)
+;
+
+context Sum_Ssfm_SerialData
+	if (this.parent.parent.sum_Ssfm_General.sSFM_QoS_Enabled == true)
+	ERROR "SUM_SSFM: Each QoS referenced in a single Sum_Ssfm_SerialData SHALL belongs to the same Consolidated Service." :
+	Ssfm_AllQoSRefsHaveSameDataType(this) == true
+;
+
+context SSFM
+	if (this.sum_Ssfm_General.sSFM_QoS_Enabled == true)
+	ERROR "SUM_SSFM: Each Consolidated Service SHALL be abstract by one Sum_Ssfm_SerialData" :
+	Ssfm_AllQoSDataTypesAreUnique(this) == true
+; 
+
+
+context Sum_Ssfm_ConfigSet
+	if((Ssfm_IsAnyACPS(this.sum_Ssfm_SerialData, "Authenticated") == false) && (Ssfm_IsAnyACPS(this.sum_Ssfm_SerialData, "ContOp") == false)&&(Ssfm_IsAnyACPS(this.sum_Ssfm_SerialData, "Protected") == false)&&(Ssfm_IsAnyACPS(this.sum_Ssfm_SerialData, "Safety") == false))
+	ERROR "SUM_SSFM: If serial data doesnt have FoI, FsI, FcI or FpI then Sum_Ssfm_Errh_SafetySecurityErrors shouldn' be configured" :
+	(this.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors == null)
+;
+
+/* Check key slot Nvm block length */
+context SSFM
+	if((Ssfm_DID_E0BB_IsConfigured(this.eRootContainer.sSFM)) &&
+	   (this.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef != null) &&
+	   (this.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMNvBlockLength > Ssfm_DID_E0BB_Length(this.sum_Ssfm_ConfigSet)))
+	    WARNING "SUM_SSFM: The Nvm block length for Sum_Ssfm_MACVerPerKSNvmRef is greater than E0BB DID length, " + Ssfm_DID_E0BB_Length(this.sum_Ssfm_ConfigSet) :
+		(false)
+;
+
+/* Check key slot Nvm block length */
+context SSFM
+	if((Ssfm_DID_E0BB_IsConfigured(this.eRootContainer.sSFM)) &&
+	   (this.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef != null) &&
+	   (this.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMNvBlockLength < Ssfm_DID_E0BB_Length(this.sum_Ssfm_ConfigSet)))
+	    ERROR "SUM_SSFM: The Nvm block length for Sum_Ssfm_MACVerPerKSNvmRef is less than E0BB DID length, " + Ssfm_DID_E0BB_Length(this.sum_Ssfm_ConfigSet):
+		(false)
+;

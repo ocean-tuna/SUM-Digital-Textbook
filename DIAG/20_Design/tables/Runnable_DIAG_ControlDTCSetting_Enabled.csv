@@ -1,0 +1,5 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};Runnable_DIAG_ControlDTCSetting_Enabled
+\cellcolor{ETASlightgray}\textbf{Parameters};void
+\cellcolor{ETASlightgray}\textbf{Return};void
+\cellcolor{ETASlightgray}\textbf{Description};Sets the IR_DIAG_ControlDTCsetting to enabled.

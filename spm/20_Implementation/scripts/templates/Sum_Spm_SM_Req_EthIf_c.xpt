@@ -1,0 +1,541 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_SM_Req_EthIf.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for defining the interfaces between EthIf and SM
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#include "Sum_Spm_SM_Req_EthIf.h"
+#include "Sum_Spm_MetaData.h"
+#include "Sum_Spm_Integration.h"
+#include "Sum_Spm_ErrorHandler.h"
+#include "Sum_Spm_Diagnostic.h"
+
+/* If empty, then Wake-up on CAN is not allowed */
+#include "Sum_Common_Utils.h"
+
+/* PRQA S 1532 EOF # Function that access the SPM_dt_Prv's arrays are defined here for modularity reason. */
+/* PRQA S 1503 EOF # Usage of function in a complete integrated project due to project specific conditions */
+/* PRQA S 3214 EOF # Memory Mapping for security reason */
+/* PRQA S 3469 EOF # Following macro are used to access data structure */
+/* PRQA S 3472 EOF # Following macro are used to access data structure */
+
+#define SPM_PTR_PROF_REQ_SIZE(i)                      ( i->ProfileRequest.Size_Indicator )
+#define SPM_PTR_PROF_REQ_ID(i, j)                     ( i->ProfileRequest.ProfileRequestPayLoad[j].ProfileID_SWID )
+#define SPM_PTR_PROF_REQ_PROF_NUMBER(i, j)            ( i->ProfileRequest.ProfileRequestPayLoad[j].ProfileID_ProfileNumber )
+#define SPM_PTR_PROF_REQ_REQUEST_TYPE(i, j)           ( i->ProfileRequest.ProfileRequestPayLoad[j].RequestType )
+
+#define SPM_PTR_PROF_REQ_STATUS_SIZE(i)               ( i->RequestStatusProfileState.Size_Indicator )
+#define SPM_PTR_PROF_REQ_STATUS_ID(i, j)              ( i->RequestStatusProfileState.RequestStatusProfileStatePayLoad[j].ProfileID_SWID )
+#define SPM_PTR_PROF_REQ_STATUS_PROF_NUMBER(i, j)     ( i->RequestStatusProfileState.RequestStatusProfileStatePayLoad[j].ProfileID_ProfileNumber )
+#define SPM_PTR_PROF_REQ_STATUS_REQ_STATE(i, j)       ( i->RequestStatusProfileState.RequestStatusProfileStatePayLoad[j].RequestStatus )
+#define SPM_PTR_PROF_REQ_STATUS_PROF_STATE(i, j)      ( i->RequestStatusProfileState.RequestStatusProfileStatePayLoad[j].ProfileStatus )
+
+#define SPM_REQUEST_SIDE_SW_ID(i)                      ( Spm_SM_Rx->ProfileRequest.ProfileRequestPayLoad[i].ProfileID_SWID )
+#define SPM_REQUEST_SIDE_PROF_NUMBER(i)                ( Spm_SM_Rx->ProfileRequest.ProfileRequestPayLoad[i].ProfileID_ProfileNumber )
+
+#define SPM_REQ_SIZE                                   ( Spm_SM_Rx->ProfileRequest.Size_Indicator )
+#define SPM_REQ_VAL(i)                                 ( Spm_SM_Rx->ProfileRequest.ProfileRequestPayLoad[i].RequestType )
+
+#define SPM_FEEDBACK_SIZE                              ( Spm_SM_Rx->RequestStatusProfileState.Size_Indicator )
+#define SPM_FEEDBACK_SIDE_SW_ID(i)                     ( Spm_SM_Rx->RequestStatusProfileState.RequestStatusProfileStatePayLoad[i].ProfileID_SWID )
+#define SPM_FEEDBACK_SIDE_PROF_NUMBER(i)               ( Spm_SM_Rx->RequestStatusProfileState.RequestStatusProfileStatePayLoad[i].ProfileID_ProfileNumber )
+#define SPM_FEEDBACK_SIDE_STATUS_REQ(i)                ( Spm_SM_Rx->RequestStatusProfileState.RequestStatusProfileStatePayLoad[i].RequestStatus )
+#define SPM_FEEDBACK_SIDE_PROF_STATE(i)                ( Spm_SM_Rx->RequestStatusProfileState.RequestStatusProfileStatePayLoad[i].ProfileStatus )
+
+
+static void Spm_SoftwMgr_ResetFrame(SPM_dt_Prv *frame_to_be_reset);
+static void Spm_SoftwMgr_AppendRequest(const uint8 indexPowProf, SPM_dt_Prv *sm_frame);
+static void Spm_SoftwMgr_PopulateSrcIpAndDstIpFrame(SPM_dt_Prv* sm_frame, const SpmTrgDvcCoordinates SpmTrgDvcCoord);
+static void Spm_SoftwMgr_ProvideRequestToRequested(const SpmTrgDvcCoordinates SpmTrgDvcCoord, const uint8 indexPowProf, SPM_dt_Prv *sm_frame);
+static void Spm_SoftwMgr_ProvideFeedbackToRequester(const SpmTrgDvcCoordinates SpmTrgDvcCoord, const uint8 indexPowProf, const uint8 indexDepList, SPM_dt_Prv *sm_frame );
+static void Spm_Handler_prfReqDispatcherForActivationFromRemote(const uint8 indexPowProf, const uint32 SrcIPRequester);
+static void Spm_prv_SM_RemoteActDeactRequestDispatch(const uint16 idx, const sint16 indexPowProf, const SPM_dt_Prv * Spm_SM_Rx, Std_ReturnType * deactRet);
+
+/**
+ * @brief This function check if the PowerProfile is already present in the sm_frame.
+ *
+ * If the profile is present, this function update the status of the request with the ErrorCode.
+ *
+ * @return TRUE : the PowerProfile is already present in the SM frame.
+ *         FALSE : the PowerProfile is NOT present in the SM frame.
+ */
+boolean Spm_SoftwMgr_CheckPowProfIndexPresentInSMFrame(const uint8 powProfIndex, SPM_dt_Prv * sm_frame, const uint8 errorCode){
+
+    uint8 i;
+    boolean ret = FALSE;
+
+    for(i = 0u; i < SPM_PTR_PROF_REQ_STATUS_SIZE((sm_frame)); i++){
+
+        if( (SPM_PTR_PROF_REQ_STATUS_ID((sm_frame), (i)) == SpmPowPrf_Cfg_WrpTable[powProfIndex].powPrf_data->PowPrfID)  &&
+            (SPM_PTR_PROF_REQ_STATUS_PROF_NUMBER((sm_frame), (i))  == SpmPowPrf_Cfg_WrpTable[powProfIndex].powPrf_data->PowPrfNum) ){
+
+                SPM_PTR_PROF_REQ_STATUS_REQ_STATE((sm_frame), (i)) = errorCode;
+                ret = TRUE;
+                break;
+
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @brief This function populate the SM frame with the corresponding status.
+ *
+ */
+void Spm_SoftwMgr_AppendFeedback(const uint8 indexPowProf, SPM_dt_Prv *sm_frame, const uint8 reqStatus, const uint32 swId, const uint8 profileNumber){
+
+    uint8 indexPowProfInSMFrame = (uint8)(SPM_PTR_PROF_REQ_STATUS_SIZE( (sm_frame) ));
+
+    // Use cached values when indexPowProf is 0xFF, otherwise use table values
+    if(indexPowProf != (uint8)0xFFu) {
+        SPM_PTR_PROF_REQ_STATUS_PROF_STATE((sm_frame), (indexPowProfInSMFrame)) = SPM_PrfStsMgr_RAM[indexPowProf].sm;
+        SPM_PTR_PROF_REQ_STATUS_ID((sm_frame), (indexPowProfInSMFrame)) = SpmPowPrf_Cfg_WrpTable[indexPowProf].powPrf_data->PowPrfID;
+        SPM_PTR_PROF_REQ_STATUS_PROF_NUMBER((sm_frame), (indexPowProfInSMFrame)) = SpmPowPrf_Cfg_WrpTable[indexPowProf].powPrf_data->PowPrfNum;
+    } 
+    else {
+        // Use cached values from the request
+        SPM_PTR_PROF_REQ_STATUS_PROF_STATE((sm_frame), (indexPowProfInSMFrame)) = (uint8)0xFFu;  // Still use 0xFF for state
+        SPM_PTR_PROF_REQ_STATUS_ID((sm_frame), (indexPowProfInSMFrame)) = swId;  // Use cached SWID
+        SPM_PTR_PROF_REQ_STATUS_PROF_NUMBER((sm_frame), (indexPowProfInSMFrame)) = profileNumber;  // Use cached ProfileNumber
+    }
+    
+    SPM_PTR_PROF_REQ_STATUS_REQ_STATE((sm_frame), (indexPowProfInSMFrame)) = reqStatus;
+    SPM_PTR_PROF_REQ_STATUS_SIZE((sm_frame)) += 1u;
+}
+
+/**
+ * @brief This function populate the SM frame with the corresponding request.
+ *
+ */
+static void Spm_SoftwMgr_AppendRequest(const uint8 indexPowProf, SPM_dt_Prv *sm_frame){
+
+    uint8 indexPowProfInSMFrame = (uint8)(SPM_PTR_PROF_REQ_SIZE((sm_frame)));
+
+    SPM_PTR_PROF_REQ_ID( (sm_frame), (indexPowProfInSMFrame))  = SpmPowPrf_Cfg_WrpTable[indexPowProf].powPrf_data->PowPrfID;
+    SPM_PTR_PROF_REQ_PROF_NUMBER( (sm_frame), (indexPowProfInSMFrame) )  = SpmPowPrf_Cfg_WrpTable[indexPowProf].powPrf_data->PowPrfNum;
+    SPM_PTR_PROF_REQ_REQUEST_TYPE( (sm_frame), (indexPowProfInSMFrame) ) = SPM_PrfStsMgr_RAM[indexPowProf].CommandSend;
+
+    SPM_PTR_PROF_REQ_SIZE((sm_frame)) += 1u;
+}
+
+/**
+ * @brief this function append the SrcIP and DestIP to the SM frame.
+ *
+ *
+ */
+static void Spm_SoftwMgr_PopulateSrcIpAndDstIpFrame(SPM_dt_Prv* sm_frame, const SpmTrgDvcCoordinates SpmTrgDvcCoord){
+
+    sm_frame -> PMDestId = SPM_GET_PGTT_INST_TRGDVCIP(SpmTrgDvcCoord.indexTrgDvc, SpmTrgDvcCoord.indexTrgDvcIPAssociated);
+	/* [$Satisfies $DDS_SPM 0128] *//* The VLANId is the second octet (MSB) of the TrgDvcIP. */
+	sm_frame -> PMSrcId  = Spm_Get_SrcIpFromVLANId( (sm_frame -> PMDestId >> 16u) & 0xFFu);
+
+}
+
+/**
+ * @brief Reset the value of the SM frame to zero.
+ *
+ *
+ */
+static void Spm_SoftwMgr_ResetFrame(SPM_dt_Prv *frame_to_be_reset){
+    uint8 i;
+
+    /* [$Satisfies $DDS_SPM 0007] */
+    SPM_PTR_PROF_REQ_SIZE( (frame_to_be_reset) ) = 0u;
+    SPM_PTR_PROF_REQ_STATUS_SIZE( (frame_to_be_reset) ) = 0u;
+
+    for(i = 0u; i < SPM_NUMBER_ITEM_IN_SM_FRAME; i++){
+       SPM_PTR_PROF_REQ_ID( (frame_to_be_reset) , i) = 0u;
+       SPM_PTR_PROF_REQ_PROF_NUMBER((frame_to_be_reset) , i ) = 0u;
+       SPM_PTR_PROF_REQ_REQUEST_TYPE( (frame_to_be_reset), i)= 0u;
+
+       SPM_PTR_PROF_REQ_STATUS_ID( (frame_to_be_reset), i) = 0u;
+       SPM_PTR_PROF_REQ_STATUS_PROF_NUMBER( (frame_to_be_reset), i) = 0u;
+       SPM_PTR_PROF_REQ_STATUS_REQ_STATE( (frame_to_be_reset), i) = 0u;
+       SPM_PTR_PROF_REQ_STATUS_PROF_STATE( (frame_to_be_reset), i) = 0u;
+    }
+}
+
+/**
+ * @brief This function check if a command shall be sent to remote trgdvc.
+ *
+ * This functionality is done exploiting the CommandSend flag. If the Spm_RemotePowerProfile_FSM() detect that a command shall be sent
+ * for a remote profile, it will update the CommandSend flag. So, this function, if see that the flag has a value different from zero,
+ * means that a request to activate/deactivate shall be sent. The request is attached to the SM frame exploiting the Spm_SoftwMgr_AppendRequest() function.
+ *
+ */
+static void Spm_SoftwMgr_ProvideRequestToRequested(const SpmTrgDvcCoordinates SpmTrgDvcCoord, const uint8 indexPowProf, SPM_dt_Prv *sm_frame){
+
+    /* Check if the profile is located on the TrgDvc. */
+    if( SPM_GET_PGTT_INST_TRGDVCIP(SpmTrgDvcCoord.indexTrgDvc, SpmTrgDvcCoord.indexTrgDvcIPAssociated) == SPM_PrfStsMgr_RAM[indexPowProf].TrgDvcIp ){
+
+        if(SPM_PrfStsMgr_RAM[indexPowProf].CommandSend != 0u){
+            Spm_SoftwMgr_AppendRequest(indexPowProf, sm_frame);
+            SPM_PrfStsMgr_RAM[indexPowProf].Spm_RemotePowProf_ActDeactRetry_OngoingTrackerInTicks = SPM_PrfStsMgr_RAM[indexPowProf].Spm_RemotePowProf_ActDeactRetry_StoredPeriodicityInTicks;
+        }
+    }
+
+}
+
+/**
+ * @brief This function check if an update status shall be sent to the SM.
+ *
+ * An update status shall be sent in two case:
+ * - an activation request is just received from a remote trgdvc
+ * - the status of the profile is changed and all the requester of activate the profile shall be notified
+ *
+ * For address the first case, the flag initFeedbackProvided (attached to each requester of a profile) is exploited.
+ * If SPM has just received the request to activate from remote, the Spm_RequesterList_ActivationRequestHandler() will set the initFeedbackProvided flag
+ * to SPM_INIT_FEEDBACK_NOT_SENT_TO_ACT_REQ. When this function detects a requester with that value of the flag, it will call the Spm_SoftwMgr_AppendFeedback()
+ * and set the flag to SPM_INIT_FEEDBACK_SENT_TO_ACT_REQ.
+ * If SPM has just received the request to deactivate from remote, the Spm_RequesterList_DeactivationRequestHandler() will set the initFeedbackProvided flag
+ * to SPM_INIT_FEEDBACK_NOT_SENT_TO_DEACT_REQ. When this function detects a requester with that value of the flag, it will call the Spm_SoftwMgr_AppendFeedback()
+ * and set the flag to SPM_INIT_FEEDBACK_SENT_TO_DEACT_REQ.
+ *
+ * For address the second case, the flag initFeedbackProvided (attached to each requester of a profile) is exploited.
+ * If the local profile status is changed, the Spm_LocalPowerProfile_FSM() API sets the flag isStateProfileChanged to TRUE. So, a feedback is needed to be sent to
+ * only the requester that asked for an activation. I.e. if the flag initFeedbackProvided is SPM_INIT_FEEDBACK_SENT_TO_ACT_REQ. To attach a feedback to the SM frame,
+ * the Spm_SoftwMgr_AppendFeedback() function is called.
+ *
+ */
+static void Spm_SoftwMgr_ProvideFeedbackToRequester(const SpmTrgDvcCoordinates SpmTrgDvcCoord, const uint8 indexPowProf, const uint8 indexDepList, SPM_dt_Prv *sm_frame ){
+
+    if( SPM_PrfStsMgr_RAM[indexPowProf].reqLst.spmReqLst[indexDepList].requesterIP == SPM_GET_PGTT_INST_TRGDVCIP(SpmTrgDvcCoord.indexTrgDvc, SpmTrgDvcCoord.indexTrgDvcIPAssociated) ){
+
+        switch(SPM_PrfStsMgr_RAM[indexPowProf].reqLst.spmReqLst[indexDepList].initFeedbackProvided){
+
+            case SPM_INIT_FEEDBACK_NOT_SENT_TO_ACT_REQ:
+
+                Spm_SoftwMgr_AppendFeedback(indexPowProf, sm_frame, SPM_OK_ACTIVATION, (uint32)0xFFFFFFFFU, (uint8)0xFFU);
+                SPM_PrfStsMgr_RAM[indexPowProf].reqLst.spmReqLst[indexDepList].initFeedbackProvided = SPM_INIT_FEEDBACK_SENT_TO_ACT_REQ;
+                break;
+
+            case SPM_INIT_FEEDBACK_NOT_SENT_TO_DEACT_REQ:
+
+                Spm_SoftwMgr_AppendFeedback( indexPowProf, sm_frame, SPM_OK_DEACTIVATION, (uint32)0xFFFFFFFFU,(uint8)0xFFU);
+                SPM_PrfStsMgr_RAM[indexPowProf].reqLst.spmReqLst[indexDepList].initFeedbackProvided = SPM_INIT_FEEDBACK_SENT_TO_DEACT_REQ;
+                break;
+
+            /* If the initial feedback is already sent, a feedback is needed if and only if the state of the profile is changed in this instance. */
+            case SPM_INIT_FEEDBACK_SENT_TO_ACT_REQ:
+
+                if((SPM_PrfStsMgr_RAM[indexPowProf].isStateProfileChanged == TRUE)){
+                    /* No need to check if the power profile is local since the variable isStateProfileChanged is set only for local one. */
+                    if( (SPM_PrfStsMgr_RAM[indexPowProf].sm == SPM_Activated) || (SPM_PrfStsMgr_RAM[indexPowProf].sm == SPM_Activating) ){
+                        Spm_SoftwMgr_AppendFeedback(indexPowProf, sm_frame, SPM_OK_ACTIVATION, (uint32)0xFFFFFFFFU, (uint8)0xFFU);
+                    }else{
+                        Spm_SoftwMgr_AppendFeedback(indexPowProf, sm_frame, SPM_OK_DEACTIVATION, (uint32)0xFFFFFFFFU, (uint8)0xFFU);
+                    }
+                }
+                break;
+
+            default:
+/* Default case is SPM_NO_FEEDBACK_NEEDED or SPM_INIT_FEEDBACK_SENT_TO_DEACT_REQ. In both case, no action is performed.*/
+                break;
+
+        }
+
+    }
+}
+
+/**
+ * @brief Handles profile requests/status by sending SM messages to target devices.
+ *
+ * This function populate SM frame for each TrgDvc configured iterating each profile and each requester of each profile.
+ * If something is appended in the SM frame, the SPM_Send_SMFrame() API is called in order to transmit the frame over the net.
+ *
+ * After the iterations, this function reset the flags (isStateProfileChanged and CommandSend) parsed needed to understand if some action shall be performed.
+ *
+ */
+void Spm_SoftwMgr_PopulateSMFrame(void){
+
+    uint8 indexPowProf;
+    uint8 indexDepList;
+    SpmTrgDvcCoordinates SpmTrgDvcCoord;
+
+    /* [$Satisfies $DDS_SPM 0002] *//* [$Satisfies $DDS_SPM 0007] */
+    /* [$Satisfies $DDS_SPM 0004] *//* [$Satisfies $DDS_SPM 0005] */
+    /* [$Satisfies $DDS_SPM 0009] */
+    SPM_dt_Prv sm_frame;
+
+    /* [$Satisfies $DDS_SPM 0001] */
+    sm_frame.PR_MsgType = 0u;
+    /* [$Satisfies $DDS_SPM 0003] */
+    sm_frame.RSPS_MsgType = 1u;
+
+    /** Iterate over all the TrgDvc packet that should be sent. */
+    for(SpmTrgDvcCoord.indexTrgDvc = 0U; SpmTrgDvcCoord.indexTrgDvc < SPM_NUM_OF_PG_OUT_EDGE; SpmTrgDvcCoord.indexTrgDvc++){
+
+        /** Iterate over all the IP associated to this TrgDvc. */
+        for(SpmTrgDvcCoord.indexTrgDvcIPAssociated = 0u; SpmTrgDvcCoord.indexTrgDvcIPAssociated < SPM_GET_PGTT_INST_NUMBER_IP_ASSOCIATED(SpmTrgDvcCoord.indexTrgDvc); SpmTrgDvcCoord.indexTrgDvcIPAssociated++){
+
+            Spm_SoftwMgr_ResetFrame((SPM_dt_Prv *)&sm_frame);
+            Spm_SoftwMgr_PopulateSrcIpAndDstIpFrame((SPM_dt_Prv *)&sm_frame, SpmTrgDvcCoord);
+
+            /* Iterate for all the profiles. */
+            for( indexPowProf = 0U; indexPowProf < SPM_CONF_POW_PRF_NUM; indexPowProf++){
+
+                /* Iterate for all the requester of that profile and search if a feedback is needed. */
+                for( indexDepList = 0U; indexDepList < SPM_PrfStsMgr_RAM[indexPowProf].reqLst.size; indexDepList++){
+
+                    Spm_SoftwMgr_ProvideFeedbackToRequester(SpmTrgDvcCoord, indexPowProf, indexDepList, (SPM_dt_Prv *)&sm_frame);
+
+                }
+
+                /* Append feedback error code (if exist) to the remote requester for the particular indexPowProf. */
+                Spm_SoftwMgr_AppendFeedbackErrorCodeToRequester(SPM_GET_PGTT_INST_TRGDVCIP(SpmTrgDvcCoord.indexTrgDvc, SpmTrgDvcCoord.indexTrgDvcIPAssociated),
+                                                                indexPowProf,
+                                                                (SPM_dt_Prv *)&sm_frame);
+
+                /* Understand if it is necessary to send a command to activate/deactivate the profile. */
+                Spm_SoftwMgr_ProvideRequestToRequested(SpmTrgDvcCoord, indexPowProf, (SPM_dt_Prv *)&sm_frame);
+
+            }
+
+            if((sm_frame.ProfileRequest.Size_Indicator > 0u) || (sm_frame.RequestStatusProfileState.Size_Indicator > 0u) ){
+                (void)SPM_Send_SMFrame((SPM_dt_Prv *)&sm_frame);
+            }
+        }
+    }
+
+    /* Reset flags associated to the status and request sending */
+    for( indexPowProf = 0U; indexPowProf < SPM_CONF_POW_PRF_NUM; indexPowProf++ ){
+        SPM_PrfStsMgr_RAM[indexPowProf].isStateProfileChanged = FALSE;
+        SPM_PrfStsMgr_RAM[indexPowProf].CommandSend = 0u;
+    }
+
+    Spm_ResetFeedbackErrorList();
+
+}
+
+/**
+ * @brief Function that check if the activation request is acceptable w.r.t. Activation Availabitity.
+ *  First it checks if the condition are satisfied to accept the request.
+ *  If the request is acceptable, it sets the requester bit (1) for the remote device (requester)
+ *  and the request is passed to the Spm_prv_prfReqDispatcher() API that will handle it.
+ *  If it is not acceptable, an ErrorCode is set thanks to the Spm_AppendFeedbackErrorItemToList() API.
+ *
+ */
+static void Spm_Handler_prfReqDispatcherForActivationFromRemote(const uint8 indexPowProf, const uint32 SrcIPRequester){
+    SpmRejectionReasonType permission;
+    Std_ReturnType ActRet;
+
+    permission = Spm_Get_ActivationAvailabilityForRemoteRequest(indexPowProf);
+
+    /* [$Satisfies $DDS_SPM 0050] *//* [$Satisfies $DDS_SPM 0053] */ /* [$Satisfies $DDS_SPM 0205]*/
+    if(permission == Spm_REQUEST_ACCEPTED){
+        /* ActivateProfile function since the profile is Inactive. */
+        /* [$Satisfies $DDS_SPM 0012] */
+        Spm_prv_prfReqDispatcher(indexPowProf,
+                                 SrcIPRequester,
+                                 SPM_ACT_REQ,
+                                 &ActRet);
+        Spm_SetRemoteDeviceAsRequester(SrcIPRequester);
+    }
+    else{
+        Spm_AppendFeedbackErrorItemToList(indexPowProf, SrcIPRequester, (uint8)permission, (uint32)0xFFFFFFFFU, (uint8)0xFFU);
+    }
+}
+
+/**
+ * @brief This function first checks if the current Frame has a conflict for request at index `i` and if not, dispatches the request.
+ *
+ * This function traverses the current SM Frame for conflicting requests.
+ * A conflicting request is present if for the same power profile the activation and deactivation
+ * requests are both present. Since, each conflict has at least two counterparties, for the first
+ * counterparty of the conflict a feedback is set through Spm_AppendFeedbackErrorItemToList.
+ * Otherwise, the function dispatches the activation or deactivation request.
+ *
+ * @param[in] idx            The index in frame to check for conflict.
+ * @param[in] indexPowProf   The index of power profile for item at position `i` which is already resolved in caller function.
+ * @param[in] Spm_SM_Rx      The pointer to Rx structure of the SM Frame under check.
+ * @param[out] deactRet      Return value of deactivation request.
+ *
+ * @retval None
+ */
+static void Spm_prv_SM_RemoteActDeactRequestDispatch(
+    /* IN  */ const uint16 idx,
+    /* IN  */ const sint16 indexPowProf,
+    /* IN  */ const SPM_dt_Prv * Spm_SM_Rx,
+    /* OUT */ Std_ReturnType * deactRet
+) {
+    uint16 j;
+    sint16 conflictCheckIndexPowProf;
+    boolean hasConflict = FALSE;
+
+    /* [$Satisfies $DDS_SPM 0539] */
+    for(j = 0U; j < ( SPM_REQ_SIZE ); j++){
+        if(idx == j){
+            continue;
+        }
+        conflictCheckIndexPowProf = Spm_GetPowProfIndexFromSwIDProfNumber(SPM_REQUEST_SIDE_SW_ID(j) , SPM_REQUEST_SIDE_PROF_NUMBER(j));
+        if(
+            /* Same power profile (Check against SPM_INVALID is not needed as it is checked against indexPowProf in the caller function) */
+            (indexPowProf == conflictCheckIndexPowProf) &&
+            /* Conflicting request */
+            (SPM_REQ_VAL(idx) != SPM_REQ_VAL(j))
+        ){
+            hasConflict = TRUE;
+            /* j > idx; Otherwise, conflict is already reported, just ignore the request. This prevents setting feedback twice for each conflict.*/
+            if(j > idx) {
+                Spm_AppendFeedbackErrorItemToList((uint8)indexPowProf, Spm_SM_Rx->PMSrcId, 
+                                                  (uint8)Spm_REJECTED_REQUEST_INVALID, 
+                                                  SPM_REQUEST_SIDE_SW_ID(j) , 
+                                                  SPM_REQUEST_SIDE_PROF_NUMBER(j));
+            }
+            break;
+        }
+    }
+
+    /* Check if a conflicting request is present in the same frame. Skip the request if it has a conflict.*/
+    if(!hasConflict){
+        /* Check if the command received is an ACTIVATION or DEACTIVATION. */
+        /* [$Satisfies $DDS_SPM 0012] */
+        if(SPM_REQ_VAL(idx) == 0x01u /* ACITVATE*/){
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+            /* Service ID needed are the 16 MSB of the ID received. */
+            (void)Spm_HandleRemoteActivationRequest( (uint16)(SPM_REQUEST_SIDE_SW_ID(idx) >> 16u), SPM_REQUEST_SIDE_PROF_NUMBER(idx), (uint8)(Spm_SM_Rx->PMSrcId & 0xFFu));
+«ENDIF-»
+            Spm_Handler_prfReqDispatcherForActivationFromRemote((uint8)indexPowProf, Spm_SM_Rx->PMSrcId);
+        }else{
+            /* DeactiveProfile function. */
+            Spm_prv_prfReqDispatcher((uint8)indexPowProf,
+                                      Spm_SM_Rx->PMSrcId,
+                                      SPM_DEA_REQ,
+                                      deactRet);
+        }
+    }
+}
+
+/**
+ * @brief Reads and processes incoming messages from other Software Managers (SMs).
+ *
+ * This function performs the following tasks when a new message is received:
+ *
+ * 1. **Receives the message:**
+ *    - Calls `Rte_Receive_RP_SPM_RemSMInfo_SPM_dt` to retrieve the incoming message from a remote SM.
+ * 2. **Checks destination IP:**
+ *    - Verifies if the destination IP in the message matches a working device (redundant check).
+ * 3. **Processes message data if destination IP is valid:**
+ *    - Extracts the source device ID (PMSrcId) from the message.
+    - Finds the index of the target device using `Spm_GetIndexTrgDvcFromIP`.
+    - If the target device is found and not already monitored:
+      - Sets the monitoring status of the target device to `TRUE`.
+    - Iterates through the requested power profiles in the message (`SPM_REQ_SIZE`):
+      - Retrieves the index of the requested power profile in the configuration table using 'Spm_GetPowProfIndexFromSwIDProfNumber'.
+      - If the profile exists:
+        - Checks the command (activation or deactivation) based on `SPM_REQ_VAL`.
+        - Calls the appropriate profile request dispatcher function (`Spm_prv_prfReqDispatcher`) based on the command:
+          - For activation (`SPM_REQ_VAL == 0x01u`):
+           - Calls Spm_Handler_prfReqDispatcherForActivationFromRemote() that check if it is acceptable the request.
+          - For deactivation:
+            - Calls `Spm_prv_prfReqDispatcher` with `SPM_DEA_REQ` to deactivate the profile.
+            - Adds the requested profile and its status (SPM_OK_DEACTIVATION) to the target device's output buffer using `Spm_ProvideInitialFeedbackToRemoteRequester`.
+ *
+ */
+void Spm_ReadIncoming_SM_Message(void){
+    SPM_dt_Prv Spm_SM_Rx_Object;
+    SPM_dt_Prv * Spm_SM_Rx = &Spm_SM_Rx_Object;
+    sint16 indexTrgDvc;
+    sint16 indexPowProf;
+    uint16 i;
+    uint8 idx_net;
+    Std_ReturnType ActRet;
+    uint8 metaData_loc[SPM_METADAT_SIZE]; /* PRQA S 3678 # the value cannot be constant because it is written by API Rte_Receive, also if it is not currently used */
+
+    /* PRQA S 2877 1 # This loop will never be executed more than once for configuration reason. */
+    for(idx_net = 0u; idx_net < SUM_SPM_NUMBER_OF_NET_CONF; idx_net++){
+
+        while(E_OK == Spm_HandleVLANCommunication(SPM_NetworkInfo_Wrap[idx_net].SPM_NetInfo->VlanID,
+										           SPM_RECV_HNDL,
+										           SPM_SM_COMHNDLING,
+										           NULL_PTR,
+										           NULL_PTR,
+										           Spm_SM_Rx,
+										           (uint8 *)&metaData_loc[0u])){
+
+	    	/* ------- Reserved for future check ------- */
+	    	SUM_SPM_UNUSED(metaData_loc); /* PRQA S 3469 # This is not a function-like macro, but just a unique way to put a x param as unused ((void)x) */
+	    	/* -------- Reserved for control in the future -------- */
+
+            /* [$Satisfies $DDS_SPM 0018] */
+            indexTrgDvc = Spm_GetIndexTrgDvcFromIP(Spm_SM_Rx->PMSrcId);
+
+            /* [$Satisfies $DDS_SPM 0018] */
+            if(indexTrgDvc != SPM_INVALID){
+
+                /* Change w.r.t extract. Handler Request Payload. */
+                for(i = 0U; i < ( SPM_REQ_SIZE ); i++){
+
+                    /* Change w.r.t extract. Represent the PowProf requested by remote. */
+                    /* [$Satisfies $DDS_SPM 0025] */
+                    indexPowProf = Spm_GetPowProfIndexFromSwIDProfNumber(SPM_REQUEST_SIDE_SW_ID(i) , SPM_REQUEST_SIDE_PROF_NUMBER(i));
+
+                    /* Check if the PowProf exists. */
+                    if(indexPowProf != SPM_INVALID){
+                        /* Check for remote conflict in the frame and dispatch the request. */
+                        Spm_prv_SM_RemoteActDeactRequestDispatch(i, indexPowProf, Spm_SM_Rx, &ActRet);
+                    }
+                    else
+                    {
+                        /*PowProfIndex is SPM_INVALID*/
+                        Spm_AppendFeedbackErrorItemToList((uint8)0xFFu, Spm_SM_Rx->PMSrcId, 
+                                                          (uint8)Spm_REJECTED_PROFILE_UNKNOWN, 
+                                                          SPM_REQUEST_SIDE_SW_ID(i) , 
+                                                          SPM_REQUEST_SIDE_PROF_NUMBER(i));
+                    }
+                }
+
+                for(i = 0u; i < SPM_FEEDBACK_SIZE; i++){
+
+                    /* Change w.r.t extract. Represent the PowProf requested by remote. */
+                    /* [$Satisfies $DDS_SPM 0025] */
+                    indexPowProf = Spm_GetPowProfIndexFromSwIDProfNumber(SPM_FEEDBACK_SIDE_SW_ID(i) , SPM_FEEDBACK_SIDE_PROF_NUMBER(i));
+
+                    if(indexPowProf != SPM_INVALID){
+
+                        /* [$Satisfies $DDS_SPM 0054] */
+                        Spm_CheckFeedbackReceivedByRequested((uint8)indexPowProf, SPM_FEEDBACK_SIDE_STATUS_REQ(i), SPM_FEEDBACK_SIDE_PROF_STATE(i));
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* EOF */
+
+«ENDFILE»
+«ENDDEFINE»

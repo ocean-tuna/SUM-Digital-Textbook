@@ -1,0 +1,70 @@
+«IMPORT bsw»
+«IMPORT bsw::TcsModule»
+«EXTENSION templates::mathlib»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND TCS FOR ecu»
+«ENDDEFINE»
+
+«DEFINE TCS FOR Ecu»
+
+«FILE "SUM_TCS_Cfg.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_TCS
+ * Date        : Mar 31, 2026
+ * Revision    : 8.0.1_Pr10
+ * Description : Source for TCS configuration
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+#include "Rte_SUM_TCS.h"
+#include "SUM_TCS_Cfg.h"
+
+/*
+** Access Function Pointers for NVM Blocks.
+*/
+/* PRQA S 1531 1 # The object is referred in one file but the possibility if the scope of the object needs to be visible outside of the file */
+const Tcs_GenericNvmAccessType tcs_Nvm_TcsTimeValueBlock_FP =
+{
+&«tcs.tcsGeneral.tCSInitValueNvmRef.nvMRamBlockDataAddress-»[0],
+&Rte_Call_RP_NvMService_TCSTimeValue_GetErrorStatus,
+&Rte_Call_RP_NvMService_TCSTimeValue_SetRamBlockStatus,
+&Rte_Call_RP_NvMService_TCSTimeValue_WriteBlock
+};
+
+«IF (tcs.tcsGeneral.timeManagementPeriodicity != null)-»
+/* PRQA S 1533 1 # Configuration value, generated, in future can be used by other modules */
+const uint16 TCS_t_TimeManagement_Periodicity = «tcs.tcsGeneral.timeManagementPeriodicity»u;
+«ENDIF»
+
+«IF (tcs.tcsGeneral.permitExecutionMask != null)-»
+/* PRQA S 1533 1 # Configuration value, generated, in future can be used by other modules */
+const uint32 TCS_PermitExecution_Mask = «tcs.tcsGeneral.permitExecutionMask.Hex()»u;	/* bit 0 is the WAKEUP bit */
+«ENDIF»
+
+/* SumTCSGlobalTimePrecision must be a non-zero multiple of TCS_t_TimeManagement_Periodicity */
+«IF (tcs.tcsGeneral.sumTCSGlobalTimePrecision != null)-»
+/* PRQA S 1533 1 # Configuration value, generated, in future can be used by other modules */
+const uint16 SumTCSGlobalTimePrecision = «tcs.tcsGeneral.sumTCSGlobalTimePrecision»u;
+«ENDIF»
+«ENDFILE-»
+«ENDDEFINE»

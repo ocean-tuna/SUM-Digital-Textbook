@@ -1,0 +1,79 @@
+\chapter{Architecture Constraints}
+This chapter lists the constraints of the architecture. For instance, due to those constraints, some alternatives may not be evaluated and some decisions have to be made in a certain direction.
+In particular, we will first describe the development environment. Second, we will identify the layers of the software architecture and locate SUM\_SOH in one specific layer. Finally, we will
+present the generic component interface and we will conclude by evaluating other possible constraints and assumptions. 
+
+\section{Environment}
+\label{sec:environment}
+\input{generated/tables/tools.tex}
+
+\section{Layers Definition}
+The SUM\_SOH is a software module in the application layer of the standardized architecture of AUTOSAR (Figure~\ref{fig:Layers}). 
+It interacts with other RTA-SUM modules and components of the BSW. In the latter case, the RTE is the means through which the interaction takes place.
+\begin{figure}[htp]
+\centering
+	\includegraphics[scale=0.3]{images/Layers}
+	\caption{System layer overview.}
+	\label{fig:Layers}
+\end{figure}
+
+\section{Generic component interface}
+
+Standard Utility Modules are dependent on each other for some functions. The SUM_SOH dependencies require that ECUs deploying the SUM_SOH shall also deploy the following SUMs: SUM\_DIAG, SUM\_SUSD, SUM\_SSC, SUM\_PNC and SUM\_ERRH. By means of the RTE, it also interacts with the OS, BswM, DCM and WdgM (Figure~\ref{fig:component}). .
+
+\begin{figure}[htp]
+\centering
+	\includegraphics[width=\textwidth]{images/component}
+	\caption{Generic Component Interface}
+	\label{fig:component}
+\end{figure}
+
+Error detection based on host ECU type shall support BSW that fulfills the requirements of AUTOSAR_SWS_BasicSoftwareManager.
+BSW that fulfills the requirements of AUTOSAR_SWS_COM.
+BSW that fulfills the requirements of AUTOSAR_SWS_DiagnosticCommunicationManager.
+BSW that fulfills the requirements of AUTOSAR_SWS_DiagnosticEventManager.
+BSW that fulfills the requirements of AUTOSAR_SWS_WatchdogManager.
+BSW that fulfills the requirements of AUTOSAR_SWS_NVRAMManager.
+BSW that filfills the requirements of AUTOSAR_SWS_OS.
+
+
+\subsection{Port Interfaces}
+\label{sec:portinterfaces}
+\Requirement{013}
+{
+All ECU types shall support Client / Server port interfaces.
+All ECU types shall support Sender / Receiver port interfaces.
+}
+{
+\Satisfies{SRS_SOH 016}
+\Satisfies{SRS_SOH 228} 
+\Satisfies{SRS_SOH 229}
+\Satisfies{SRS_SOH 230} 
+\Satisfies{SRS_SOH 232} 
+\Satisfies{SRS_SOH 233}
+\Satisfies{SRS_SOH 234} 
+\Satisfies{SRS_SOH 235}
+\Satisfies{SRS_SOH 248}
+\Satisfies{SRS_SOH 249} 
+\Satisfies{SRS_SOH 250} 
+\Satisfies{SRS_SOH 253} 
+\Satisfies{SRS_SOH 262}
+}
+\input{generated/tables/port_interfaces.tex}
+
+
+
+\section{Other constraints and assumptions}
+\label{sec:otherconstraint}
+The ECU in which the SUM_SOH is implemented shall have a Secure cumulative NVM memory type, as defined in CTRS section 7.1.6, accessible to the SUM_SOH.
+The ECU in which the SUM_SOH is implemented shall have NonClearedRAM memory type accessible to the SUM_SOH.
+The ECU in which the SUM_SOH is implemented shall have an AdaptableNVM memory type accessible to the SUM_SOH.
+
+The ECU initialization sequence shall be implemented such that any NVM needed for the SUM_SOH function is available prior to the SUM_SOH being initialized.
+
+For ECUs that implement Memory Partitioning mechanisms, the SUM_SOH shall be implemented in the supervisory partition of the ECU software. Rationale: SUM_SOH must be in the trusted partition in order to interface with OS services. Supervisory partition is expected to include BSW Modules.
+
+The SUM_SOH shall be implemented as a Supervised Entity of the Watchdog Manager.
+
+For the SUM_SOH DIDs, the relative Dcm parameter \textit{DcmDspDataUsePort} must be set to CLIENT\_SERVER. Starting from this configuration,
+SUM_SOH will populate the DIDs values in a BIG\_ENDIAN format as it is expected at the UDS layer (because the \textit{DcmDspDataEndianness}  has no effect if CLIENT\_SERVER is selected for \textit{DcmDspDataUsePort}).

@@ -1,0 +1,62 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_ErrorHandler.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : header for Spm Error Handler
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef SUM_SPM_ERRORHANDLER_H_
+#define SUM_SPM_ERRORHANDLER_H_
+
+#include "Rte_Type.h"
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+void Spm_ErrorHandler_LowVoltageBattery(void); 
+«ENDIF-»
+SpmRejectionReasonType Spm_Get_ActivationAvailabilityForRemoteRequest(const uint8 powProfIndex); 
+boolean Spm_Get_ActivationAvailabilityForLocalRequest(const uint8 powProfIndex);
+void Spm_AppendFeedbackErrorItemToList(const uint8 powProfIndex, const uint32 trgDvcIp, const uint8 errorCode, const uint32 swId, const uint8 profileNumber);
+void Spm_SoftwMgr_AppendFeedbackErrorCodeToRequester(const uint32 trgDvcIp, const uint8 powProfIndex, SPM_dt_Prv *sm_frame ); 
+void Spm_ResetFeedbackErrorList(void); 
+void Spm_ErrorHandler_VehOff(void);
+
+boolean Spm_GetVehPowModeConditionSatisfiedForDID(void); 
+void Spm_SendDeactivationRequestForEachRequester(const uint8 powProfIndex, const uint8 ErrorCode);
+void Spm_ForceRemoteProfileDeactivationRequest(const uint8 powProfIndex);
+
+#endif
+
+/* EOF */
+
+«ENDFILE -»
+«ENDDEFINE -»

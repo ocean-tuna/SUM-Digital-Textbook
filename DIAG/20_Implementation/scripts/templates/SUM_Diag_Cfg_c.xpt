@@ -1,0 +1,70 @@
+«IMPORT bsw»
+«IMPORT bsw::DiagModule»
+«EXTENSION templates::mathlib»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND DIAG FOR ecu»
+«ENDDEFINE»
+
+«DEFINE DIAG FOR Ecu»
+
+«FILE "SUM_Diag_Cfg.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Banner
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *--------------------------------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or 
+ * design.
+ *--------------------------------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *--------------------------------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_DIAG
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr24
+ * Description : SUM_DIAG Configuration File
+ ***************************************************************************************************
+ * END:Banner
+ ***************************************************************************************************
+*/
+
+#include "SUM_Diag.h"
+#include "Rte_SUM_DIAG.h"
+#include "SUM_Diag_Cfg.h"
+
+VAR(Diag_NormalCommStatus_Channel_Type, RTE_DATA) Diag_NormalCommStatus_Channel[DIAG_NUMBER_OF_CHANNELS] =
+{
+«FOREACH diag.diagConfigSet.commChannels.commChannel.commChannelRef AS channelRef-»
+	{ SUM_DiagNormalCom_Enable, Rte_Mode_SUM_DIAG_BswM_CommunicationMode_«channelRef.shortName»_SUM_COMM_MODE, Rte_Write_SUM_DIAG_PP_DIAG_DisableNormalComm_Ch«channelRef.comMChannelId»_NormalComMode },
+«ENDFOREACH»};
+
+«IF (diag.diagGeneral.mecStorageInHsm != true)-»
+«LET diag.diagGeneral.dIAG_MEC_NvMRef AS mec_NvMBlockDescRef-»
+/* RAM mirror to NvM block */
+/*PRQA S 1504 2 # The variable can be reused in the other modules */
+/* PRQA S 3408 1 # The variable is declared in other modules */
+uint8 «mec_NvMBlockDescRef.nvMRamBlockDataAddress» = MEC_INITIAL_VALUE;
+/* PRQA S 1531 1 # This object can be used in other translation units and is defined here for template needs */
+uint8 * const MEC_RamBlockPtr = &«mec_NvMBlockDescRef.nvMRamBlockDataAddress»;
+«ENDLET-»
+«ENDIF-»
+
+«LET diag.diagGeneral.dIAG_OTA_PSF_NvMRef AS ota_psf_NvMBlockDescRef-»
+/* RAM mirror to NvM block */
+/*PRQA S 1504 2 # The variable can be reused in the other modules */
+/* PRQA S 3408 1 # The variable is declared in other modules */
+boolean «ota_psf_NvMBlockDescRef.nvMRamBlockDataAddress»;
+/* PRQA S 1531 1 # This object can be used in other translation units and is defined here for template needs */
+boolean * const OTA_PSF_RamBlockPtr = &«ota_psf_NvMBlockDescRef.nvMRamBlockDataAddress»;
+«ENDLET-»
+
+«ENDFILE»
+«ENDDEFINE»

@@ -1,0 +1,187 @@
+import bsw;
+import bsw::SrvcMgr;
+import bsw::SSFM;
+import bsw::ComModule;
+import bsw::DcmModule;
+import bsw::Sd;
+
+extension templates::mathlib;
+extension org::eclipse::xtend::util::stdlib::elementprops;
+extension org::eclipse::xtend::util::stdlib::io;
+extension org::eclipse::xtend::util::stdlib::counter;
+extension org::eclipse::xtend::util::stdlib::cloning;
+
+String GetFirstDidE0CCSignal(Sum_SrvcMgr_ConfigSet config):
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CC_Ref.dcmDspDidSignal.first().shortName
+;
+
+String GetFirstDidE0CCDataRef(Sum_SrvcMgr_ConfigSet config):
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CC_Ref.dcmDspDidSignal.first().dcmDspDidDataRef.shortName
+;
+
+String GetFirstDidE0CDSignal(Sum_SrvcMgr_ConfigSet config):
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CD_Ref.dcmDspDidSignal.first().shortName
+;
+
+String GetFirstDidE0CDDataRef(Sum_SrvcMgr_ConfigSet config):
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CD_Ref.dcmDspDidSignal.first().dcmDspDidDataRef.shortName
+;
+
+String GetFirstDidE0CESignal(Sum_SrvcMgr_ConfigSet config):
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CE_Ref.dcmDspDidSignal.first().shortName
+;
+
+String GetFirstDidE0CEDataRef(Sum_SrvcMgr_ConfigSet config):
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Did_E0CE_Ref.dcmDspDidSignal.first().dcmDspDidDataRef.shortName
+;
+
+/* Create a list, sorted by ID, of the Client and Server services configured in the Sd module. */
+List[Object] SrvcMgr_CreateListOfAllService(List[SdClientService] A, List[SdServerService] B):
+
+	let list_A = A.collect( e |
+		let controller = new Object:
+		controller.setProperty("id", e.sdClientServiceId) ->
+		controller.setProperty("ServiceIstanceId",e.sdClientServiceInstanceId) ->
+		controller.setProperty("ServiceMajorVers",e.sdClientServiceMajorVersion) ->
+    	controller.setProperty("HandleId", e.sdClientServiceHandleId) ->
+		controller.setProperty("ServiceName", e.shortName) ->
+		controller.setProperty("IsClient", "true") ->
+		controller.setProperty("GroupIdRefSize", e.sdServiceGroupRef.size) ->
+		controller.setProperty("CnsmdEvntGrp", e.sdConsumedEventGroup.size) ->
+		controller
+ 	).typeSelect(Object):
+
+	let List_B = B.collect( e |
+		let controller = new Object:
+		controller.setProperty("id", e.sdServerServiceId) ->
+		controller.setProperty("ServiceIstanceId",e.sdServerServiceInstanceId) ->
+		controller.setProperty("ServiceMajorVers",e.sdServerServiceMajorVersion) ->
+    	controller.setProperty("HandleId", e.sdServerServiceHandleId) ->
+		controller.setProperty("ServiceName", e.shortName) ->
+		controller.setProperty("IsClient", "false") ->
+		controller.setProperty("GroupIdRefSize", e.sdServiceGroupRef.size) ->
+		controller
+	).typeSelect(Object):
+
+	list_A.addAll(List_B).sortBy( e | e.getProperty("id"))
+
+;
+
+
+Boolean SrvcMgr_IsPropSysActvGroupSignal(Sum_SrvcMgr_ConfigSet config):
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref != null &&
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.metaType.toString().contains("ComGroupSignal")
+;
+
+Boolean SrvcMgr_IsPSAServiceBased(Sum_SrvcMgr_ConfigSet config):
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref != null &&
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref != null &&
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.comSignalType == "UINT8_N"
+;
+
+Boolean SrvcMgr_IsVehSpdAvgDrvnGroupSignal(Sum_SrvcMgr_ConfigSet config):
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref != null &&
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.metaType.toString().contains("ComGroupSignal")
+;
+
+String SrvcMgr_GetImplementationDataTypeElementName(String path):
+	path.toString().split("/").last()
+;
+
+String SrvcMgr_GetImplementationDataTypePath(String path):
+	path.toString().replaceAll("/"+SrvcMgr_GetImplementationDataTypeElementName(path),"")
+;
+
+String SrvcMgr_GetImplementationDataTypeName(String path):
+	SrvcMgr_GetImplementationDataTypePath(path).split("/").last()
+;
+
+/* Obtain the Signal length for types that are not present as Base Type */
+List[Integer] SrvcMgr_SignalLengthList(List[ComGroupSignal] signals):
+	let SigLenList= signals.select(e|e.comSignalType == "UINT8_N").comSignalLength :
+	SigLenList.toSet()
+;
+
+/* Collect all unique UINT8_N signal lengths from all signal sources (PropSysActv and VehSpdAvgDrvn) */
+List[Integer] SrvcMgr_CollectAllUint8NLengths(Sum_SrvcMgr_ConfigSet config):
+	let allLengths = {}:
+	let psaLengths = (!SrvcMgr_IsSameSignalReference(config) && 
+	                  SrvcMgr_IsPropSysActvGroupSignal(config) && 
+	                  !SrvcMgr_IsPSAServiceBased(config)) ? 
+	                  SrvcMgr_SignalLengthList(config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.parent.comGroupSignal) : 
+	                  {}:
+	let vehLengths = (!SrvcMgr_IsSameSignalReference(config) && 
+	                  SrvcMgr_IsVehSpdAvgDrvnGroupSignal(config) && 
+	                  !SrvcMgr_IsVehSpdAvgDrvnServiceBased(config)) ? 
+	                  SrvcMgr_SignalLengthList(config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.parent.comGroupSignal) : 
+	                  {}:
+	let combinedLengths = (SrvcMgr_IsSameSignalReference(config) && 
+	                       SrvcMgr_IsPropSysActvGroupSignal(config)) ? 
+	                       SrvcMgr_SignalLengthList(config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.parent.comGroupSignal) : 
+	                       {}:
+	allLengths.addAll(psaLengths).addAll(vehLengths).addAll(combinedLengths).toSet()
+;
+
+/* Check if VehSpdAvgDrvn signal is configured as service-based 
+   Returns true if both the service-based reference and signal reference are configured */
+Boolean SrvcMgr_IsVehSpdAvgDrvnServiceBased(Sum_SrvcMgr_ConfigSet config):
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref != null &&
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref != null &&
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.comSignalType == "UINT8_N"
+;
+
+/* Check if PropSysActv and VehSpdAvgDrvn signals reference the same signal
+   Returns true if:
+   - Both signals are directly the same reference, OR
+   - Both are group signals and belong to the same signal group container */
+Boolean SrvcMgr_IsSameSignalReference(Sum_SrvcMgr_ConfigSet config):
+	(config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref == config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref) ||
+	(SrvcMgr_IsVehSpdAvgDrvnGroupSignal(config) &&
+	SrvcMgr_IsPropSysActvGroupSignal(config) &&
+	config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.eContainer.shortName == config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.eContainer.shortName)
+;
+
+/* Check E2E configuration for a specific signal type 
+   signalType: "PropSysActv" or "VehSpdAvgDrvn" */
+Boolean SrvcMgr_IsE2EConfigured(Sum_SrvcMgr_ConfigSet config, String signalType):
+	let e2exf = config.eRootContainer.xfrm.select(e | e.shortName.toLowerCase() == "e2exf"):
+		if e2exf != null then (
+			let signalRef = (
+				if signalType == "VehSpdAvgDrvn" then
+					config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref
+				else
+					config.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref
+			):
+			let isGroupSignal = (
+				if signalType == "VehSpdAvgDrvn" then
+					config.SrvcMgr_IsVehSpdAvgDrvnGroupSignal()
+				else
+					config.SrvcMgr_IsPropSysActvGroupSignal()
+			):
+			if signalRef != null then (
+				if isGroupSignal then (
+					e2exf.xfrmImplementationMapping.xfrmSignal
+					.xfrmSignalChoice.select(e | e.xfrmISignalGroupRefChoice != null)
+					.xfrmISignalGroupRefChoice.xfrmISignalGroupRef
+					.exists(e | signalRef.eContainer.shortName.contains(e.split("/").last()))
+				)
+				else (
+					e2exf.xfrmImplementationMapping.xfrmSignal
+					.xfrmSignalChoice.select(e | e.xfrmISignalRefChoice != null)
+					.xfrmISignalRefChoice.xfrmISignalRef
+					.exists(e | signalRef.shortName.contains(e.split("/").last()))
+				)
+			)
+			else
+				false
+		)
+		else
+			false
+;
+
+Boolean Susd_Ssfm_IsSinglePortSupported(SSFM cfg):
+	if (cfg != null && cfg.sum_Ssfm_General != null && cfg.sum_Ssfm_General.sum_Ssfm_FxI_FxFA_SinglePortsSupport == true) then
+	  true
+	else
+	  false
+;

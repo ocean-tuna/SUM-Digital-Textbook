@@ -1,0 +1,122 @@
+«IMPORT bsw»
+«IMPORT bsw::LNMModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::LNM_Utils»
+
+«DEFINE LnmCfgH FOR Autosar»
+«FILE "SUM_LNM_Cfg.h" -»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_LNM
+ * Date        : Jun 26, 2026
+ * Revision    : 8.0.1_rc
+ * Description : LNM Configuration header file
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+#ifndef LNM_CFG_H
+#define LNM_CFG_H
+
+/*****************************************************************************************
+ * Header Includes *
+ *****************************************************************************************/
+#include "SUM_LNM_Types.h"
+
+/*
+ **********************************************************************************************************************
+ * Defines/Macros
+ **********************************************************************************************************************
+ */
+
+#define PERMIT_EXECUTION_MASK                        «lNM.lNM_General.lNM_PermitExecution_Mask-»u
+
+«IF lNM.lNM_General.cyberFill_Supported != false -»
+#define CYBERFILL_VALUE                              «lNM.lNM_General.lNM_CyberFillValue-»u
+#define CYBERFILL_SUPPORT						     LNM_ON
+«ELSE -»
+#define CYBERFILL_SUPPORT						     LNM_OFF
+«ENDIF -»
+
+«IF lNM.lNM_General.lnmGenerateInitRunnable== true -»
+#define LNM_RUNNABLE_INIT_ENABLED						     STD_ON
+«ELSE -»
+#define LNM_RUNNABLE_INIT_ENABLED						     STD_OFF
+«ENDIF -»
+
+#define LNM_NUMBER_OF_NETWORKS                       «lNM.lNM_Networks.lNMNetwork.size-»u
+
+/* LNM network status period in us */
+#define LNM_NETWORK_STATUS_PERIOD_US                    «(lNM.lNM_General.lNM_NetworkStatus_Period*1000*1000).toInteger()-»u
+#define LNM_SCHEDULE_PERIOD_US							«(lNM.lNM_General.lNM_ScheduleManagement_Period*1000*1000).toInteger()-»u
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+#define LNM_NUMBER_OF_RESPONDERS_NETWORK_«Network.shortName -» «Network.lNM_Responders.size -»u
+«ENDFOREACH -»
+
+«IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+/* Schedule states definition for network «Network.shortName -» */
+#define «Network.lNM_ScheduleManagement.lNM_ScheduleStates.lNM_SleepState.shortName -»_«Network.shortName -» 0u
+#define «Network.lNM_ScheduleManagement.lNM_ScheduleStates.lNM_StartState.shortName -»_«Network.shortName -» 1u
+  «FOREACH Network.lNM_ScheduleManagement.lNM_ScheduleStates.lNM_ScheduleState AS ScheduleState ITERATOR i -»
+#define «ScheduleState.shortName -»_«Network.shortName -» «i.counter0 + 2 -»u
+  «ENDFOREACH -»
+«ENDFOREACH -»
+«ENDIF -»
+
+#define LNM_SLEEP_SCHEDULE_STATE 0u
+
+
+/* Data structure containing Network configuration */
+extern const LNM_Network_Info_Type LNM_Network_Info[LNM_NUMBER_OF_NETWORKS];
+
+
+«IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == true -»
+#define LNM_CHANNEL_SCHEDULE_USRFUNCS_ENABLED				STD_ON
+«ELSE -»
+#define LNM_CHANNEL_SCHEDULE_USRFUNCS_ENABLED				STD_OFF
+«ENDIF -»
+
+«IF (sum_Lnm_ExistsRuleWithVPM(lNM)) -»
+#define VPM_USED_IN_ACTIVATION_RULE (STD_ON)
+«ELSE -»
+#define VPM_USED_IN_ACTIVATION_RULE (STD_OFF)
+«ENDIF -»
+
+#define LNM_MAIN_FUNCTION_PERIODICITY_US «(lNM.lNM_General.lNM_MainFunction_Period * 1000 * 1000).toInteger() -»u
+
+/*
+ **********************************************************************************************************************
+ * Public Functions declaration
+ **********************************************************************************************************************
+ */
+«IF (sum_Lnm_ExistsRuleWithVPM(lNM)) -»
+FUNC(void, SUM_LNM_CODE) LNM_Activation_Rule_VPM (void);
+«ENDIF -»
+
+#endif
+
+/********************************** END OF FILE ******************************************************/
+
+«ENDFILE»
+«ENDDEFINE»

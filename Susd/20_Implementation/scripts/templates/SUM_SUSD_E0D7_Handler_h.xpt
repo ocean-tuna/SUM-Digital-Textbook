@@ -1,0 +1,153 @@
+«IMPORT bsw»
+«IMPORT bsw::SUSDModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Susd»
+
+«DEFINE SusdE0D7Handler_h FOR Autosar»
+«FILE "SUM_SUSD_E0D7_Handler.h"»/*
+ *****************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SUSD
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description :
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/*
+ ***************************************************************************************************
+ * Includes
+ ***************************************************************************************************
+ */
+ /* DID E0D7 minimum length*/
+#define SUSD_E0D7_MIN_LENGTH                (28u)
+ /* DID E0D7 maximum length*/
+#define SUSD_E0D7_MAX_LENGTH                (182u)
+/* Minimum number of Activity Records for DID E0D7 */
+#define SUSD_ACTIVITY_RECORDS_MIN_NUMBER (2u)
+/* Maximum number of Activity Records for DID E0D7 */
+#define SUSD_ACTIVITY_RECORDS_MAX_NUMBER (16u)
+
+
+#define RxID_INVALID_INDEX                  (0xFFu)
+#define NUM_RxIDS                           (11u)
+
+/* [$Satisfies $SDD_SUSD 238] */
+#define SUSD_AR_LIN_WAKEUPSOURCES_MASK      (0x«Susd_GetLINWakeUpSourcesMask(sUSD.sUSDConfigSet).convertToHex()»u)
+#define SUSD_AR_ECU_WAKEUPSOURCES_MASK      (0x«Susd_GetECUWakeUpSourcesMask(sUSD.sUSDConfigSet).convertToHex()»u)
+#define SUSD_AR_ECU_WAKEUPSOURCES_BITMAPPED («IF sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_Record0x01_Type == "BitMapped"-»TRUE«ELSE-»FALSE«ENDIF-»)
+
+#define SUSD_E0D7_ASYNC_MODE «IF Susd_IsDIDE0D7AsyncCS(sUSD.sUSDConfigSet.sUSDDiagReferences)-»(TRUE)«ELSE»(FALSE)«ENDIF-»
+
+typedef enum
+{
+    RxID_NO_RECORD                                           = 0x00,
+    RxID_NO_PN_ACTIVE_NO_PRIVATE_NETWORK_ACTIVE              = 0x01,
+    RxID_REMOTE_PN_AP_ACTIVE_NO_LOCAL_PN_AP_ACTIVE           = 0x02,
+    RxID_PRIVATE_NETWORK_ACTIVE                              = 0x03,
+    RxID_LOCALLY_ACTIVE_AP                                   = 0x20,
+    RxID_SDV2_ALL_NODES                                      = 0x21,
+    RxID_SDV2_WIRELESS_CHARGING                              = 0x22,
+    RxID_SDV2_SHORT_DURATION_EVENT                           = 0x23,
+    RxID_SDV2_DIAGNOSE_MECHATRONICS_ETH                      = 0x24,
+    RxID_SDV2_ANY_DIAGNOSE_CAN_PN                            = 0x25,
+    RxID_WUF_RECEIVED_NO_PN_AP_ACTIVE                        = 0x26,
+} SUSD_RecordIDType;
+
+/* Enumeration type for all the possible states DID 0xE0D7 might be in */
+typedef enum {
+    Sum_SUSD_AR_State_Wakeup    = 0x00u,
+    Sum_SUSD_AR_State_ToActive  = 0x01u,
+    Sum_SUSD_AR_State_Active    = 0x02u,
+    Sum_SUSD_AR_State_Disabled  = 0x03u,
+    Sum_SUSD_AR_State_Inactive  = 0x04u
+} Sum_SUSD_AR_StateType;
+
+/* Enumeration type for all the possible active sub-states DID 0xE0D7 might be in */
+typedef enum {
+    Sum_SUSD_AR_SubState_Invalid    = 0x00u,
+    Sum_SUSD_AR_SubState_0x01       = 0x01u,
+    Sum_SUSD_AR_SubState_0x02       = 0x02u,
+    Sum_SUSD_AR_SubState_0x03       = 0x03u,
+    Sum_SUSD_AR_SubState_0x20       = 0x20u,
+    Sum_SUSD_AR_SubState_0x21_0x25  = 0x21u,
+    Sum_SUSD_AR_SubState_0x26       = 0x26u,
+} Sum_SUSD_AR_ActiveSubStateType;
+
+/* Enumeration type for source of Activity Record Update */
+typedef enum {
+    Sum_SUSD_AR_SUSD    = 0x00u,
+    Sum_SUSD_AR_PNC     = 0x01u,
+    Sum_SUSD_AR_SPM     = 0x02u
+} Sum_SUSD_AR_SourceType;
+
+/* Structure to store the DID E0D7 Data */
+/*[$Satisfies $SDD_SUSD 177]*/
+typedef struct Susd_Activity_Records_Type {
+    /* Record ID */
+    SUSD_RecordIDType RxID;
+    /* Record Wakeup Reason */
+    uint8 RxWR; //TODO: enum or bitmap
+    /* Record Last Active Reason */
+    uint8 RxLAR;
+    /* Record Current Activity Timer */
+    uint16 RxCAT;
+    /* Record Total Activity Timer */
+    uint32 RxTAT;
+    /* Record Wakeup Counter */
+    uint16 RxWC;
+} Susd_Activity_Record;
+
+typedef struct {
+    /* Total Activity Timer */
+    uint32 TAT;
+    /* Total Wakeup Counter*/
+    uint16 TWC;
+    /* Activity Records */
+    Susd_Activity_Record Activity_Records[SUSD_ACTIVITY_RECORDS_MAX_NUMBER];
+} Susd_DID_E0D7_Type;
+
+typedef struct {
+    /* Record ID */
+    SUSD_RecordIDType id;
+    /* Record index */
+    uint8 index;
+}RxIDMapping;
+
+/* Variable tracking the next free position in Activity Records array for DID 0xE0D7 */
+extern uint8 Susd_Activity_Records_NextFreeIndex;
+extern Susd_DID_E0D7_Type Susd_DID_E0D7;
+
+/* Function to update Record 0x03 internal states. */
+extern void Sum_SUSD_AR_LINRecord_Handler(uint32 WakeUpSources);
+/* Function to update Record 0x01 internal states. */
+extern void Sum_SUSD_AR_ECURecord_Handler(uint32 WakeUpSources);
+/* Function to clear all fields of Susd_DID_E0D7 */
+extern FUNC(void, SUSD_CODE) Sum_SUSD_ActivityRecord_Clear(void);
+/* Function to initialize the RxID-to-index map and next free index from DID 0xE0D7 */
+extern void SUSD_Init_RxID_Index_Map(void);
+/* Function to initialize the active substate for DID 0xE0D7 */
+extern void SUSD_E0D7_Init_ActiveSubState(void);
+
+/********************************** END OF FILE ******************************************************/
+«ENDFILE»
+«ENDDEFINE»

@@ -1,0 +1,9 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};DynamicallyDefineDataIdentifier_Indication
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};SSC_DIAG_ReadMemorySecurityVerification
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Parameters};uint8 SID \newline const uint8 * RequestData \newline uint16 DataSize \newline uint8 ReqType \newline uint16 SourceAddress \newline Dcm_NegativeResponseCodeType * const ErrorCode
+\cellcolor{ETASlightgray}\textbf{Return};Std_ReturnType (E_OK or E_NOT_OK)
+\cellcolor{ETASlightgray}\textbf{Description};This routine is responsible for: \newline Verifying pre-conditions for executing DynamicallyDefineDataIdentifier service

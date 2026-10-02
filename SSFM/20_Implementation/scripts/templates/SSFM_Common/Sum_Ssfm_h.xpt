@@ -1,0 +1,182 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Header file for SSFM-SSM (Generic one - Top Level)
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_SSM_H
+#define SUM_SSFM_SSM_H
+
+/*
+ *	ROOT LIBRARY
+ */
+
+/* SSFM Runnables header files */
+#include "Rte_SUM_SSFM.h"
+
+/* Platform types header inclusion */
+#include "Platform_Types.h"
+/* AUTOSAR communication types header file which includes compiler, std types and platform types header files */
+#include "ComStack_Types.h"
+«IF Ssfm_IsAnyAuthenticated(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)»
+/* SecOc Types header file */
+#include "SecOC_Types.h"
+#include "Rte_SecOC_Type.h"
+«ENDIF-»
+«IF Ssfm_IsAnyContOp(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData) ||
+	Ssfm_IsAnyProtected(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)»
+/* E2E Transformer Types header file */
+#include "E2EXf_Types.h"
+«IF Ssfm_AnySomeIpConfigured(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+/* SomeIp Transformer Types header file */
+#include "SomeIpXf.h"
+«ENDIF-»
+«ENDIF-»
+«IF Ssfm_AnyServiceBased(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+/* Sd API header file */
+#include "rba_SdLrng.h"
+# if( SD_ECUC_RB_RTE_IN_USE == STD_ON)
+#include "SchM_Sd.h"
+# endif
+«ENDIF-»
+/* Common Algo Deque utility */
+#include "Sum_Common_Algo_Deque.h"
+
+/* Header file for types defined by SSFM */
+#include "Sum_Ssfm_SsmTypes.h"
+/* SSFM configuration header file */
+#include "Sum_Ssfm_Cfg.h"
+/* SSFM initialization header */
+#include "Sum_Ssfm_Initialization.h"
+/* SSFM ERRH execution manager header */
+#include "Sum_Ssfm_EM_Errh_Execution_Manager.h"
+/* SSFM SSM execution manager header */
+#include "Sum_Ssfm_EM_Ssm_Execution_Manager.h"
+/* SSFM received SerialData handler header */
+#include "Sum_Ssfm_FIM_ReceivedSerialData_Handler.h"
+/* SSFM Security Status manager header */
+#include "Sum_Ssfm_FIM_SecurityStatus_Manager.h"
+/* SSFM Continuous Operation Status manager header */
+#include "Sum_Ssfm_FIM_ContOpStatus_Manager.h"
+/* SSFM Message Information Handler header */
+#include "Sum_Ssfm_MessageInfo_Handler.h"
+/* SSFM LIN Information Handler header */
+#include "Sum_Ssfm_LINInfo_Handler.h"
+/* SSFM NodeSts Manager header */
+#include "Sum_Ssfm_NodeSts_Manager.h"
+/* SSFM Protection Status manager header */
+#include "Sum_Ssfm_FIM_ProtStatus_Manager.h"
+/* SSFM Safety Status manager header */
+#include "Sum_Ssfm_FIM_SafetyStatus_Manager.h"
+/* SSFM Single Port FxI manager header */
+#include "Sum_Ssfm_FIM_SingleFxI_Manager.h"
+/* SSFM Service Manager header */
+#include "Sum_Ssfm_Service_Manager.h"
+/* SSFM SignalBased Controller DataManager header */
+#include "Sum_Ssfm_SignalBased_Controller_DataManager.h"
+/* SSFM ServiceBased TrgDvc DataManager header */
+#include "Sum_Ssfm_ServiceBased_TrgDvc_DataManager.h"
+/* SSFM SignalBased MultipleProvider Manager header */
+#include "Sum_Ssfm_SignalBased_MultipleProvider_Manager.h"
+/* SSFM fault indications data manager header */
+#include "Sum_Ssfm_FaultIndications_DataManager.h"
+/* SSFM CANETH Availability manager header */
+#include "Sum_Ssfm_CANETH_Av_Manager.h"
+/* SSFM LIN Availability manager header */
+#include "Sum_Ssfm_LIN_Av_Manager.h"
+/* SSFM BSW Error manager header */
+#include "Sum_Ssfm_Errh_BSW_Error_Management.h"
+/* SSFM Signal Status Availability manager header */
+#include "Sum_Ssfm_SigStat_Av_Manager.h"
+
+/* SSFM Errh Calibration Parameter Handler header */
+#include "Sum_Ssfm_Errh_CalibrationParameter_Handler.h"
+/* SSFM ERRH Event Debouncing header */
+#include "Sum_Ssfm_Errh_EventDebouncer_Manager.h"
+/* SSFM Errh U19A3 57 Handler header */
+#include "Sum_Ssfm_Errh_U19A3_57_Handler.h"
+/* SSFM Errh U19A3 92 Handler header */
+#include "Sum_Ssfm_Errh_U19A3_92_Handler.h"
+/* SSFM Errh U19A3 8A Handler header */
+#include "Sum_Ssfm_Errh_U19A3_8A_Handler.h"
+/* SSFM Errh U19A6 54 Handler header */
+#include "Sum_Ssfm_Errh_U19A6_54_Handler.h"
+/* SSFM Errh U19A6 57 Handler header */
+#include "Sum_Ssfm_Errh_U19A6_57_Handler.h"
+/* SSFM Errh U19A6 87 Handler header */
+#include "Sum_Ssfm_Errh_U19A6_87_Handler.h"
+/* SSFM Errh U198C 8A Handler header */
+#include "Sum_Ssfm_Errh_U198C_8A_Handler.h"
+/* SSFM Errh Run Crank Input Stuck Fault Indication header */
+#include "Sum_Ssfm_RunCrankFault_Manager.h"
+/* SSFM Errh Service 0x14 Handler header */
+#include "Sum_Ssfm_Service0x14_Handler.h"
+/* SSFM DID Utility header */
+#include "Sum_Ssfm_DID_Util.h"
+/* SSFM DID E0B9 Handler header */
+#include "Sum_Ssfm_DID_E0B9_Handler.h"
+/* SSFM Errh Lin Responder Error Manager header */
+#include "Sum_Ssfm_LinResponder_Error_Manager.h"
+/* SSFM DID E0B8 Handler header */
+#include "Sum_Ssfm_DID_E0B8_Handler.h"
+/* SSFM DID E0BA Handler header */
+#include "Sum_Ssfm_DID_E0BA_Handler.h"
+/* SSFM DTC Trigger Message Handler header */
+#include "Sum_Ssfm_DTCTriggeredMessage_Generator_Handler.h"
+/* SSFM RID 02C0 Handler header */
+#include "Sum_Ssfm_RID_02C0_Handler.h"
+/* Sum Common Types header */
+#include "SUM_Common_Types.h"
+/* SSFM Errh Dtcs Enable Manager header */
+#include "Sum_Ssfm_Errh_Dtc_Enable_Manager.h"
+/* SSFM LNM LIN Bus off Handler header */
+#include "Sum_Ssfm_LinBusOff_Handler.h"
+/* SSFM Errh U198C 49 Handler header */
+#include "Sum_Ssfm_Errh_U198C_49_Handler.h"
+/* SSFM Errh U198C 54 Handler header */
+#include "Sum_Ssfm_Errh_U198C_54_Handler.h"
+/* SSFM QoS Manager header */
+#include "Sum_Ssfm_QoS_Manager.h"
+/* SSFM SSFM DID E0BB Handler header */
+#include "Sum_Ssfm_DID_E0BB_Handler.h"
+
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

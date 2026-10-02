@@ -1,0 +1,192 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_FIM_ReceivedSerialData_Handler.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM Fault Indications Manager - Received SerialData Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA ITERATOR i-»
+«LET counterInc("serial_data_counter") - 1 AS SerialDataNumber-»
+/* PRQA S 1503 10 # When the SSFM is integrated, this runnable will be called by the RTE                     */
+/**
+ * @brief			SSFM/SSM Runnable to be executed when «SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()-» has been received by the Com
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			void
+ */
+FUNC(void, SUM_SSFM_CODE) «SSFM_SERIAL_DATA.Ssfm_GetSerialDataCallbackName()-»(«IF SSFM_SERIAL_DATA.sum_Ssfm_RteSerialData_Ref.rteSerialDataE2EInTransformerChain == true -»P2CONST(Rte_TransformerError, AUTOMATIC, <APPL_DATA>) TransformerError«ELSE»void«ENDIF-»)
+{
+    /*[$Satisfies $DDS_SSFM 007]*/
+	if(TRUE == Sum_Ssfm_Ssm_GetFuncPermitExecution())
+	{
+	    /*[$Satisfies $DDS_SSFM 008]*/
+
+		«IF Ssfm_IsAuthenticated(SSFM_SERIAL_DATA) == true-»
+		/*[$Satisfies $DDS_SSFM 009]*/
+        // Ask the Security Status Manager to reset the FcI
+        Sum_Ssfm_SecStatus_Manager_Set_FcI(&Sum_Ssfm_SerialDatas[«SerialDataNumber»], FALSE);
+		«ENDIF-»
+
+		«IF Ssfm_IsContOp(SSFM_SERIAL_DATA) == true-»
+		/*[$Satisfies $DDS_SSFM 013]*/
+        // Ask the Continuous Operation Status Manager to set the FoI
+        Sum_Ssfm_ContOpStatus_Manager_Set_FoI_Given_Transformer_Error(&Sum_Ssfm_SerialDatas[«SerialDataNumber»], TransformerError);
+		«ENDIF-»
+		«IF Ssfm_IsProtected(SSFM_SERIAL_DATA)-»
+		«IF Ssfm_IsAuthenticated(SSFM_SERIAL_DATA) == true-»
+		/*[$Satisfies $DDS_SSFM 021]*/ /*[$Satisfies $DDS_SSFM 022]*/
+        // Ask the Protection Status Manager to set the FpI as the FcI is False and signal«Ssfm_IsSignalGroup(SSFM_SERIAL_DATA)?" group":""» is not secure.
+        Sum_Ssfm_ProtStatus_Manager_Set_FpI(&Sum_Ssfm_SerialDatas[«SerialDataNumber»], FALSE);
+		«ELSE-»
+		/*[$Satisfies $DDS_SSFM 021]*/ /*[$Satisfies $DDS_SSFM 023]*/
+        // Ask the Protection Status Manager to set the FpI based on the transformer error.
+		Sum_Ssfm_ProtStatus_Manager_Set_FpI_Given_Transformer_Error(&Sum_Ssfm_SerialDatas[«SerialDataNumber»], TransformerError);
+		«ENDIF-»
+		«ENDIF-»
+		«IF Ssfm_IsSafety(SSFM_SERIAL_DATA) == true-»
+		/*[$Satisfies $DDS_SSFM 026]*/
+		// Ask the Safety Status Manager to populate the FsI
+		Sum_Ssfm_SafetyStatus_Manager_Populate_FsI(&Sum_Ssfm_SerialDatas[«SerialDataNumber»]);
+		«ENDIF-»
+		«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == true-»
+		«IF Ssfm_IsFxI(SSFM_SERIAL_DATA) == true-»
+		/*[$Satisfies $DDS_SSFM 078]*/
+		// Set the single port FxI
+    	Sum_Ssfm_SingleFxI_Manager_Set_FxI(&Sum_Ssfm_SerialDatas[«SerialDataNumber»]);
+    	«ENDIF-»
+		«ENDIF-»
+		«IF Ssfm_IsMessageInfo(SSFM_SERIAL_DATA)-»
+		/*[$Satisfies $DDS_SSFM 035]*/
+		Sum_Ssfm_SerialDatas[«SerialDataNumber»].MsgInfoGrp->SigSts_Supervision = SUM_SSFM_SigSts_Supervision_Received;
+		Sum_Ssfm_SigStsAvailability_Manager_CANETH(&Sum_Ssfm_SerialDatas[«SerialDataNumber»]);
+		«ENDIF-»
+		«IF Ssfm_IsLINChannelCfg(SSFM_SERIAL_DATA) -»
+		Sum_Ssfm_SerialDatas[«SerialDataNumber»].LINInfo->SigSts_Supervision = SUM_SSFM_SigSts_Supervision_Received;
+		Sum_Ssfm_SigStsAvailability_Manager_LIN(&Sum_Ssfm_SerialDatas[«SerialDataNumber»]);
+		«IF sum_Ssfm_CheckSerialDataAssociatedMissingMsgCfg(SSFM_SERIAL_DATA)-»
+		Sum_Ssfm_LINResponder_CbkRxRec_Handler(«Ssfm_Get_SerialDataAssociatedLINInfo(SSFM_SERIAL_DATA)»);
+		«ENDIF-»
+		«ENDIF-»
+		«IF !Ssfm_IsLINChannelCfg(SSFM_SERIAL_DATA) -»
+		«IF Ssfm_IsSerialDataLcFA(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo, SSFM_SERIAL_DATA)-»
+		/*[$Satisfies $DDS_SSFM 044]*/
+		/*[$Satisfies $DDS_SSFM 106]*/
+		«IF SSFM_SERIAL_DATA.Ssfm_IsServiceBased()-»
+		«IF Ssfm_AnyTrgDvc(sSFM.sum_Ssfm_ConfigSet) == true-»
+		if(Sum_Ssfm_SerialDatas[«SerialDataNumber»].ServiceInfo->DTCAllowed){
+			if(Sum_Ssfm_SerialDatas[«SerialDataNumber»].ServiceInfo->IsResolved == FALSE){
+				Sum_Ssfm_ResolveServiceDemEvent(&Sum_Ssfm_SerialDatas[«SerialDataNumber»]);
+
+				«IF Sum_Ssfm_Errh_U19A6_87_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+				/*[$Satisfies $DDS_SSFM 166]*/
+				// Update U19A6_87 by checking all the services. In case of no IP found (ip==0), the ResolveServiceDemEvent function updates the U19A6_87 itself.
+				if(Sum_Ssfm_SerialDatas[«SerialDataNumber»].ServiceInfo->IpAddress != 0u){
+					Sum_Ssfm_U19A6_87_Update(FALSE);
+				}
+				«ENDIF-»
+			}
+			// Check if the corresponding ECU has been found
+			if (Sum_Ssfm_SerialDatas[«SerialDataNumber»].LostCommInfo->CurrentProvider != NULL_PTR) {
+				if (Sum_Ssfm_Node_MissingMsg_TestEnableConditions(&Sum_Ssfm_SerialDatas[«SerialDataNumber»])){
+					Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm(&Sum_Ssfm_SerialDatas[«SerialDataNumber»]);
+				}
+			}
+		}
+		«ENDIF-»
+		«ELSE-»
+		if(Sum_Ssfm_Node_MissingMsg_TestEnableConditions(&Sum_Ssfm_SerialDatas[«SerialDataNumber»])){
+			Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm(&Sum_Ssfm_SerialDatas[«SerialDataNumber»]);
+		}
+		«ENDIF-»
+		«ENDIF-»
+		«ENDIF-»
+		«IF Ssfm_IsQoSEnabled(sSFM) && Ssfm_GetSerialDataHasQoSRef(SSFM_SERIAL_DATA)-»
+		/*[$Satisfies $DDS_SSFM 362]*/
+		Sum_Ssfm_QoS_Manager_UpdateOnReceivedConsolidatedService_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()-»();
+		«ENDIF-»
+	}
+}
+
+«ENDLET-»
+«ENDFOREACH-»
+
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

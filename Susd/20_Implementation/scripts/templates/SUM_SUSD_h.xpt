@@ -1,0 +1,213 @@
+«IMPORT bsw»
+«IMPORT bsw::SUSDModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Susd»
+
+«DEFINE Susd_h FOR Autosar»
+«FILE "SUM_SUSD.h"»/*
+ *****************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SUSD
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Module header for public module functions
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+#ifndef SUSD_H
+#define SUSD_H
+/*
+ ***************************************************************************************************
+ * Includes
+ ***************************************************************************************************
+ */
+#include "SUM_SUSD_Types.h"
+#include "SUM_Common_Types.h"
+#include "SUM_SUSD_PBcfg.h"
+#include "SUM_SUSD_E0D7_Handler.h"
+
+/* The RTE will generate a E_PENDING for every service, instead, we want a generic one.  They
+*  are all 10, so just define as 10 */
+#ifndef E_PENDING
+#define E_PENDING   (10u)
+#endif
+
+/***************************************************************************************************
+ * Defines
+ ***************************************************************************************************
+ */
+
+#define ECUM_WKSOURCE_POWER 0x1u
+#define ECUM_WKSOURCE_RESET 0x2u
+#define ECUM_WKSOURCE_INTERNAL_RESET 0x4u
+#define ECUM_WKSOURCE_INTERNAL_WDG 0x8u
+#define ECUM_WKSOURCE_EXTERNAL_WDG 0x10u
+#define ECUM_WKSOURCE_NETWORK_1_CAN 0x20u
+#define ECUM_WKSOURCE_NETWORK_2_CAN 0x40u
+#define ECUM_WKSOURCE_NETWORK_1_ETH 0x80u
+#define ECUM_WKSOURCE_NETWORK_2_ETH 0x100u
+#define ECUM_WKSOURCE_LIN 0x200u
+#define SUSD_FIRST_BOOT_VALID_FLAG (0xA5u)
+
+/* Bitmasks for SUM modules - mapping wakeup sources to specific SUM modules */
+#define SUSD_GLOBAL_WAKEUP_MASK (ECUM_WKSOURCE_POWER | ECUM_WKSOURCE_RESET | ECUM_WKSOURCE_INTERNAL_RESET | ECUM_WKSOURCE_INTERNAL_WDG | ECUM_WKSOURCE_EXTERNAL_WDG)
+#define SUSD_CAN_WAKEUP_MASK (ECUM_WKSOURCE_NETWORK_1_CAN | ECUM_WKSOURCE_NETWORK_2_CAN)
+#define SUSD_ETH_WAKEUP_MASK (ECUM_WKSOURCE_NETWORK_1_ETH | ECUM_WKSOURCE_NETWORK_2_ETH)
+#define SUSD_LIN_WAKEUP_MASK (ECUM_WKSOURCE_LIN)
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.select(e|e.sUSD_C_ShutdownPermControl == true).size > 0) -»
+#define SUSD_SWC_SHUTDOWN_BIT_ARRAY_SIZE ((SUSD_SWC_SHUTPERM + 63u) / 64u)
+«ENDIF-»
+/*
+ ***************************************************************************************************
+ * Global Function Prototypes
+ ***************************************************************************************************
+ */
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h"  /* PRQA S 5087 EOF */
+/* include MemMap.h required here to occupy the space in memory for the described macro*/
+
+/* extern is required here since this array has been used globally*/
+/* Initialization function of SUSD to be invoked by BswM */
+extern FUNC(void, SUSD_CODE) SUSD_Init(void); /* PRQA S 3447 EOF */
+
+/*Function used to check if there are active wakeups*/
+extern FUNC(uint8, SUSD_CODE) SUSD_No_Active_Wakeup(void);
+
+#pragma PRQA_NO_SIDE_EFFECTS SUSD_No_Active_Wakeup
+
+
+/* Function for receiving an indication from BswM on successful activation or deactivation of the wakeup source*/
+extern FUNC(void, SUSD_CODE) SUSD_UpdatedWakeupSource(uint32 WakeupStatus);
+
+/* Function invoked when there is diagnostic reprogramming request from BswM */
+extern FUNC(void, SUSD_CODE) SUSD_DiagnosticReprogrammingRequest(ReprogrammingStatus Status);
+
+/* Function invoked when there is diagnostic reset request from BswM */
+extern FUNC(void, SUSD_CODE) SUSD_DiagnosticResetRequest(ResetStatus Status);
+
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.select(e|e.sUSD_C_ShutdownPermControl == true).size > 0) -»
+/* External bit array declarations from SUM_SUSD_Int.c */
+extern VAR(uint64, SUSD_VAR) Gblshutdownenablecnt[SUSD_SWC_SHUTDOWN_BIT_ARRAY_SIZE];  /* Bit array for SWC shutdown enable (scalable) */
+«ENDIF-»
+extern VAR(uint16, SUSD_VAR) GblSUMshutdownenablecnt;  /* Bit array for SUM shutdown enable (max 16 SUMs) */
+
+/* Function declarations for shutdown permission DRE */
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0)-»
+«FOREACH sUSD.sUSDConfigSet.sUSD_C_SWCInfo AS swc ITERATOR swc_iter-»
+«IF swc.sUSD_C_ShutdownPermControl == true-»
+extern FUNC(void, SUSD_CODE) RE_«swc.sUSD_SWCName»_ShutdownPermission(void);
+«ENDIF-»
+«ENDFOREACH-»
+«ENDIF-»
+
+«FOREACH sUSD.sUSDConfigSet.sUSD_C_SUMsInfo AS sum-»
+«IF sum.sUSD_ShutdownPermission == true-»
+extern FUNC(void, SUSD_CODE) RE_«sum.sUSD_SUMsName»_ShutdownPermission(void);
+«ENDIF-»
+«ENDFOREACH-»
+
+/* Function to process shutdown refresh timers for both SUM and SWC modules */
+extern FUNC(void, SUSD_CODE) Processing_SUSD_Shutdown_Refresh_Timer(void);
+
+/* Function to process shutdown Global wait Force timers for both SUM and SWC modules */
+extern FUNC(void, SUSD_CODE) Processing_SUSD_Shutdown_GloabalWait_Force_Timer(void);
+
+/* Function to handle Permit Execution notifications to SUM */
+extern FUNC(void, SUSD_CODE) SUSD_SUM_PermitExecution(void);
+
+/* Function to handle Permit Execution notifications to SWC */
+extern FUNC(void, SUSD_CODE) SUSD_SWC_PermitExecution(void);
+
+/* Function to handle Vehicle Battery notifications to SWC */
+extern FUNC(void, SUSD_CODE) SUSD_SWC_VehicleBatteryVoltage(void);
+
+/* Function to handle Vehicle Battery notifications to disable NvM write to SWC */
+extern FUNC(void, SUSD_CODE) SUSD_BatteryVoltage_DisableNVMWrite(DisableWrite Status);
+
+#if(SUSD_VEHICLE_BATTERY_STATE_OF_CHARGE_SUPPORTED == STD_ON)
+/* Function to handle Vehicle Battery State of Charge mode request to BswM */
+extern FUNC(void, SUSD_CODE) SUSD_BswM_VehicleBatteryStateOfCharge(void);
+#endif
+
+/* Function to handle the application state manager */
+extern FUNC(void, SUSD_CODE) SUSD_ApplnStateManager(void);
+
+/* Function to indicate if hardware is available for PNC and LIN */
+extern FUNC(void, SUSD_CODE) SUSD_HardwareReady(void);
+
+#if(SUSD_RUNCRANKPLAUSIBILITY_SUPPORT == STD_ON)
+/* Function to handle Run Crank Plausibility */
+extern FUNC(void, SUSD_CODE) SUSD_RunCrankPlausibility(void);
+#endif
+
+#if(SUSD_POWERMODING_SLAVE_SUPPORT == STD_ON)
+/* Function to handle Vehicle Power Mode */
+extern FUNC(void, SUSD_CODE) SUSD_VehiclePowerModeDetermination(void);
+#endif
+/*Function to handle the request for storing into NVM the RAM block value of the given NvM block.*/
+extern FUNC(void, SUM_SUSD_CODE) Susd_NvmWriteBlock(const Susd_GenericNvmAccessType * blockNvmConfig, Std_ReturnType * lastRequestResult);
+
+/*Function to handle the request for storing into NVM the RAM block value of the given NvM block.*/
+extern FUNC(void, SUM_SUSD_CODE) Susd_NvmWriteBlock_uint16(const Susd_GenericNvmAccessType_uint16 * blockNvmConfig, Std_ReturnType * lastRequestResult);
+
+/*Function to check the status of the last write request of the given NVM block.*/
+extern FUNC(void, SUM_SUSD_CODE) Susd_NvmGetErrorStatus(const Susd_GenericNvmAccessType * blockNvmConfig, Std_ReturnType * lastRequestResult);
+
+/*Function to check the status of the last write request of the given NVM block.*/
+extern FUNC(void, SUM_SUSD_CODE) Susd_NvmGetErrorStatus_uint16(const Susd_GenericNvmAccessType_uint16 * blockNvmConfig, Std_ReturnType * lastRequestResult);
+
+/*Function to update status of init function done*/
+extern FUNC(uint8, SUSD_CODE) SUSD_GetInitState(void);
+
+/*Function to handle the running reset wait timer */
+extern FUNC(void, SUSD_CODE) Manage_SUM_SUSD_RunningResetWait_TIMER(void);
+
+/*Function to manage the reset execution timer */
+extern FUNC(void, SUSD_CODE) Manage_SUM_SUSD_RESETExecution_TIMER(void);
+
+/*Function to check whether this is the first boot after a flash operation.*/
+extern FUNC(boolean, SUSD_CODE) Sum_SUSD_isFirstBootAfterFlash(void);
+
+FUNC(Std_ReturnType, SUSD_CODE) RE_ReadData_DID_E0D7(
+#if SUSD_E0D7_ASYNC_MODE == TRUE
+    VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+#endif
+    P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data
+);
+
+FUNC(Std_ReturnType, SUSD_CODE) RE_ReadDataLength_DID_E0D7(
+#if SUSD_E0D7_ASYNC_MODE == TRUE
+    VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+#endif
+    P2VAR(uint16, AUTOMATIC, RTE_APPL_DATA) DataLength
+);
+
+FUNC(Std_ReturnType, SUSD_CODE) RE_ReadData_DID_F088(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                      P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data);
+
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+
+#endif /* SUSD_H */
+/********************************** END OF FILE ******************************************************/
+«ENDFILE»
+«ENDDEFINE»

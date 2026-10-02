@@ -1,0 +1,27 @@
+6;2;2;2;4
+\textbf{Port Interface};\textbf{Port Type};\textbf{P-Port};\textbf{R-Port};\textbf{Description}
+PP_LNM_SUSD_ShutdownPermi\newline ssion;Sender / Receiver;SUM_LNM;SUM_SUSD;Used to provide the ShutdownPermission
+RP_SUSD_LNM_PermitExecuti\newline on;Sender / Receiver;SUM_SUSD;SUM_LNM;Used to receive the PermitExecution
+PP_LNM_Cyberfill;Sender / Receiver;SUM_LNM;Com;Used for publishing the CyberFill value
+RP_WdgM_LNM_LocalSupervis\newline ion;Client / Server;WdgM;SUM_LNM;Used to notify aliveness to WdgM 
+PP_LNM_BswM_ComM_Request\newline ComMode_<n>;Mode Switch;SUM_LNM;BswM;Used to request the communication mode switch of the channel to BswM
+RP_LNM_ActivationSignal_<n>;Sender / Receiver;SWC/Com;SUM_LNM;Notification from Com or SWC of channel activation or deactivation requests
+RP_LNM_ActivationSignal_Av\newline <n>;Sender / Receiver;SUM_SSM;SUM_LNM;Availability indication of the activation signal (if the activation signal has been configured as Com)
+RP_LNM_BswM_LinSM_Current\newline State_<n>;Mode Switch;BswM;SUM_LNM;Indication of the current network status
+PP_LNM_BswM_LinSM_Schedule\newline Request_<n>;Mode Switch;SUM_LNM;BswM;Request project specific schedules for the selected network
+RP_LNM_BswM_LinSM_Current\newline Schedule_<n>;Mode Switch;BswM;SUM_LNM;Feedback of the current schedule running in the network
+RP_LNM_ScheduleSignal_<n>;Sender / Receiver;SWC;SUM_LNM;Schedule signal status indication from SWC
+RP_LNM_ScheduleSignal_Av_\newline <n>;Sender / Receiver;SWC;SUM_SSM;Schedule signal availability status indication from SUM_SSM (if signal source is Com)
+PP_<LINXX>_LNM_SSM_MSCL;Sender / Receiver;SUM_LNM;SUM_SSM;Publication of MSCL value of the selected network
+PP_LNM_Dcm_DID_MSCL;Client / Server;SUM_LNM;Dcm;Port interface with Dcm for DID F1BE
+RP_NvM_MSCL;Client / Server;NvM;SUM_LNM;Port interface with NvM to write in non volatile memory the MSCL
+RP_LNM_Cal_<XXX>_Responder \newline Present;Parameter;Parameter SWC;SUM_LNM;Port used to evaluate if the responder is present on the network (only for MSCL via Evaluation)
+PP_LNM_ERRH_NodeStatusIdx \newline _<n>;Sender / Receiver;SUM_LNM;SUM_ERRH;Notification to ERRH of the test result for Lost Communication with LIN Responder Device <n>
+RP_SSM_LNM_NodeTimeout \newline_<n>;Sender / Receiver;SUM_SSM;SUM_LNM;Read signal status for Lost Communication with LIN Responder Device <n>
+RP_COM_LNM_APINFO2_<n>;Sender / Receiver;Com;SUM_LNM;Read APINFO2 signal from Com for all the responders that supports Internal Electronic Failure <n> through APINFO2
+RP_COM_LNM_APINFO4_<n>;Sender / Receiver;Com;SUM_LNM;Read APINFO4 signal from Com for all the responders that supports Internal Electronic Failure <n> through APINFO4
+PP_LNM_ERRH_IntElectFault \newline _<n>;Sender / Receiver;SUM_LNM;SUM_ERRH;Notification to SUM ERRH of the latest Internal Electronic Failure <n> test result
+RP_COM_LNM_APINFO3_<n>;Sender / Receiver;Com;SUM_LNM;Read APINFO4 signal from Com for all the responders that supports Responder Device Not Configured <n>
+PP_LNM_ERRH_NotConfigured \newline _<n>;Sender / Receiver;SUM_ERRH;SUM_LNM;Notification to ERRH of the latest test result for Responder Device Not Configured <n>
+PP_LNM_ERRH_LossCommBus \newline _<n>;Sender / Receiver;SUM_ERRH;SUM_LNM;Notification to ERRH of the latest test result for Loss of Communication with Bus
+RP_SUSD_LNM_VehiclePower \newline Mode;Sender / Receiver;SUM_SUSD;SUM_LNM; Read vehicle power mode from SUSD.

@@ -1,0 +1,105 @@
+«IMPORT bsw»
+«IMPORT bsw::SrvcMgrModule»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SrvcMgr FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SrvcMgr FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_SrvcMgr_LearningSession_Manager.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SrvcMgr
+ * Date        : Apr 20, 2026
+ * Revision    : 8.0.1_Pr16
+ * Description : Header file for SrvcMgr Learning Session Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+#ifndef SUM_SRVCMGR_LRNGSESSION_MANAGER_H
+#define SUM_SRVCMGR_LRNGSESSION_MANAGER_H
+
+/***************************************************************************************************
+ * Includes
+ ***************************************************************************************************
+ */
+#include "rba_SdLrng.h"
+
+/***************************************************************************************************
+ * Defines
+ ***************************************************************************************************
+ */
+
+#define SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED  400u
+#define SUM_SRVCMGR_SIZE_CLIENT_SERVICE_ROUTINE_STATUS         11u
+#define SUM_SRVCMGR_BASE_SIZE_SERVER_SERVICE                    8u
+#define SUM_SRVCMGR_SIZE_ADDRESS_TYPE                           6u
+#define SUM_SRVCMGR_MAX_NUMBER_OF_CLIENT_SERVICE              371u
+#define SUM_SRVCMGR_MAX_BYTE_SIZE_ROUTINE_STATUS_SERVER_CASE 4085u
+«IF srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref != null -»
+«REM»[$Satisfies $DDS_SrvcMgr 009]«ENDREM-»
+#define SRVCMGR_LEARNINGSESSION_COMPLETE (0x00u)
+#define SRVCMGR_LEARNINGSESSION_FAIL (0x01u)
+#define SRVCMGR_LEARNINGSESSION_PENDING (0x02u)
+#define SRVCMGR_LEARNINGSESSION_SUCCESS (0x03u)
+«ENDIF-»
+
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+
+«IF srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref != null -»
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_CheckLearningTableWriteStatus(
+    P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»Type, AUTOMATIC, RTE_APPL_DATA) DataOut,
+    P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode);
+«ENDIF-»
+
+«IF srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref != null -»
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_ReportFirstTwoSignalOutRid0x0612(VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»Type, AUTOMATIC) srvcmgr_OptionRecordOne,
+                                                                                        VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»Type, AUTOMATIC) srvcmgr_OptionRecordTwo,
+                                                                                        P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»Type, AUTOMATIC, RTE_APPL_DATA) srvcmgr_RoutineStatusOne,
+                                                                                        P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»Type, AUTOMATIC, RTE_APPL_DATA) srvcmgr_RoutineStatusTwo,
+                                                                                        const tableContentType * srvcmgr_local_tableContentType,
+                                                                                        P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) srvcmgr_local_ErrorCode);
+
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_RetrieveRecordRid0x0612(VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»Type, AUTOMATIC) srvcmgr_OptionRecordTwo,
+                                                                               VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 16).shortName»Type, AUTOMATIC) srvcmgr_OptionRecordThree,
+                                                                               P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»Type, AUTOMATIC, RTE_APPL_DATA) srvcmgr_RoutineStatusTwo,
+                                                                               P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 24).shortName»Type, AUTOMATIC, RTE_APPL_DATA) srvcmgr_RoutineStatusThree,
+                                                                               P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) srvcmgr_RoutineStatusFour,
+                                                                               P2VAR(uint16, AUTOMATIC, RTE_APPL_DATA) srvcmgr_local_currentDataLength,
+                                                                               const tableContentType * srvcmgr_local_tableContentType,
+                                                                               P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) srvcmgr_local_ErrorCode);
+
+
+
+«ENDIF-»
+
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

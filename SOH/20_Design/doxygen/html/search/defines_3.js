@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['soh_5faction_5fnvm_5fsupport_5fenabled_0',['SOH_ACTION_NVM_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a0d3d9cce96c36655766482b8bd9b20c4',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fclear_5fdiag_5finfo_5fsupport_5fenabled_1',['SOH_CLEAR_DIAG_INFO_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a48b80c4f4934b05a30585b6a95c2d5af',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fdiag_5freset_5fsupport_5fenabled_2',['SOH_DIAG_RESET_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#af55c4d294d5dd79e05e9a098bc313fec',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fdiag_5fsession_5fsupport_5fenabled_3',['SOH_DIAG_SESSION_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#ad78710fde236b6563df1031c5f331cda',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5ferr_5fos_5fsupport_5fenabled_4',['SOH_ERR_OS_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#aff3d1200307f7639a81b187158566cf5',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5ferrh_5flocal_5fsup_5ferrors_5fsupport_5fenabled_5',['SOH_ERRH_LOCAL_SUP_ERRORS_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#af9adbf2d670314af439b582a884921c6',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fexcep_5fos_5fsupport_5fenabled_6',['SOH_EXCEP_OS_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a2a29b895936b2624702d160638cae6d9',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fgenerate_5finit_5frunnable_5fstatus_7',['SOH_GENERATE_INIT_RUNNABLE_STATUS',['../_s_u_m___s_o_h___cfg_8h.html#a3e976735aaf2d1c9c785dcaa783f1599',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fimmediate_5fdelayed_5fsupport_5fenabled_8',['SOH_IMMEDIATE_DELAYED_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a526fab90cd1682fef43f20e6324c9127',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5flocal_5fsup_5ffailures_5fsupport_5fenabled_9',['SOH_LOCAL_SUP_FAILURES_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#ac2c734edcbe8ca38bbe64772cd2e65a7',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fmac_5ffailures_5fsupport_5fenabled_10',['SOH_MAC_FAILURES_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#aae9908bdbe4965acfcddc683fd92b520',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fmemprot_5fos_5fsupport_5fenabled_11',['SOH_MEMPROT_OS_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a03bbc9393f28b66d905b8eb9e3a8f42f',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fpermitexecution_5fmask_12',['SOH_PERMITEXECUTION_MASK',['../_s_u_m___s_o_h___cfg_8h.html#a61553c514e6cb86ca70fb60d0e1d2340',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fprivilege_5fnvm_5fsupport_5fenabled_13',['SOH_PRIVILEGE_NVM_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a61a3fa8fee9a3bd62b5051fb54eed244',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fsec_5faccess_5ffailures_5fsupport_5fenabled_14',['SOH_SEC_ACCESS_FAILURES_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a2e891b4951a9ded54bd55bf5ea19b209',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fsecp_5ferrors_5fsupport_5fenabled_15',['SOH_SECP_ERRORS_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a91d699176202acf4d97113b65bed7428',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fserv_5fos_5fsupport_5fenabled_16',['SOH_SERV_OS_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#aef5ce1c33d1518af291226b321a76541',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fshutdown_5fdelay_5fsupport_5fenabled_17',['SOH_SHUTDOWN_DELAY_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#ad34d2eaa3cbc31fea5102b9da1e5df99',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fstack_5fos_5fsupport_5fenabled_18',['SOH_STACK_OS_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a7c442039cd32d16cc2f1992cdd9ef50b',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fstatus_5fnvm_5fsupport_5fenabled_19',['SOH_STATUS_NVM_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a53ab8e3a0d1555e87b60c50ce74d1cf4',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5ftimeprot_5fos_5fsupport_5fenabled_20',['SOH_TIMEPROT_OS_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#a951354dd31ff126f8846c4b21279ea84',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5funsigned_5fzero_21',['SOH_UNSIGNED_ZERO',['../_s_u_m___s_o_h___cfg_8h.html#a68c1c3c71db6d5a1e0492fa324b7b9a8',1,'SUM_SOH_Cfg.h']]],
+  ['soh_5fwdgmdem_5fsup_5ferrors_5fsupport_5fenabled_22',['SOH_WdgMDEM_SUP_ERRORS_SUPPORT_ENABLED',['../_s_u_m___s_o_h___cfg_8h.html#aed666a971ccdb8c26774e19d54a73b76',1,'SUM_SOH_Cfg.h']]],
+  ['sum_5fsoh_5fstart_5fsec_5fcode_23',['SUM_SOH_START_SEC_CODE',['../_s_u_m___s_o_h___p_b_cfg_8c.html#a498cc0f5b66e70eb638f36e1c0d84712',1,'SUM_SOH_PBCfg.c']]],
+  ['sum_5fsoh_5fstop_5fsec_5fcode_24',['SUM_SOH_STOP_SEC_CODE',['../_s_u_m___s_o_h___p_b_cfg_8c.html#a3b3e1e352e1ca34be41b08b5c75fce99',1,'SUM_SOH_PBCfg.c']]]
+];

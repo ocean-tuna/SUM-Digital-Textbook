@@ -1,0 +1,338 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DID_E0B8_Handler.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM DID E0B8 Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+static Sum_Ssfm_SerialData* Sum_Ssfm_DID_E0B8_SerialDatas_InList[SSFM_DID_E0B8_MAX_MSGS];
+static uint8 Sum_Ssfm_DID_E0B8_NumOfMsgs = 0u;
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+static boolean Sum_Ssfm_DID_E0B8_AddSerialData(Sum_Ssfm_SerialData* serial_data);
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+
+ *********************************************************************************************************************************************************
+ */
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 1532 EOF # The functions will be kept here for a better modularity */
+
+/**
+ * @brief           This function updates the given metric of the given serial data.
+ *  				If the serial data is not in the list, it asks the utility function to add it.
+ *					Please note that prior to calling this function with a metric, make sure that
+ *					the input serial data is enabled with the metric.
+ * @param[in]       serial_data - const Sum_Ssfm_SerialData*: the serial data to add
+ * @param[in]       metric - Sum_Ssfm_DID_E0B8_Metric: the metric to update
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+void Sum_Ssfm_DID_E0B8_MetricUpdated(Sum_Ssfm_SerialData* serial_data, Sum_Ssfm_DID_E0B8_Metric metric){
+	/*[$Satisfies $DDS_SSFM 137]*/
+	boolean is_in_list = Sum_Ssfm_DID_E0B8_AddSerialData(serial_data);
+	if(is_in_list){
+		switch(metric){
+			case SUM_SSFM_DID_E0B8_Unavailability:
+				if(serial_data->MsgInfoGrp->UnavailableCount < SSFM_DID_E0B8_MAX_COUNTER){
+					serial_data->MsgInfoGrp->UnavailableCount++;
+				}
+				break;
+			case SUM_SSFM_DID_E0B8_ContOp:
+				if(serial_data->ContOp->OccurrenceCount < SSFM_DID_E0B8_MAX_COUNTER){
+					serial_data->ContOp->OccurrenceCount++;
+				}
+				break;
+			case SUM_SSFM_DID_E0B8_Protected:
+				if(serial_data->Protected->OccurrenceCount < SSFM_DID_E0B8_MAX_COUNTER){
+					serial_data->Protected->OccurrenceCount++;
+				}
+				break;
+			default:
+				/* do nothing */
+				break;
+		}
+	}
+}
+
+/* PRQA S 1503 EOF # This runnable will be called by RTE */
+/* PRQA S 1505 EOF # This runnable will be called by RTE */
+/**
+ * @brief           This Runnable will be run at the time of DID E0B8 read request.
+ * 					It uses the internal queue of messages to fill in the buffer.
+ *
+ * @param[in]       OpStatus - Dcm_OpStatusType:
+ * @param[inout]    Data - uint8 *: The buffer to fill in the data
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(Std_ReturnType, SUM_SSFM_CODE) Runnable_SSFM_DID_E0B8(Dcm_OpStatusType OpStatus,
+                                                           uint8 * Data){
+	/*[$Satisfies $DDS_SSFM 138]*/
+	Std_ReturnType ret = E_NOT_OK;
+	uint16 offset;
+	uint16 i;
+	if((OpStatus == DCM_INITIAL) || (OpStatus == DCM_PENDING)){
+		// Fill number of messages
+		offset = 0u;
+		Sum_Ssfm_DID_FillBuffer_u8(Data,
+								Sum_Ssfm_DID_E0B8_NumOfMsgs,
+								offset);
+		// Fill Messages
+		for(i = 0u; i < Sum_Ssfm_DID_E0B8_NumOfMsgs; i++){
+			// Set Message ID
+			offset = SSFM_DID_E0B8_MSGS_START_BYTE + (i * SSFM_DID_E0B8_MSG_SIZE);
+			Sum_Ssfm_DID_FillBuffer_u32(Data,
+									Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->MessageID,
+									offset);
+			// Set unavailability count
+			offset = SSFM_DID_E0B8_MSGS_START_BYTE + (i * SSFM_DID_E0B8_MSG_SIZE) +
+						SSFM_DID_E0B8_MSG_ID_SIZE;
+			Sum_Ssfm_DID_FillBuffer_u16(Data,
+									(Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->MsgInfoGrp != NULL_PTR) ?
+										Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->MsgInfoGrp->UnavailableCount:
+										0u,
+									offset);
+			// Set ContOp count
+			offset = SSFM_DID_E0B8_MSGS_START_BYTE + (i * SSFM_DID_E0B8_MSG_SIZE) +
+						SSFM_DID_E0B8_MSG_ID_SIZE + SSFM_DID_E0B8_MSG_AV_CNT_SIZE;
+			Sum_Ssfm_DID_FillBuffer_u16(Data,
+									(Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->ContOp != NULL_PTR) ?
+										Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->ContOp->OccurrenceCount :
+										0u,
+									offset);
+			// Set Protected count
+			offset = SSFM_DID_E0B8_MSGS_START_BYTE + (i * SSFM_DID_E0B8_MSG_SIZE) +
+						SSFM_DID_E0B8_MSG_ID_SIZE + SSFM_DID_E0B8_MSG_AV_CNT_SIZE + SSFM_DID_E0B8_MSG_CONTOP_CNT_SIZE;
+			Sum_Ssfm_DID_FillBuffer_u16(Data,
+									(Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->Protected != NULL_PTR) ?
+										Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->Protected->OccurrenceCount :
+										0u,
+									offset);
+		}
+		ret = E_OK;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief           This Runnable will be run at the time of DID E0B8 read data length request.
+ *
+ *
+ * @param[in]       OpStatus - Dcm_OpStatusType:
+ * @param[inout]    DataLength - uint16 *: The pointer to the data length to update.
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(Std_ReturnType, SUM_SSFM_CODE) Runnable_SSFM_DID_E0B8_RDL(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                               uint16 * DataLength){
+	/*[$Satisfies $DDS_SSFM 139]*/
+	Std_ReturnType ret = E_NOT_OK;
+
+	if((OpStatus == DCM_INITIAL) || (OpStatus == DCM_PENDING)){
+		*DataLength = SSFM_DID_E0B8_MSGS_START_BYTE +
+						((uint16)Sum_Ssfm_DID_E0B8_NumOfMsgs * (
+							SSFM_DID_E0B8_MSG_ID_SIZE + SSFM_DID_E0B8_MSG_AV_CNT_SIZE +
+							SSFM_DID_E0B8_MSG_CONTOP_CNT_SIZE + SSFM_DID_E0B8_MSG_PROT_CNT_SIZE
+						));
+		ret = E_OK;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief           Appends the serial data to the E0B8 list if there is enough space
+ *
+ * @param[in]       serial_data - const Sum_Ssfm_SerialData*: the serial data to add
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          boolean: Returns true if after the function call, the serial data is in list
+ */
+static boolean Sum_Ssfm_DID_E0B8_AddSerialData(Sum_Ssfm_SerialData* serial_data){
+	boolean now_in_list = serial_data->In_DID_E0B8_List;
+	if((Sum_Ssfm_DID_E0B8_NumOfMsgs < SSFM_DID_E0B8_MAX_MSGS) && (now_in_list == FALSE)){
+		serial_data->In_DID_E0B8_List = TRUE;
+		Sum_Ssfm_DID_E0B8_SerialDatas_InList[Sum_Ssfm_DID_E0B8_NumOfMsgs] = serial_data;
+		Sum_Ssfm_DID_E0B8_NumOfMsgs++;
+		now_in_list = TRUE;
+	}
+	return now_in_list;
+}
+
+/**
+ * @brief           This function is called when the DTC Clear Diagnostics is requested to clear
+ *  				internal state and counters of DID E0B8
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+void Sum_Ssfm_DID_E0B8_ResetData(void){
+	/*[$Satisfies $DDS_SSFM 140]*/
+	uint8 i;
+	for(i = 0u; i < Sum_Ssfm_DID_E0B8_NumOfMsgs; i++){
+		Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->In_DID_E0B8_List = FALSE;
+		if(Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->MsgInfoGrp != NULL_PTR){
+			Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->MsgInfoGrp->UnavailableCount = 0u;
+		}
+		if(Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->ContOp != NULL_PTR){
+			Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->ContOp->OccurrenceCount = 0u;
+		}
+		if(Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->Protected != NULL_PTR){
+			Sum_Ssfm_DID_E0B8_SerialDatas_InList[i]->Protected->OccurrenceCount = 0u;
+		}
+		Sum_Ssfm_DID_E0B8_SerialDatas_InList[i] = NULL_PTR;
+	}
+	Sum_Ssfm_DID_E0B8_NumOfMsgs = 0u;
+}
+
+/**
+ * @brief           This function is called when the ERRH perform the SUM_SSFM_Run_Mode -> SUM_SSFM_Shutdown_Mode.
+ * 					It is needed to store the info in the RAM buffer that will be later saved in the Non volatile
+ * 					memory by the NvM.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_DID_E0B8_SaveData(void){
+	/*[$Satisfies $DDS_SSFM 141]*/
+
+	/* Call the runnable to fill the buffer with latest internal data */
+	(void)Runnable_SSFM_DID_E0B8(DCM_INITIAL, «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_CommFigureOfMeritNvmRef.nvMRamBlockDataAddress-»);
+
+	/* Inform the NvM that the RAM buffer has value updated -> it shall be saved in the non volatile memory. */
+	(void)Rte_Call_RP_NvM_SSFM_NvMService_DID_E0B8_Data_SetRamBlockStatus(TRUE);
+}
+
+
+
+/**
+ * @brief           This function is the handler of the internal buffer restoring at init time.
+ * 					Related to DID 0xE0B8.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_DID_E0B8_RestoreData(void){
+	/*[$Satisfies $DDS_SSFM 142]*/
+
+	uint16 i, j, offset;
+	uint32 message_id;
+	uint8 e0b9_index = 0u;
+
+	for(i = 0u; i < «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_CommFigureOfMeritNvmRef.nvMRamBlockDataAddress-»[0]; i++){
+		// Get Message ID
+		offset = SSFM_DID_E0B8_MSGS_START_BYTE + (i * SSFM_DID_E0B8_MSG_SIZE);
+		Sum_Ssfm_DID_ReadBuffer_u32(«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_CommFigureOfMeritNvmRef.nvMRamBlockDataAddress-»,
+									&message_id,
+									offset);
+
+		Sum_Ssfm_DID_E0B8_SerialDatas_InList[e0b9_index] = NULL_PTR;
+		for(j = 0u; j < SSFM_SSM_NUM_OF_SERIALDATAS; j++){
+			if(Sum_Ssfm_SerialDatas[j].MessageID == message_id){
+				Sum_Ssfm_DID_E0B8_SerialDatas_InList[e0b9_index] = &(Sum_Ssfm_SerialDatas[j]);
+				break;
+			}
+		}
+
+		// Check if message found
+		if(Sum_Ssfm_DID_E0B8_SerialDatas_InList[e0b9_index] != NULL_PTR){
+			// Get unavailability count
+			if(Sum_Ssfm_DID_E0B8_SerialDatas_InList[e0b9_index]->MsgInfoGrp != NULL_PTR){
+				offset = SSFM_DID_E0B8_MSGS_START_BYTE + (i * SSFM_DID_E0B8_MSG_SIZE) +
+							SSFM_DID_E0B8_MSG_ID_SIZE;
+				Sum_Ssfm_DID_ReadBuffer_u16(«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_CommFigureOfMeritNvmRef.nvMRamBlockDataAddress-»,
+											&(Sum_Ssfm_DID_E0B8_SerialDatas_InList[e0b9_index]->MsgInfoGrp->UnavailableCount),
+											offset);
+			}
+			// Get ContOp count
+			if(Sum_Ssfm_DID_E0B8_SerialDatas_InList[e0b9_index]->ContOp != NULL_PTR){
+				offset = SSFM_DID_E0B8_MSGS_START_BYTE + (i * SSFM_DID_E0B8_MSG_SIZE) +
+							SSFM_DID_E0B8_MSG_ID_SIZE + SSFM_DID_E0B8_MSG_AV_CNT_SIZE;
+				Sum_Ssfm_DID_ReadBuffer_u16(«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_CommFigureOfMeritNvmRef.nvMRamBlockDataAddress-»,
+											&(Sum_Ssfm_DID_E0B8_SerialDatas_InList[e0b9_index]->ContOp->OccurrenceCount),
+											offset);
+			}
+			// Get Protected count
+			if(Sum_Ssfm_DID_E0B8_SerialDatas_InList[e0b9_index]->Protected != NULL_PTR) {
+				offset = SSFM_DID_E0B8_MSGS_START_BYTE + (i * SSFM_DID_E0B8_MSG_SIZE) +
+							SSFM_DID_E0B8_MSG_ID_SIZE + SSFM_DID_E0B8_MSG_AV_CNT_SIZE + SSFM_DID_E0B8_MSG_CONTOP_CNT_SIZE;
+				Sum_Ssfm_DID_ReadBuffer_u16(«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_CommFigureOfMeritNvmRef.nvMRamBlockDataAddress-»,
+											&(Sum_Ssfm_DID_E0B8_SerialDatas_InList[e0b9_index]->Protected->OccurrenceCount),
+											offset);
+			}
+
+			e0b9_index++;
+		}
+	}
+	Sum_Ssfm_DID_E0B8_NumOfMsgs = e0b9_index;
+}
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

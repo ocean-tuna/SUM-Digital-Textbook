@@ -1,0 +1,82 @@
+@startuml Sum_Ssfm_FaultIndications_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_FaultIndications_Manager"
+
+**Interfaces Legend**
+	//II152 //: ERRH_ExecutionStatus / SSM_ExecutionStatus
+	//pi102 //: SerialData<n>_FcI
+	//pi105 //: SerialData<n>_FoI
+	//pi108 //: SerialData<n>_FpI
+	//pi111 //: SerialData<n>_FsI
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+	interface pi102
+	interface pi105
+	interface pi108
+	interface pi111
+	interface II152
+
+
+
+component [SSFM::FaultIndications_Manager] as EC{
+	portout ppi102
+	portout ppi105
+	portout ppi108
+	portout ppi111
+	interface II152
+
+component [Sum_Ssfm_Received_SerialData_Handler]  as O{
+   portout SetFcI
+   portout SetFoI
+}
+
+component [Sum_Ssfm_SecStatus_Manager] as E{
+   portout FcI
+}
+component [Sum_Ssfm_ProtStatus_Manager]  as T{
+   portout FpI
+}
+component [Sum_Ssfm_ContOpStatus_Manager]  as S{
+	portout FoI
+}
+
+component [Sum_Ssfm_SafStatus_Manager]  as R{
+   portout FsI
+}
+
+}
+
+
+
+	
+	II152 )- EC
+	 
+    SetFcI ---0)- E
+    SetFoI -----down0)-- S
+    
+    FcI ---down0)--- ppi102
+    ppi102 --down0 pi102
+    FoI ----down0)- ppi105
+    ppi105 --down0 pi105
+    FpI -0)- ppi108	
+    ppi108 --down0 pi108
+    FsI -0)-ppi111
+    ppi111--down0 pi111
+    
+    FoI --0)- R	
+    FcI --down0)---  T
+    FpI ----0)-- R
+
+    
+
+
+@enduml

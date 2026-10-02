@@ -1,0 +1,5 @@
+16;10;8;6
+\textbf{Document Name};\textbf{Description};\textbf{Version};\textbf{Released}
+SDV-8002; AUTOSAR Standard Utility Modules Specification;27.27.180.3p0;04/04/2025
+SDV-6001; Diagnostic Infrastructure Specification;27.27.180.3p0;04/09/2025
+CYS5402; SecOC and SOME IP Deployment Requirements;27.27.180.3p0;03/04/2025

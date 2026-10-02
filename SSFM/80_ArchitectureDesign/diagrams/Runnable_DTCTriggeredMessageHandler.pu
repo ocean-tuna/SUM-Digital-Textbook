@@ -1,0 +1,36 @@
+@startuml Runnable_SSFM_DTCTriggeredMessage_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Runnable_SSFM_DTCTriggeredMessage_Handler"
+
+**Interfaces Legend**
+   //ri121 //: PNC_ActiveTxPDUEnable<n>
+   //ri122 //: SSC_DIAG_GetECUAddress
+   //II123 //: Service14requested
+   //ri124 //: Dem_CallbackDTCStatusChangedIndication
+   //II125 //: Dem_OperationCycle
+   //pi135 //: SSFM_DTCTriggered
+   
+endlegend
+
+component [SSFM::Runnable_SSFM_DTCTriggeredMessage_Handler] as EC{
+	portin ri121
+  portin ri122
+  portin ri123
+  portin ri124
+  portin ri125
+	portout pi135
+
+	[Runnable_SSFM_DTCTriggeredMessage_Handler]  as E
+}
+
+  ri121 -> E
+  ri122 -> E
+  ri123 -> E
+  ri124 -> E
+  ri125 -> E
+  E -> pi135
+
+@enduml

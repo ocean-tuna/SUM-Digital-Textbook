@@ -1,0 +1,62 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Service_Manager.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM Service Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+
+#define SSFM_SSM_NUM_OF_SERVICEINFO_SERIALDATAS «Ssfm_NumOfServiceBased(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)»u
+
+
+«IF Ssfm_AnyServiceBased(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+extern Sum_Ssfm_ServiceInfo_SerialData Sum_Ssfm_ServiceInfo_SerialDatas[SSFM_SSM_NUM_OF_SERVICEINFO_SERIALDATAS];
+«IF Ssfm_AnyTrgDvc(sSFM.sum_Ssfm_ConfigSet) == true-»
+extern void Sum_Ssfm_ResolveServiceDemEvent(Sum_Ssfm_SerialData* service_based_serialdata);
+«ENDIF-»
+«ENDIF-»
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

@@ -1,0 +1,1 @@
+Powershell.exe -executionpolicy remotesigned -File .\build_puml_svg.ps1

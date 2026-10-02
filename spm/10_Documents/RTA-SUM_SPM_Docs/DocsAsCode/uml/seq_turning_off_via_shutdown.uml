@@ -1,0 +1,12 @@
+@startuml
+
+actor RemoteState
+
+participant On
+participant Pending_Shutdown
+participant Off
+
+On -> Pending_Shutdown : HeartBeat received with value \n greater than Power Down threshold \n (2^32 - 256)
+Pending_Shutdown -> Off : HeartBeat NOT received within \n DTC timeout length AND \n device is not monitored \n (!IsRequested AND !IsRequester)
+
+@enduml

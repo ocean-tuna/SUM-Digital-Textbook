@@ -1,0 +1,59 @@
+\chapter{Introduction and Goals}
+
+This document intends to describe the design of the SUM_SUSD module.
+The scope of this document is to capture the implementation based on the requirements as defined in SDV-8002 AUTOSAR Standard Utility Module Specification.
+For a better process and higher quality design, this can be seen as an extension to the before mentioned document.
+
+\section{Introduction}
+
+\subsection{System Purpose}
+
+This document defines a set of standard software compositions which are referred to as GM Standardized Utility Modules (SUM).
+Use of the SUM modules allows for standardized specification of behavior requirements and expectations with respect to the interface to the software infrastructure (BSW Services).
+This allows functional software to be completely abstracted from the software infrastructure.
+SUM will be used to communicate a set of standardized implementations of the interactions between SW-C and BSW.
+
+The SUM_SUSD is a software module in the application layer of the standardized architecture of AUTOSAR.
+
+SUM_SUSD contains the following functions:
+
+\begin{itemize}
+	\item Application State Manager
+	\item Application SWC Start/Shutdown
+	\item Operating/Battery Voltage Monitor
+	\item Wakeup Reason DID
+	\item Power Moding Slave
+	\item Run Crank Functionality
+\end{itemize}
+
+\subsection{Document Purpose}
+
+This document introduces the key ideas of the architecture of SUM_SUSD.
+Its intended audience comprises System Architects, Product Architects, Developers and Testers who need a rough understanding on the concepts of the product.
+The document describes the product and its functionality on the component level, the interaction and communication between those components and the integration of ETAS wide shared components.
+The document does not explain the components design in detail.
+
+\section{Goals of the Architecture}
+
+\subsection{Goals}
+
+The main goals of the architecture are:
+
+\begin{enumerate}
+\item \textbf{Configurability}: The module has to be designed with the highest possible level of configurability, in order to be easy to adapt it in the future to changes on the standard or even in some project requirements.
+\item \textbf{Maintainability}: The architecture of the component shall be clearly defined and easy to understand, in order to guarantee the maximum possible level of maintainability.
+\item \textbf{Performance}: The component shall be designed in order to maximize run-time execution speed as well as minimize memory consumption.
+\item \textbf{Correctness of Implementation}: The Detailed Design must to be aligned to the Architecture document (SDV-8002).
+\end{enumerate}
+
+\section{Stakeholders}
+
+Stakeholders for SUM_SUSD module are GM, Bosch, Systems engineers, Software architect, QA personnel.
+
+\section{Definitions, Acronyms and Abbreviations}
+
+\input{generated/tables/definitions.tex}
+
+\section{Referenced Documents}
+
+\input{generated/tables/references.tex}

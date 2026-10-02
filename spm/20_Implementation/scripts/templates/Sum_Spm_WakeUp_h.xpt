@@ -1,0 +1,110 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::Spm_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_WakeUp.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for Source for SPM WakeUp functionality
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef SUM_SPM_WAKEUP_H_
+#define SUM_SPM_WAKEUP_H_
+
+#include "Sum_Spm_Cfg.h"
+
+«IF Spm_IsTC10CommandPresent(spm)== true -»
+#define SPM_VLAN_ID_INVALID				     ( 0xFFFFU )
+#define SPM_NETWORK_HANDLE_CNT			     ( « spm.eRootContainer.ethSM.ethSMNetwork.size -»u )
+
+typedef struct {
+	uint16    		  vlanId;
+	NetworkHandleType networkHndId;
+} SpmTc10DstMapType;
+«ENDIF-»
+
+#define WAKEUP_FRAME_LEN		   8u
+
+/* Frame index definitions for wakeup frame checking */
+#define SPM_CHK_WKUPFRM_A (0U)
+#define SPM_CHK_WKUPFRM_B (1U)
+#define SPM_CHK_WKUPFRM_C (2U)
+
+/* Protocol type enumeration for wake-up frame handlers */
+typedef enum {
+    SPM_PROTOCOL_CAN = 0u,
+    SPM_PROTOCOL_ETH = 1u,
+    SPM_PROTOCOL_GPIO = 2u
+} Spm_WakeUpCmdDispatcher_Type;
+
+/* Protocol state management structure - better organization */
+typedef struct {
+    boolean hasTransmittedAtLeastOnce;
+    boolean transmissionActive;
+    uint8 numberWUFAllZerosSent;
+    uint8 prevFrameBufferA[WAKEUP_FRAME_LEN];       /* Previous frame A sent for change detection */
+    uint8 prevFrameBufferB[WAKEUP_FRAME_LEN];       /* Previous frame B sent for change detection */
+    uint8 prevFrameBufferC[WAKEUP_FRAME_LEN];       /* Previous frame C sent for change detection */
+} Sum_Spm_WkUpFrameState;
+
+/* Structure to hold wake-up frame handling configuration for each protocol */
+typedef struct {
+    Spm_WakeUpCmdDispatcher_Type protocol;          /* Protocol type (CAN/ETH) */
+    uint16 timerTickTracker;                        /* Tracker (in tick) to ensure periodicity in WUF sending */
+    uint16 burstPhaseCounter;                       /* Counter that track the remaining WUF to send in burst way */
+    uint16 steadyStateTickPeriodicity;              /* Steady  state periodicity (in tick) */
+    uint8* txFrameBufferA;                          /* Pointer to transmission frame buffer A */
+    uint8* txFrameBufferB;                          /* Pointer to transmission frame buffer B */
+    uint8* txFrameBufferC;                          /* Pointer to transmission frame buffer C */
+    uint8* wakeUpCmdBufferA;                        /* Pointer to wake-up command buffer A */
+    uint8* wakeUpCmdBufferB;                        /* Pointer to wake-up command buffer B */
+    uint8* wakeUpCmdBufferC;                        /* Pointer to wake-up command buffer B */
+    Sum_Spm_WkUpFrameState* state;                  /* Pointer to protocol state */
+} Sum_Spm_WkUpFrameConfig;
+
+void Sum_Spm_WkUpTiming_Handler(void);
+void SPM_PM_Init_WkUpFrame_Period(void);
+«IF Spm_ECU_INTERMEDIATE(spm) == true -»
+void Spm_ETHWkUpFrame_Rx_Polling_Handler(void);
+«ENDIF-»
+void Spm_ETHWkUpFrame_Multicast_Rx_Polling_Handler(void);
+boolean Spm_IsWakeUpBitSet(const uint8* wakeUpFrame, const uint8 wakeUpBitPos);
+boolean Spm_GetOwnwakeUpBit(void);
+void Spm_ExecuteWakeUpFrameActions(boolean advanceTimer);
+void Sum_Spm_WakeUpCmdDispatcher(const uint8 cmdType, const uint8 cmdValue, const uint8 numberIPAssociated, const uint32 *ListIP, const boolean IsPoweringOn);
+
+
+#endif /* SUM_SPM_WAKEUP_H_ */
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

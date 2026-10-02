@@ -1,0 +1,64 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Errh_U19A3_8A_Handler.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM ERRH U19A3 92 Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_ERRH_U19A3_8A_HANDLER_H
+#define SUM_SSFM_ERRH_U19A3_8A_HANDLER_H
+
+«IF ((Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true) && (Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0))-»
+#define	SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER	 «Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet)»u
+#define SUM_SSFM_PDU_TIMER_MAX  ((uint32)(~(uint32)0u))
+
+extern Sum_Ssfm_Errh_KeySlotVerifyStatus Sum_Ssfm_Errh_KeySlotVerifyFilter[SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER];
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+extern FUNC(void,SUM_SSFM_ERRH_CODE) Sum_Ssfm_KeySlotNumber_DTCStatusChanged(uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew);
+void Sum_Ssfm_Clear_KeySlot_Authentication_Failure_Timers(void);
+void Sum_Ssfm_Errh_Initialize_KeySlotVerify(void);
+void Sum_Ssfm_Update_KeySlotState(Sum_Ssfm_Errh_KeySlotVerifyStatus* keyslotfilter);
+«ENDIF -»
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

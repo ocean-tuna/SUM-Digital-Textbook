@@ -1,0 +1,3 @@
+13;60;21;26
+\textbf{Port Name};\textbf{Port Interface};\textbf{Dual Port};\textbf{Description}
+RP_NvMService_TCSTimeValue;/AUTOSAR_NvM/PortInterfaces/NvMService;P-Port C/S NVM;Needed to use NVM services to store \code{SumTCSInitValue}.

@@ -1,0 +1,389 @@
+«IMPORT bsw»
+«IMPORT bsw::SOHModule»
+«IMPORT bsw::NvMModule»
+«IMPORT bsw::ComMModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE SohCfgH FOR Autosar»
+	«EXPAND CreateSohStruct FOR this.ecu.sOH»
+«ENDDEFINE»
+
+«DEFINE CreateSohStruct FOR SOH»
+«FILE "SUM_SOH_Cfg.h"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SOH
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Header for SOH configuration
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+#ifndef SUM_SOH_CFG_H
+#define SUM_SOH_CFG_H
+
+«IF sOHGeneral.sohGenerateInitRunnable == true»
+#include "SUM_Common_Types.h"
+«ENDIF»
+#include "SUM_SOH_Types.h"
+#include "WdgM_Cfg.h"
+
+/***************************************************************************************************
+ * Defines
+ ***************************************************************************************************
+ */
+
+#define SOH_UNSIGNED_ZERO 0x0u
+
+#define OsCounterSOHName	                «sOHGeneral.sOH_OsCounterRef.shortName»
+#define OS_TICKS2MS_SOH_Counter      	    OS_TICKS2MS_«sOHGeneral.sOH_OsCounterRef.shortName»
+#define OSTICKDURATION_SOH_Counter			OSTICKDURATION_«sOHGeneral.sOH_OsCounterRef.shortName»
+
+#define NUM_OF_DETECTORS «
+								(sOHGeneral.sOH_ImmediateDelayed_SupportEnabled == true? 2 : 0) +
+	 							(sOHGeneral.sOH_DiagnosticReset_SupportEnabled == true? 1 : 0) +
+	 							(sOHGeneral.sOH_ClearDiagnosticInformation_SupportEnabled == true? 2 : 0) +
+								(sOHGeneral.sOH_DiagnosticSessionControl_SupportEnabled == true? 2 : 0) +
+								(sOHGeneral.sOH_MACFailures_SupportEnabled == true? 2 : 0) +
+								(sOHGeneral.sOH_SecurityAccessFailures_SupportEnabled == true? 1 : 0) +
+								(sOHGeneral.sOH_SecPErrors_SupportEnabled == true? 1 : 0) +
+								(sOHGeneral.sOH_LocalSupervisionFailures_SupportEnabled == true? 1 : 0) +
+	 							(sOHGeneral.sOH_WdgMDEMSupervisionErrors_SupportEnabled == true? 1 : 0) +
+	 							(sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true? 1 : 0) +
+	 							(sOHGeneral.eRRH_SOHLocalSupervision_SupportEnabled == true? 1 : 0) +
+	 							(sOHGeneral.sOH_ShutdownDelay_SupportEnabled == true ? 1 : 0) +
+ 								(sOHGeneral.sOH_StatNvM_SupportEnabled == true ? 1 : 0)+
+ 								(sOHGeneral.sOH_ActNvM_SupportEnabled == true ? 1 : 0)+
+ 								(sOHGeneral.sOH_PrivNvM_SupportEnabled == true ? 1 : 0)+
+ 								(sOHGeneral.sOH_ExcepOS_SupportEnabled == true ? 1 : 0)+
+								(sOHGeneral.sOH_ServOS_SupportEnabled == true ? 1 : 0)+
+								(sOHGeneral.sOH_StackOS_SupportEnabled == true ? 1 : 0)+
+								(sOHGeneral.sOH_MemProtOS_SupportEnabled == true ? 1 : 0)+
+								(sOHGeneral.sOH_TimeProtOS_SupportEnabled == true ? 1 : 0)+
+								(sOHGeneral.sOH_ErrOS_SupportEnabled == true ? 1 : 0)-»u
+
+#define NUM_OF_SOH_DETECTORS «
+								(sOHGeneral.sOH_ImmediateDelayed_SupportEnabled == true? 2 : 0) +
+	 							(sOHGeneral.sOH_DiagnosticReset_SupportEnabled == true? 1 : 0) +
+	 							(sOHGeneral.sOH_ClearDiagnosticInformation_SupportEnabled == true? 2 : 0) +
+								(sOHGeneral.sOH_DiagnosticSessionControl_SupportEnabled == true? 2 : 0) +
+								(sOHGeneral.sOH_MACFailures_SupportEnabled == true? 2 : 0) +
+								(sOHGeneral.sOH_SecurityAccessFailures_SupportEnabled == true? 1 : 0) +
+								(sOHGeneral.sOH_SecPErrors_SupportEnabled == true? 1 : 0) +
+								(sOHGeneral.sOH_LocalSupervisionFailures_SupportEnabled == true? 1 : 0) +
+	 							(sOHGeneral.sOH_WdgMDEMSupervisionErrors_SupportEnabled == true? 1 : 0) +
+	 							(sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true? 1 : 0) +
+	 							(sOHGeneral.sOH_ShutdownDelay_SupportEnabled == true ? 1 : 0) +
+ 								(sOHGeneral.sOH_StatNvM_SupportEnabled == true ? 1 : 0)+
+ 								(sOHGeneral.sOH_ActNvM_SupportEnabled == true ? 1 : 0)+
+ 								(sOHGeneral.sOH_PrivNvM_SupportEnabled == true ? 1 : 0)+
+ 								(sOHGeneral.sOH_ExcepOS_SupportEnabled == true ? 1 : 0)+
+								(sOHGeneral.sOH_ServOS_SupportEnabled == true ? 1 : 0)+
+								(sOHGeneral.sOH_StackOS_SupportEnabled == true ? 1 : 0)+
+								(sOHGeneral.sOH_MemProtOS_SupportEnabled == true ? 1 : 0)+
+								(sOHGeneral.sOH_TimeProtOS_SupportEnabled == true ? 1 : 0)+
+								(sOHGeneral.sOH_ErrOS_SupportEnabled == true ? 1 : 0)-»u
+
+/* Mask that can be OR'd with the value supplied by PermitExecution */
+#define SOH_PERMITEXECUTION_MASK (uint8)«sOHGeneral.sOH_PermitExecution_Mask-»u
+
+/* Enable the usage of a dedicated periodic runnable to run SOH init functions */
+/* [$Satisfies $SDD_SOH 036] */
+«IF sOHGeneral.sohGenerateInitRunnable == true»
+#define SOH_GENERATE_INIT_RUNNABLE_STATUS STD_ON
+«ELSE»
+#define SOH_GENERATE_INIT_RUNNABLE_STATUS STD_OFF
+«ENDIF»
+
+/* Enable the detector of Status NvM */
+«IF sOHGeneral.sOH_StatNvM_SupportEnabled == true»
+#define SOH_STATUS_NVM_SUPPORT_ENABLED STD_ON
+«ELSE»
+#define SOH_STATUS_NVM_SUPPORT_ENABLED STD_OFF
+«ENDIF»
+
+/* Enable the detector of Action NvM */
+«IF sOHGeneral.sOH_ActNvM_SupportEnabled == true»
+#define SOH_ACTION_NVM_SUPPORT_ENABLED STD_ON
+«ELSE»
+#define SOH_ACTION_NVM_SUPPORT_ENABLED STD_OFF
+«ENDIF»
+
+/* Enable the detector of Privilege NvM */
+«IF sOHGeneral.sOH_PrivNvM_SupportEnabled == true»
+#define SOH_PRIVILEGE_NVM_SUPPORT_ENABLED STD_ON
+«ELSE»
+#define SOH_PRIVILEGE_NVM_SUPPORT_ENABLED STD_OFF
+«ENDIF»
+
+/* Enable the detector of OS Hardware Protection */
+«IF sOHGeneral.sOH_ExcepOS_SupportEnabled == true-»
+#define SOH_EXCEP_OS_SUPPORT_ENABLED STD_ON
+«ELSE»
+#define SOH_EXCEP_OS_SUPPORT_ENABLED STD_OFF
+«ENDIF»
+
+/* Enable the detector of OS Service Protection / Trusted Function*/
+«IF sOHGeneral.sOH_ServOS_SupportEnabled == true-»
+#define SOH_SERV_OS_SUPPORT_ENABLED STD_ON
+«ELSE»
+#define SOH_SERV_OS_SUPPORT_ENABLED STD_OFF
+«ENDIF»
+
+/* Enable the detector of OS Stack Fault*/
+«IF sOHGeneral.sOH_StackOS_SupportEnabled == true-»
+#define SOH_STACK_OS_SUPPORT_ENABLED STD_ON
+«ELSE»
+#define SOH_STACK_OS_SUPPORT_ENABLED STD_OFF
+«ENDIF»
+
+/* Enable the detector of OS Memory Protection*/
+«IF sOHGeneral.sOH_MemProtOS_SupportEnabled == true-»
+#define SOH_MEMPROT_OS_SUPPORT_ENABLED STD_ON
+«ELSE»
+#define SOH_MEMPROT_OS_SUPPORT_ENABLED STD_OFF
+«ENDIF»
+
+/* Enable the detector of OS Time Protection*/
+«IF sOHGeneral.sOH_TimeProtOS_SupportEnabled == true-»
+#define SOH_TIMEPROT_OS_SUPPORT_ENABLED STD_ON
+«ELSE»
+#define SOH_TIMEPROT_OS_SUPPORT_ENABLED STD_OFF
+«ENDIF»
+
+/* Enable the detector of OS Other OS Errors*/
+«IF sOHGeneral.sOH_ErrOS_SupportEnabled == true-»
+#define SOH_ERR_OS_SUPPORT_ENABLED STD_ON
+«ELSE»
+#define SOH_ERR_OS_SUPPORT_ENABLED STD_OFF
+«ENDIF»
+
+/*Enable the support for Immediate Reset Detector and Delayed Reset Detector */
+«IF sOHGeneral.sOH_ImmediateDelayed_SupportEnabled == true-»
+#define SOH_IMMEDIATE_DELAYED_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_IMMEDIATE_DELAYED_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for Diagnostic Reset Detector */
+«IF sOHGeneral.sOH_DiagnosticReset_SupportEnabled == true-»
+#define SOH_DIAG_RESET_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_DIAG_RESET_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for Clear Diagnostic Information Accepted Request Detector and Clear Diagnostic Information Rejected Request Detector */
+«IF sOHGeneral.sOH_ClearDiagnosticInformation_SupportEnabled == true-»
+#define SOH_CLEAR_DIAG_INFO_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_CLEAR_DIAG_INFO_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for Diagnostic Session Control Request Detector and Accepted Diagnostic Session Control Request Detector */
+«IF sOHGeneral.sOH_DiagnosticSessionControl_SupportEnabled == true-»
+#define SOH_DIAG_SESSION_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_DIAG_SESSION_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for MAC Failures Types 1 and 2 Detector and MAC Failures Type 3 Detector */
+«IF sOHGeneral.sOH_MACFailures_SupportEnabled == true-»
+#define SOH_MAC_FAILURES_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_MAC_FAILURES_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for SecurityAccess (Service 0x27) Failures Detector */
+«IF sOHGeneral.sOH_SecurityAccessFailures_SupportEnabled == true-»
+#define SOH_SEC_ACCESS_FAILURES_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_SEC_ACCESS_FAILURES_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for SecP Errors Detector */
+«IF sOHGeneral.sOH_SecPErrors_SupportEnabled == true-»
+#define SOH_SECP_ERRORS_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_SECP_ERRORS_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for Local Supervision Failures Detector */
+«IF sOHGeneral.sOH_LocalSupervisionFailures_SupportEnabled == true-»
+#define SOH_LOCAL_SUP_FAILURES_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_LOCAL_SUP_FAILURES_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for WdgM DEM Supervision Errors Detector */
+«IF sOHGeneral.sOH_WdgMDEMSupervisionErrors_SupportEnabled == true-»
+#define SOH_WdgMDEM_SUP_ERRORS_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_WdgMDEM_SUP_ERRORS_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for SUM_ERRH Local Supervision Detector */
+«IF sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true-»
+#define SOH_ERRH_LOCAL_SUP_ERRORS_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_ERRH_LOCAL_SUP_ERRORS_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for SUM_ERRH Local Supervision Detector */
+«IF sOHGeneral.eRRH_SOHLocalSupervision_SupportEnabled == true-»
+#define ERRH_SOH_LOCAL_SUP_ERRORS_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define ERRH_SOH_LOCAL_SUP_ERRORS_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/*Enable the support for Shutdown Delay Detector */
+«IF sOHGeneral.sOH_ShutdownDelay_SupportEnabled == true-»
+#define SOH_SHUTDOWN_DELAY_SUPPORT_ENABLED STD_ON
+«ELSE -»
+#define SOH_SHUTDOWN_DELAY_SUPPORT_ENABLED STD_OFF
+«ENDIF-»
+
+/***************************************************************************
+ *
+ **************************************************************************/
+
+
+typedef enum
+{
+«IF sOHGeneral.sOH_ImmediateDelayed_SupportEnabled == true-»
+	SOH_ImmeReset,
+	SOH_DelayedReset,
+«ENDIF-»
+«IF sOHGeneral.sOH_DiagnosticReset_SupportEnabled == true-»
+	SOH_DiagReset,
+«ENDIF-»
+«IF sOHGeneral.sOH_StatNvM_SupportEnabled == true-»
+	SOH_StatNVM,
+«ENDIF-»
+«IF sOHGeneral.sOH_ActNvM_SupportEnabled == true-»
+	SOH_ActNVM,
+«ENDIF-»
+«IF sOHGeneral.sOH_PrivNvM_SupportEnabled == true-»
+	SOH_PrivNVM,
+«ENDIF-»
+«IF sOHGeneral.sOH_ExcepOS_SupportEnabled == true-»
+	SOH_ExcepOS,
+«ENDIF-»
+«IF sOHGeneral.sOH_ServOS_SupportEnabled == true-»
+	SOH_ServOS,
+«ENDIF-»
+«IF sOHGeneral.sOH_StackOS_SupportEnabled == true-»
+	SOH_StackOS,
+«ENDIF-»
+«IF sOHGeneral.sOH_MemProtOS_SupportEnabled == true-»
+	SOH_MemProtOS,
+«ENDIF-»
+«IF sOHGeneral.sOH_TimeProtOS_SupportEnabled == true-»
+	SOH_TimeProtOS,
+«ENDIF-»
+«IF sOHGeneral.sOH_ErrOS_SupportEnabled == true-»
+	SOH_ErrOS,
+«ENDIF-»
+«IF sOHGeneral.sOH_ClearDiagnosticInformation_SupportEnabled == true -»
+	SOH_ClearDiagInfo,
+	SOH_RejectClearDiag,
+«ENDIF-»
+«IF sOHGeneral.sOH_DiagnosticSessionControl_SupportEnabled == true -»
+	SOH_DiagSession,
+	SOH_AcceptDiagSession,
+«ENDIF-»
+«IF sOHGeneral.sOH_SecurityAccessFailures_SupportEnabled == true -»
+	SOH_SecurityAccess,
+«ENDIF-»
+«IF sOHGeneral.sOH_MACFailures_SupportEnabled == true -»
+	SOH_MACfailTenAct,
+	SOH_ReplayCount,
+«ENDIF-»
+«IF sOHGeneral.sOH_SecPErrors_SupportEnabled == true -»
+	SOH_SecP,
+«ENDIF-»
+«IF sOHGeneral.sOH_LocalSupervisionFailures_SupportEnabled == true -»
+	SOH_LocalStatFail,
+«ENDIF-»
+«IF sOHGeneral.sOH_WdgMDEMSupervisionErrors_SupportEnabled == true -»
+	SOH_WdgMDEMErr,
+«ENDIF-»
+«IF sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true -»
+	SOH_ERRHSupFail,
+«ENDIF-»
+«IF sOHGeneral.eRRH_SOHLocalSupervision_SupportEnabled == true -»
+	ERRH_SOHSupFail,
+«ENDIF-»
+«IF sOHGeneral.sOH_ShutdownDelay_SupportEnabled == true -»
+	SOH_ShutdownDelay,
+«ENDIF-»
+	SOH_ALL = 0xFF
+
+}SOH_DetectorsId;
+
+extern SOH_DetectorType* SOH_DetectorItems[NUM_OF_DETECTORS];
+
+«IF sOHGeneral.sOH_ImmediateDelayed_SupportEnabled == true ||
+    sOHGeneral.sOH_DiagnosticReset_SupportEnabled == true-»
+extern SOH_MonitorType   SOH_ResetReliabilityMonitor;
+«ENDIF-»
+
+«IF sOHGeneral.sOH_StatNvM_SupportEnabled == true     ||
+	sOHGeneral.sOH_ActNvM_SupportEnabled == true      ||
+	sOHGeneral.sOH_PrivNvM_SupportEnabled == true     ||
+	sOHGeneral.sOH_ExcepOS_SupportEnabled == true     ||
+	sOHGeneral.sOH_ServOS_SupportEnabled == true      ||
+	sOHGeneral.sOH_StackOS_SupportEnabled == true     ||
+	sOHGeneral.sOH_MemProtOS_SupportEnabled == true   ||
+	sOHGeneral.sOH_TimeProtOS_SupportEnabled == true  ||
+	sOHGeneral.sOH_ErrOS_SupportEnabled == true -»
+extern SOH_MonitorType   SOH_MemoryStatusReliabilityMonitor;
+«ENDIF-»
+
+«IF sOHGeneral.sOH_ClearDiagnosticInformation_SupportEnabled == true ||
+     sOHGeneral.sOH_DiagnosticSessionControl_SupportEnabled == true ||
+     sOHGeneral.sOH_SecurityAccessFailures_SupportEnabled == true ||
+     sOHGeneral.sOH_MACFailures_SupportEnabled == true ||
+     sOHGeneral.sOH_SecPErrors_SupportEnabled == true -»
+extern SOH_MonitorType   SOH_CommunicationReliabilityMonitor;
+«ENDIF-»
+
+«IF sOHGeneral.sOH_LocalSupervisionFailures_SupportEnabled == true ||
+     sOHGeneral.sOH_WdgMDEMSupervisionErrors_SupportEnabled == true ||
+     sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true »
+extern SOH_MonitorType   SOH_WdgMReliabilityMonitor;
+«ENDIF-»
+
+«IF sOHGeneral.eRRH_SOHLocalSupervision_SupportEnabled == true »
+extern SOH_MonitorType   SOH_WdgMReliabilityF094Monitor;
+«ENDIF-»
+
+«IF sOHGeneral.sOH_ShutdownDelay_SupportEnabled == true-»
+extern SOH_MonitorType	 SOH_PlatformReliabilityMonitor;
+«ENDIF-»
+
+extern SOH_MonitorType   SOH_AllMonitors;
+
+#endif
+«ENDFILE»
+«ENDDEFINE»

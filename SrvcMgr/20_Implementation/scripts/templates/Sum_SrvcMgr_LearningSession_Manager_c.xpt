@@ -1,0 +1,1324 @@
+«IMPORT bsw»
+«IMPORT bsw::SrvcMgrModule»
+«IMPORT bsw::Dem»
+«IMPORT bsw::Sd»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::Sum_SrvcMgr_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SrvcMgr FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SrvcMgr FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_SrvcMgr_LearningSession_Manager.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SrvcMgr
+ * Date        : Apr 20, 2026
+ * Revision    : 8.0.1_Pr16
+ * Description : Source file for SrvcMgr Learning Session Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SrvcMgr Top Level Library */
+#include "Sum_SrvcMgr_Prv.h"
+#include "Sum_SrvcMgr_LearningSession_Manager.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+/**
+ *  @brief Buffer for tracking ssfm sdmissing service id
+ *  @private
+ */
+static uint16 Sum_SrvcMgr_Ssfm_MissingServiceIds[SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED];
+static uint16 Sum_SrvcMgr_Ssfm_num_Of_Missing_Services = 0;
+
+/**
+ *  @brief Variable for tracking if a learning session is currently in progress
+ *  If the value is TRUE, a learning session request is ongoing. False otherwise.
+ *  @private
+ */
+static boolean Sum_SrvcMgr_LearningSessionReq = FALSE;
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+«IF srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref != null -»
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_Send_SPM_SDLearningStatusIndication(CONST(uint8, AUTOMATIC) LearningSessionStatus);
+«ENDIF-»
+static FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_ReadPropSysActvAndVehicleSpeed(
+«IF !SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+«IF  SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(RxSignal_PropSysActv_GroupSignal, AUTOMATIC, RTE_APPL_DATA) signal_group_psa,
+«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(«SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)», AUTOMATIC, RTE_APPL_DATA) signal_group_psa,
+«ENDIF-»
+                                                                P2VAR(boolean, AUTOMATIC, AUTOMATIC) srvcmgr_PropSysActv,
+«IF  SrvcMgr_IsVehSpdAvgDrvnGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(RxSignal_VehSpdAvgDrvn_GroupSignal, AUTOMATIC, RTE_APPL_DATA) signal_group_vehspeed,
+«ELSEIF SrvcMgr_IsVehSpdAvgDrvnServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(«SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref)», AUTOMATIC, RTE_APPL_DATA) srv_signal_vehspeed,
+«ENDIF-»
+                                                                P2VAR(float32, AUTOMATIC, AUTOMATIC) srvcmgr_VehicleSpeed);
+«ELSE -»
+«IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(RxSignal_VeActvProp_YeDrvnVeh_GroupSignal, AUTOMATIC, RTE_APPL_DATA) signal_group,
+«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(«SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)», AUTOMATIC, RTE_APPL_DATA) srv_signal,
+«ENDIF-»
+                                                                P2VAR(boolean, AUTOMATIC, AUTOMATIC) srvcmgr_PropSysActv,
+                                                                P2VAR(float32, AUTOMATIC, AUTOMATIC) srvcmgr_VehicleSpeed);
+«ENDIF-»
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_AddMissingServiceId(uint16 serviceId,
+                                                                        uint16 *missingServiceIds,
+                                                                        uint16 *numOfMissingServices);
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SrvcMgr_START_SEC_CODE
+#include "SUM_SrvcMgr_MemMap.h"
+
+
+«IF srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref != null -»
+
+/**
+ * @brief           SrvcMgr function that valued Routine Signal #3 and #4
+ *
+ * @param[in]       srvcmgr_OptionRecordTwo Control Option #2
+ * @param[in]       srvcmgr_OptionRecordThree Control Option #3
+ * @param[out]      srvcmgr_RoutineStatusOne Pointer to Routine Status Signal #3
+ * @param[out]      srvcmgr_RoutineStatusTwo Pointer to Routine Status Signal #4
+ * @param[out]      srvcmgr_local_currentDataLength Pointer to the variable that store the value of the length in byte of the Routine Status Signal #4
+ * @param[in]       srvcmgr_local_tableContentType Pointer to the struct that contains the Learning Table content
+ * @param[out]      srvcmgr_local_ErrorCode A pointer to a variable where any error code will be stored in case of failure
+ * @return          Std_ReturnType
+ *                  -E_OK if the Control Option #2, Control Option #3 and the number of Client/Server Services are coherently between each other.
+ *                  -E_NOT_OK if the start_of_range is greater than end_of_range (contained in Control Option #3) and return DCM_E_CONDITIONSNOTCORRECT.*/
+/* PRQA S 1505 1 # Here for modularity */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_RetrieveRecordRid0x0612(VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»Type, AUTOMATIC) srvcmgr_OptionRecordTwo,
+                                                                               VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 16).shortName»Type, AUTOMATIC) srvcmgr_OptionRecordThree,
+                                                                               P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»Type, AUTOMATIC, RTE_APPL_DATA) srvcmgr_RoutineStatusTwo,
+                                                                               P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 24).shortName»Type, AUTOMATIC, RTE_APPL_DATA) srvcmgr_RoutineStatusThree,
+                                                                               P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) srvcmgr_RoutineStatusFour,
+                                                                               P2VAR(uint16, AUTOMATIC, RTE_APPL_DATA) srvcmgr_local_currentDataLength,
+                                                                               const tableContentType * srvcmgr_local_tableContentType,
+                                                                               P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) srvcmgr_local_ErrorCode)
+{
+    Std_ReturnType ret = E_NOT_OK;
+    uint16 srvcmgr_startofrange = (uint16)((srvcmgr_OptionRecordThree & 0xFFFF0000u) >> 16); 	/* Lowest value of service IDs to retrieve */
+    uint16 srvcmgr_endofrange = (uint16)(srvcmgr_OptionRecordThree & 0xFFFFu); 					/* Highest value of service IDs to retrieve */
+    uint16 offset_srvr_packet = 0x00u;
+    uint16 offset_clnt_packet;
+    uint16 srvcmgr_counter;
+    uint16 i;
+    uint16 numOfOutputIDs = 0x00u;
+
+    if(srvcmgr_endofrange >= srvcmgr_startofrange){
+        if( srvcmgr_OptionRecordTwo ==  (uint8)SUM_SrvcMgr_Client_Table){
+            ret = E_OK;
+            *srvcmgr_RoutineStatusThree = srvcmgr_OptionRecordThree;
+			«IF (sd.sdConfig.sdInstance.sdClientService.size > 0) »
+            for(srvcmgr_counter = 0u; srvcmgr_counter < srvcmgr_local_tableContentType->num_Of_Entries_In_Client_Section; srvcmgr_counter++){
+                if( (srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].service_ident.service_id >= srvcmgr_startofrange)
+            			&& (srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].service_ident.service_id <= srvcmgr_endofrange) ){
+					/* Each Client Data retrieved has the same size of SUM_SRVCMGR_SIZE_CLIENT_SERVICE_ROUTINE_STATUS. So it is multiplied by numOfOutputIDs*/
+            		offset_clnt_packet = numOfOutputIDs * (uint16)SUM_SRVCMGR_SIZE_CLIENT_SERVICE_ROUTINE_STATUS;
+            		srvcmgr_RoutineStatusFour[offset_clnt_packet] = (uint8)(srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].service_ident.service_id >> 8u);
+            		srvcmgr_RoutineStatusFour[offset_clnt_packet + 1u] = (uint8)(srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].service_ident.service_id & 0xFFu);
+                    srvcmgr_RoutineStatusFour[offset_clnt_packet + 2u] = (uint8)(srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].service_ident.service_instance_id >> 8u);
+            		srvcmgr_RoutineStatusFour[offset_clnt_packet + 3u] = (uint8)(srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].service_ident.service_instance_id & 0xFFu);
+					srvcmgr_RoutineStatusFour[offset_clnt_packet + 4u] = (uint8)srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].service_ident.major_version;
+					srvcmgr_RoutineStatusFour[offset_clnt_packet + 5u] = (uint8)((srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].address.ip_address[0] & 0xFF000000u) >> 24u);
+                    srvcmgr_RoutineStatusFour[offset_clnt_packet + 6u] = (uint8)((srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].address.ip_address[0] & 0xFF0000u) >> 16u);
+                    srvcmgr_RoutineStatusFour[offset_clnt_packet + 7u] = (uint8)((srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].address.ip_address[0] & 0xFF00u) >> 8u);
+                    srvcmgr_RoutineStatusFour[offset_clnt_packet + 8u] = (uint8)(srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].address.ip_address[0] & 0xFFu);
+                    srvcmgr_RoutineStatusFour[offset_clnt_packet + 9u] = (uint8)(srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].address.port_num >> 8u);
+					srvcmgr_RoutineStatusFour[offset_clnt_packet + 10u] = (uint8)(srvcmgr_local_tableContentType->entry_c_array[srvcmgr_counter].address.port_num & 0xFFu);
+					numOfOutputIDs++;
+            	}
+            }
+			«ENDIF-»
+            *srvcmgr_local_currentDataLength = numOfOutputIDs * SUM_SRVCMGR_SIZE_CLIENT_SERVICE_ROUTINE_STATUS;
+           	*srvcmgr_RoutineStatusTwo = numOfOutputIDs;
+        }else{
+            ret = E_OK;
+            *srvcmgr_RoutineStatusThree = srvcmgr_OptionRecordThree;
+            /* Each Server Service retrieved has a size of SUM_SRVCMGR_BASE_SIZE_SERVER_SERVICE + num_Of_Subscribers*SUM_SRVCMGR_SIZE_ADDRESS_TYPE.
+            where SUM_SRVCMGR_BASE_SIZE_SERVER_SERVICE = sum of the size of the type of : service_id service_instance_id, major_version, event_group_id, num_Of_Subscribers
+            where SUM_SRVCMGR_SIZE_ADDRESS_TYPE = sum of the size of the type of : ip_address, port_num
+            */
+			«IF (sd.sdConfig.sdInstance.sdServerService.size > 0) »
+            for(srvcmgr_counter = 0u; srvcmgr_counter < srvcmgr_local_tableContentType->num_Of_Entries_In_Server_Section; srvcmgr_counter++){
+                if( (srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].service_ident.service_id >= srvcmgr_startofrange)
+                		&& (srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].service_ident.service_id <= srvcmgr_endofrange) ){
+
+                    srvcmgr_RoutineStatusFour[offset_srvr_packet] = (uint8)(srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].service_ident.service_id >> 8u);
+					srvcmgr_RoutineStatusFour[offset_srvr_packet + 1u] = (uint8)srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].service_ident.service_id;
+                    srvcmgr_RoutineStatusFour[offset_srvr_packet + 2u] = (uint8)(srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].service_ident.service_instance_id >> 8u);
+					srvcmgr_RoutineStatusFour[offset_srvr_packet + 3u] = (uint8)srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].service_ident.service_instance_id;
+					srvcmgr_RoutineStatusFour[offset_srvr_packet + 4u] = (uint8)srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].service_ident.major_version;
+                    srvcmgr_RoutineStatusFour[offset_srvr_packet + 5u] = (uint8)(srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].event_group_id >> 8u);
+					srvcmgr_RoutineStatusFour[offset_srvr_packet + 6u] = (uint8)srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].event_group_id;
+					srvcmgr_RoutineStatusFour[offset_srvr_packet + 7u] = (uint8)srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].num_Of_Subscribers;
+					offset_srvr_packet += SUM_SRVCMGR_BASE_SIZE_SERVER_SERVICE;
+
+					/* The following is needed to append at the end of the actual buffer the ip_address and the port_num knowing the num_Of_Subscribers. */
+					for(i = 0u; i < srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].num_Of_Subscribers; i++)
+					{
+                        srvcmgr_RoutineStatusFour[offset_srvr_packet + (uint16)(i*SUM_SRVCMGR_SIZE_ADDRESS_TYPE)] = (uint8)((srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].address[i].ip_address[0] & 0xFF000000u) >> 24u);
+						srvcmgr_RoutineStatusFour[offset_srvr_packet + (uint16)(i*SUM_SRVCMGR_SIZE_ADDRESS_TYPE) + 1u] = (uint8)((srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].address[i].ip_address[0] & 0xFF0000u) >> 16u);
+						srvcmgr_RoutineStatusFour[offset_srvr_packet + (uint16)(i*SUM_SRVCMGR_SIZE_ADDRESS_TYPE) + 2u] = (uint8)((srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].address[i].ip_address[0] & 0xFF00u) >> 8u);
+						srvcmgr_RoutineStatusFour[offset_srvr_packet + (uint16)(i*SUM_SRVCMGR_SIZE_ADDRESS_TYPE) + 3u] = (uint8)srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].address[i].ip_address[0];
+						srvcmgr_RoutineStatusFour[offset_srvr_packet + (uint16)(i*SUM_SRVCMGR_SIZE_ADDRESS_TYPE) + 4u] = (uint8)(srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].address[i].port_num >> 8u);
+                        srvcmgr_RoutineStatusFour[offset_srvr_packet + (uint16)(i*SUM_SRVCMGR_SIZE_ADDRESS_TYPE) + 5u] = (uint8)srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].address[i].port_num ;
+					}
+                	numOfOutputIDs++;
+                    /* PRQA S 1891 1 # The variable offset_srvr_packet represents (after the last iteration) the length of the packet that can be till 4085 -> uint16 is necessary */
+                    offset_srvr_packet += SUM_SRVCMGR_SIZE_ADDRESS_TYPE*srvcmgr_local_tableContentType->entry_s_array[srvcmgr_counter].num_Of_Subscribers;
+                }
+
+             }
+			«ENDIF-»
+            *srvcmgr_local_currentDataLength = offset_srvr_packet;
+			*srvcmgr_RoutineStatusTwo = numOfOutputIDs;
+        }
+    }else{
+        *srvcmgr_local_ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+    }
+    return ret;
+}
+
+/**
+ * @brief           SrvcMgr function that valued Routine Signal #1 and #2
+ *
+ * @param[in]       srvcmgr_OptionRecordOne Control Option #1
+ * @param[in]       srvcmgr_OptionRecordTwo Control Option #2
+ * @param[out]      srvcmgr_RoutineStatusOne Pointer to Routine Status Signal #1
+ * @param[out]      srvcmgr_RoutineStatusTwo Pointer to Routine Status Signal #2
+ * @param[in]       srvcmgr_local_tableContentType Pointer to the struct that contains the Learning Table content
+ * @param[out]      srvcmgr_local_ErrorCode A pointer to a variable where any error code will be stored in case of failure
+ * @return          Std_ReturnType
+ *                  -E_OK if the Control Option #1 and Control Option #2 are coherent each other
+ *                  -E_NOT_OK if the Control Option #1 and Control Option #2 are NOT coherent each other. srvcmgr_local_ErrorCode will assume therefore DCM_E_CONDITIONSNOTCORRECT. */
+/* PRQA S 1505 1 # Here for modularity */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_ReportFirstTwoSignalOutRid0x0612(VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»Type, AUTOMATIC) srvcmgr_OptionRecordOne,
+                                                                                        VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»Type, AUTOMATIC) srvcmgr_OptionRecordTwo,
+                                                                                        P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»Type, AUTOMATIC, RTE_APPL_DATA) srvcmgr_RoutineStatusOne,
+                                                                                        P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»Type, AUTOMATIC, RTE_APPL_DATA) srvcmgr_RoutineStatusTwo,
+                                                                                        const tableContentType * srvcmgr_local_tableContentType,
+                                                                                        P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) srvcmgr_local_ErrorCode)
+{
+    Std_ReturnType ret = E_NOT_OK;
+
+    /* Check if there is consistency between the Control Option received and Routine Status #1 and #2 are valued accordingly. */
+    if((srvcmgr_OptionRecordOne + srvcmgr_OptionRecordTwo) == 0x01u){
+       *srvcmgr_RoutineStatusTwo = srvcmgr_local_tableContentType->num_Of_Entries_In_Client_Section;
+       *srvcmgr_RoutineStatusOne = 0x00u;
+       ret = E_OK;
+    }else{
+        if(((srvcmgr_OptionRecordOne + srvcmgr_OptionRecordTwo) == 0x02u) && (srvcmgr_OptionRecordOne != 0x01u))
+        {
+            *srvcmgr_RoutineStatusTwo = srvcmgr_local_tableContentType->num_Of_Entries_In_Server_Section;
+            *srvcmgr_RoutineStatusOne = 0x01u;
+            ret = E_OK;
+        }else{
+            /* If the Control Options are not consistent, the Error Code is DCM_E_CONDITIONSNOTCORRECT and this function return E_NOT_OK. */
+            *srvcmgr_local_ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief           SrvcMgr runnable RID 0x0612 Retrieve Learning Table Content
+ *
+ * @param[in]       DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName» Control Option #1
+ * @param[in]       DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName» Control Option #2
+ * @param[in]       DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 16).shortName» Control Option #3
+ * @param[in]       OpStatus The operation status, indicating the current phase of the service operation.
+ * @param[out]      DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName» Pointer to  Routine Status Signal #1
+ * @param[out]      DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName» Pointer to  Routine Status Signal #2
+ * @param[out]      DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 24).shortName» Pointer to  Routine Status Signal #3
+ * @param[out]      DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 56).shortName» Pointer to  Routine Status Signal #4
+ * @param[out]      currentDataLength Pointer to the variable that store the value of the length in byte of the Routine Status Signal #4
+ * @param[out]      ErrorCode A pointer to a variable where any error code will be stored in case of failure
+ * @return          Std_ReturnType
+ *                  - E_OK: The operation was successful.
+ *                  - E_NOT_OK: The operation failed, and an error code is set in ErrorCode.*/
+/* PRQA S 1503 2 # This Runnable will be called directly the O.S. */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_RID_0612(VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»Type, AUTOMATIC) DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»,
+                                                                VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»Type, AUTOMATIC) DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»,
+                                                                VAR(Dcm_StartDataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 16).shortName»Type, AUTOMATIC) DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 16).shortName»,
+                                                                VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»Type, AUTOMATIC, RTE_APPL_DATA) DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»,
+                                                                P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»Type, AUTOMATIC, RTE_APPL_DATA) DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»,
+                                                                P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 24).shortName»Type, AUTOMATIC, RTE_APPL_DATA) DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 24).shortName»,
+                                                                P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 56).shortName»,
+                                                                P2VAR(uint16, AUTOMATIC, RTE_APPL_DATA) currentDataLength,
+                                                                P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+«IF !SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    «IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    RxSignal_PropSysActv_GroupSignal signal_group_psa = {0};
+    «ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    «SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)-» srv_signal_psa;
+    «ENDIF-»
+
+    «IF SrvcMgr_IsVehSpdAvgDrvnGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    RxSignal_VehSpdAvgDrvn_GroupSignal signal_group_vehspeed = {0};
+    «ELSEIF SrvcMgr_IsVehSpdAvgDrvnServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    «SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref)-» srv_signal_vehspeed;
+    «ENDIF-»
+«ELSE -»
+    «IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    RxSignal_VeActvProp_YeDrvnVeh_GroupSignal signal_group = {0};
+    «ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    «SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)-» srv_signal;
+    «ENDIF-»
+«ENDIF-»
+    Std_ReturnType ret = E_NOT_OK;
+    tableContentType srvcmgr_tableContentType;
+    boolean srvcmgr_PropSysActv;
+    float32 srvcmgr_VehicleSpeed;
+
+    /*[$Satisfies $DDS_SrvcMgr 008]*/
+    switch (OpStatus)
+    {
+        case DCM_INITIAL:
+        case DCM_PENDING:
+
+        /* Read PropSysActv and VehicleSpeed signals */
+        ret = Sum_SrvcMgr_prv_ReadPropSysActvAndVehicleSpeed(«IF !SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»«IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»&signal_group_psa, «ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»&srv_signal_psa, «ENDIF-»&srvcmgr_PropSysActv, «IF SrvcMgr_IsVehSpdAvgDrvnGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»&signal_group_vehspeed, «ELSEIF SrvcMgr_IsVehSpdAvgDrvnServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»&srv_signal_vehspeed, «ENDIF-»&srvcmgr_VehicleSpeed«ELSE-»«IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»&signal_group, «ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»&srv_signal, «ENDIF-»&srvcmgr_PropSysActv, &srvcmgr_VehicleSpeed«ENDIF-»);
+
+        /* Check if Propulsion System Active is FALSE AND Vehicle Speed <= 3 km/h - enable condition for RID 0612 */
+        if((ret == E_OK) && (srvcmgr_PropSysActv == FALSE) && (srvcmgr_VehicleSpeed <= (float32)3.0)){
+        /* PRQA S 3469 1 # This function will be defined in BSW */
+            ret = Sd_RetrieveLearningTable(&srvcmgr_tableContentType);
+
+            /*If the Sd_RetrieveLearningTable() function return E_OK, proceed with data retrieval*/
+            if(ret == E_OK){
+                /* Check consistency between Control Option #1 and #2. Populate Routine Status #1 and #2 */
+                ret = Sum_SrvcMgr_prv_ReportFirstTwoSignalOutRid0x0612(DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»,
+                                                                    DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»,
+                                                                    DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»,
+                                                                    DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»,
+                                                                    &srvcmgr_tableContentType,
+                                                                    ErrorCode);
+                if(ret == E_OK){
+                    /* Check performed to understand if the request asks to retrieve data about a certain range of client or server or just the number of istance. */
+                    if(DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName» == (uint8)SUM_SrvcMgr_Retrieve_Range_of_Service_Ids ){
+                        /* Function needed to retrieve a certain range. Populate the Routine Status #4 (buffer that store the data) and Routine Status #3 */
+                        ret = Sum_SrvcMgr_prv_RetrieveRecordRid0x0612(DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»,
+                                                                    DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 16).shortName»,
+                                                                    DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 8).shortName»,
+                                                                    DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 24).shortName»,
+                                                                    DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 56).shortName»,
+                                                                    currentDataLength,
+                                                                    &srvcmgr_tableContentType,
+                                                                    ErrorCode);
+                    }else{
+                        /* Check if the C.O. #3 is consistent with the request of retrieving the number of instances. */
+                        if(DataIn_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 16).shortName» == 0x00u){
+                            /* Here are valued the missing Routine Status when the Control Option ask just to retrieve the number of instances. */
+                            *DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 24).shortName» = 0x00u;
+                            *currentDataLength = 0x00u;
+                        }else{
+                            ret = E_NOT_OK;
+                            *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+                        }
+                    }
+                }
+            }else{
+                /* Sd_RetrieveLearningTable failed */
+                *ErrorCode = DCM_E_GENERALREJECT;
+            }
+        }else{
+            /* PropSysActv condition not met or RTE read failed */
+            ret = E_NOT_OK;
+            *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+
+        }
+
+        break;
+
+    default:
+        /* Nothing to do */
+        break;
+    }
+    return ret;
+}
+«ENDIF-»
+
+
+/**
+ * @brief           SrvcMgr helper function to read PropSysActv and VehicleSpeed signals for RID 0x0612
+ *
+«IF !SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+«IF  SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+ * @param[in]       signal_group_psa Pointer to PropSysActv signal group (RxSignal_PropSysActv_GroupSignal)
+«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+ * @param[in]       signal_group_psa Pointer to PropSysActv service-based signal («SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)»)
+«ENDIF-»
+ * @param[out]      srvcmgr_PropSysActv Pointer to Propulsion System Active status
+«IF  SrvcMgr_IsVehSpdAvgDrvnGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+ * @param[in]       signal_group_vehspeed Pointer to Vehicle Speed signal group (RxSignal_VehSpdAvgDrvn_GroupSignal)
+«ELSEIF SrvcMgr_IsVehSpdAvgDrvnServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+ * @param[in]       srv_signal_vehspeed Pointer to Vehicle Speed service-based signal («SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref)»)
+«ENDIF-»
+«ELSE -»
+«IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+ * @param[in]       signal_group Pointer to combined signal group (RxSignal_VeActvProp_YeDrvnVeh_GroupSignal) containing PropSysActv and VehicleSpeed
+«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+ * @param[in]       srv_signal Pointer to combined service-based signal («SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)») containing PropSysActv and VehicleSpeed
+«ENDIF-»
+ * @param[out]      srvcmgr_PropSysActv Pointer to Propulsion System Active status
+«ENDIF-»
+ * @param[out]      srvcmgr_VehicleSpeed Pointer to Vehicle Speed value
+ * @return          Std_ReturnType
+ *                  - E_OK: Both signals were read successfully.
+ *                  - E_NOT_OK: One or both signal reads failed.*/
+/* PRQA S 1505 1 # Here for modularity and MISRA compliance */
+static FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_ReadPropSysActvAndVehicleSpeed(
+«IF !SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+«IF  SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(RxSignal_PropSysActv_GroupSignal, AUTOMATIC, RTE_APPL_DATA) signal_group_psa,
+«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(«SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)», AUTOMATIC, RTE_APPL_DATA) srv_signal_psa,
+«ENDIF-»
+                                                                P2VAR(boolean, AUTOMATIC, AUTOMATIC) srvcmgr_PropSysActv,
+«IF  SrvcMgr_IsVehSpdAvgDrvnGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(RxSignal_VehSpdAvgDrvn_GroupSignal, AUTOMATIC, RTE_APPL_DATA) signal_group_vehspeed,
+«ELSEIF SrvcMgr_IsVehSpdAvgDrvnServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(«SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref)», AUTOMATIC, RTE_APPL_DATA) srv_signal_vehspeed,
+«ENDIF-»
+                                                                P2VAR(float32, AUTOMATIC, AUTOMATIC) srvcmgr_VehicleSpeed)
+«ELSE -»
+«IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(RxSignal_VeActvProp_YeDrvnVeh_GroupSignal, AUTOMATIC, RTE_APPL_DATA) signal_group,
+«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                                                                P2VAR(«SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)», AUTOMATIC, RTE_APPL_DATA) srv_signal,
+«ENDIF-»
+                                                                P2VAR(boolean, AUTOMATIC, AUTOMATIC) srvcmgr_PropSysActv,
+                                                                P2VAR(float32, AUTOMATIC, AUTOMATIC) srvcmgr_VehicleSpeed)
+«ENDIF-»
+{
+    Std_ReturnType ret;
+«IF !SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    «IF SrvcMgr_IsE2EConfigured(srvcMgr.sum_SrvcMgr_ConfigSet, "PropSysActv") || SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    Rte_TransformerError transformerError_psa;
+    «ENDIF-»
+     «IF SrvcMgr_IsE2EConfigured(srvcMgr.sum_SrvcMgr_ConfigSet, "VehSpdAvgDrvn") || SrvcMgr_IsVehSpdAvgDrvnServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    Rte_TransformerError transformerError_speed;
+    «ENDIF-»
+    «IF !SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet) && !SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet) && srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.comSignalType == "UINT8"-»
+    uint8 signal_PropSysActv;
+    «ENDIF-»
+«ELSE -»
+    «IF SrvcMgr_IsE2EConfigured(srvcMgr.sum_SrvcMgr_ConfigSet, "PropSysActv") || SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    Rte_TransformerError transformerError;
+    «ENDIF-»
+«ENDIF-»
+    /*[$Satisfies $DDS_SrvcMgr 008]*/
+«IF !SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+«IF  SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    /* Reception of the PropSysActv signal via the Com Signal Group */
+    «IF SrvcMgr_IsE2EConfigured(srvcMgr.sum_SrvcMgr_ConfigSet, "PropSysActv")-»
+    ret = Rte_Read_RP_Com_SrvcMgr_VePSAR_b_PropSysActv_VePSAR_b_PropSysActvRxSignal(signal_group_psa, &transformerError_psa);
+    «ELSE-»
+    ret = Rte_Read_RP_Com_SrvcMgr_VePSAR_b_PropSysActv_VePSAR_b_PropSysActvRxSignal(signal_group_psa);
+    «ENDIF-»
+«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    /* Read PropSysActv signal from RTE port (Service-Based) */
+    ret = Rte_Read_RP_Com_SrvcMgr_VePSAR_b_PropSysActv_VePSAR_b_PropSysActvRxSignal(srv_signal_psa, &transformerError_psa);
+«ELSE-»
+    /* Read PropSysActv signal from RTE port RP_Com_SrvcMgr_VePSAR_b_PropSysActv */
+    «IF  srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.comSignalType == "UINT8"-»
+    ret = Rte_Read_RP_Com_SrvcMgr_VePSAR_b_PropSysActv_VePSAR_b_PropSysActvRxSignal(&signal_PropSysActv);
+    «ELSE-»
+    ret = Rte_Read_RP_Com_SrvcMgr_VePSAR_b_PropSysActv_VePSAR_b_PropSysActvRxSignal(srvcmgr_PropSysActv);
+    «ENDIF-»
+«ENDIF-»
+    if (ret == E_OK)
+    {
+«IF  SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+        *srvcmgr_PropSysActv = (boolean)(signal_group_psa->RxSignal_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.shortName» != 0u);
+«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+        *srvcmgr_PropSysActv = (boolean)(srv_signal_psa->«SrvcMgr_GetImplementationDataTypeElementName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)» != 0u);
+«ELSE-»
+«IF  srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.comSignalType == "UINT8"-»
+        *srvcmgr_PropSysActv = (boolean)(signal_PropSysActv != 0u);
+«ENDIF-»
+«ENDIF-»
+«IF  SrvcMgr_IsVehSpdAvgDrvnGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+        /* Reception of the Vehicle Speed signal via the Com Signal Group */
+        «IF SrvcMgr_IsE2EConfigured(srvcMgr.sum_SrvcMgr_ConfigSet, "VehSpdAvgDrvn")-»
+        ret = Rte_Read_RP_Com_SrvcMgr_YeVSPR_v_DrvnVehicle_YeVSPR_v_DrvnVehicleRxSignal(signal_group_vehspeed, &transformerError_speed);
+        «ELSE-»
+        ret = Rte_Read_RP_Com_SrvcMgr_YeVSPR_v_DrvnVehicle_YeVSPR_v_DrvnVehicleRxSignal(signal_group_vehspeed);
+        «ENDIF-»
+        if (ret == E_OK)
+        {
+            *srvcmgr_VehicleSpeed = signal_group_vehspeed->RxSignal_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.shortName»;
+        }
+«ELSEIF SrvcMgr_IsVehSpdAvgDrvnServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+        /* Read Vehicle Speed signal from RTE port (Service-Based) */
+        ret = Rte_Read_RP_Com_SrvcMgr_YeVSPR_v_DrvnVehicle_YeVSPR_v_DrvnVehicleRxSignal(srv_signal_vehspeed, &transformerError_speed);
+        if (ret == E_OK)
+        {
+            *srvcmgr_VehicleSpeed = srv_signal_vehspeed->«SrvcMgr_GetImplementationDataTypeElementName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref)»;
+        }
+«ELSE-»
+        /* Read Vehicle Speed signal from RTE port RP_Com_SrvcMgr_YeVSPR_v_DrvnVehicle */
+        ret = Rte_Read_RP_Com_SrvcMgr_YeVSPR_v_DrvnVehicle_YeVSPR_v_DrvnVehicleRxSignal(srvcmgr_VehicleSpeed);
+«ENDIF-»
+    }
+«ELSE -»
+«IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    /* Reception of the PropSysActv and VehicleSpeed signals via the Com Signal Group */
+    «IF SrvcMgr_IsE2EConfigured(srvcMgr.sum_SrvcMgr_ConfigSet, "PropSysActv")-»
+    ret = Rte_Read_RP_Com_SrvcMgr_VeActvProp_YeDrvnVeh_VeActvProp_YeDrvnVeh_RxSignal(signal_group, &transformerError);
+    «ELSE-»
+    ret = Rte_Read_RP_Com_SrvcMgr_VeActvProp_YeDrvnVeh_VeActvProp_YeDrvnVeh_RxSignal(signal_group);
+    «ENDIF-»
+    if (ret == E_OK)
+    {
+        *srvcmgr_PropSysActv = (boolean)(signal_group->RxSignal_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_PropSysActv_Ref.shortName» != 0u);
+        *srvcmgr_VehicleSpeed = signal_group->RxSignal_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref.shortName»;
+    }
+«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    /* Read PropSysActv signal from RTE port (Service-Based) */
+    ret = Rte_Read_RP_Com_SrvcMgr_VeActvProp_YeDrvnVeh_VeActvProp_YeDrvnVeh_RxSignal(srv_signal, &transformerError);
+    if (ret == E_OK)
+    {
+        *srvcmgr_PropSysActv = (boolean)(srv_signal->«SrvcMgr_GetImplementationDataTypeElementName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)» != 0u);
+        /* Read Vehicle Speed signal from RTE port (Service-Based) */
+        *srvcmgr_VehicleSpeed = srv_signal->«SrvcMgr_GetImplementationDataTypeElementName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref)»;
+    }
+«ENDIF-»
+«ENDIF-»
+    return ret;
+}
+
+
+ /**
+ * @brief           SrvcMgr runnable DID 0xE0CC Data Service Discovery Learning Table ReadData
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          Std_ReturnType */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_DID_E0CC_ReadData(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus, P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+{
+	/*[$Satisfies $DDS_SrvcMgr 007]*/
+	tableStateType LearningTableSts;
+	switch (OpStatus)
+	{
+		case DCM_INITIAL:
+		case DCM_PENDING:
+			/* Get Learning Table Status by calling API from Sd */
+			/* PRQA S 3469 1 # This function will be defined in BSW */
+			Sd_GetLearningTableState(&LearningTableSts);
+			*Data = (uint8)LearningTableSts;
+			break;
+		default:
+			/* Nothing to do */
+			break;
+	}
+	return E_OK;
+}
+
+ /**
+ * @brief           SrvcMgr runnable DID 0xE0CC Data Service Discovery Learning Table CheckRead
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          Std_ReturnType */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_DID_E0CC_CheckRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus, P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+	/*[$Satisfies $DDS_SrvcMgr 007]*/
+	Std_ReturnType ret = E_NOT_OK;
+	/* No specific condition to be checked. */
+	switch (OpStatus)
+	{
+		case DCM_INITIAL:
+		case DCM_PENDING:
+			*ErrorCode = 0u;
+			ret = E_OK;
+			break;
+		default:
+			/* Nothing to do */
+			break;
+	}
+	return ret;
+}
+
+/**
+ * @brief           SrvcMgr runnable DID 0xE0CD Client Incomplete Learning Table ReadData
+ *
+ * @param[in]       OpStatus The operation status, indicating the current phase of the service operation.
+ * @param[inout]    Data Pointer to variable that store the Number of Missing Services + Service IDs missing.
+ * @return          Std_ReturnType
+ *                  - E_OK: The API returns E_OK.
+ *                  - E_NOT_OK: The API returns E_NOT_OK. */
+/* PRQA S 1503 1 # Called directly by O.S. */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_DID_E0CD_ReadData(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus, P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+{
+	/*[$Satisfies $DDS_SrvcMgr 010]*/
+    Std_ReturnType ret = E_NOT_OK;
+    incompleteLearningReasonsType srvcmgr_incompleteLearning;
+    uint16 i, totalServices;
+    uint16 tempData[SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED];
+    static uint16 remainingSize;
+    switch (OpStatus)
+	{
+		case DCM_INITIAL:
+		case DCM_PENDING:
+			/* Get Learning Table Status by calling API from Sd */
+			/* PRQA S 3469 1 # This function will be defined in BSW */
+			ret = Sd_RetrieveIncompleteLearningReasons(&srvcmgr_incompleteLearning);
+            if((ret == E_OK) && (srvcmgr_incompleteLearning.num_Of_Missing_Services <= SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED)){
+                Data[0u] = (uint8)(srvcmgr_incompleteLearning.num_Of_Missing_Services >> 8u);
+                Data[1u] = (uint8)(srvcmgr_incompleteLearning.num_Of_Missing_Services & 0xFFu);
+                for(i = 0; i < srvcmgr_incompleteLearning.num_Of_Missing_Services; i++){
+                    Data[(i*2u) + 2u] = (uint8)(srvcmgr_incompleteLearning.service_id[i] >> 8u);
+                    Data[(i*2u) + 3u] = (uint8)(srvcmgr_incompleteLearning.service_id[i] & 0xFFu);
+                    /* Copy SD service IDs to tempData */
+                    tempData[i] = srvcmgr_incompleteLearning.service_id[i];
+                }
+                /*[$Satisfies $DDS_SrvcMgr 010]*/
+                /* totalServices in DID Data after adding all missing sd service id, before adding ssfm missing sd service id */
+                totalServices = srvcmgr_incompleteLearning.num_Of_Missing_Services;
+                /* Determine how many SSFM services can be added */
+                remainingSize = SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED - srvcmgr_incompleteLearning.num_Of_Missing_Services;
+                if (Sum_SrvcMgr_Ssfm_num_Of_Missing_Services < remainingSize)
+                {
+                    remainingSize = Sum_SrvcMgr_Ssfm_num_Of_Missing_Services;
+                }
+                /* Merge SSFM services into tempData (deduplicated) */
+                for (i = 0u; i < remainingSize; i++)
+                {
+                    Sum_SrvcMgr_prv_AddMissingServiceId(
+                            Sum_SrvcMgr_Ssfm_MissingServiceIds[i],
+                            tempData,
+                            &totalServices);
+                }
+                /* Copy SD service IDs (ssfm) from tempData */
+                for (i = srvcmgr_incompleteLearning.num_Of_Missing_Services; i < totalServices; i++)
+                {
+                    Data[(i*2u) + 2u] = (uint8)(tempData[i] >> 8u);
+                    Data[(i*2u) + 3u] = (uint8)(tempData[i] & 0xFFu);
+                }
+                /* Update the number of service */
+                Data[0u] = (uint8)(totalServices >> 8u);
+                Data[1u] = (uint8)(totalServices & 0xFFu);
+            }else{
+                ret = E_NOT_OK;
+            }
+			break;
+		default:
+			/* Nothing to do */
+			break;
+	}
+	return ret;
+}
+
+/**
+ * @brief           SrvcMgr runnable DID 0xE0CD Client Incomplete Learning Table CheckRead
+ *
+ * @param[in]       OpStatus The operation status, indicating the current phase of the service operation.
+ * @param[inout]    ErrorCode A pointer to a variable where any error code will be stored in case of failure.
+ * @return          Std_ReturnType
+ *                  - E_OK: The status of the learning table is LEARNING_INCOMPLETE.
+ *                  - E_NOT_OK: The status of the learning table is NOT LEARNING_INCOMPLETE */
+/* PRQA S 1503,3206 2 # Called directly by O.S and don't have any requirement for NRC so we not need return the value of ErrorCode */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_DID_E0CD_CheckRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus, P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    /*[$Satisfies $DDS_SrvcMgr 010]*/
+	Std_ReturnType ret = E_NOT_OK;
+    tableStateType LearningTableSts;
+    incompleteLearningReasonsType srvcmgr_incompleteLearning;
+	/* No specific condition to be checked. */
+	switch (OpStatus)
+	{
+		case DCM_INITIAL:
+		case DCM_PENDING:
+			/* PRQA S 3469 1 # This function will be defined in BSW */
+			Sd_GetLearningTableState(&LearningTableSts);
+            if (LearningTableSts == LEARNING_INCOMPLETE)
+            {
+            	/* PRQA S 3469 1 # This function will be defined in BSW */
+                ret = Sd_RetrieveIncompleteLearningReasons(&srvcmgr_incompleteLearning);
+                if ((srvcmgr_incompleteLearning.num_Of_Missing_Services <= SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED) && (ret == E_OK))
+                {
+					/*the learning table is LEARNING_INCOMPLETE*/
+                }
+                else
+                {
+                    ret = E_NOT_OK;
+                }
+            }
+            else if (LearningTableSts == LEARNING_COMPLETED)
+            {
+                /*The learning table is LEARNING_COMPLETED*/
+                ret = E_OK;
+            }
+            else
+            {
+                /*if learning table is neither LEARNING_INCOMPLETE nor LEARNING_COMPLETED*/
+                /* it might be Cleared, Updating, or All Services Learned */
+                *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+                ret = E_NOT_OK;
+            }
+            break;
+        default:
+			/* Nothing to do */
+			break;
+	}
+	return ret;
+}
+
+/**
+ * @brief           SrvcMgr runnable DID 0xE0CD Client Incomplete Learning Table ReadDataLength
+ *
+ * @param[in]       OpStatus The operation status, indicating the current phase of the service operation.
+ * @param[out]      Data Pointer to variable that stores the data length in byte of the ReadData data (number of Missing Services + missing Service IDs).
+ * @return          Std_ReturnType
+ *                  - E_OK: The status of the learning table is LEARNING_INCOMPLETE.
+ *                  - E_NOT_OK: The status of the learning table is NOT LEARNING_INCOMPLETE */
+/* PRQA S 1503 1 # Called directly by O.S. */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_DID_E0CD_ReadDataLength(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus, P2VAR(uint16, AUTOMATIC, RTE_APPL_DATA) DataLength)
+{
+	/*[$Satisfies $DDS_SrvcMgr 010]*/
+    Std_ReturnType ret = E_NOT_OK;
+    incompleteLearningReasonsType srvcmgr_incompleteLearning;
+    uint16 i, totalServices;
+    uint16 tempData[SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED];
+    static uint16 remainingSize;
+    switch (OpStatus)
+	{
+		case DCM_INITIAL:
+		case DCM_PENDING:
+			/* Get Learning Table Status by calling API from Sd */
+			/* PRQA S 3469 1 # This function will be defined in BSW */
+			ret = Sd_RetrieveIncompleteLearningReasons(&srvcmgr_incompleteLearning);
+            if((ret == E_OK) && (srvcmgr_incompleteLearning.num_Of_Missing_Services <= SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED)){
+            	/* totalServices in DID Data after adding all missing sd service id, before adding ssfm missing sd service id */
+                totalServices = srvcmgr_incompleteLearning.num_Of_Missing_Services;
+                /* Copy SD service IDs to tempData */
+                for (i = 0; i < totalServices; i++)
+                {
+                    tempData[i] = srvcmgr_incompleteLearning.service_id[i];
+                }
+                /*[$Satisfies $DDS_SrvcMgr 010]*/
+                /* Determine how many SSFM services can be added */
+                remainingSize = SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED - totalServices;
+                if (Sum_SrvcMgr_Ssfm_num_Of_Missing_Services < remainingSize)
+                {
+                    remainingSize = Sum_SrvcMgr_Ssfm_num_Of_Missing_Services;
+                }
+                /* Merge SSFM services into tempData (deduplicated) */
+                for (i = 0; i < remainingSize; i++)
+                {
+                    Sum_SrvcMgr_prv_AddMissingServiceId(
+                        Sum_SrvcMgr_Ssfm_MissingServiceIds[i],
+                        tempData,
+                        &totalServices);
+                }
+                /* Calculate final DataLength in bytes */
+                *DataLength = (uint16)((totalServices * 2u) + 2u);
+            }else{
+                ret = E_NOT_OK;
+            }
+			break;
+		default:
+			/* Nothing to do */
+			break;
+	}
+	return ret;
+}
+
+/**
+ * @brief           SrvcMgr runnable DID 0xE0CE Server Incomplete Learning Table ReadData
+ *
+ * @param[in]       OpStatus The operation status, indicating the current phase of the service operation.
+ * @param[inout]    Data Pointer to variable that store the Number of Missing Services + [Service ID missing|Event Group Id|DTC Id] for each missing event group..
+ * @return          Std_ReturnType
+ *                  - E_OK: The API returns E_OK.
+ *                  - E_NOT_OK: The API returns E_NOT_OK. */
+/* PRQA S 1503 1 # Called directly by O.S. */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_DID_E0CE_ReadData(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus, P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+{
+	/*[$Satisfies $DDS_SrvcMgr 011]*/
+    Std_ReturnType ret = E_NOT_OK;
+    incompleteLearningReasonsType srvcmgr_incompleteLearning;
+    uint16 i;
+    uint16 srvcmgr_dtcValue;
+
+    switch (OpStatus)
+	{
+		case DCM_INITIAL:
+
+		case DCM_PENDING:
+			/* Get Learning Table Status by calling API from Sd */
+			/* PRQA S 3469 1 # This function will be defined in BSW */
+			ret = Sd_RetrieveIncompleteLearningReasons(&srvcmgr_incompleteLearning);
+            if((ret == E_OK) && (srvcmgr_incompleteLearning.num_Of_Missing_EventGroups <= SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED))
+            {
+                Data[0u] = (uint8)(srvcmgr_incompleteLearning.num_Of_Missing_EventGroups >> 8u);
+                Data[1u] = (uint8)(srvcmgr_incompleteLearning.num_Of_Missing_EventGroups & 0xFFu);
+
+                /* Iterate for all the missing event groups and copy their IDs (service_id and event_group_id)*/
+                for(i = 0; i < srvcmgr_incompleteLearning.num_Of_Missing_EventGroups; i++)
+                {
+
+                    ret = Sum_SrvcMgr_pub_RetrieveDtcIdValue(srvcmgr_incompleteLearning.entry_array[i].service_id,&srvcmgr_dtcValue);
+
+                    if (ret == E_OK)
+                    {
+                        /* Service ID */
+                        Data[(i*6u) + 2u] = (uint8)(srvcmgr_incompleteLearning.entry_array[i].service_id >> 8u);
+                        Data[(i*6u) + 3u] = (uint8)(srvcmgr_incompleteLearning.entry_array[i].service_id & 0xFFu);
+                        /* Event Group ID */
+                        Data[(i*6u) + 4u] = (uint8)(srvcmgr_incompleteLearning.entry_array[i].event_group_id >> 8u);
+                        Data[(i*6u) + 5u] = (uint8)(srvcmgr_incompleteLearning.entry_array[i].event_group_id & 0xFFu);
+                        /* Dtc ID */
+                        Data[(i*6u) + 6u] = (uint8)( srvcmgr_dtcValue >> 8u);
+                        Data[(i*6u) + 7u] = (uint8)( srvcmgr_dtcValue & 0xFFu);
+                    }
+                    else
+                    {
+                        /* Incomplete information. So returns E_NOT_OK*/
+                        ret = E_NOT_OK;
+                        break;
+                    }
+
+                }
+            }
+            else
+            {
+                ret = E_NOT_OK;
+            }
+
+			break;
+		default:
+			/* Nothing to do */
+			break;
+	}
+	return ret;
+}
+
+/**
+ * @brief           SrvcMgr runnable DID 0xE0CE Server Incomplete Learning Table CheckRead
+ *
+ * @param[in]       OpStatus The operation status, indicating the current phase of the service operation.
+ * @param[inout]    ErrorCode A pointer to a variable where any error code will be stored in case of failure.
+ * @return          Std_ReturnType
+ *                  - E_OK: The status of the learning table is LEARNING_INCOMPLETE.
+ *                  - E_NOT_OK: The status of the learning table is NOT LEARNING_INCOMPLETE */
+/* PRQA S 1503,3206 2 # Called directly by O.S and don't have any requirement for NRC so we not need return the value of ErrorCode */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_DID_E0CE_CheckRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus, P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    /*[$Satisfies $DDS_SrvcMgr 011]*/
+	Std_ReturnType ret = E_NOT_OK;
+    tableStateType LearningTableSts;
+    incompleteLearningReasonsType srvcmgr_incompleteLearning;
+	/* No specific condition to be checked. */
+	switch (OpStatus)
+	{
+		case DCM_INITIAL:
+		case DCM_PENDING:
+			/* PRQA S 3469 1 # This function will be defined in BSW */
+			Sd_GetLearningTableState(&LearningTableSts);
+            if (LearningTableSts == LEARNING_INCOMPLETE)
+            {
+            	/* PRQA S 3469 1 # This function will be defined in BSW */
+                ret = Sd_RetrieveIncompleteLearningReasons(&srvcmgr_incompleteLearning);
+                if ((srvcmgr_incompleteLearning.num_Of_Missing_EventGroups <= SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED) && (ret == E_OK))
+                {
+                	/*the learning table is LEARNING_INCOMPLETE*/
+                }
+                else
+                {
+                    ret = E_NOT_OK;
+                }
+            }
+            else if (LearningTableSts == LEARNING_COMPLETED)
+            {
+                /*The learning table is LEARNING_COMPLETED*/
+                ret = E_OK;
+            }
+            else
+            {
+                /*if learning table is neither LEARNING_INCOMPLETE nor LEARNING_COMPLETED*/
+				/* it might be Cleared, Updating, or All Services Learned */
+				*ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+                ret = E_NOT_OK;
+            }
+			break;
+        default:
+			/* Nothing to do */
+			break;
+	}
+	return ret;
+}
+
+/**
+ * @brief           SrvcMgr runnable DID 0xE0CE Server Incomplete Learning Table ReadDataLength
+ *
+ * @param[in]       OpStatus The operation status, indicating the current phase of the service operation.
+ * @param[out]      Data Pointer to variable that stores the data length in byte of the ReadData data (number of Missing Services + missing Service IDs).
+ * @return          Std_ReturnType
+ *                  - E_OK: The status of the learning table is LEARNING_INCOMPLETE.
+ *                  - E_NOT_OK: The status of the learning table is NOT LEARNING_INCOMPLETE */
+/* PRQA S 1503 1 # Called directly by O.S. */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_DID_E0CE_ReadDataLength(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus, P2VAR(uint16, AUTOMATIC, RTE_APPL_DATA) DataLength)
+{
+	/*[$Satisfies $DDS_SrvcMgr 011]*/
+    Std_ReturnType ret = E_NOT_OK;
+    incompleteLearningReasonsType srvcmgr_incompleteLearning;
+    switch (OpStatus)
+	{
+		case DCM_INITIAL:
+		case DCM_PENDING:
+			/* Get Learning Table Status by calling API from Sd */
+			/* PRQA S 3469 1 # This function will be defined in BSW */
+			ret = Sd_RetrieveIncompleteLearningReasons(&srvcmgr_incompleteLearning);
+            if((ret == E_OK) && (srvcmgr_incompleteLearning.num_Of_Missing_EventGroups <= SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED)){
+				*DataLength = (uint16) ((srvcmgr_incompleteLearning.num_Of_Missing_EventGroups * 6u) + 2u);
+            }else{
+                ret = E_NOT_OK;
+            }
+			break;
+		default:
+			/* Nothing to do */
+			break;
+	}
+	return ret;
+}
+
+/**
+ * @brief Getter function of the flag Sum_SrvcMgr_LearningSessionReq.
+ *
+ * @return boolean:
+ *         - TRUE: a learning session request is ongoing;
+ *         - FALSE: otherwise;
+ */
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetLearningSessionReq(void){
+    return Sum_SrvcMgr_LearningSessionReq;
+}
+
+
+«IF srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref != null -»
+«REM»[$Satisfies $DDS_SrvcMgr 009]«ENDREM-»
+/**
+ * @brief Handle the RID 0654 learning session based on the current status.
+ *
+ * This function checks the current status of the learning session
+ *
+ * @param DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName» A pointer to a variable where the result of the learning session is stored.
+ * @param ErrorCode A pointer to a variable where the error of the Dcm error code is stored.
+ * @return The return status.
+ */
+/* PRQA S 1505 1 # Here for modularity */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_CheckLearningTableWriteStatus(
+    P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»Type, AUTOMATIC, RTE_APPL_DATA) DataOut,
+    P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode
+                                        ) {
+
+	Std_ReturnType ret = E_PENDING;
+    learningSessionStatusType learningStatus = NOT_STARTED;
+
+    /* Get the status of learning session */
+    /* PRQA S 0432 2 # The enum type learningSessionStatusType is compatible with macros defined in the sum_common */
+    /* PRQA S 3469 1 # This function will be defined in BSW */
+    Sd_GetLearningSessionStatus(&learningStatus);
+
+    switch (learningStatus) {
+        case PENDING:
+            /* Operation is still pending; waiting for the final status */
+            break;
+        case SUCCESSFUL:
+            /* Learning has completed successfully */
+            *DataOut = SRVCMGR_LEARNINGSESSION_COMPLETE;
+            ret = E_OK;
+            break;
+        case FAILED:
+            /* Learning session failed */
+            *DataOut = SRVCMGR_LEARNINGSESSION_FAIL;
+            ret = E_OK;
+            break;
+        default:
+            /* Learning session status is NOT_STARTED or an unknown value */
+            *ErrorCode = DCM_E_GENERALREJECT;
+            ret = E_NOT_OK;
+            break;
+    }
+
+    return ret;
+}
+
+/**
+ * @brief			Helper function to forward the learning table state to SPM module.
+ *
+ * @param[in]		LearningTableState Current state of the learning table
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			None
+ */
+
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_Send_SPM_SDLearningStatusIndication(CONST(uint8, AUTOMATIC) LearningSessionStatus)
+{
+    switch (LearningSessionStatus)
+    {
+        case (uint8)SRVCMGR_LEARNINGSESSION_PENDING:
+            (void)Rte_Call_RP_SrvcMgr_SPM_SdLearningStatusIndication_SPM_SDLearningStatusIndication((uint8)SUM_LRNG_PENDING);
+            break;
+
+        case (uint8)SRVCMGR_LEARNINGSESSION_SUCCESS:
+            (void)Rte_Call_RP_SrvcMgr_SPM_SdLearningStatusIndication_SPM_SDLearningStatusIndication((uint8)SUM_LRNG_SUCCESSFUL);
+            break;
+
+        case (uint8)SRVCMGR_LEARNINGSESSION_FAIL:
+            (void)Rte_Call_RP_SrvcMgr_SPM_SdLearningStatusIndication_SPM_SDLearningStatusIndication((uint8)SUM_LRNG_FAILED);
+            break;
+
+        default:
+            /* do nothing. */
+            break;
+    }
+
+    return;
+}
+
+/**
+ * @brief Perform the RID (Routine Identifier) 0654 service operation.
+ *
+ * This function is called by DCM to handle the RID 0654 service.
+ * The service involves triggering the learning session and monitoring its progress.
+ *
+ * @param OpStatus             The operation status, indicating the current phase of the service operation.
+ * @param DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»
+ *                            A pointer to a variable where the result of the learning session is stored.
+ *                            Possible values include SRVCMGR_LEARNINGSESSION_COMPLETE and SRVCMGR_LEARNINGSESSION_FAIL.
+ * @param ErrorCode            A pointer to a variable where any error code will be stored in case of failure.
+ *
+ * @return                    Standard return status.
+ *                            - E_OK: The operation was successful.
+ *                            - E_PENDING: The operation is in progress or requires further processing.
+ *                            - E_NOT_OK: The operation failed, and an error code is set in ErrorCode.
+ */
+
+
+/* PRQA S 1503 3 */ /* This function will be called by DCM */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_RID_0654(
+    VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+    P2VAR(Dcm_StartDataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.shortName»_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»Type, AUTOMATIC, RTE_APPL_DATA) DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»,
+    P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode
+) {
+    /* PRQA S 2981 2 */ /* The initialization in this case is useful in order to avoid undesired returned values */
+    Std_ReturnType ret = E_NOT_OK;
+    Std_ReturnType retrieveRet;
+    tableStateType CurrentTableState;
+    incompleteLearningReasonsType IncompleteLearningReasons;
+    float32 srvcmgr_VehicleSpeed;
+    boolean srvcmgr_PropSysActv;
+
+    «IF !SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    «IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    RxSignal_PropSysActv_GroupSignal signal_group_psa;
+    «ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    «SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)-» srv_signal_psa;
+    «ENDIF-»
+
+    «IF SrvcMgr_IsVehSpdAvgDrvnGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    RxSignal_VehSpdAvgDrvn_GroupSignal signal_group_vehspeed;
+    «ELSEIF SrvcMgr_IsVehSpdAvgDrvnServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    «SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref)-» srv_signal_vehspeed;
+    «ENDIF-»
+    «ELSE -»
+    «IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    RxSignal_VeActvProp_YeDrvnVeh_GroupSignal signal_group;
+    «ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    «SrvcMgr_GetImplementationDataTypeName(srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_ServiceBased_PropSysActv_Ref)-» srv_signal;
+    «ENDIF-»
+    «ENDIF-»
+
+    /* Fault status variables for SSFM fault indication */
+«IF SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+    boolean fault_VSAD_PSA_active ;
+«ELSE-»
+    boolean fault_VSAD_active ;
+    boolean fault_PSA_active ;
+«ENDIF-»
+
+
+    /*[$Satisfies $DDS_SrvcMgr 017]*//*[$Satisfies $DDS_SrvcMgr 009]*//*[$Satisfies $DDS_SrvcMgr 018]*/
+    switch (OpStatus) {
+        case DCM_INITIAL:
+        case DCM_PENDING:
+            /* Read PropSysActv and VehicleSpeed signals */
+            ret = Sum_SrvcMgr_prv_ReadPropSysActvAndVehicleSpeed(«IF !SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»«IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»&signal_group_psa,«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»&srv_signal_psa,«ENDIF-»&srvcmgr_PropSysActv,«IF SrvcMgr_IsVehSpdAvgDrvnGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»&signal_group_vehspeed,«ELSEIF SrvcMgr_IsVehSpdAvgDrvnServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»&srv_signal_vehspeed,«ENDIF-»&srvcmgr_VehicleSpeed«ELSE-»«IF SrvcMgr_IsPropSysActvGroupSignal(srvcMgr.sum_SrvcMgr_ConfigSet)-»&signal_group,«ELSEIF SrvcMgr_IsPSAServiceBased(srvcMgr.sum_SrvcMgr_ConfigSet)-»&srv_signal,«ENDIF-»&srvcmgr_PropSysActv,&srvcmgr_VehicleSpeed«ENDIF-»);
+
+            /* Read fault status from SSFM (IDOC-1092) */
+            if (ret == E_OK)
+            {
+            «IF Susd_Ssfm_IsSinglePortSupported(srvcMgr.sum_SrvcMgr_ConfigSet.eRootContainer.sSFM)-»
+            «IF SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                /* FxFA mode (same signal/service): single port covers both VSAD and PSA */
+                ret = Rte_Read_RP_SSFM_SrvcMgr_FxFA_VSAD_PSA_DTC_STATUS_FXFA(&fault_VSAD_PSA_active);
+            «ELSE-»
+                /* FxFA mode: separate FxFA ports for VSAD and PSA */
+                ret = Rte_Read_RP_SSFM_SrvcMgr_FxFA_VSAD_DTC_STATUS_FXFA(&fault_VSAD_active);
+                if (ret == E_OK)
+                {
+                    ret = Rte_Read_RP_SSFM_SrvcMgr_FxFA_PSA_DTC_STATUS_FXFA(&fault_PSA_active);
+                }
+            «ENDIF-»
+            «ELSE-»
+            «IF SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+                /* FsFA mode (same signal/service): single port covers both VSAD and PSA */
+                ret = Rte_Read_RP_SSFM_SrvcMgr_FsFA_VSAD_PSA_DTC_STATUS_FSFA(&fault_VSAD_PSA_active);
+            «ELSE-»
+                /* FsFA mode: separate FsFA ports for VSAD and PSA */
+                ret = Rte_Read_RP_SSFM_SrvcMgr_FsFA_VSAD_DTC_STATUS_FSFA(&fault_VSAD_active);
+                if (ret == E_OK)
+                {
+                    ret = Rte_Read_RP_SSFM_SrvcMgr_FsFA_PSA_DTC_STATUS_FSFA(&fault_PSA_active);
+                }
+            «ENDIF-»
+            «ENDIF-»
+            }
+
+            /* Enable condition for RID:
+             *   (Vehicle Speed Average Driven <= 3 km/h)
+             *   AND (Vehicle Speed Failed Safety Fault Active == FALSE)
+             *   AND (Propulsion System Active == FALSE)
+             *   AND (Propulsion System Active Failed Safety Fault Active == FALSE) */
+«IF SrvcMgr_IsSameSignalReference(srvcMgr.sum_SrvcMgr_ConfigSet)-»
+            if((ret == E_OK) &&
+               (srvcmgr_VehicleSpeed <= (float32)3.0) &&
+               (fault_VSAD_PSA_active == FALSE) &&
+               (srvcmgr_PropSysActv == FALSE))
+«ELSE-»
+            if((ret == E_OK) &&
+               (srvcmgr_VehicleSpeed <= (float32)3.0) &&
+               (fault_VSAD_active == FALSE) &&
+               (srvcmgr_PropSysActv == FALSE) &&
+               (fault_PSA_active == FALSE))
+«ENDIF-»
+            {
+                if (OpStatus == DCM_INITIAL)
+                {
+                    /* Needed to inform SPM that a Learning Session will start. */
+                    Sum_SrvcMgr_prv_Send_SPM_SDLearningStatusIndication((uint8)SRVCMGR_LEARNINGSESSION_PENDING);
+                    /* Initial DCM status: Trigger clearing learning table entries */
+                    /* PRQA S 3469 1 # This function will be defined in BSW */
+                    if (E_OK == Sd_ClearLearningTable()) {
+                        ret = E_PENDING; /* Entry clearing requested */
+                        Sum_SrvcMgr_LearningSessionReq = TRUE;
+                        Sum_Srvcmgr_SetClientSrvcRequestedRemoteSrvcAvailable();
+                        /* Clear the sd missing learning serviceid buffer from ssfm */
+                        Sum_SrvcMgr_Ssfm_num_Of_Missing_Services = 0;
+                    } else {
+                        /* Failed to trigger clearing table entries */
+                        ret = E_NOT_OK;
+                        *ErrorCode = DCM_E_GENERALREJECT;
+                        /* Needed to inform SPM that a Learning Session is finished. */
+                        Sum_SrvcMgr_prv_Send_SPM_SDLearningStatusIndication((uint8)SRVCMGR_LEARNINGSESSION_FAIL);
+                    }
+                }
+                else /* DCM_PENDING */
+                {
+                    /* PENDING DCM status: Check Learning Table Write Status */
+                    ret = Sum_SrvcMgr_prv_CheckLearningTableWriteStatus(DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName», ErrorCode);
+                    /* Signal that the learning session request has been completed */
+                    if ((ret == E_OK) || (ret == E_NOT_OK)) {
+                        Sum_SrvcMgr_LearningSessionReq = FALSE;
+
+                        if( (ret == E_OK) && (SRVCMGR_LEARNINGSESSION_COMPLETE == *DataOut_«srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0654_Ref.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.selectFirst(e|e.dcmDspRoutineSignalPos == 0).shortName»)){
+                            Sum_SrvcMgr_prv_Send_SPM_SDLearningStatusIndication((uint8)SRVCMGR_LEARNINGSESSION_SUCCESS);
+                        }else{
+                            Sum_SrvcMgr_prv_Send_SPM_SDLearningStatusIndication((uint8)SRVCMGR_LEARNINGSESSION_FAIL);
+                        }
+
+                        /* Perform the necessary operations for the Dtcs after RID 0x0654 execution */
+                        /* PRQA S 3469 2 # This function will be defined in BSW */
+                        Sd_GetLearningTableState(&CurrentTableState);
+
+                        /* DTC U19A6 87: Let's initialize the LearningTableStatus with status NONE so that we can send the message only when status */
+                        /* has been set to something different */
+                        Sum_SrvcMgr_prv_HandleU19A6_87Status(CurrentTableState, RID_0654_END);
+
+                        /* DTC U19A6 57 status *//* PRQA S 3469 1 # This function will be defined in BSW */
+                        retrieveRet = Sd_RetrieveIncompleteLearningReasons(&IncompleteLearningReasons);
+                        if (retrieveRet == E_OK)
+                        {
+                            /* Handle U19A6_57 DTC status */
+                            Sum_SrvcMgr_prv_HandleU19A6_57Status(CurrentTableState, &IncompleteLearningReasons);
+                        }
+
+                        /* DTC U19A6 54 : test pass/fail criteria. */
+                        Sum_SrvcMgr_prv_HandleU19A6_54Status(CurrentTableState);
+                    }
+
+                }
+            }
+            else
+            {
+                /* enable condition not met */
+                ret = E_NOT_OK;
+                *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+            }
+            break;
+
+        default:
+            /* Handle unsupported DCM status */
+            break;
+    }
+    return ret;
+}
+«ENDIF-»
+
+/**
+ * @brief           SrvcMgr runnable to handle DTC clear request from SSFM
+ *
+ * @details         This function is triggered when a clear DTC confirmation DRE event occurs.
+ *                  It retrieves the current learning table state and incomplete learning reasons,
+ *                  then calls the helper function to update the U19A6_57 DTC status accordingly.
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+/* PRQA S 1503 1 # This function will be called by RTE */
+FUNC(void, SUM_SrvcMgr_CODE) Runnable_SSFM_ClearDiagReq(void)
+{
+	tableStateType CurrentTableState;
+	incompleteLearningReasonsType IncompleteLearningReasons;
+	Std_ReturnType retrieveRet;
+
+	/* Get the current learning table state */
+	/* PRQA S 3469 1 # This function will be defined in BSW */
+	Sd_GetLearningTableState(&CurrentTableState);
+
+	/* Retrieve incomplete learning reasons */
+	/* PRQA S 3469 1 # This function will be defined in BSW */
+	retrieveRet = Sd_RetrieveIncompleteLearningReasons(&IncompleteLearningReasons);
+
+	/* Check if retrieval was successful */
+	if (retrieveRet == E_OK)
+	{
+		/* Handle U19A6_57 DTC status based on learning table state */
+		Sum_SrvcMgr_prv_HandleU19A6_57Status(CurrentTableState, &IncompleteLearningReasons);
+	}
+
+    /* DTC U19A6 54 : test pass/fail criteria. */
+    Sum_SrvcMgr_prv_HandleU19A6_54Status(CurrentTableState);
+}
+
+/**
+ * @brief    SrvcMgr helper function to make sure that the new element is added to the buffer is unique
+ *
+ * @param    serviceId input id need to add to check duplication and then add to buffer
+ * @param    missingServiceIds buffer of missing serID - target buffer to add and de-dupicate
+ * @param    numOfMissingServices - number of serID in target buffer
+ * @return   void
+ */
+/* PRQA S 1505 1 # Here for modularity and MISRA compliance */
+static FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_AddMissingServiceId(uint16 serviceId,
+		                                                                uint16 *missingServiceIds,
+                                                                        uint16 *numOfMissingServices)
+{
+	/*[$Satisfies $DDS_SrvcMgr 010]*/
+    uint16 i;
+    boolean alreadyExists = FALSE;
+    /* Check for duplicate */
+    for (i = 0u; i < *numOfMissingServices; i++)
+    {
+        if (missingServiceIds[i] == serviceId)
+        {
+            alreadyExists = TRUE;
+            break;
+        }
+    }
+    /* Add new ServiceId if not exists and space is available */
+    if ((alreadyExists == FALSE) &&
+        (*numOfMissingServices < SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED))
+    {
+        missingServiceIds[*numOfMissingServices] = serviceId;
+        (*numOfMissingServices)++;
+    }
+}
+
+/**
+ * @brief           SrvcMgr runnable to handle SDMissingMessage from SSFM
+ *
+ * @details         This function is triggered when a SDMissingMessage DRE event occurs.
+ *                  It will put all SDMissingMessages onto an buffer.
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+/* PRQA S 1503 1 # This function will be called by RTE */
+FUNC(void, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_SSFM_SDMissingMessage(void)
+{
+	/*[$Satisfies $DDS_SrvcMgr 010]*/
+    Std_ReturnType ret;
+    uint32 serviceid;
+    /* Read service Id from Port, implement a function to add it to the buffer if it doesn't already exist */
+    ret = Rte_Read_SUM_SrvcMgr_RP_SSFM_SrvcMgr_SDMissingMessage_SSFM_ServiceId(&serviceid);
+    if((ret == E_OK) && (Sum_SrvcMgr_Ssfm_num_Of_Missing_Services <= SUM_SRVCMGR_MAX_NUMBER_OF_SERVICES_NOT_LEARNED))
+    {
+        Sum_SrvcMgr_prv_AddMissingServiceId(
+            (uint16)serviceid,
+            Sum_SrvcMgr_Ssfm_MissingServiceIds,
+            &Sum_SrvcMgr_Ssfm_num_Of_Missing_Services);
+    }
+}
+
+#define SUM_SrvcMgr_STOP_SEC_CODE
+#include "SUM_SrvcMgr_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

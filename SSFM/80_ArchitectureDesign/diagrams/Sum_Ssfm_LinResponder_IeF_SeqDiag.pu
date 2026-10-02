@@ -1,0 +1,37 @@
+@startuml Sum_Ssfm_LinResponder_IeF_SeqDiag
+
+participant Dem as Dem
+participant LNM as LNM
+participant SUSD as SUSD
+participant SWC as SWC
+participant RTE as RTE
+box SUM_SSFM
+    participant Sum_Ssfm_LinResponder_Error_Manager as IEF
+    participant Sum_Ssfm_Errh_EventDebouncer_Manager as Deb
+end box
+
+activate IEF
+group LIN Responder IeF Sequence of each configured <Lin_Responder>
+LNM -> IEF: Data event IntElectFault changed
+IEF->IEF: Execute Runnable_SSFM_LNM_<Lin_Responder>_IntElectFault_Changed
+IEF -> SUSD: Ask for battery voltage range
+SUSD --> IEF
+alt (No OBD Support and voltage in range) or (OBD Support and not under voltage)
+    IEF -> LNM: Read IntElectFault of <Lin_Responder>
+    LNM --> IEF
+    activate Deb
+    IEF->Deb: Perform debouncing, calling Sum_Ssfm_ErrhDebouncerExecution()
+    Deb-->IEF:
+    deactivate Deb
+    IEF -> Dem: Set/Reset related Dem events based on debouncing result
+end
+end
+
+group Call back of DTC Status
+Dem -> IEF: Call back DTC status changed
+alt DTC Value of call back function \n matches the DTC Value of each configured LIN Responder
+IEF -> SWC: Write the invalidity of all signals for the matched DTC Value of LIN Responder
+end
+end
+deactivate IEF
+@enduml 

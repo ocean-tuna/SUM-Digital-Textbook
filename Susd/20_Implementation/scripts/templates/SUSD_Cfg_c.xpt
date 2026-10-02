@@ -1,0 +1,282 @@
+«IMPORT bsw»
+«IMPORT bsw::SUSDModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Susd»
+
+«DEFINE Susdcfg_c FOR Autosar»
+«FILE "SUM_SUSD_Cfg.c"»/*
+ *****************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SUSD
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Module configuration source file for pre-compile configuration
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/*****************************************************************************************************
+*                                    Includes
+*****************************************************************************************************/
+/* PRQA S 0380 2 # SUM_SUSD_CFG_C guard macro is required to exclude extern declarations from the defining TU; one additional macro is added but total count remains within the ISO C99 §5.2.4.1 implementation limit of 4095 */
+/* Identifies this as the defining Translation Unit for NVM block FP variables; suppresses extern+initializer GCC warning */
+#define SUM_SUSD_CFG_C
+/* PRQA S 0380 1 # less than 1024 macros are being used in this file verified  */
+#include "SUM_SUSD_Types.h"
+#include "SUM_SUSD_Ram.h"
+#include "Rte_SUSD.h"
+
+/*
+ ***************************************************************************************************
+ *                                  Definitions
+ ***************************************************************************************************
+*/
+
+		«FOREACH this.sUSD.sUSDConfigSet.sUSD_BatteryVoltageRange.sUSD_C_BatteryVoltageRange AS voltRange»
+extern FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE) Rte_CData_SUSD_C_OverVoltage_hysteresis_«voltRange.shortName»(void);
+extern FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE) Rte_CData_SUSD_C_UnderVoltage_hysteresis_«voltRange.shortName»(void);
+		«ENDFOREACH-»
+extern FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE) Rte_CData_SUSD_C_DefaultOverVoltage_hysteresis(void);
+extern FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE) Rte_CData_SUSD_C_DefaultUnderVoltage_hysteresis(void);
+
+		«FOREACH this.sUSD.sUSDConfigSet.sUSD_BatteryVoltageRange.sUSD_C_BatteryVoltageRange AS voltRange»
+			«IF (voltRange.getReferrers().size > 0)-»
+const SUSD_SWCToVoltRangeReferenceType SWC_«voltRange.shortName»_Mapping[«voltRange.getReferrers().size»];
+			«ENDIF-»
+		«ENDFOREACH-»
+
+		«IF (Susd_SWCNoVoltRangeRefList(this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo).size > 0)»
+const SUSD_SWCToVoltRangeReferenceType SWC_«voltRange.shortName»_Mapping[«voltRange.getReferrers().size»];
+		«ENDIF-»
+
+/* Variable used to store DID E0D7 Data */
+/* [$Satisfies $SDD_SUSD 236] */
+/* [$Satisfies $SDD_SUSD 250] */
+/* PRQA S 1531 1 # This variable can be used in the multiple file and can not be turned into static as well as moved to static code */
+VAR(uint8, RTE_CODE) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7NvMBlockRef.nvMRamBlockDataAddress-»[SUSD_E0D7_MAX_LENGTH];
+
+/* Variable used to store First Boot Post Flash flag */
+/* [$Satisfies $SDD_SUSD 237] */
+/* [$Satisfies $SDD_SUSD 250] */
+/* PRQA S 1504 1 # Implicitly used by NvM, need to have external linkage */
+VAR(uint8, RTE_CODE) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_FirstBootPostFlashNvMBlockRef.nvMRamBlockDataAddress-»;
+
+/* Variable used to store DID E0D7 Monitor Disabled flag */
+/* [$Satisfies $SDD_SUSD 241] */
+/* [$Satisfies $SDD_SUSD 250] */
+/* PRQA S 1531 1 # This variable can be used in the multiple file and can not be turned into static as well as moved to static code */
+VAR(boolean, RTE_CODE) «sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7_MonitorDisabled_NvMBlockRef.nvMRamBlockDataAddress-»;
+
+/* Satisfies: [$SDD_SUSD 007] */
+/* Constant array containing the link between the EcuM Wakeup source and the corresponding ComM channel Bus Type */
+/* PRQA S 1533 1 */ /* This struct is generated and can not be turned into static and moved to static code */
+CONST (uint32, RTE_CONST) SUSD_GaaWakeupSourcesArray[NO_OF_WAKEUPSRCS] =
+{
+	«LET 1 AS int-»
+    «LET sUSD.sUSDWakeUpRelation.sUSD_WakeupSourceId
+      .union(sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMs_SpecificWkSrcId)
+      .union(sUSD.sUSDConfigSet.sUSD_C_SWCInfo.sUSD_SWCs_SpecificWkSrcId)
+      .toSet().sortBy(e|e.ecuMWakeupSourceId) AS allWakeupSources-»
+		«FOREACH allWakeupSources AS WakeupSource SEPARATOR ','»
+			«REM» For bit 31 (0x80000000), xpt produces a 64-bit value, so managed manually. «ENDREM-»
+			«IF int.shiftLeftOperand(WakeupSource.ecuMWakeupSourceId).Hex() != "0xFFFFFFFF80000000"-»
+        		«int.shiftLeftOperand(WakeupSource.ecuMWakeupSourceId).Hex()»u
+			«ELSE-»
+        		0x80000000u
+			«ENDIF-»
+		«ENDFOREACH-»
+	«ENDLET-»
+	«ENDLET-»
+};
+
+/* Satisfies: [$SDD_SUSD 008], [$SDD_SUSD 009], [$SDD_SUSD 010], [$SDD_SUSD 011], [$SDD_SUSD 012],
+   [$SDD_SUSD 013], [$SDD_SUSD 014] */
+/* Function pointers to RTE interface API with SUM for Permit Execution Interface */
+/* PRQA S 1531 1 */ /* This struct is generated, it can be used in the multiple files and cannot be turned into static as well as moved to static code */
+CONST (PermitExecutionInterface, RTE_CONST) SUSD_GaaSUM_PermitExec_Interface[SUSD_SUM_PERMEXE] =
+{
+		«FOREACH sUSD.sUSDConfigSet.sUSD_C_SUMsInfo AS sum-»
+			«IF sum.sUSD_PermitExecution == true-»
+	&Rte_Write_PP_«sum.sUSD_SUMsName»_SUSD_PermitExecution_SUSD_SWC_ExecutionStatus,
+			«ENDIF-»
+		«ENDFOREACH-»
+};
+
+/* Function pointers to RTE interface API with SUM for Shutdown Permission Interface */
+/* PRQA S 1531 1 */ /* This struct is generated, it can be used in the multiple files and cannot be turned into static as well as moved to static code */
+CONST (SUMShutdownPermInterface, RTE_CONST) SUSD_GaaSUM_ShutdwnPer_Interface[SUSD_SUM_SHUTPERM] =
+{
+		«FOREACH sUSD.sUSDConfigSet.sUSD_C_SUMsInfo AS sum-»
+			«IF sum.sUSD_ShutdownPermission == true-»
+	&Rte_Read_RP_«sum.sUSD_SUMsName»_SUSD_ShutdownPermission_SUSD_UserRequest,
+			«ENDIF-»
+		«ENDFOREACH-»
+};
+
+/* [$Satisfies $SDD_SUSD 250] */
+/* Access Function Pointers for NVM Blocks. */
+/* PRQA S 3408 1 # extern declaration is present in SUM_SUSD_Cfg.h but excluded from this TU by SUM_SUSD_CFG_C guard to suppress GCC extern+initializer warning; external linkage correctly declared for all other TUs */
+const Susd_GenericNvmAccessType susd_NVMECUWakeUpDetectionRecordsBlock_FP =
+{
+    &«sUSD.sUSDGeneral.susdEcuWakeUpDetectionRecordsNvmBlockRef.nvMRamBlockDataAddress-»[0],
+    &Rte_Call_RP_NVM_SUSD_NvMServiceECUWakeUpDetectionRecordsBlock_GetErrorStatus,
+    &Rte_Call_RP_NVM_SUSD_NvMServiceECUWakeUpDetectionRecordsBlock_SetRamBlockStatus,
+    &Rte_Call_RP_NVM_SUSD_NvMServiceECUWakeUpDetectionRecordsBlock_WriteBlock
+};
+
+/* [$Satisfies $SDD_SUSD 250] */
+/* PRQA S 1531 2 */ /* This struct is generated, it can be used in the multiple file and can not be turned into static as well as moved to static code */
+/* PRQA S 3408 1 # Extern declaration excluded from this TU by SUM_SUSD_CFG_C guard to suppress GCC extern+initializer warning */
+const Susd_GenericNvmAccessType_uint16 susd_NvMServiceRESET_ExecutionTimerBlock_FP =
+{
+    &«sUSD.sUSDGeneral.sUM_SUSD_RESETExecution_TIMERNvmBlockRef.nvMRamBlockDataAddress-»,
+    &Rte_Call_RP_NVM_SUSD_NvMServiceRESET_ExecutionTimerBlock_GetErrorStatus,
+    &Rte_Call_RP_NVM_SUSD_NvMServiceRESET_ExecutionTimerBlock_SetRamBlockStatus,
+    &Rte_Call_RP_NVM_SUSD_NvMServiceRESET_ExecutionTimerBlock_WriteBlock
+};
+
+/* [$Satisfies $SDD_SUSD 250] */
+/* Access Function Pointers for NVM Blocks. */
+/* PRQA S 3408 1 # Extern declaration is present in SUM_SUSD_Cfg.h but excluded from this TU by SUM_SUSD_CFG_C guard to suppress GCC extern+initializer warning; external linkage correctly declared for all other TUs */
+const Susd_GenericNvmAccessType_uint8 susd_NvMService_E0D7Block_FP =
+{
+    &«sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_E0D7NvMBlockRef.nvMRamBlockDataAddress-»[0],
+    NULL_PTR,
+    NULL_PTR,
+    NULL_PTR
+};
+
+/* [$Satisfies $SDD_SUSD 250] */
+/* Access Function Pointers for FirstBootPostFlash NVM Block. */
+/* PRQA S 1531 2 */ /* This struct is generated, it can be used in the multiple file and can not be turned into static as well as moved to static code */
+/* PRQA S 3408 1 # Extern declaration excluded from this TU by SUM_SUSD_CFG_C guard to suppress GCC extern+initializer warning */
+const Susd_GenericNvmAccessType_uint8 susd_NvMService_FirstBootPostFlashBlock_FP =
+{
+    &«sUSD.sUSDConfigSet.sum_SUSD_ActivityRecords.sum_SUSD_FirstBootPostFlashNvMBlockRef.nvMRamBlockDataAddress-»,
+    NULL_PTR,
+    NULL_PTR,
+    NULL_PTR
+};
+
+			«FOREACH this.sUSD.sUSDConfigSet.sUSD_BatteryVoltageRange.sUSD_C_BatteryVoltageRange AS voltRange»
+				«IF (voltRange.getReferrers().size > 0)-»
+/* PRQA S 1504 3 */ /* This struct is generated, it can be used in the multiple file and can not be turned into static as well as moved to static code */
+const SUSD_SWCToVoltRangeReferenceType SWC_«voltRange.shortName»_Mapping[«voltRange.getReferrers().size»] =
+{
+					«FOREACH Susd_SWCToVoltRangeRefList(this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo, voltRange.shortName) AS Swc ITERATOR j SEPARATOR ','»
+	{
+		&Rte_Write_PP_«Swc.sUSD_SWCName»_SUSD_PermitExecution_SUSD_SWC_ExecutionStatus,
+
+						«FOREACH this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo.sortBy(e|e.sUSD_SWCName) AS Swc_Info ITERATOR i-»
+							«IF (Swc_Info.sUSD_SWCName == Swc.sUSD_SWCName)-»
+		/* SWC Index */
+		«i.counter0»
+							«ENDIF-»
+						«ENDFOREACH-»
+	}
+					«ENDFOREACH-»
+};
+				«ENDIF-»
+			«ENDFOREACH-»
+
+			«IF (Susd_SWCNoVoltRangeRefList(this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo).size > 0)»
+/* PRQA S 1504 3 */ /* This struct is generated, it can be used in the multiple file and can not be turned into static as well as moved to static code */
+const SUSD_SWCToVoltRangeReferenceType SWC_Default9To16V_Mapping[«Susd_SWCNoVoltRangeRefList(this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo).size»] =
+{
+				«FOREACH Susd_SWCNoVoltRangeRefList(this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo) AS Swc ITERATOR j SEPARATOR ','»
+	{
+		&Rte_Write_PP_«Swc.sUSD_SWCName»_SUSD_PermitExecution_SUSD_SWC_ExecutionStatus,
+
+					«FOREACH this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo.sortBy(e|e.sUSD_SWCName) AS Swc_Info ITERATOR i-»
+						«IF (Swc_Info.sUSD_SWCName == Swc.sUSD_SWCName)-»
+		/* SWC Index */
+		«i.counter0»
+						«ENDIF-»
+					«ENDFOREACH-»
+	}
+				«ENDFOREACH-»
+};
+			«ENDIF-»
+
+/* Normal voltage range with resolution of 0.1 V */
+/* PRQA S 1531 3 */ /* This struct is generated, it can be used in the multiple file and can not be turned into static as well as moved to static code */
+const SUSD_BatteryVoltageRangeType SUSD_BatteryVoltageThreshold[«sUSD.sUSDConfigSet.sUSD_BatteryVoltageRange.sUSD_C_BatteryVoltageRange.size + 1»] =
+{
+	{
+		/* Default voltage range for 9V to 16V */
+		/* Port interface for battery voltage range, normal, over or undervoltage */
+		&Rte_Write_PP_SUSD_DefaultBatteryVoltage_MintoMax_9Vto16V_OperatingRange,
+
+		/* Under Voltage hysteresis */
+		&Rte_CData_SUSD_C_DefaultUnderVoltage_hysteresis,
+
+		/* Over Voltage hysteresis */
+		&Rte_CData_SUSD_C_DefaultOverVoltage_hysteresis,
+
+		/* Min range */
+		90,
+
+		/* Max range */
+		160,
+
+		/* Number of SWCs reference to this voltage range */
+		«Susd_SWCNoVoltRangeRefList(this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo).size»,
+
+		/* Pointer to SWCs mapping */
+				«IF(Susd_SWCNoVoltRangeRefList(this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo).size > 0)-»
+		SWC_Default9To16V_Mapping
+				«ELSE-»
+		NULL_PTR
+				«ENDIF-»
+	},
+			«FOREACH this.sUSD.sUSDConfigSet.sUSD_BatteryVoltageRange.sUSD_C_BatteryVoltageRange AS voltRange ITERATOR i SEPARATOR ','»
+	{
+		/* Port interface for battery voltage range, normal, over or undervoltage */
+		&Rte_Write_PP_SUSD_BatteryVoltage_MintoMax_«voltRange.shortName»_OperatingRange,
+
+		/* Under Voltage hysteresis */
+		&Rte_CData_SUSD_C_UnderVoltage_hysteresis_«voltRange.shortName»,
+
+		/* Over Voltage hysteresis */
+		&Rte_CData_SUSD_C_OverVoltage_hysteresis_«voltRange.shortName»,
+
+		/* Min range */
+		«(voltRange.sUSD_C_BatteryVoltageRange_Min*10).toInteger()»,
+
+		/* Max range */
+		«(voltRange.sUSD_C_BatteryVoltageRange_Max*10).toInteger()»,
+
+		/* Number of SWCs reference to this voltage range */
+		«voltRange.getReferrers().size»,
+
+				«IF (voltRange.getReferrers().size > 0)-»
+		/* Pointer to SWCs mapping */
+		SWC_«voltRange.shortName»_Mapping
+				«ELSE-»
+		NULL_PTR
+				«ENDIF-»
+	}
+			«ENDFOREACH-»
+};
+
+/********************************** END OF FILE ******************************************************/
+«ENDFILE»
+«ENDDEFINE»

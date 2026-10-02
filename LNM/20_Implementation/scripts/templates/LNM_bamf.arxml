@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00049.xsd">
+  <AR-PACKAGES>
+    <AR-PACKAGE UUID="395cf73a-bd6e-4b6b-9325-74691ba35061">
+      <SHORT-NAME>RB_Manifest</SHORT-NAME>
+      <ELEMENTS>
+        <BUILD-ACTION-MANIFEST UUID="19ef2f6a-3b0b-4db5-965c-f4159e07c43f">
+          <SHORT-NAME>LNM_Manifest</SHORT-NAME>
+          <BUILD-ACTIONS>
+            <BUILD-ACTION UUID="ba8c5cdb-14bd-4e93-b115-de2c110fec7c">
+              <SHORT-NAME>LNM_Generate</SHORT-NAME>
+              <CATEGORY>GENERATOR</CATEGORY>
+              <INVOCATION>
+                <SDGS>
+                  <SDG>
+                    <SD GID="VARIANT">1</SD>
+                    <SD GID="ACTION_ATTRIBUTE_singleExecutable">true</SD>
+                    <SD GID="STOP_ON_ERROR">true</SD>
+                    <SD GID="SUPPLIER">RBA-BSW</SD>
+                  </SDG>
+                </SDGS>
+              </INVOCATION>
+              <PREDECESSOR-ACTION-REFS>
+                <PREDECESSOR-ACTION-REF DEST="BUILD-ACTION">/RB_Manifest/LNM_Manifest/LNM_Validate</PREDECESSOR-ACTION-REF>
+              </PREDECESSOR-ACTION-REFS>
+              <CREATED-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>SUM_LNM_PBCfg</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>c</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>SUM_LNM_Cfg</SHORT-LABEL>
+                    <CATEGORY>PJTSRC</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>c</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>SUM_LNM_Cfg</SHORT-LABEL>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>SUM_LNM_PBCfg</SHORT-LABEL>
+                    <CATEGORY>PJTHDR</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>h</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_Lnm_Cfg_SWCD</SHORT-LABEL>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>arxml</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="ROLE_PROVIDER_TYPE">MDF</SD>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_OUT</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>Sum_Lnm_SWCD*</SHORT-LABEL>
+                    <CATEGORY>PJTSWCD</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>arxml</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+              </CREATED-DATAS>
+              <INPUT-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">PROCESSOR</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>LNM_generator</SHORT-LABEL>
+                    <CATEGORY>CONFWF</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>oaw</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-MODULE-DEF">/ASW_SUM_LNM/LNM</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+              </INPUT-DATAS>
+              <REQUIRED-ENVIRONMENT-REF DEST="BUILD-ACTION-ENVIRONMENT">/RB_Manifest/com_bosch_configfw_bfwaction_oaw</REQUIRED-ENVIRONMENT-REF>
+            </BUILD-ACTION>
+            <BUILD-ACTION UUID="6541a481-67c1-4f82-b59c-f91ababb0134">
+              <SHORT-NAME>LNM_Validate</SHORT-NAME>
+              <CATEGORY>VALIDATOR</CATEGORY>
+              <INVOCATION>
+                <SDGS>
+                  <SDG>
+                    <SD GID="VARIANT">1</SD>
+                    <SD GID="ACTION_ATTRIBUTE_singleExecutable">true</SD>
+                    <SD GID="STOP_ON_ERROR">true</SD>
+                    <SD GID="INPUT_VALIDATION1">true</SD>
+                  </SDG>
+                </SDGS>
+              </INVOCATION>
+              <INPUT-DATAS>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>ARTIFACT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">PROCESSOR</SD>
+                    </SDG>
+                  </SDGS>
+                  <ENGINEERING-OBJECT>
+                    <SHORT-LABEL>LNM_Validate</SHORT-LABEL>
+                    <CATEGORY>CONFWF</CATEGORY>
+                    <DOMAIN>CUBAS</DOMAIN>
+                    <FILE-TYPE>oaw</FILE-TYPE>
+                  </ENGINEERING-OBJECT>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-MODULE-DEF">/ASW_SUM_LNM/LNM</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-MODULE-DEF">/AUTOSAR_ComM/EcucModuleDefs/ComM</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>AR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-MODULE-DEF">/AUTOSAR_Com/EcucModuleDefs/Com</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>MSR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-MODULE-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+                <BUILD-ACTION-IO-ELEMENT>
+                  <CATEGORY>MSR_OBJECT</CATEGORY>
+                  <SDGS>
+                    <SDG>
+                      <SD GID="USED_ACTION_ROLE">DEFAULT_IN</SD>
+                    </SDG>
+                  </SDGS>
+                  <ECUC-DEFINITION-REF DEST="ECUC-MODULE-DEF">/AUTOSAR_LinSM/EcucModuleDefs/LinSM</ECUC-DEFINITION-REF>
+                </BUILD-ACTION-IO-ELEMENT>
+              </INPUT-DATAS>
+              <REQUIRED-ENVIRONMENT-REF DEST="BUILD-ACTION-ENVIRONMENT">/RB_Manifest/com_bosch_configfw_bfwaction_oaw</REQUIRED-ENVIRONMENT-REF>
+            </BUILD-ACTION>
+          </BUILD-ACTIONS>
+        </BUILD-ACTION-MANIFEST>
+      </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>

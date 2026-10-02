@@ -1,0 +1,222 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Cbk.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for Spm Cfg
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_HeartBeat_Mgr.h"
+#include "Sum_Spm_WakeUp.h"
+#include "Rte_SPM.h"						/* Needed for Rte_CData_Spm_Wakeup_Frame_Info function. */
+#include "Sum_Spm_WufRollingBuffer.h"
+
+«IF Spm_ECU_INTERMEDIATE(spm) == true && spm.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmRxRef.size > 0-»
+static boolean Sum_Spm_isPduIdReceivedValid(const PduIdType RxPduId, uint8* indexElementFound);
+
+/**
+ * @brief Function to retrieve the index of the element in the Spm_CanIf_Rx based on the received PDU ID.
+ *	It performs a validation by checking the received PDU ID against the expected PDU IDs defined in the Spm_CanIf_Rx array.
+ *
+ * @param[in] RxPduId Identifier of the received PDU.
+ * @param[out] indexElementFound Pointer to a variable where the index of the found element, in the Spm_CanIf_Rx array, will be
+ *	 stored if the PDU ID is valid.
+ * @retval boolean TRUE if the PDU ID is found in the Spm_CanIf_Rx array, FALSE otherwise.
+ * @note
+ */
+static boolean Sum_Spm_isPduIdReceivedValid(const PduIdType RxPduId, uint8* indexElementFound)
+ {
+	boolean isElementFound = FALSE;
+
+«IF spm.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmRxRef.size > 1-»
+	uint8 i ;
+	/* Iteration over the Spm_CanIf_Rx array in order to check if the received PDU ID matches any entry */
+	for (i = 0u; i < SPM_WUF_CAN_RX_LEN; i++)
+	{
+		/* If found, assign the index to indexElement */
+		if (Spm_CanIf_Rx[i].pduId == RxPduId)
+		{
+			*indexElementFound = i;
+			isElementFound = TRUE;
+			break;
+		}
+	}
+«ELSE -»
+	if (Spm_CanIf_Rx[0u].pduId == RxPduId)
+	{
+		*indexElementFound = 0u;
+		isElementFound = TRUE;
+	}
+«ENDIF -»
+
+	return isElementFound;
+}
+«ENDIF -»
+
+«IF Spm_ECU_INTERMEDIATE(spm) == true && spm.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmRxRef.size > 0-»
+/*
+ * ===========================================================
+ *	SUPPORT ON CAN FOR WKUP
+ * ===========================================================
+ */
+
+/**
+ * @brief Indication function for processing received PDUs from the CAN interface.
+ *
+ * This function is invoked when a PDU is received from the CAN interface. It validates the PDU
+ * using Spm_ValidateRvcPduById for a specific conversion type (SPM_CAN_TO_ETH).
+ *
+ * @param[in] RxPduId Identifier of the received PDU. This ID is used to validate the PDU and determine
+ *                    the appropriate handling procedure.
+ * @param[in] PduInfoPtr Pointer to the structure containing the received PDU data and length. This includes
+ *                       the data buffer (SduDataPtr) that contains the wakeup bit to be evaluated.
+ *
+ *
+ * @retval None No return value as this function is intended to process the PDU without any direct output.
+ * @note   GM specication requires that only frame A is received from CAN for wakeup purpose.
+ */
+/* PRQA S 1503 2 # Following function will be called by another module.  */
+/* PRQA S 3408 1 # No declaration necessary in this case. */
+void Spm_RxIndication (
+	/* IN */PduIdType 			RxPduId,
+	/* IN */const PduInfoType* 	PduInfoPtr
+ 	) {
+
+	uint8 indexElement;
+
+	/* [$Satisfies $DDS_SPM 0112] */
+	if((PduInfoPtr != NULL_PTR) && (PduInfoPtr->SduLength == 8U)) {
+		if(Sum_Spm_isPduIdReceivedValid(RxPduId, &indexElement)){
+			/* [$Satisfies $DDS_SPM 0660] */
+			/* We insert the newly received CAN WUF within the rolling buffer */
+			Sum_Spm_WufRollingBuffer_StoreWuf(
+				 PduInfoPtr->SduDataPtr,
+				 NULL_PTR,
+				 NULL_PTR,
+				 (uint8)(Spm_CanIf_Rx[indexElement].canIdLastByte));
+			/* After storing the newly received WUF let's react on possible updates. */
+
+			/* Here we are not owner of any timer, therefore we pass FALSE as parameter
+			   so that we do not advance the WUF Rolling Buffer internal timer */
+			Spm_ExecuteWakeUpFrameActions(FALSE);
+			«IF  Spm_IsThereAnyManagedDevice(spm)-»
+			/* [$Satisfies $DDS_SPM 0524] */
+			Sum_Spm_WkupEdgeNodes();
+			«ENDIF-»
+		}
+	}
+
+ }
+ «ENDIF»
+
+«IF Spm_ECU_INTERMEDIATE(spm) == true -»
+/**
+ * @brief Handles the confirmation of a PDU transmission over the CAN interface.
+ *
+ * This function is called to confirm the transmission of a PDU on the CAN network. Upon successful
+ * confirmation, the function resets the wakeup transmit buffer.
+ *
+ * @param[in] TxPduId Identifier of the transmitted PDU. This ID is used to verify that the confirmation
+ *                    corresponds to the expected PDU.
+ * @param[in] result  Result of the PDU transmission. A value of E_OK indicates that the transmission
+ *                    was successful.
+ *
+ *
+ * @retval None No return value as this function is intended to confirm PDU transmission and does not
+ *              provide direct output.
+ */
+/* PRQA S 1503 2 # Following function will be called by another module.  */
+/* PRQA S 3408 1 # No declaration necessary in this case. */
+void Spm_TxConfirmation (
+	/* IN */PduIdType      TxPduId,
+	/* IN */Std_ReturnType result
+ ) {
+
+	if(E_OK == result){
+
+		if(TxPduId == Spm_CanIf_Tx_WakeUpFrame_A.pduId){
+
+			/* [$Satisfies $DDS_SPM 0108] *//* Since the requirement specify 'with each trasmission',
+			when the TX confirmation is received the WkUp TX buffer SHALL be reset. */
+			(void)Sum_Common_MemSet((uint8 *)(&Spm_CanIf_Tx_WakeUpFrame_A.pduInfo.SduDataPtr[0u]), 0x00, 8u*sizeof(uint8));
+		}
+
+		if(TxPduId == Spm_CanIf_Tx_WakeUpFrame_B.pduId){
+			/* [$Satisfies $DDS_SPM 0108] *//* Since the requirement specify 'with each trasmission',
+			when the TX confirmation is received the WkUp TX buffer SHALL be reset. */
+			(void)Sum_Common_MemSet((uint8 *)(&Spm_CanIf_Tx_WakeUpFrame_B.pduInfo.SduDataPtr[0u]), 0x00, 8u*sizeof(uint8));
+		}
+
+		if(TxPduId == Spm_CanIf_Tx_WakeUpFrame_C.pduId){
+
+			/* Since the requirement specify 'with each trasmission',
+			when the TX confirmation is received the WkUp TX buffer SHALL be reset. */
+			(void)Sum_Common_MemSet((uint8 *)(&Spm_CanIf_Tx_WakeUpFrame_C.pduInfo.SduDataPtr[0u]), 0x00, 8u*sizeof(uint8));
+		}
+
+	}
+}
+
+«IF Spm_IsThereAnyManagedDevice(spm) && (Spm_ECU_INTERMEDIATE(spm) == true) -»
+/**
+ * @brief  The function examinates the value stored in the rolling buffer wake-up frame to identify whether any of
+ *         SPM direct handled node has been requested by remote
+ * @return None
+ */
+void Sum_Spm_WkupEdgeNodes(void) {
+       uint8 trg_id;
+       boolean edge_wkup_requested_b;
+       /* Run for all target device are configured */
+       for(trg_id = 0U; trg_id < SPM_NUM_OF_PG_OUT_EDGE; trg_id++) {
+               /* [$Satisfies $DDS_SPM 0520] */
+               if( Spm_PowMgr_TrgDvc_List[trg_id].SpmTrgDevInfo.trgHndl_p != NULL_PTR)
+               {
+                    /* match the asserted bit in the wake-up frame */
+                    /* [$Satisfies $DDS_SPM 0521] */
+                    edge_wkup_requested_b = Sum_Spm_WufRollingBuffer_IsBitXInWufYSet(Spm_PowMgr_TrgDvc_List[trg_id].SpmTrgDevInfo.trgHndl_p->SpmTrgWkupBit,
+                                                                                     Spm_PowMgr_TrgDvc_List[trg_id].SpmTrgDevInfo.trgHndl_p->SpmTrgWkupFrm);
+                    /* Set TargetDevicerequestedByRemote flag for this device */
+                    /*[$Satisfies $DDS_SPM 0523]*/
+                    Spm_PowMgr_TrgDvc_List[trg_id].SpmTrgDevInfo.TargetDevicerequestedByRemote = edge_wkup_requested_b;
+               } /* endif */
+       } /* endfor */
+}
+«ENDIF -»
+
+«ENDIF»
+
+/* EOF */
+
+«ENDFILE -»
+«ENDDEFINE -»

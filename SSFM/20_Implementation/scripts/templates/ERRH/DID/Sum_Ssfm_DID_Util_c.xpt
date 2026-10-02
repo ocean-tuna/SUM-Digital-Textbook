@@ -1,0 +1,276 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DID_Util.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM DID Utility
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+#include "Sum_Ssfm_DID_Util.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+
+ *********************************************************************************************************************************************************
+ */
+«IF Ssfm_isEnableERRHLocalSupervision(sSFM.sum_Ssfm_General) -»
+static boolean SUM_ERRH_SOHSupFail_TWStarted;
+static uint16 ERRH_SOHSupFail_Cntr;
+static uint32 ERRH_SOHSupFail_TW;
+static uint16 SUM_ERRH_DID_SOHSupFail_Cntr;
+
+ERRH_DetectorType SOHSupFail	=	{
+										/*ERRH_ThresholdType Detector Values */
+										{
+											&ERRH_SOHSupFail_Cntr,
+											&ERRH_SOHSupFail_TW,
+											&SUM_ERRH_SOHSupFail_TWStarted,
+											&SUM_ERRH_DID_SOHSupFail_Cntr
+										},
+										/*ERRH_GenericNvmAccessType NvM DID*/
+										{
+											&«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef.nvMRamBlockDataAddress-»[0],
+											&Rte_Call_RP_NvM_SSFM_NvMService_DID_F094_Data_SetRamBlockStatus
+										}
+									};
+«ENDIF-»
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 1532 EOF # These utility functions will be used by other modules */
+/* PRQA S 1503 EOF # Some utility functions may be used later */
+/* PRQA S 3673 EOF # The pointers are not const for the compatibility with upper layer */
+void Sum_Ssfm_DID_FillBuffer_u8(uint8* Buffer, uint8 Data, uint32 offset){
+    Buffer[offset] = Data;
+}
+
+void Sum_Ssfm_DID_FillBuffer_u16(uint8* Buffer, uint16 Data, uint32 offset){
+    Buffer[offset] = (uint8)(Data >> 8);
+    Buffer[offset + 1u] = (uint8)Data;
+}
+
+void Sum_Ssfm_DID_FillBuffer_u32(uint8* Buffer, uint32 Data, uint32 offset){
+    Buffer[offset]      = (uint8)(Data >> 24);
+    Buffer[offset + 1u]  = (uint8)(Data >> 16);
+    Buffer[offset + 2u]  = (uint8)(Data >> 8);
+    Buffer[offset + 3u]  = (uint8)Data;
+}
+
+void Sum_Ssfm_DID_ReadBuffer_u8(uint8* Buffer, uint8* Data, uint32 offset){
+    *Data = Buffer[offset];
+}
+
+void Sum_Ssfm_DID_ReadBuffer_u16(uint8* Buffer, uint16* Data, uint32 offset){
+    *Data = ((uint16)Buffer[offset] << 8) + (Buffer[offset + 1u]);
+}
+
+void Sum_Ssfm_DID_ReadBuffer_u32(uint8* Buffer, uint32* Data, uint32 offset){
+    *Data = ((uint32)Buffer[offset] << 24) + ((uint32)Buffer[offset + 1u] << 16) + ((uint32)Buffer[offset + 2u] << 8) + ((uint32)Buffer[offset + 3u]);
+}
+«IF Ssfm_isEnableERRHLocalSupervision(sSFM.sum_Ssfm_General) -»
+ /**
+ * @brief			ERRH_Filter implementation.
+ * 					Apply the filtering mechanism for the monitor.
+ *
+ * @param[in]		void
+ * @param[inout]	item
+ * @param[out]		void
+ * @return			void
+ */
+ /*[$Satisfies $DDS_SSFM 143][$Satisfies $DDS_SSFM 144]*/
+ /* PRQA S 1505 2 # This function is put here for modularity */
+FUNC(boolean, SUM_ERRH_CODE) ERRH_Filter(ERRH_DetectorType const* item)
+{
+	boolean ret = TRUE;
+
+	/*Time window management*/
+
+	/*The detector shall wait for the occurrence of the first error event detection to start its time window*/
+	if((*(item->ERRH_ThresholdItem.ERRH_TWStarted) == FALSE) &&( *(item->ERRH_ThresholdItem.ERRH_Cntr) == 0x1u))
+	{
+		*(item->ERRH_ThresholdItem.ERRH_TW) = 0x00000000;
+		*(item->ERRH_ThresholdItem.ERRH_TWStarted) = TRUE;
+	}
+	else
+	{
+		ret = FALSE;
+	}
+
+
+	/*In the case where the detection counter reaches its threshold count calibration, the following steps SUM_ERRH:
+	  - Increments the DID counter by one if it has not reached the MAX value.
+	  - Resets the detection counter to 0x0000
+	*/
+	if((*(item->ERRH_ThresholdItem.ERRH_Cntr))>= Rte_CData_SUM_ERRH_SOHSupFail_Thresh())
+	{
+		*(item->ERRH_ThresholdItem.ERRH_Cntr) = 0x0000;
+
+		*(item->ERRH_ThresholdItem.ERRH_TWStarted) = FALSE;
+
+
+		if(*(item->ERRH_ThresholdItem.ERRH_DIDCntr)<0xFFFEu)
+		{
+			(*(item->ERRH_ThresholdItem.ERRH_DIDCntr))++;
+		}
+	}
+	else
+	{
+		ret = FALSE;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief			ERRH_Event_Detector implementation.
+ *
+ * @param[in]		void
+ * @param[inout]	item
+ * @param[out]		void
+ * @return			void
+ */
+  /* PRQA S 1532 2 # This function is put here for modularity */
+FUNC(void, SUM_ERRH_CODE) ERRH_Event_Detector(ERRH_DetectorType const* item)
+{
+ 	/* Increase detection counter */
+ 	(*(item->ERRH_ThresholdItem.ERRH_Cntr))++;
+
+ 	(void)ERRH_Filter(item);
+}
+
+/**
+ * @brief			ERRH_CheckConditionAndWrite implementation.
+ * 					Check conditions to decide to write counter into corresponding memory type.
+ *
+ * @param[in]		void
+ * @param[inout]	item
+ * @param[out]		void
+ * @return			void
+ */
+ /*[$Satisfies $DDS_SSFM 143][$Satisfies $DDS_SSFM 144]*/
+/* PRQA S 1532 2 # This function is put here for modularity */
+FUNC(void, SUM_ERRH_CODE) ERRH_CheckConditionAndWrite(ERRH_DetectorType const* item)
+{
+ 	boolean DIDCnt_Condition_b = FALSE;
+ 	static uint16 prev_DIDCnt_u16 = 0;
+ 	uint16 curr_DIDCnt_u16;
+
+ 	/* Get previous DID Counter value */
+ 	prev_DIDCnt_u16 = *(item->NvMDID.NvmRamBlock);
+
+ 	/* Get current DID Counter value after processed by corresponding filter */
+ 	curr_DIDCnt_u16 = *(item->ERRH_ThresholdItem.ERRH_DIDCntr);
+
+ 	/* Check whether DID counter is changed */
+ 	if((prev_DIDCnt_u16 != curr_DIDCnt_u16))
+ 	{
+ 		DIDCnt_Condition_b = TRUE;
+ 	}
+
+ 	/* If at least one filed must be updated */
+ 	if(TRUE == DIDCnt_Condition_b)
+ 	{
+		/* Perform write counters into memory */
+		*(item->NvMDID.NvmRamBlock) = *(item->ERRH_ThresholdItem.ERRH_DIDCntr);
+		item->NvMDID.ERRH_RteCallNvmSetRamBlockStatus_fp(TRUE);
+ 	}
+}
+
+/**
+ * @brief			Increments of 1s the Time Windows.
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			void
+ */
+ /*[$Satisfies $DDS_SSFM 148]*/
+ /* PRQA S 1532 2 # This function is put here for modularity */
+FUNC(void, SUM_ERRH_CODE) ERRH_UpdateTimeWindows(void)
+{
+/*For Future use this part could implemented as for loop to cover all the DID counter's*/
+	if(((*(SOHSupFail.ERRH_ThresholdItem.ERRH_TWStarted)) == TRUE))
+	{
+		/*Increment the time window of 1s */
+		(*(SOHSupFail.ERRH_ThresholdItem.ERRH_TW))++;
+
+		/*If the detection counter does not reach its threshold count calibration within the
+		 * calibration time window, the SUM_ERRH resets its time window to 0x000000 to start
+		 * a new detection cycle and  resets its detection counter to 0x0000*/
+		if((*(SOHSupFail.ERRH_ThresholdItem.ERRH_TW)) >= Rte_CData_SUM_ERRH_SOHSupFail_TW_Thresh())
+		{
+			*(SOHSupFail.ERRH_ThresholdItem.ERRH_TW) = 0x00000000;
+			*(SOHSupFail.ERRH_ThresholdItem.ERRH_Cntr) = 0x0u;
+			*(SOHSupFail.ERRH_ThresholdItem.ERRH_TWStarted) = FALSE;
+		}
+
+	}
+}
+
+ /* PRQA S 1505 9 # This function is put here for modularity */
+ /* PRQA S 3469 9*/ /*Function-like macro defined by the RTE*/
+FUNC(uint16, RTE_CODE) Rte_CData_SUM_ERRH_SOHSupFail_Thresh(void)
+{
+	return Rte_CData_ERRH_SOHSupFail_Thresh();
+}
+FUNC(uint32, RTE_CODE) Rte_CData_SUM_ERRH_SOHSupFail_TW_Thresh(void)
+{
+	return Rte_CData_ERRH_SOHSupFail_TW_Thresh();
+}
+«ENDIF-»
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

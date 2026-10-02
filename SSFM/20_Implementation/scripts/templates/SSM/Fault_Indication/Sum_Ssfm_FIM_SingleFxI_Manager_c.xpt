@@ -1,0 +1,114 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_FIM_SingleFxI_Manager.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM Fault Indications Manager - Single FxI Port
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == true-»
+«IF Ssfm_AnyFxI(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)»
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+
+/**
+ * @brief			SSFM function used to populate the single port FxI interface state
+ *
+ * @param[in]       serialData      - const Sum_Ssfm_SerialData*: Sum_Ssfm_SerialData structure to access the SerialData info and RTE functions
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			void
+ */
+FUNC(void, SUM_SSFM_SSM_CODE) Sum_Ssfm_SingleFxI_Manager_Set_FxI(const Sum_Ssfm_SerialData* serialData)
+{
+   	/*[$Satisfies $DDS_SSFM 078]*/
+   	// Check if SerialData FxI source is valid
+	switch(serialData->FxI_Source){
+		case SUM_SSFM_FxI_Source_FcI:
+			serialData->Authenticated->FP_Rte_Write_PP_FxI_LocalSWC(serialData->Authenticated->FxI);
+			break;
+		case SUM_SSFM_FxI_Source_FoI:
+			serialData->ContOp->FP_Rte_Write_PP_FxI_LocalSWC(serialData->ContOp->FxI);
+			break;
+		case SUM_SSFM_FxI_Source_FpI:
+			serialData->Protected->FP_Rte_Write_PP_FxI_LocalSWC(serialData->Protected->FxI);
+			break;
+		case SUM_SSFM_FxI_Source_FsI:
+			serialData->Safety->FP_Rte_Write_PP_FxI_LocalSWC(serialData->Safety->FxI);
+			break;
+		/* PRQA S 2016 5 # The default should do nothing */
+		default:
+			break;
+	}
+}
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+«ENDIF-»
+«ENDIF-»
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

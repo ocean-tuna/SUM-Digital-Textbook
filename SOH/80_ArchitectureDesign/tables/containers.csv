@@ -1,0 +1,4 @@
+3;2;6
+\textbf{Name};\textbf{Multiplicity};\textbf{Scope / Dependency}
+SOHGeneral;1..1;General configuration parameters of the SOH
+SUSDConfigSet;1..1;This container contains the configuration parameters and sub containers of the SOH module supporting multiple SWC configuration sets

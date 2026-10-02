@@ -1,0 +1,3095 @@
+«IMPORT bsw»
+«IMPORT bsw::SUSDModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Susd»
+
+«DEFINE Susd_c FOR Autosar»
+«FILE "SUM_SUSD.c"»
+/*
+ *****************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SUSD
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description :
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/*
+ ***************************************************************************************************
+ * Includes
+ ***************************************************************************************************
+ */
+/* PRQA S 0380 1 # header included from RTE */
+#include "Rte_SUSD.h"
+#include "SUM_SUSD.h"
+#include "SUM_SUSD_Ram.h"
+/*
+ ***************************************************************************************************
+ * Defines
+ ***************************************************************************************************
+ */
+/*
+ ***************************************************************************************************
+ * Type definitions
+ ***************************************************************************************************
+ */
+
+/*
+ ***************************************************************************************************
+ * Variables
+ ***************************************************************************************************
+ */
+
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.select(e|e.sUSD_C_ShutdownPermControl == true).size > 0) -»
+/* External bit array declarations from SUM_SUSD_Int.c */
+VAR(uint64, SUSD_VAR) Gblshutdownenablecnt[SUSD_SWC_SHUTDOWN_BIT_ARRAY_SIZE];  /* Bit array for SWC shutdown enable (scalable) */
+«ENDIF-»
+VAR(uint16, SUSD_VAR) GblSUMshutdownenablecnt;  /* Bit array for SUM shutdown enable (max 16 SUMs) */
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0)-»
+/* Variable used to store the Permit Execution values for SUSD to invoke for other SUM and SWC connected */
+static VAR(SUSD_SWC_ExecutionStatusType, RTE_CODE) SUSD_GaaSWCPermitExecution[NO_OF_SWCS];
+/* Variable used to track which SWC modules have an active wakeup bit set.
+** Written by SUSD_SetWakeupbits()/SUSD_ResetWakeupbits() and read by SUSD_SWC_PermitExecution(). */
+static VAR(uint32, RTE_CODE) SUSD_SWCModuleWakeupBits;
+«ENDIF-»
+/* Variable used to store notification when vehicle battery voltage is too low to write to NVM. */
+static VAR(boolean, RTE_CODE) SUSD_GblPnHwAvailable;
+/* Variable used to store notification when vehicle battery voltage is too low to write to NVM. */
+static VAR(boolean, RTE_CODE) SUSD_GblLinHwAvailable;
+/* Variable used to store notification when Hw related to a SWC is available */
+/* PRQA S 3218 1 # This variable will be accessed in one function in case of EXISTS_SWC is ON. */
+static VAR(boolean, RTE_CODE) SUSD_GblSWCHwAvailable;
+/* Variable  to take trace of the index of the last wakeup stored in the array */
+static uint32 Luccount = SUSD_ZERO;
+
+/*Variable used to verify if the RunCrank Input is being debounced*/
+static boolean SUSD_DebouncingCompleted=FALSE;
+
+static uint8 NoActiveWakeup=INITIAL_WAKEUP_STATUS;
+
+«IF (sUSD.sUSDGeneral.sUSD_RunCrankPlausibility_Supported)-»
+/* Variable to store the value of Run/Crank Active */
+static VAR(RunCrankPlausibility, RTE_CODE) SUSD_RunCrankActive;
+/* Variable to store the value of Run/Crank Active Invalidity*/
+static VAR(RunCrankPlausibility, RTE_CODE) SUSD_RunCrankActiveInv;
+
+/* Variables to store the values of Run/Crank Stuck Low/High Diagnostic
+ * Enable and Failure Counts.
+ * These are defined as uint32 to have more margin before overflow when
+ * Run/Crank Stuch Low/High Diagnostic is enabled but DTC setting is disabled.
+ */
+static VAR(uint32, RTE_CODE) SUSD_RunCrankStuckHighDiagnostic_EnabledCount;
+static VAR(uint32, RTE_CODE) SUSD_RunCrankStuckHighDiagnostic_FailCount;
+static VAR(uint32, RTE_CODE) SUSD_RunCrankStuckLowDiagnostic_EnabledCount;
+static VAR(uint32, RTE_CODE) SUSD_RunCrankStuckLowDiagnostic_FailCount;
+
+/* Variable to store the value of Run/Crank Input */
+static VAR(RunCrankPlausibility, RTE_CODE) SUSD_RunCrankInput;
+/* Variable to store the value of Run/Crank Input Invalidity */
+static VAR(RunCrankPlausibility, RTE_CODE) SUSD_RunCrankInputInv;
+«ENDIF-»
+
+static uint8 SUSD_Init_state  = E_NOT_OK;
+
+«IF (sUSD.sUSDGeneral.sUSD_PowerModing_Slave_Supported)-»
+/*Variable to get the value of the wakeup flag is set after reset*/
+static boolean WakeupAfterReset = FALSE;
+
+/*Variable to get the value of the timer is expired after running reset occurs */
+static boolean TimerExpired = FALSE;
+
+/*Variable to store the running reset wait time from calibration parameter in micro-second precision*/
+static uint32 RunningResetWaitTime = 0u;
+
+/* Flag used to indicate if this is the first boot after a flash operation */
+static boolean isFirstBootAfterFlash = FALSE;
+
+«ENDIF-»
+
+/*bit map Flags used to check if there are active wakeups similar to the wakeup source*/
+static VAR(uint32, RTE_CODE) AnySimilarWakeup;
+
+/* Global SUM module wakeup masks array - maps SUM enum to wakeup mask */
+/* This array defines which wakeup sources are relevant for each SUM module */
+static const uint32 SUSD_GaaSUMWakeupMasks[SUSD_SUM_PERMEXE] = {
+  «LET 1 AS int-»                                                                                                                                             
+  «FOREACH sUSD.sUSDConfigSet.sUSD_C_SUMsInfo AS sum -»
+    «IF sum.sUSD_PermitExecution == true-»
+      SUSD_WAKEUP_MASK_«sum.sUSD_SUMsName-»
+      «FOREACH sum.sUSD_SUMs_SpecificWkSrcId AS wkSrc-»
+        «REM» For bit 31 (0x80000000), xpt produces a 64-bit value, so managed manually. «ENDREM-»
+        «IF int.shiftLeftOperand(wkSrc.ecuMWakeupSourceId).Hex() != "0xFFFFFFFF80000000"»
+          | «int.shiftLeftOperand(wkSrc.ecuMWakeupSourceId).Hex() -»u
+        «ELSE»
+          | 0x80000000u
+        «ENDIF -»
+      «ENDFOREACH»,
+    «ENDIF-»
+  «ENDFOREACH-»
+  «ENDLET-»
+};
+
+/* Global SWC wakeup masks array - maps SWC index to wakeup mask. */
+/* This array defines which wakeup sources are relevant for each SWC. */
+static const uint32 SUSD_GaaSWCWakeupMasks[NO_OF_SWCS] = {
+  «LET 1 AS int-»
+  «FOREACH sUSD.sUSDConfigSet.sUSD_C_SWCInfo AS swc -»
+    «REM» Same base mask for each SWC. «ENDREM-»
+    SUSD_WAKEUP_MASK_SWC
+    «FOREACH swc.sUSD_SWCs_SpecificWkSrcId AS wkSrc-»
+      «REM» For bit 31 (0x80000000), xpt produces a 64-bit value, so managed manually. «ENDREM-»
+      «IF int.shiftLeftOperand(wkSrc.ecuMWakeupSourceId).Hex() != "0xFFFFFFFF80000000"»
+        | «int.shiftLeftOperand(wkSrc.ecuMWakeupSourceId).Hex() -»u
+      «ELSE»
+        | 0x80000000u
+      «ENDIF -»
+    «ENDFOREACH»,
+  «ENDFOREACH-»
+  «ENDLET-»
+};
+
+/*
+ ******************************************************************************
+ * Internal Functions
+ ******************************************************************************
+ */
+static FUNC(void, SUSD_CODE) SUSD_ECUWakeupDetectionRecordsUpdate(const SUSD_ECUWakeupDetectionRecord *Data);
+
+static FUNC(void, SUSD_CODE) Manage_Initial_SUM_SUSD_RESETExecution_TIMER(uint32 WakeupSrc);
+
+static FUNC(void, SUSD_CODE) SUSD_CheckVehicleBatteryVoltageState(uint16 UpperLimit, uint16 LowerLimit,
+																  uint16 CurrentVoltage, uint16* OutState, uint16 State);
+
+/*Function used to find the activated Wakeup source, update SUSD_GaaWakeUpSources,activate the wakeup bits and keep track of the number of currently active wakeups*/
+static FUNC(void, SUSD_CODE) SUSD_ActivatedWakeupSource(uint32 WakeupSrc);
+/*Function used to find the deactivated Wakeup source, update SUSD_GaaWakeUpSources, deactivate the wakeup bits and keep track of the number of currently active wakeups*/
+static FUNC(void, SUSD_CODE) SUSD_DeactivatedWakeupSource(uint32 WakeupSrc);
+/*Function used to set the wakeup bits in the PermitExecution Interfaces*/
+static FUNC(void, SUSD_CODE) SUSD_SetWakeupbits(uint32 WakeupSrc);
+/*Function used to reset the wakeup bits in the PermitExecution Interfaces*/
+static FUNC(void, SUSD_CODE) SUSD_ResetWakeupbits(void);
+/*Function used to check if there active wakeups related to different types of wakeup sources*/
+static FUNC(void, SUSD_CODE) SUSD_CheckSimilarWakeups(void);
+/* Function to handle Permit Execution notifications to SUM for Diagnostic reprogram/reset*/
+static FUNC(void, SUSD_CODE) SUSD_SUM_PermitExecutionDiagReprgmRstReq(void);
+/* Function to handle Permit Execution notifications to SUM with bit information*/
+static FUNC(void, SUSD_CODE) SUSD_SUM_PermitExecutionToSUMsWithBitInfo(void);
+/* Function to check for all SW-Cs configured for battery voltage */
+static FUNC(void, SUSD_CODE) SUSD_SWC_VehicleBatteryVoltageAllSWC(void);
+
+«IF (sUSD.sUSDGeneral.sUSD_RunCrankPlausibility_Supported)-»
+/* Function to handle Run Crank Active Determination */
+static FUNC(void, SUSD_CODE) SUSD_RunCrankActiveDetermination(void);
+/* Function to compute Run/Crank Input Voltage */
+static FUNC(uint16, SUSD_CODE) SUSD_RunCrankInputVoltage(void);
+/* Function to handle Run Crank Input Discrete and Analog Type */
+static FUNC(void, SUSD_CODE) SUSD_RunCrankInputDiscreteAnalog(void);
+/* Function to handle Run Crank Input Validity */
+static FUNC(void, SUSD_CODE) SUSD_RunCrankInputValidity(void);
+/* Function to handle Run Crank Stuck High Diagnostic Enable/Failure Criteria */
+static FUNC(void, SUSD_CODE) SUSD_RunCrankStuckHighDiagnosticCriteria(void);
+/* Function to handle Run Crank Stuck Low Diagnostic Enable/Failure Criteria */
+static FUNC(void, SUSD_CODE) SUSD_RunCrankStuckLowDiagnosticCriteria(void);
+
+static FUNC(void, SUSD_CODE) SUSD_RunCrankInputAnalog(uint16 *StateCount);
+
+static FUNC(void, SUSD_CODE) Runcrak_Count_input_sample(uint16 *State_Couter, boolean Sample_State);
+«ENDIF-»
+/*Function to update status of init function done*/
+static FUNC(void, SUSD_CODE) SUSD_SetInitState(void);
+/*Function to activate and deactivation of wake up source*/
+static FUNC(void, SUSD_CODE) SUSD_ActDeact_WakeupSource(uint32 WakeupSrc , uint32 WakeupStatus);
+«IF (sUSD.sUSDGeneral.sUSD_PowerModing_Slave_Supported)-» 
+static FUNC(void, SUSD_CODE) SUSD_ClearRunningResetEvent(void);
+
+static FUNC(void, SUSD_CODE) SUSD_PowerModeStrategyHandler(void);
+
+static FUNC(void, SUSD_CODE) SUSD_VehiclePowerModeHandler(void);
+«ENDIF-»
+
+/* Function to read the First Boot Post Flash Flag from NvM */
+static FUNC(uint8, RTE_CODE) SUSD_ReadFirstBootAfterFlash_Flag (void);
+
+/* Function to write the First Boot Post Flash Flag into NvM */
+static FUNC(void, RTE_CODE) SUSD_WriteFirstBootAfterFlash_Flag (VAR(uint8, AUTOMATIC) FirstBootAfterFlash_Flag);
+
+/* Update the unmarshalled version of the DID 0xE0D7 NVRam mirror block after reading on startup */
+extern FUNC(void, SUSD_CODE) SUSD_E0D7_Populate_On_Startup(void);
+/* Reset RxTAT to 0 for all activity records after a power-on/off cycle (not an ECU reset) */
+extern FUNC(void, SUSD_CODE) SUSD_E0D7_Reset_RxTAT_For_PowerOn(void);
+
+/* Helper function declarations for bit array manipulation */
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.select(e|e.sUSD_C_ShutdownPermControl == true).size > 0) -»
+static FUNC(void, SUSD_CODE) SUSD_SetShutdownEnableBit_SWC(uint32 swcIndex);
+static FUNC(void, SUSD_CODE) SUSD_ClearShutdownEnableBit_SWC(uint32 swcIndex);
+«ENDIF-»
+static FUNC(void, SUSD_CODE) SUSD_SetShutdownEnableBit_SUM(uint8 sumIndex);
+static FUNC(void, SUSD_CODE) SUSD_ClearShutdownEnableBit_SUM(uint8 sumIndex);
+
+/*
+ ***************************************************************************************************
+ * Functions
+ ***************************************************************************************************
+ */
+#define SUSD_START_SEC_CODE
+#include "SUSD_MemMap.h" /* PRQA S 5087 EOF */
+
+/***********************************************************************************
+
+  Function name :   Manage_SUM_SUSD_RESETExecution_TIMER
+  Description   :   Function for managing the determination of the type of reset
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* PRQA S 1532 1 # This Function can be used in the multiple files and cannot be turned into static as well as moved to static code  */
+FUNC(void, SUSD_CODE) Manage_SUM_SUSD_RESETExecution_TIMER(void)
+		{
+	/* Satisfies: [$SDD_SUSD 169] */
+	static boolean write_cnt_at_shutdown_start = FALSE;
+
+	/*If SUSD wants to write SUM_SUSD_RESETExecution_TIMER into NvM*/
+	/* PRQA S 3469 1 # The function like macros is used. This is necessary to get value via RTE variable */
+	if((Rte_IrvRead_Runnable_Manage_SUM_SUSD_RESETExecution_TIMER_NvMWrite_SUM_SUSD_RESETExecution_TIMER_started())==TRUE)
+	{
+		/*Check if it already started writing the final value of SUM_SUSD_RESETExecution_TIMER into NvM*/
+		if(write_cnt_at_shutdown_start == FALSE)
+		{
+			/*If not*/
+			/*Increase SUM_SUSD_RESETExecution_TIMER*/
+			SUM_SUSD_RESETExecution_TIMER += (SUM_SUSD_RESETExecution_TIMER > SUSD_MAX_RESETEXECUTION_TIMER) ? 0u : SUSD_RESET_EXECUTION_PERIOD;
+
+			/* Check if the initial writing of SUM_SUSD_RESETExecution_TIMER is still pending */
+			if (E_PENDING == Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER)
+			{
+				Susd_NvmGetErrorStatus_uint16(&susd_NvMServiceRESET_ExecutionTimerBlock_FP, &Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER);
+			}
+			/* If the initial writing of SUM_SUSD_RESETExecution_TIMER is not pending */
+			if (E_PENDING != Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER)
+			{
+				/*Communicate that SUM_SUSD_RESETExecution_TIMER has changed*/
+				if(E_OK==susd_NvMServiceRESET_ExecutionTimerBlock_FP.Susd_RteCallNvmSetRamBlockStatus_fp(TRUE))
+				{
+					/*Start writing SUM_SUSD_RESETExecution_TIMER into NvM*/
+					/* [$Satisfies $SDD_SUSD 250] */
+					Susd_NvmWriteBlock_uint16(&susd_NvMServiceRESET_ExecutionTimerBlock_FP, &Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER);
+					/*Update the flag to communicate that the final writing of SUM_SUSD_RESETExecution_TIMER has been started*/
+					write_cnt_at_shutdown_start = TRUE;
+				}
+			}
+			else
+			{
+				/*Do Nothing*/
+			}
+		}
+		else
+		{
+			/*Check if the final writing of SUM_SUSD_RESETExecution_TIMER into NvM is still pending*/
+			Susd_NvmGetErrorStatus_uint16(&susd_NvMServiceRESET_ExecutionTimerBlock_FP, &Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER);
+			/*If the final writing of SUM_SUSD_RESETExecution_TIMER into NvM is not pending*/
+			if(E_PENDING != Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER)
+			{
+				/*Set Go_to_Reset to TRUE*/
+				Rte_IrvWrite_Runnable_Manage_SUM_SUSD_RESETExecution_TIMER_Go_to_reset((TRUE));
+				/*Update SUSD_GddASM_CurrentMode*/
+				SUSD_GddASM_CurrentMode = SUM_RESET;
+
+				if(SUSD_GddASM_CurrentMode != Rte_Mode_RP_SUSD_CurrentECUOperatingModePort_CurrentMode())
+				{
+					/* Indicate the state to BswM to reset the ECU */
+					(void)Rte_Switch_PP_SUSD_ECUOperatingModeReq_ECUOperatingMode(SUSD_GddASM_CurrentMode);
+				}
+			}
+		}
+	}
+	/*If SUM_SUSD_RESETExecution_TIMER has already been started*/
+	/* PRQA S 3469 1 # The function like macros is used. This is necessary to get value via RTE variable */
+	else if((Rte_IrvRead_Runnable_Manage_SUM_SUSD_RESETExecution_TIMER_SUM_SUSD_RESETExecution_TIMER_started())==TRUE)
+	{
+		/*Increment SUM_SUSD_RESETExecution_TIMER*/
+		SUM_SUSD_RESETExecution_TIMER += (SUM_SUSD_RESETExecution_TIMER > SUSD_MAX_RESETEXECUTION_TIMER) ? 0u : SUSD_RESET_EXECUTION_PERIOD;
+
+		/*Check if there is an NvM writing pending*/
+		Susd_NvmGetErrorStatus_uint16(&susd_NvMServiceRESET_ExecutionTimerBlock_FP, &Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER);
+		/*If there is no NvM writing pending*/
+		if (E_PENDING != Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER)
+		{
+			/*Communicate that SUM_SUSD_RESETExecution_TIMER has changed*/
+			(void)susd_NvMServiceRESET_ExecutionTimerBlock_FP.Susd_RteCallNvmSetRamBlockStatus_fp(TRUE);
+		}
+	}
+	else
+	{
+		/*Do nothing*/
+	}
+}
+«IF (sUSD.sUSDGeneral.sUSD_PowerModing_Slave_Supported)-» 
+/***********************************************************************************
+
+  Function name :   Manage_SUM_SUSD_RunningResetWait_TIMER
+  Description   :   Function for handling wait time after running reset occurs
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* PRQA S 1532 1 # This Function can be used in the multiple files and cannot be turned into static as well as moved to static code  */
+FUNC(void, SUSD_CODE) Manage_SUM_SUSD_RunningResetWait_TIMER(void)
+{
+  /* Satisfies: [$SDD_SUSD 149] [$SDD_SUSD 176] */
+  static uint32 elapsed_time;
+  /* Check if wakeup flag is set after reset occurs */
+   if (WakeupAfterReset == TRUE)
+   { 
+      /* Check if the elapsed time is over the wait time */
+      if (elapsed_time >= RunningResetWaitTime)
+      {
+        /* Set the timer expired flag*/
+        TimerExpired = TRUE;
+        elapsed_time = 0u;
+      }
+      else
+      {
+        elapsed_time += SUSD_RESET_EXECUTION_PERIOD;
+      }
+   }
+}
+«ENDIF-»
+/***********************************************************************************
+
+  Function name :   SUSD_Init
+  Description   :   Initialization routine of SUM_SUSD module. It shall initialize all interfaces to default values.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+ /* Satisfies: [$SDD_SUSD 019], [$SDD_SUSD 110], [$SDD_SUSD 111] */
+/* include MemMap.h required here to occupy the space in memory for the described macro*/
+/* PRQA S 1532 2 # Function defined here for modularity reason */
+/* PRQA S 1503 1 # When the SUSD is integrated, this runnable will be called */
+FUNC(void, SUSD_CODE) SUSD_Init(void)
+{
+  «IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0)-»
+  uint32 LulShutdownPermInterfaceCount;
+  «ENDIF-»
+  uint32 LddPermitExeInterfaceCount;
+  /* Local Variable used to initialize Shutdown Permission */
+  uint8 LucShutdownPermCount;
+      
+  /* Read the current value of the First Boot Post Flash Flag from NVM */
+  uint8 Sum_SUSD_FirstBootAfterFlash = SUSD_ReadFirstBootAfterFlash_Flag();
+
+  /* Check if this is the first boot after flashing */
+  if(Sum_SUSD_FirstBootAfterFlash != SUSD_FIRST_BOOT_VALID_FLAG)
+  {
+    /* Set internal flag indicating first boot after flash */
+    isFirstBootAfterFlash = TRUE;
+
+    /* Write validation flag to NVM to indicate boot has occurred */
+    SUSD_WriteFirstBootAfterFlash_Flag(SUSD_FIRST_BOOT_VALID_FLAG);
+    
+  }
+
+  /* Update the unmarshalled version of the DID 0xE0D7 NVRam mirror block after reading on startup */
+  SUSD_E0D7_Populate_On_Startup();
+
+  /* Initialize the RxID-to-index map and next free index from DID 0xE0D7 */
+  SUSD_Init_RxID_Index_Map();
+
+  /* Initialize the active substate for DID 0xE0D7 */
+  SUSD_E0D7_Init_ActiveSubState();
+
+	if(SUSD_GetInitState() == E_NOT_OK)
+	{
+	
+	«IF (sUSD.sUSDGeneral.sUSD_PowerModing_Slave_Supported)-» 
+		/* variable to store NvM Get Error Status API return value */
+		Std_ReturnType LucRet_Sts;
+		/* variable to store Nvm Get Error Status value */
+		NvM_RequestResultType LucNvMErSts;
+	«ENDIF-»
+		/* Initialize Diagnostic Reprogramming request to inactive by default */
+		SUSD_GblDiagReprgRequest = SUM_REPREQ_INACTIVE;
+
+		/* Clear wakeup sources */
+		SUSD_GddValidatedWakeupSrc = SUSD_ZERO;
+	«IF (sUSD.sUSDGeneral.sUSD_RunCrankPlausibility_Supported)-»
+		/* Set Run Crank Active to INACTIVE by default */
+		SUSD_RunCrankActive = SUSD_INACTIVE;
+		/* Set Run Crank Active invalidity to TRUE by default */
+		SUSD_RunCrankActiveInv = TRUE;
+	«ENDIF-»
+
+		/* Initialize Diagnostic Reset request to inactive by default */
+		SUSD_GblDiagResetRequest = SUM_RESREQ_INACTIVE;
+
+	«IF (sUSD.sUSDGeneral.sUSD_PowerModing_Slave_Supported)-» 
+    /* Get running reset wait time */
+    RunningResetWaitTime = (uint32)1000u * (uint32)Rte_CData_SUSD_PDP_SUSD_C_RunningResetWaitTime(); // Store in micro-seconds precision
+		/* check get error status */
+		LucRet_Sts = Rte_Call_RP_NvMService_VehPowerMode_GetErrorStatus(&LucNvMErSts);
+		/* As per Design review discussion with GM,read VPM value from NvM if request is OK else VPM is SUM_PMS_OFF */
+		if ((LucRet_Sts == E_OK) && ((LucNvMErSts == NVM_REQ_OK) || (LucNvMErSts == NVM_REQ_BLOCK_SKIPPED)))
+		{
+			/* Set VPM as read from NvM */
+			/* PRQA S 3469 1 # The function like macros is used. This is necessary to get value via RTE variable */
+			SUSD_VehiclePowerMode = *Rte_Pim_VehiclePowerMode_State();
+		}
+		else
+		{
+			/* Vehicle Power mode state as OFF */
+			SUSD_VehiclePowerMode = SUM_PMS_OFF;
+		}
+		/* Set initially invalidity to true, when valid power mode is available then set to false */
+		SUSD_VehiclePowerModeInv = TRUE;
+
+		/* Indicate Vehicle Power Mode to SWCs */
+		/* [$Satisfies $SDD_SUSD 248] */
+		(void) Rte_Write_PP_SUSD_VehiclePowerMode_VehiclePowerMode(SUSD_VehiclePowerMode);
+		
+		/* Indicate Vehicle Power Mode Invalidity to SWCs */
+		/* [$Satisfies $SDD_SUSD 248] */
+		(void) Rte_Write_PP_SUSD_VehiclePowerMode_Inv_VehiclePowerMode_Inv(SUSD_VehiclePowerModeInv);
+	«ENDIF-»
+
+		/* Set vehicle Battery Voltage to 12 volts by default */
+		SUSD_GucVehicleBattVoltage = (uint8) SUSD_INIT_VOLTAGE;
+
+		«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0)-»
+		/* Initializing the Permit Execution to default value for the number of SW-Cs configured for this interface */
+		for (LddPermitExeInterfaceCount = SUSD_ZERO ; LddPermitExeInterfaceCount < NO_OF_SWCS ;
+				LddPermitExeInterfaceCount++)
+		{
+			SUSD_GaaSWCPermitExecution[LddPermitExeInterfaceCount] = (SUSD_SWC_ExecutionStatusType) SUSD_ZERO;
+		}
+		«ENDIF-»
+		/* Initializing the Permit Execution to default value for the 8 SUMs configured for this interface */
+		for (LddPermitExeInterfaceCount = SUSD_ZERO ; LddPermitExeInterfaceCount < SUSD_SUM_PERMEXE ;
+				LddPermitExeInterfaceCount++)
+		{
+			SUSD_GaaSUMPermitExecution[LddPermitExeInterfaceCount] = (SUSD_SWC_ExecutionStatusType) SUSD_ZERO;
+		}
+    /*Set The wait Global Force Timer to the Configured valua at Init*/
+    SUSD_GaaWaitGlobalForceShutdownTimer = SUSD_T_FORCE_SHUTDOWN_WAIT;
+
+	  
+    «IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.select(e|e.sUSD_C_ShutdownPermControl == true).size > 0) -»
+	  /* Initialize SWC shutdown enable bit array to all 1s (Enable Shutdown) */
+	  {
+      uint32 arraySize = SUSD_SWC_SHUTDOWN_BIT_ARRAY_SIZE;
+	    uint32 i;
+      /* PRQA S 2877 20 # Loop designed for scalability with multiple SWC array elements */
+	    for (i = SUSD_ZERO; i < arraySize; i++)
+	    {
+	      Gblshutdownenablecnt[i] = 0xFFFFFFFFFFFFFFFFULL;
+	    }
+	  }
+    «ENDIF-»
+    «IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0)-»
+		/* Initializing the Shutdown Permission to default value for the number of SW-Cs configured for this interface */
+		for (LulShutdownPermInterfaceCount = SUSD_ZERO ; LulShutdownPermInterfaceCount < NO_OF_SWCS ;
+				LulShutdownPermInterfaceCount++)
+		{
+			SUSD_GaaSWCShutdownPermission[LulShutdownPermInterfaceCount] = ENABLESHUTDOWN;
+
+			SUSD_GaaShutdownTimer[LulShutdownPermInterfaceCount] = SUSD_T_SHUTDOWN_REFRESH;
+
+		}
+    «ENDIF-»
+
+    /* Initialize SUM shutdown enable bit array to all 1s (Enable Shutdown) */
+	  GblSUMshutdownenablecnt = 0xFFFFU;
+
+		/* Initializing the Shutdown Permission to default value for the 4 SUMs configured for this interface */
+		for (LucShutdownPermCount = SUSD_ZERO ; LucShutdownPermCount < SUSD_SUM_SHUTPERM ; LucShutdownPermCount++)
+		{
+			SUSD_GaaSUMShutdownPermission[LucShutdownPermCount] = ENABLESHUTDOWN;
+
+			SUSD_GaaSUMShutdownTimer[LucShutdownPermCount] = SUSD_T_SHUTDOWN_REFRESH;
+
+		}
+	«IF (sUSD.sUSDGeneral.sUSD_RunCrankPlausibility_Supported)-»
+		/* Clear the accumulated counter for run crank input stuck high diagnostic Enable Criteria */
+		SUSD_RunCrankStuckHighDiagnostic_EnabledCount = SUSD_ZERO;
+		/*clear the accumulated counter for Failure Criteria */
+		SUSD_RunCrankStuckHighDiagnostic_FailCount = SUSD_ZERO;
+
+		/* Clear the accumulated counter for run crank input stuck low diagnostic Enable Criteria */
+		SUSD_RunCrankStuckLowDiagnostic_EnabledCount = SUSD_ZERO;
+		/*clear the accumulated counter for Failure Criteria */
+		SUSD_RunCrankStuckLowDiagnostic_FailCount = SUSD_ZERO;
+	«ENDIF-»
+
+		/* Initialization of Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER */
+		Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER=0u;
+		/*Reset Go_to_reset*/
+		/* PRQA S 3432 1 # This runnable is invoked so the argument will follow the AUTOSAR specification */
+		Rte_IrvWrite_Runnable_Manage_SUM_SUSD_RESETExecution_TIMER_Go_to_reset(FALSE);
+		/* Initialization of ASM of SUSD */
+		SUSD_GddASM_CurrentMode = SUM_INIT;
+		
+		/* set init state to done */
+		SUSD_SetInitState();
+	}
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_UpdatedWakeupSource
+  Description   :   Indication from BswM on successful activation or deactivation of the wakeup source
+  Parameter in  :   WakeupSrc
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 147] [$SDD_SUSD 166] [$SDD_SUSD 205] [$SDD_SUSD 239]*/
+/* PRQA S 1503 1 # When the SUSD is integrated, this runnable will be called */
+FUNC(void, SUSD_CODE) SUSD_UpdatedWakeupSource(uint32 WakeupStatus)
+{
+  /*Counter to check the previous status of wakeups*/
+  uint8 WakeupCounter;
+  /*Previous status of wakeup*/
+  uint32 Prev_WakeupStatus;
+  /*Variable to store the position of the wakeup that has changed*/
+  uint32 WakeupSrc;
+  /*Variable used to check the least significant bit which has been changed*/
+  uint32 Wakeup_mask;
+  /*Variable used to keep track of the number of right-shifts which have been performed*/
+  uint8 n_shift;
+  /*Variable used to verify whether the bit, that was changed, has been found*/
+  boolean bit_found;
+
+  uint8 SrcArrayIndex;
+  
+	if(SUSD_GetInitState() == E_OK)
+	{
+    Sum_SUSD_AR_LINRecord_Handler(WakeupStatus);
+    Sum_SUSD_AR_ECURecord_Handler(WakeupStatus);
+
+	  Prev_WakeupStatus=0u;
+
+	  /*Find the previous status of wakeups*/
+	  for(WakeupCounter=0;WakeupCounter<Luccount;WakeupCounter++)
+	  {
+		 Prev_WakeupStatus|=SUSD_GaaWakeUpSources[WakeupCounter] ;
+	  }
+	  /*Check which bit has changed*/
+	  if(Prev_WakeupStatus!=WakeupStatus)
+	  {
+		/*Compute an array whose ones are located in the position of the changed bits*/
+		WakeupSrc = WakeupStatus^Prev_WakeupStatus;
+
+		n_shift=0;
+
+		bit_found=FALSE;
+
+		Wakeup_mask=WakeupSrc;
+
+		WakeupSrc=0u;
+
+		while((bit_found==FALSE)&&(n_shift<32u))
+		{
+			if((Wakeup_mask&0x1u)==0x1u)
+			{
+				/*Store in WakeupSrc the least significant bit which changed*/
+				WakeupSrc=(uint32)1u<<n_shift;
+				for(SrcArrayIndex=0;(SrcArrayIndex<NO_OF_WAKEUPSRCS)&&(bit_found==FALSE);SrcArrayIndex++)
+				{
+					/* Match the wakeup source with the list configured */
+					if((SUSD_GaaWakeupSourcesArray[SrcArrayIndex] & WakeupSrc)!= SUSD_ZERO)
+					{
+						bit_found=TRUE;
+					}
+				}
+				if(bit_found==FALSE)
+				{
+				   WakeupSrc=0u;
+				   n_shift++;
+				   Wakeup_mask=Wakeup_mask>>1;
+				}
+			}
+			else
+			{
+			  n_shift++;
+			  Wakeup_mask=Wakeup_mask>>1;
+			}
+		}
+		
+		SUSD_ActDeact_WakeupSource(WakeupSrc,WakeupStatus);
+
+	  }
+	}
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_ActDeact_WakeupSource
+  Description   :   To activation or deactivation of the wakeup source
+  Parameter in  :   WakeupSrc
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_ActDeact_WakeupSource(uint32 WakeupSrc , uint32 WakeupStatus)
+{
+	if(WakeupSrc!=0u)
+	{
+		/*Two different conditions if the wakeup was activated or deactivated*/
+		if((WakeupSrc&WakeupStatus)!= 0u)
+		{
+			SUSD_ActivatedWakeupSource(WakeupSrc);
+		}
+		else
+		{
+			SUSD_DeactivatedWakeupSource(WakeupSrc);
+		}
+	}
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_ActivatedWakeupSource
+  Description   :   Function used to find the activated Wakeup source,
+                    update SUSD_GaaWakeUpSources,
+                    activate the wakeup bits and
+                    keep track of the number of currently active wakeups
+  Parameter in  :   WakeupSrc
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_ActivatedWakeupSource(uint32 WakeupSrc)
+{
+  /*Variable needed to identify the first iteration*/
+  static boolean first_iteration=TRUE;
+  /* Variable to read the time of occurrence of wakeup from TCS */
+  TimeSyncMessageType LucTimeValue;
+  /* Variable used for looping to store the time of occurrence */
+  uint8 LucTmValcnt;
+
+  SUSD_ECUWakeupDetectionRecord Data;
+
+
+  if(first_iteration==TRUE)
+  {
+
+     /* Copy the wakeup source for DID info on current wakeup source */
+     SUSD_GddValidatedWakeupSrc = WakeupSrc;
+
+     /* Manage the interface with SOH and reset SUM_SUSD_RESETExecution_TIMER*/
+     Manage_Initial_SUM_SUSD_RESETExecution_TIMER(WakeupSrc);
+     
+     /* On a power-on/off cycle (WakeupAfterReset == FALSE), reset RxTAT to 0 for all
+        activity records. SUSD_E0D7_Populate_On_Startup() restores NvM data unconditionally
+        at startup, but RxTAT is a per-key-cycle timer and must be 0 at each new key cycle.
+        On an ECU reset within the same key cycle (WakeupAfterReset == TRUE), RxTAT is
+        left as restored from NvM so it correctly accumulates across the reset. */
+     if (WakeupAfterReset == FALSE)
+     {
+         SUSD_E0D7_Reset_RxTAT_For_PowerOn();
+     }
+
+     /*Reset the flag to indicate that the first iteration occurred*/
+     first_iteration=FALSE;
+
+     /* Get the time from TCS to store the time of occurence of wakeup */
+     (void)Rte_Read_RP_TCS_SUSD_Clock_GlobalTime(&LucTimeValue);
+
+     /* Store the wakeup source ID and TimeStamp*/
+     Data.ECUWakeupDetectionRecordId[0] = (uint8)WakeupSrc;
+     Data.ECUWakeupDetectionRecordId[1] = (uint8)(WakeupSrc >> 8u);
+     Data.ECUWakeupDetectionRecordId[2] = (uint8)(WakeupSrc >> 16u);
+     Data.ECUWakeupDetectionRecordId[3] = (uint8)(WakeupSrc >> 24u);
+
+     for(LucTmValcnt = SUSD_ZERO; LucTmValcnt < SUSD_FIVE; LucTmValcnt++)
+     {
+        /* Store the time of occurrence in big-endian format */
+        Data.TimeStampOfOccurence[LucTmValcnt] = (uint8)((LucTimeValue >> ((SUSD_FIVE - 1u - LucTmValcnt) * 8u)) & 0xFFu);
+     }
+
+     /*Update the ECU Wakeup Detection Records based on validated wakeup source*/
+     SUSD_ECUWakeupDetectionRecordsUpdate(&Data);
+  }
+
+  /*Set Wakeup bits in the PermitExecution interfaces*/
+  SUSD_SetWakeupbits(WakeupSrc);
+
+  /*Check Local count is within limits - number of wakeup sources */
+  if(Luccount < NO_OF_WAKEUPSRCS)
+  {
+	/* Store the wakeup source ID*/
+	SUSD_GaaWakeUpSources[Luccount]  = WakeupSrc;
+    /*Increment counter*/
+    Luccount++;
+  }
+  else
+  {
+    Luccount = NO_OF_WAKEUPSRCS;
+  }
+}
+
+/***********************************************************************************
+
+  Function name :   Manage_Initial_SUM_SUSD_RESETExecution_TIMER
+  Description   :   Function used to manage the interface which communicates the
+                    type of reset to the SOH. It is also used to reset
+                    SUM_SUSD_RESETExecution_TIMER and it into NvM.
+  Parameter in  :   WakeupSrc
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+
+static FUNC(void, SUSD_CODE) Manage_Initial_SUM_SUSD_RESETExecution_TIMER(uint32 WakeupSrc)
+{
+
+	static SUSD_SOH_ResetOccurredType LastResetType = LAST_RESET_INVALID;;
+
+	/* Satisfies: [$SDD_SUSD 169] */
+	/*If the WakeupSrc is among the ones indicated in the specs, and the timer value is below the threshold*/
+    if((WakeupSrc==ECUM_WKSOURCE_RESET)||
+   	    (WakeupSrc==ECUM_WKSOURCE_INTERNAL_RESET)||
+		(WakeupSrc==ECUM_WKSOURCE_INTERNAL_WDG)||
+		(WakeupSrc==ECUM_WKSOURCE_EXTERNAL_WDG))
+
+	{
+
+    	/* PRQA S 3469 1 # The function like macros is used. This is necessary to get value via RTE variable */
+    	if((1000u * Rte_CData_SUM_SUSD_RESETExecution_TIMER_Thresh()) >= (*susd_NvMServiceRESET_ExecutionTimerBlock_FP.NvmRamBlock))
+    	{
+			  /*Tell SOH that it was an immediate Reset*/
+			LastResetType=SUSDResetOccurred_ImmediateResetOccurred;
+    	}
+    	else
+    	{
+    		 /*Tell SOH that it was a delayed Reset*/
+    		LastResetType=SUSDResetOccurred_DelayedResetOccurred;
+    	}
+«IF (sUSD.sUSDGeneral.sUSD_PowerModing_Slave_Supported)-»       
+    	WakeupAfterReset = TRUE;
+«ENDIF-»     
+	}
+    else
+    {
+        /*Tell SOH default*/
+    	LastResetType=SUSDResetOccurred_Default;
+    }
+    /* [$Satisfies $SDD_SUSD 248] */
+    (void)Rte_Write_PP_SUSD_SOH_ResetOccurred_SUSDResetOccurred(LastResetType);
+    /*Reset SUM_SUSD_RESETExecution_TIMER*/
+    SUM_SUSD_RESETExecution_TIMER=0x0000;
+    /*For the sake of completeness, check if there is any other NvM writing pending*/
+	if (E_PENDING == Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER)
+	{
+		Susd_NvmGetErrorStatus_uint16(&susd_NvMServiceRESET_ExecutionTimerBlock_FP, &Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER);
+	}
+	/*If there is no other NvM writing pending*/
+	if (E_PENDING != Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER)
+	{
+	  /*Communicate that SUM_SUSD_RESETExecution_TIMER has changed*/
+	  if(E_OK==susd_NvMServiceRESET_ExecutionTimerBlock_FP.Susd_RteCallNvmSetRamBlockStatus_fp(TRUE))
+	  {
+		/*Start writing SUM_SUSD_RESETExecution_TIMER into NvM*/
+		/* [$Satisfies $SDD_SUSD 250] */
+		Susd_NvmWriteBlock_uint16(&susd_NvMServiceRESET_ExecutionTimerBlock_FP, &Susd_LastRequestResult_SUM_SUSD_RESETExecution_TIMER);
+	  }
+	}
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_DeactivatedWakeupSource
+  Description   :   Function used to find the deactivated Wakeup source,
+                    update SUSD_GaaWakeUpSources,
+                    deactivate the wakeup bits and
+                    keep track of the number of currently active wakeups
+  Parameter in  :   WakeupSrc
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_DeactivatedWakeupSource(uint32 WakeupSrc)
+{
+  /*Flag used to check when the wakeup source, which has been deactivated, is found*/
+  boolean Wakeupfound;
+  /* Variable used for looping through the wakeup sources configured */
+  uint8 Lulwakeupsrccount;
+  /*Index*/
+  uint8 SrcArrayIndex;
+
+  Wakeupfound=FALSE;
+
+  for(Lulwakeupsrccount = SUSD_ZERO; (Lulwakeupsrccount < NO_OF_WAKEUPSRCS)&&(Wakeupfound==FALSE); Lulwakeupsrccount++)
+  {
+    /*If the wakeup source stored in the array is equal to the deactivated wakeup source*/
+    if(SUSD_GaaWakeUpSources[Lulwakeupsrccount]  == WakeupSrc)
+    {
+      Wakeupfound=TRUE;
+	  /*Reset the data stored in the array related to this source*/
+	  SUSD_GaaWakeUpSources[Lulwakeupsrccount] =0u;
+
+	  if(Luccount>1u)
+	  {
+	    /*Reorganize the array*/
+	    for (SrcArrayIndex=Lulwakeupsrccount;SrcArrayIndex<(Luccount-1u);SrcArrayIndex++)
+	    {
+	      SUSD_GaaWakeUpSources[SrcArrayIndex] =SUSD_GaaWakeUpSources[(SrcArrayIndex+1u)] ;
+
+	    }
+	    SUSD_GaaWakeUpSources[SrcArrayIndex] =0u;
+
+        Luccount--;
+      }
+      else
+      {
+        Luccount = SUSD_ZERO;
+      }
+
+
+	  /*Reset Wakeup bits*/
+	  SUSD_ResetWakeupbits();
+
+	}
+  }
+}
+
+
+
+/***********************************************************************************
+
+  Function name :   SUSD_SetWakeupbits
+  Description   :   Function used to set the wakeup bits in the PermitExecution Interfaces
+  Parameter in  :   WakeupSrc
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_SetWakeupbits(uint32 WakeupSrc)
+{
+    uint8 i;
+    boolean WakeupBitSet = FALSE;
+
+    NoActiveWakeup = WAKEUPS_ENABLED;
+    
+    /* Set wakeup bits for all relevant SUM modules.
+    ** SUSD_SUM_PERMEXE doesn't exceed 32 by configuration. */
+    for (i = 0u; i < SUSD_SUM_PERMEXE; i++)
+    {
+        if ((SUSD_GaaSUMWakeupMasks[i] & WakeupSrc) != 0u)
+        {
+            /* Check if the bit for this module is not already set */
+            if (((SUSD_ModuleWakeupBits & ((uint32)1u << i))) == 0u)
+            {
+                /* This wakeup source is relevant for this SUM module */
+                SUSD_GaaSUMPermitExecution[i] = (SUSD_GaaSUMPermitExecution[i] | (uint8)0x01);
+                
+                /* Set the corresponding bit in the global wakeup bits variable */
+                SUSD_ModuleWakeupBits |= ((uint32)1u << i);
+                
+                /* Mark that at least one wakeup bit was set */
+                WakeupBitSet = TRUE;
+            }
+        }
+    }
+    /* Execute permit execution only if at least one wakeup bit was set */
+    if (WakeupBitSet != FALSE)
+    {
+        /* Permit Execution interface to be invoked after wakeup validation */
+        SUSD_SUM_PermitExecution();
+    }
+
+    /* Set wakeup bits for all relevant SWCs. 
+    ** SUSD_SWCModuleWakeupBits doesn't exceed 32 by configuration. */
+    WakeupBitSet = FALSE;
+    for (i = 0u; i < NO_OF_SWCS; i++)
+    {
+        if ((SUSD_GaaSWCWakeupMasks[i] & WakeupSrc) != 0u)
+        {
+            if (((SUSD_SWCModuleWakeupBits & ((uint32)1u << i))) == 0u)
+            {
+              SUSD_SWCModuleWakeupBits |= ((uint32)1u << i);
+              WakeupBitSet = TRUE;
+            }
+        }
+    }
+    /* Execute permit execution only if at least one wakeup bit was set */
+    if (WakeupBitSet != FALSE)
+    {
+        /* SWC-specific wakeup without a matching SUM - still update SWC permit execution */
+        SUSD_SWC_PermitExecution();
+    }
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_ResetWakeupbits
+  Description   :   Function used to reset the wakeup bits in the PermitExecution Interfaces
+  Parameter in  :   WakeupSrc
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_ResetWakeupbits(void)
+{
+  uint8 i;
+	boolean WakeupBitReset = FALSE;
+
+	/* Build AnySimilarWakeup. */
+	SUSD_CheckSimilarWakeups();
+
+	/* Loop on all the SUM modules. */
+	for (i = 0; i < SUSD_SUM_PERMEXE; i++)
+	{
+    /* If current SUM is active and no relevant wakeup source: reset wakeup bit. */
+		if ((((SUSD_ModuleWakeupBits & ((uint32)1u << i))) != 0u) && ((SUSD_GaaSUMWakeupMasks[i] & AnySimilarWakeup) == 0u))
+		{
+      /* Reset when no similar wakeup is active for this SUM module */
+      SUSD_GaaSUMPermitExecution[i] &= (uint8)0xFE;
+      
+      /* Clear the corresponding bit in the global wakeup bits variable */
+      SUSD_ModuleWakeupBits &= ~((uint32)1u << i);
+      
+      /* Mark that at least one wakeup bit was reset */
+      WakeupBitReset = TRUE;
+    }
+	}
+	/* Execute permit execution only if at least one wakeup bit was reset */
+	if (WakeupBitReset == TRUE)
+	{
+		/* Permit Execution interface to be invoked after wakeup validation */
+		SUSD_SUM_PermitExecution();
+	}
+
+  /* SWCs. */
+  WakeupBitReset = FALSE;
+  /* Loop on all the SWC modules. */
+  for (i = 0u; i < NO_OF_SWCS; i++)
+  {
+    if (((SUSD_SWCModuleWakeupBits & ((uint32)1u << i)) != 0u) && ((SUSD_GaaSWCWakeupMasks[i] & AnySimilarWakeup) == 0u))
+    {
+      /* Reset SWC wakeup bit. */
+      SUSD_SWCModuleWakeupBits &= ~((uint32)1u << i);
+      /* Mark that at least one wakeup bit was reset. */
+      WakeupBitReset = TRUE;
+    }
+  }
+  /* Execute permit execution only if at least one wakeup bit was reset */
+  if (WakeupBitReset == TRUE)
+  {
+    SUSD_SWC_PermitExecution();
+  }
+
+  if((SUSD_ModuleWakeupBits == SUSD_ZERO) && (SUSD_SWCModuleWakeupBits == SUSD_ZERO)) 
+  {
+    NoActiveWakeup = ALL_WAKEUPS_DISABLED;
+  }
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_CheckSimilarWakeups
+  Description   :   Function used to check if there active wakeups related to different
+                    types of wakeup sources
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_CheckSimilarWakeups(void)
+{
+  uint32 i;
+
+  AnySimilarWakeup = SUSD_ZERO;
+
+  for (i = 0u; i < Luccount; i++)
+  {
+    switch (SUSD_GaaWakeUpSources[i])
+    {
+      case ECUM_WKSOURCE_POWER:
+      case ECUM_WKSOURCE_RESET:
+      case ECUM_WKSOURCE_INTERNAL_RESET:
+      case ECUM_WKSOURCE_INTERNAL_WDG:
+      case ECUM_WKSOURCE_EXTERNAL_WDG:
+        AnySimilarWakeup |= SUSD_GLOBAL_WAKEUP_MASK;
+        break;
+
+      case ECUM_WKSOURCE_NETWORK_1_CAN:
+      case ECUM_WKSOURCE_NETWORK_2_CAN:
+        AnySimilarWakeup |= SUSD_CAN_WAKEUP_MASK;
+        break;
+
+      case ECUM_WKSOURCE_NETWORK_1_ETH:
+      case ECUM_WKSOURCE_NETWORK_2_ETH:
+        AnySimilarWakeup |= SUSD_ETH_WAKEUP_MASK;
+        break;
+
+      case ECUM_WKSOURCE_LIN:
+        AnySimilarWakeup |= SUSD_LIN_WAKEUP_MASK;
+        break;
+
+      default:
+        /* Ungrouped wakeup source. */
+        AnySimilarWakeup |= SUSD_GaaWakeUpSources[i];
+        break;
+    }
+  }
+}
+
+
+/***********************************************************************************
+  Function name :   SUSD_DiagnosticReprogrammingRequest
+  Description   :   Notification from BswM for Diagnostic Reprogramming request to support jump to
+                    bootloader request received from diagnostic tester.
+  Parameter in  :   ReprogrammingStatus
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* PRQA S 1532 1 # This Function can be used in the multiple files and cannot be turned into static as well as moved to static code  */
+FUNC(void, SUSD_CODE) SUSD_DiagnosticReprogrammingRequest(ReprogrammingStatus Status)
+{
+  SUSD_GblDiagReprgRequest = Status;
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_DiagnosticResetRequest
+  Description   :   Notification from BswM for Diagnostic reset request received from diagnostic tester.
+  Parameter in  :   ResetStatus
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* PRQA S 1532 1 # This Function can be used in the multiple file and can not be turned into static as well as moved to static code */
+FUNC(void, SUSD_CODE) SUSD_DiagnosticResetRequest(ResetStatus Status)
+{
+  SUSD_GblDiagResetRequest = Status;
+}
+
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.select(e|e.sUSD_C_ShutdownPermControl == true).size > 0) -»
+/***********************************************************************************
+  Function name :   SUSD_SetShutdownEnableBit_SWC
+  Description   :   Sets the shutdown enable bit to 1 for the specified SWC module
+  Parameter in  :   swcIndex - Index of the SWC module
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_SetShutdownEnableBit_SWC(uint32 swcIndex)
+{
+  /* PRQA S 3120 2 # 64 is the number of bits per uint64 element in the bit array */
+  uint32 arrayIndex = swcIndex / 64u;
+  uint32 bitPosition = swcIndex % 64u;
+  Gblshutdownenablecnt[arrayIndex] |= ((uint64)1u << bitPosition);
+}
+«ENDIF-»
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.select(e|e.sUSD_C_ShutdownPermControl == true).size > 0) -»
+/***********************************************************************************
+  Function name :   SUSD_ClearShutdownEnableBit_SWC
+  Description   :   Clears the shutdown enable bit to 0 for the specified SWC module
+  Parameter in  :   swcIndex - Index of the SWC module
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_ClearShutdownEnableBit_SWC(uint32 swcIndex)
+{
+  /* PRQA S 3120 2 # 64 is the number of bits per uint64 element in the bit array */
+  uint32 arrayIndex = swcIndex / 64u;
+  uint32 bitPosition = swcIndex % 64u;
+  Gblshutdownenablecnt[arrayIndex] &= ~((uint64)1u << bitPosition);
+}
+«ENDIF-»
+
+/***********************************************************************************
+  Function name :   SUSD_SetShutdownEnableBit_SUM
+  Description   :   Sets the shutdown enable bit to 1 for the specified SUM module
+  Parameter in  :   sumIndex - Index of the SUM module
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_SetShutdownEnableBit_SUM(uint8 sumIndex)
+{
+  GblSUMshutdownenablecnt |= ((uint16)1u << sumIndex);
+}
+
+/***********************************************************************************
+  Function name :   SUSD_ClearShutdownEnableBit_SUM
+  Description   :   Clears the shutdown enable bit to 0 for the specified SUM module
+  Parameter in  :   sumIndex - Index of the SUM module
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_ClearShutdownEnableBit_SUM(uint8 sumIndex)
+{
+  GblSUMshutdownenablecnt &= ~((uint16)1u << sumIndex);
+}
+
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0)-»
+«FOREACH sUSD.sUSDConfigSet.sUSD_C_SWCInfo AS swc ITERATOR swc_iter-»
+«IF swc.sUSD_C_ShutdownPermControl == true-»
+/***********************************************************************************
+  Function name :   RE_«swc.sUSD_SWCName»_ShutdownPermission
+  Description   :   Function used to restart the Shutdown Refresh timer for «swc.sUSD_SWCName»
+                    upon reception of new data
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 148]*/
+/* PRQA S 1503 1 # When the SUSD is integrated, this function may be called by RTE*/
+FUNC(void, SUSD_CODE) RE_«swc.sUSD_SWCName»_ShutdownPermission(void)
+{
+  /* Rte interfaces */
+  P2CONST(SUSD_SWCRteInterfaces, AUTOMATIC,AUTOMATIC) LpRteInterface;
+  /* Point to the array of structures containing the SWC interfaces */
+  LpRteInterface = &SUSD_GaaRteSWCInterface[SUSD_ZERO];
+  /*Refresh the Refresh Timer*/
+  SUSD_GaaShutdownTimer[«swc_iter.counter0»] = SUSD_T_SHUTDOWN_REFRESH;
+
+  if(TRUE == (LpRteInterface[«swc_iter.counter0»].ShutdownPermControl)())
+  {
+    /* Invoke Rte Read to read the Shutdown Value from that SWC */
+    (*(LpRteInterface[«swc_iter.counter0»].SWCShutdownPermInterface))(&SUSD_GaaSWCShutdownPermission[«swc_iter.counter0»]);
+    
+    if(ENABLESHUTDOWN == SUSD_GaaSWCShutdownPermission[«swc_iter.counter0»])
+    {
+      /* When Shutdown is indicated Reset the timers and set bit */
+      SUSD_GaaShutdownTimer[«swc_iter.counter0»] = SUSD_ZERO;
+      SUSD_SetShutdownEnableBit_SWC(«swc_iter.counter0»);
+    }
+  }
+   
+}
+
+«ENDIF-»
+«ENDFOREACH-»
+«ENDIF-»
+
+«FOREACH sUSD.sUSDConfigSet.sUSD_C_SUMsInfo AS sum-»
+«IF sum.sUSD_ShutdownPermission == true-»
+/***********************************************************************************
+  Function name :   RE_«sum.sUSD_SUMsName»_ShutdownPermission
+  Description   :   Function used to restart the Shutdown Refresh timer for «sum.sUSD_SUMsName»
+                    upon reception of new data
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 148]*/
+/* PRQA S 1503 1 # When the SUSD is integrated, this function may be called by RTE*/
+FUNC(void, SUSD_CODE) RE_«sum.sUSD_SUMsName»_ShutdownPermission(void)
+{
+  /*Refresh the Refresh Timer*/
+  SUSD_GaaSUMShutdownTimer[«sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.indexOf(sum)»] = SUSD_T_SHUTDOWN_REFRESH;
+
+  /* Invoke Rte Read to read the SHutdown Value from that SWC */
+  SUSD_GaaSUM_ShutdwnPer_Interface[«sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.indexOf(sum)»]((SUSD_UserRequestType*)&SUSD_GaaSUMShutdownPermission[«sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.indexOf(sum)»]);
+  
+  if(ENABLESHUTDOWN == SUSD_GaaSUMShutdownPermission[«sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.indexOf(sum)»])
+  {
+    /* When Shutdown is indicated Reset the timers and set bit */
+    SUSD_GaaSUMShutdownTimer[«sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.indexOf(sum)»] = SUSD_ZERO;
+    SUSD_SetShutdownEnableBit_SUM(«sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.indexOf(sum)»);
+  }
+«IF sum.sUSD_SUMsName == "SUM_SPM"-»
+  /*For the SPM we have to set the Bit also if the SUSD_GaaSUMShutdownPermission is 254 Ready for Shoutdown*/
+  if(READYFORSHUTDOWN == SUSD_GaaSUMShutdownPermission[«sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.indexOf(sum)»])
+  {
+    /*For the SPM also if the Interface is 254 Ready to Shutdown we have to process the information */
+     SUSD_SetShutdownEnableBit_SUM(«sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.indexOf(sum)»);
+  }
+«ENDIF-»
+}
+«ENDIF-»
+«ENDFOREACH-»
+
+/***********************************************************************************
+  Function name :   Processing_SUSD_Shutdown_Refresh_Timer
+  Description   :   Centralized function to process shutdown refresh timers for both 
+                    SUM and SWC modules. Decrements active timers and forces 
+                    Enable Shutdown status when timers expire.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 148]*/
+/* PRQA S 1532 1 # This Function can be used in the multiple file and can not be turned into static as well as moved to static code */
+FUNC(void, SUSD_CODE) Processing_SUSD_Shutdown_Refresh_Timer(void)
+{
+  «LET sUSD.sUSDConfigSet.sUSD_C_SWCInfo.select(e|e.sUSD_C_ShutdownPermControl == true).size AS swcShutdownPermCount-»
+  «IF (swcShutdownPermCount > 0)-»
+  uint32 i;
+  «ELSE-»
+  uint8 i;
+  «ENDIF-»
+
+  «IF (swcShutdownPermCount > 0)-»
+  /* Process SWC Shutdown Refresh Timers */
+  /* PRQA S 2877 1 # This is called only once due to configuration */
+  for(i = SUSD_ZERO; i < NO_OF_SWCS; i++)
+  {
+    /* Check if timer expired */
+    if(SUSD_GaaShutdownTimer[i] == SUSD_ZERO)
+    {
+      /* Timer expired - override SWC response and force Enable Shutdown */
+      SUSD_GaaSWCShutdownPermission[i] = ENABLESHUTDOWN;
+      /* Set bit to 1 when forcing Enable Shutdown */
+      SUSD_SetShutdownEnableBit_SWC(i);
+    }
+    else 
+    {
+      /* Clear bit to 1 when forcing Enable Shutdown */
+      if(SUSD_GaaWaitGlobalForceShutdownTimer != SUSD_ZERO)
+      {
+        SUSD_ClearShutdownEnableBit_SWC(i);
+      }
+      /* Decrement wait shutdown timer if active */
+      SUSD_GaaShutdownTimer[i]--;
+    }
+  }
+  «ENDIF-»
+  «ENDLET-»
+
+  /* Process SUM Shutdown Refresh Timers */
+  for(i = SUSD_ZERO; i < SUSD_SUM_SHUTPERM; i++)
+  {
+    /* Check if timer expired */
+    if(SUSD_GaaSUMShutdownTimer[i] == SUSD_ZERO)
+    {
+      /* Timer expired - override SUM response and force Enable Shutdown */
+      SUSD_GaaSUMShutdownPermission[i] = ENABLESHUTDOWN;
+      /* Set bit to 1 when forcing Enable Shutdown */
+      SUSD_SetShutdownEnableBit_SUM((uint8)i);
+    }
+    else 
+    {
+      /* Clear bit to 1 when forcing Enable Shutdown */
+      if(SUSD_GaaWaitGlobalForceShutdownTimer != SUSD_ZERO)
+      {
+        SUSD_ClearShutdownEnableBit_SUM((uint8)i);
+      }
+      /* Decrement shutdown timer if active */
+      SUSD_GaaSUMShutdownTimer[i]--;  
+    }
+  }
+}
+
+
+/***********************************************************************************
+  Function name :   Processing_SUSD_Shutdown_GloabalWait_Force_Timer
+  Description   :   Centralized function to process shutdown Wait Global Force Timer for both 
+                    SUM and SWC modules. Decrements active timers and forces 
+                    Enable Shutdown status when timers expire.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 148]*/
+/* PRQA S 1532 1 # This Function can be used in the multiple file and can not be turned into static as well as moved to static code */
+FUNC(void, SUSD_CODE) Processing_SUSD_Shutdown_GloabalWait_Force_Timer(void)
+{
+  uint8 SUM_ShutdownIter;
+  uint32 SWC_ShutdownIter;
+  boolean SUM_AllnoPermitEx = TRUE;
+  boolean SWC_AllnoPermitEx = TRUE; 
+
+  «IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0)-»
+   /*Check if there is some SWC that still have the permit Execution */
+  for (SWC_ShutdownIter = 0; SWC_ShutdownIter < NO_OF_SWCS; SWC_ShutdownIter++ )
+  {
+    if ((uint8)(SUSD_GaaSWCPermitExecution[SWC_ShutdownIter] & (uint8)0x01) != (uint8)0)
+    {
+      SWC_AllnoPermitEx = FALSE;
+    }
+  } 
+  «ENDIF-»
+  
+  /*Check if there is some SUM that still have the permit Execution */
+  for (SUM_ShutdownIter = 0; SUM_ShutdownIter < SUSD_SUM_PERMEXE; SUM_ShutdownIter++ )
+  {
+    if ((uint8)(SUSD_GaaSUMPermitExecution[SUM_ShutdownIter] & (uint8)0x01) != (uint8)0)
+    {
+      SUM_AllnoPermitEx = FALSE;
+    }
+  }
+
+  /* If all SUM and SWC do not have Permit Execution, decrease the global wait force timer.
+     Do NOT decrement when the counter is already zero (prevents underflow). If any
+     module has permit execution, restore the configured value. */
+  if ((SUM_AllnoPermitEx == TRUE) && (SWC_AllnoPermitEx == TRUE))
+  {
+    if (SUSD_GaaWaitGlobalForceShutdownTimer > SUSD_ZERO)
+    {
+      SUSD_GaaWaitGlobalForceShutdownTimer--;
+    }
+    /* else: timer is already zero - keep it at zero so expiration handling runs below */
+  }
+  else /* in other case restore the Config Value */
+  {
+    SUSD_GaaWaitGlobalForceShutdownTimer = SUSD_T_FORCE_SHUTDOWN_WAIT;
+  }
+  /*When this timer expired set all the Flag and array to force the Enable shutdown*/
+  if (SUSD_GaaWaitGlobalForceShutdownTimer == SUSD_ZERO)
+  {
+    for (SUM_ShutdownIter = 0; SUM_ShutdownIter < SUSD_SUM_PERMEXE; SUM_ShutdownIter++ )
+    {
+       /* Timer expired - override SUM response and force Enable Shutdown */
+      SUSD_GaaSUMShutdownPermission[SUM_ShutdownIter] = ENABLESHUTDOWN;
+      /* Set bit to 1 when forcing Enable Shutdown */
+      SUSD_SetShutdownEnableBit_SUM((uint8)SUM_ShutdownIter);
+    }
+«IF NumOfSwcConfigured(sUSD.sUSDConfigSet) >= 1-»
+    for (SWC_ShutdownIter = 0; SWC_ShutdownIter < NO_OF_SWCS; SWC_ShutdownIter++ )
+    {
+         /* Timer expired - override SUM response and force Enable Shutdown */
+          SUSD_GaaSWCShutdownPermission[SWC_ShutdownIter] = ENABLESHUTDOWN;
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.select(e|e.sUSD_C_ShutdownPermControl == true).size > 0) -»
+          /* Set bit to 1 when forcing Enable Shutdown */
+          SUSD_SetShutdownEnableBit_SWC((uint8)SWC_ShutdownIter);
+«ENDIF-»
+    }
+«ENDIF-»
+  }
+}
+
+
+
+/***********************************************************************************
+
+  Function name :   SUSD_SUM_PermitExecution
+  Description   :   Function to handle the Permit Execution interface from SUM
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 133] [$SDD_SUSD 147]*/
+/* PRQA S 1532 1 # This Function can be used in the multiple file and can not be turned into static as well as moved to static code */
+FUNC(void, SUSD_CODE) SUSD_SUM_PermitExecution(void)
+{
+  /* Local variable to loop SUM to load timer on reset */
+  uint8 LucSUMCount;
+  static boolean SumSpmBit1SetOnce = FALSE;
+  «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SPM")-»
+  /*if bit 0 is 1, set bit 1 only once*/
+  if((((SUSD_GaaSUMPermitExecution[SUM_SPM] & (uint8)0x01) == (uint8)0x01)) &&
+      (SumSpmBit1SetOnce == FALSE))
+  {
+    SUSD_GaaSUMPermitExecution[SUM_SPM] = (SUSD_GaaSUMPermitExecution[SUM_SPM] | (uint8)0x02);
+    SumSpmBit1SetOnce = TRUE;
+  }
+  «ENDIF-»
+
+  «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_PNC")-»
+  /* Check hardware availability */
+  if(TRUE == SUSD_GblPnHwAvailable)
+  {
+    /* Set bit 3 in case PN hardware is supported by the ECU */
+    SUSD_GaaSUMPermitExecution[SUM_PNC] = (SUSD_GaaSUMPermitExecution[SUM_PNC] | (uint8)0x04);
+  }
+  «ENDIF-»
+  «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_LNM")-»
+  /* Check hardware availability */
+  if(TRUE == SUSD_GblLinHwAvailable)
+  {
+    /* Set bit 3 in case LIN hardware is supported by the ECU */
+    SUSD_GaaSUMPermitExecution[SUM_LNM] = (SUSD_GaaSUMPermitExecution[SUM_LNM] | (uint8)0x04);
+  }
+  «ENDIF-»
+  for(LucSUMCount = SUSD_ZERO; LucSUMCount < SUSD_SUM_PERMEXE; LucSUMCount++)
+  {
+      /* Rte API to indicate the Permit Execution to all SUMs with the bit information */
+      (void)SUSD_GaaSUM_PermitExec_Interface[LucSUMCount](SUSD_GaaSUMPermitExecution[LucSUMCount]);
+  }
+  /* If Diagnostic Reprogramming request or Reset Request or SOH Reset Request */
+  if((SUM_REPREQ_ACTIVE == SUSD_GblDiagReprgRequest) || (SUM_RESREQ_ACTIVE == SUSD_GblDiagResetRequest))
+  {
+    /* Satisfies: [$SDD_SUSD 146]*/
+    SUSD_SUM_PermitExecutionDiagReprgmRstReq();
+  }
+  else
+  {
+    SUSD_SUM_PermitExecutionToSUMsWithBitInfo();
+  }
+  
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_SUM_PermitExecutionDiagReprgmRstReq
+  Description   :   Function to handle the Permit Execution interface from SUM
+                :   for Diagnostic reprogram/reset or SOH Reset Request
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_SUM_PermitExecutionDiagReprgmRstReq(void)
+{
+
+  uint8 SUM_counter;
+  uint8 SUM_limit = SUSD_SUM_PERMEXE;
+  const uint8 SUM_disabling_order[SUSD_SUM_PERMEXE]={
+    
+    «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SSFM_ERRH") && 
+    sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SSFM_ERRH").first().sUSD_PermitExecution == true-»
+    SUM_SSFM_ERRH,
+    «ENDIF-»
+    «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_LNM") && 
+    sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_LNM").first().sUSD_PermitExecution == true-»
+    SUM_LNM,
+    «ENDIF-»
+    «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_PNC") && 
+    sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_PNC").first().sUSD_PermitExecution == true-»
+    SUM_PNC,
+    «ENDIF-»
+    «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SOH") && 
+    sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SOH").first().sUSD_PermitExecution == true-»
+    SUM_SOH,
+    «ENDIF-»
+    «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SSFM_SSM") && 
+    sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SSFM_SSM").first().sUSD_PermitExecution == true-»
+    SUM_SSFM_SSM,
+    «ENDIF-»
+    «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SSC") && 
+    sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SSC").first().sUSD_PermitExecution == true-»
+    SUM_SSC,
+    «ENDIF-»
+    «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_TCS") && 
+    sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_TCS").first().sUSD_PermitExecution == true-»
+    SUM_TCS,
+    «ENDIF-»
+    «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SRVMGR") && 
+    sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SRVMGR").first().sUSD_PermitExecution == true-»
+    SUM_SRVMGR,
+    «ENDIF-»
+    «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SPM") && 
+    sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SPM").first().sUSD_PermitExecution == true-»
+    SUM_SPM,
+    «ENDIF-»
+    «IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_DIAG") && 
+    sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_DIAG").first().sUSD_PermitExecution == true-»
+    SUM_DIAG
+    «ENDIF-»
+    };
+
+  for(SUM_counter=0u;SUM_counter<SUM_limit;SUM_counter++)
+  {
+		/*If a reset request occurred*/
+		if(SUM_RESREQ_ACTIVE == SUSD_GblDiagResetRequest)
+		{
+			/* Satisfies: [$SDD_SUSD 168] */
+			/* Satisfies: [$SDD_SUSD 038] */
+			/*Set the shutdown target bit and reset all the other bits including the reset bit*/
+			SUSD_GaaSUMPermitExecution[SUM_disabling_order[SUM_counter]]=NOT_OFF;
+		}
+		else
+		{
+			/* Satisfies: [$SDD_SUSD 168] */
+			/* Satisfies: [$SDD_SUSD 038] */
+			/*Reset all te bits including the reset bit*/
+			SUSD_GaaSUMPermitExecution[SUM_disabling_order[SUM_counter]] = SUSD_ZERO;
+		}
+		/* Rte API to indicate the Permit Execution to SUM_SOH with the bit information */
+		SUSD_GaaSUM_PermitExec_Interface[SUM_disabling_order[SUM_counter]](SUSD_GaaSUMPermitExecution[SUM_disabling_order[SUM_counter]]);
+  }
+
+  
+
+  /* PRQA S 3469 1 # The function like macros is used. This is necessary to get value via RTE variable */
+  if((Rte_IrvRead_Runnable_AppStateManager_SUM_SUSD_RESETExecution_TIMER_started()==FALSE)
+	  &&(SUSD_GblDiagResetRequest==SUM_RESREQ_ACTIVE))
+  {
+	  /* Satisfies: [$SDD_SUSD 169] */
+	  Rte_IrvWrite_Runnable_AppStateManager_SUM_SUSD_RESETExecution_TIMER_started((TRUE));
+  }
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_SUM_PermitExecutionToSUMsWithBitInfo
+  Description   :   Function to handle the Permit Execution interface for SUM
+                :   with bit information
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 134]*/
+static FUNC(void, SUSD_CODE) SUSD_SUM_PermitExecutionToSUMsWithBitInfo(void)
+{
+
+«IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SOH") && 
+  sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SOH").first().sUSD_PermitExecution == true-»
+  /* Set bit 4 if ECU reset is requested */
+  SUSD_GaaSUMPermitExecution[SUM_SOH] = (SUSD_GaaSUMPermitExecution[SUM_SOH] | (uint8)0x40);
+  /* Rte API to indicate the Permit Execution to SUM_SOH with the bit information */
+  SUSD_GaaSUM_PermitExec_Interface[SUM_SOH](SUSD_GaaSUMPermitExecution[SUM_SOH]);
+«ENDIF»
+«IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SSFM_ERRH") && 
+  sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SSFM_ERRH").first().sUSD_PermitExecution == true-»
+  SUSD_GaaSUMPermitExecution[SUM_SSFM_ERRH] = (SUSD_GaaSUMPermitExecution[SUM_SSFM_ERRH] | (uint8)0x40);
+  /* Rte API to indicate the Permit Execution to SUM_SSFM_ERRH with the bit information */
+  SUSD_GaaSUM_PermitExec_Interface[SUM_SSFM_ERRH](SUSD_GaaSUMPermitExecution[SUM_SSFM_ERRH]);
+«ENDIF»
+«IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_LNM") && 
+  sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_LNM").first().sUSD_PermitExecution == true-»
+  SUSD_GaaSUMPermitExecution[SUM_LNM] = (SUSD_GaaSUMPermitExecution[SUM_LNM] | (uint8)0x40);
+  /* Rte API to indicate the Permit Execution to SUM_LNM with the bit information */
+  SUSD_GaaSUM_PermitExec_Interface[SUM_LNM](SUSD_GaaSUMPermitExecution[SUM_LNM]);
+«ENDIF»
+«IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_PNC") && 
+  sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_PNC").first().sUSD_PermitExecution == true-»
+  SUSD_GaaSUMPermitExecution[SUM_PNC] = (SUSD_GaaSUMPermitExecution[SUM_PNC] | (uint8)0x40);
+  /* Rte API to indicate the Permit Execution to SUM_PNC with the bit information */
+  SUSD_GaaSUM_PermitExec_Interface[SUM_PNC](SUSD_GaaSUMPermitExecution[SUM_PNC]);
+«ENDIF»
+«IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SSFM_SSM") && 
+  sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SSFM_SSM").first().sUSD_PermitExecution == true-»
+  SUSD_GaaSUMPermitExecution[SUM_SSFM_SSM] = (SUSD_GaaSUMPermitExecution[SUM_SSFM_SSM] | (uint8)0x40);
+  /* Rte API to indicate the Permit Execution to SUM_SSFM_SSM with the bit information */
+  SUSD_GaaSUM_PermitExec_Interface[SUM_SSFM_SSM](SUSD_GaaSUMPermitExecution[SUM_SSFM_SSM]);
+«ENDIF»
+«IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SSC") && 
+  sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SSC").first().sUSD_PermitExecution == true-»
+  SUSD_GaaSUMPermitExecution[SUM_SSC] = (SUSD_GaaSUMPermitExecution[SUM_SSC] | (uint8)0x40);
+  /* Rte API to indicate the Permit Execution to SUM_SSC with the bit information */
+  SUSD_GaaSUM_PermitExec_Interface[SUM_SSC](SUSD_GaaSUMPermitExecution[SUM_SSC]);
+«ENDIF»
+«IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SRVMGR") && 
+  sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SRVMGR").first().sUSD_PermitExecution == true-»
+  SUSD_GaaSUMPermitExecution[SUM_SRVMGR] = (SUSD_GaaSUMPermitExecution[SUM_SRVMGR] | (uint8)0x40);
+  /* Rte API to indicate the Permit Execution to SUM_SRVMGR with the bit information */
+  SUSD_GaaSUM_PermitExec_Interface[SUM_SRVMGR](SUSD_GaaSUMPermitExecution[SUM_SRVMGR]);
+«ENDIF»
+«IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_TCS") && 
+  sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_TCS").first().sUSD_PermitExecution == true-»
+  SUSD_GaaSUMPermitExecution[SUM_TCS] = (SUSD_GaaSUMPermitExecution[SUM_TCS] | (uint8)0x40);
+  SUSD_GaaSUM_PermitExec_Interface[SUM_TCS](SUSD_GaaSUMPermitExecution[SUM_TCS]);
+«ENDIF»
+«IF sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.sUSD_SUMsName.contains("SUM_SPM") && 
+  sUSD.sUSDConfigSet.sUSD_C_SUMsInfo.select(e| e.sUSD_SUMsName == "SUM_SPM").first().sUSD_PermitExecution == true-»
+  SUSD_GaaSUMPermitExecution[SUM_SPM] = (SUSD_GaaSUMPermitExecution[SUM_SPM] | (uint8)0x40);
+  /* Rte API to indicate the Permit Execution to SUM_SPM with the bit information */
+  SUSD_GaaSUM_PermitExec_Interface[SUM_SPM](SUSD_GaaSUMPermitExecution[SUM_SPM]);
+«ENDIF»
+}
+
+/*******************************************************************************
+  Function name :   SUSD_SWC_PermitExecution
+  Description   :   Function to handle the Permit Execution interface from SW-C
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+*******************************************************************************/
+/* PRQA S 1532 1 # This function will be called only from anoother file in case of EXISTS_SWC is ON. */
+FUNC(void, SUSD_CODE) SUSD_SWC_PermitExecution(void)
+{
+«IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0)-»
+  /* Rte interfaces */
+  P2CONST(SUSD_SWCRteInterfaces, AUTOMATIC,AUTOMATIC) LpRteInterface;
+  /* varaible to loop number of SW-Cs */
+  uint32 i;
+
+  LpRteInterface = &SUSD_GaaRteSWCInterface[SUSD_ZERO];
+  for(i = SUSD_ZERO; i < NO_OF_SWCS; i++)
+  {
+    /* The SWC*/
+    if ((SUSD_SWCModuleWakeupBits & ((uint32)1u << i)) != SUSD_ZERO)
+    {
+      /* Wakeup has been received: set bit 1. */
+      SUSD_GaaSWCPermitExecution[i] |= (uint8)0x01;
+    }
+    else
+    {
+      /* Wakeup has been reset: reset bit to 0. */
+      SUSD_GaaSWCPermitExecution[i] &= (uint8)0xFE;
+    }
+
+    if(TRUE == SUSD_GblSWCHwAvailable)
+    {
+      /* Hw is ready -  Set bit 2 */
+      SUSD_GaaSWCPermitExecution[i] = (SUSD_GaaSWCPermitExecution[i] | (uint8)0x04);
+    }
+
+    «IF (sUSD.sUSDGeneral.sUSD_PowerModing_Slave_Supported)-»
+    if(SUM_PMS_OFF == SUSD_VehiclePowerMode)
+    {
+      SUSD_GaaSWCPermitExecution[i] = (SUSD_GaaSWCPermitExecution[i] & ((uint8)0xF7));
+    }
+    else
+    {
+      SUSD_GaaSWCPermitExecution[i] = (SUSD_GaaSWCPermitExecution[i] | (uint8)0x08);
+    }
+    «ENDIF-»
+
+    /* If Diagnostic Reprogramming request or Reset Request or SOH Reset Request */
+    if((SUM_REPREQ_ACTIVE == SUSD_GblDiagReprgRequest) || (SUM_RESREQ_ACTIVE == SUSD_GblDiagResetRequest))
+    {
+      /*If a reset request occurred*/
+      if(SUM_RESREQ_ACTIVE == SUSD_GblDiagResetRequest)
+      {
+        /*Set the shutdown target bit and reset all the other bits including the reset bit*/
+        /* Satisfies: [$SDD_SUSD 168] */
+        /* Satisfies: [$SDD_SUSD 038] */
+        SUSD_GaaSWCPermitExecution[i] = NOT_OFF;
+      }
+      else
+      {
+        /*Reset all the bits including the reset bit*/
+        /* Satisfies: [$SDD_SUSD 168] */
+        /* Satisfies: [$SDD_SUSD 038] */
+        SUSD_GaaSWCPermitExecution[i] = SUSD_ZERO;
+      }
+    }
+    else
+    {
+      SUSD_GaaSWCPermitExecution[i] = (SUSD_GaaSWCPermitExecution[i] | (uint8)0x40);
+    }
+
+  «IF (sUSD.sUSDGeneral.sUSD_PermitExecAvailable == true)-»
+  /* Rte Interface API to indicate the SW-C about the wakeup */
+  (LpRteInterface[i].SWCPermitExecutionInterface)(SUSD_GaaSWCPermitExecution[i]);
+  «ENDIF-»
+  }
+}
+«ENDIF-»
+
+
+/***********************************************************************************
+
+  Function name :   SUSD_SWC_VehicleBatteryVoltage
+  Description   :   Function to handle Battery Voltage Monitoring
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/*Satisfies: [$SDD_SUSD 138]*/
+/* PRQA S 1532 1 # This Function can be used in the multiple file and can not be turned into static as well as moved to static code */
+FUNC(void, SUSD_CODE) SUSD_SWC_VehicleBatteryVoltage(void)
+{
+  /* Battery Voltage Threshold */
+  P2CONST(SUSD_BatteryVoltageRangeType, AUTOMATIC,AUTOMATIC) LpVoltThreshold;
+
+  /* Variable to loop through the number of ranges configured for Battery Voltage */
+  uint32 LulCount;
+  /* Variable to store maximum voltage range */
+  Impl_SUSD_C_VoltageHysteresis LulMaxVolRange;
+  /* Variable to store minimum voltage range */
+  Impl_SUSD_C_VoltageHysteresis LulMinVolRange;
+  /*Variable used to store the Vehicle Battery Voltage current state */
+  uint16 curState;
+
+  LpVoltThreshold = &SUSD_BatteryVoltageThreshold[SUSD_ZERO];
+
+  /* Read the Battery Voltage value from SW-C in volts */
+  (void)Rte_Read_RP_SUSD_VehicleBatteryVoltage_VehicleVoltage(&SUSD_GucVehicleBattVoltage);
+
+  /* loop through all Ranges */
+  for (LulCount = SUSD_ZERO; LulCount < NO_OF_VOLTRANGE; LulCount++)
+  {
+    /* Read Maximum voltage with hysteresis */
+    LulMaxVolRange = (LpVoltThreshold[LulCount].SWC_OverVoltageHysteresis() + LpVoltThreshold[LulCount].BatteryVoltageMax);
+
+    /* Read Minimum voltage with hysteresis */
+    LulMinVolRange = (LpVoltThreshold[LulCount].BatteryVoltageMin - (LpVoltThreshold[LulCount].SWC_UnderVoltageHysteresis()));
+
+    curState = SUSD_GucBatteryVoltageStatus[LulCount];
+    switch (curState){
+    	case SUSD_OUT_OF_RANGE_HIGH:
+    		SUSD_CheckVehicleBatteryVoltageState(LulMaxVolRange, LulMinVolRange, SUSD_GucVehicleBattVoltage, &curState, SUSD_IN_RANGE);
+    		SUSD_CheckVehicleBatteryVoltageState(LulMaxVolRange, LulMinVolRange, SUSD_GucVehicleBattVoltage, &curState, SUSD_OUT_OF_RANGE_LOW);
+    	break;
+    	case SUSD_OUT_OF_RANGE_LOW:
+    		SUSD_CheckVehicleBatteryVoltageState(LulMaxVolRange, LulMinVolRange, SUSD_GucVehicleBattVoltage, &curState, SUSD_IN_RANGE);
+    		SUSD_CheckVehicleBatteryVoltageState(LulMaxVolRange, LulMinVolRange, SUSD_GucVehicleBattVoltage, &curState, SUSD_OUT_OF_RANGE_HIGH);
+    	break;
+    	default:
+    		SUSD_CheckVehicleBatteryVoltageState(LulMaxVolRange, LulMinVolRange, SUSD_GucVehicleBattVoltage, &curState, SUSD_OUT_OF_RANGE_HIGH);
+    		SUSD_CheckVehicleBatteryVoltageState(LulMaxVolRange, LulMinVolRange, SUSD_GucVehicleBattVoltage, &curState, SUSD_OUT_OF_RANGE_LOW);
+    	break;
+    }
+    SUSD_GucBatteryVoltageStatus[LulCount] = curState;
+  }
+
+  SUSD_SWC_VehicleBatteryVoltageAllSWC();
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_SWC_VehicleBatteryVoltageAllSWC
+  Description   :   Function to check for all SW-Cs configured for battery voltage
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 015] [$SDD_SUSD 142]*/
+static FUNC(void, SUSD_CODE) SUSD_SWC_VehicleBatteryVoltageAllSWC(void)
+{
+  BattVltgSnsrStsEnum LucBattVltgSnsrSts = Battery_Voltage_Uninitialized;
+  
+  /* Battery Voltage Threshold */
+  P2CONST(SUSD_BatteryVoltageRangeType, AUTOMATIC,AUTOMATIC) LpVoltThreshold;
+  /* Variable to loop through the number of ranges configured for Battery Voltage */
+  uint32 LulCount;
+
+  /* Variable to loop through the number of SWCs which refer to a Battery Voltage */
+  «IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0)-»
+  uint32 LulCount1;
+  «ENDIF-»
+
+  /* point to structure containing Rte interfaces */
+  LpVoltThreshold = &SUSD_BatteryVoltageThreshold[SUSD_ZERO];
+
+
+  /* Indicate actual Voltage */
+  /* [$Satisfies $SDD_SUSD 248] */
+  (void)Rte_Write_PP_SUSD_BatteryVoltage_Actual_ActualVoltage(SUSD_GucVehicleBattVoltage);
+
+  /* Check for all SW-Cs configured for battery voltage */
+  for(LulCount =  SUSD_ZERO; LulCount < NO_OF_VOLTRANGE; LulCount++)
+  {
+    /* Indicate Over, Under and normal Voltage */
+    (*(LpVoltThreshold[LulCount].SWCBattVolt_Range_MintoMax))((uint8)SUSD_GucBatteryVoltageStatus[LulCount]);
+
+    «IF (sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0)-»
+    /* battery voltage bit in Permit Execution to indicate that the inappropriate Battery voltage
+             level/s relevant to this SW-C is active */
+	/* Check if Reprogramming or Reset Request is active do not update PermitExecution  */		 
+    if(((LpVoltThreshold[LulCount].SWCRangeMapping) != NULL_PTR) &&((SUM_REPREQ_INACTIVE == SUSD_GblDiagReprgRequest) && (SUM_RESREQ_INACTIVE == SUSD_GblDiagResetRequest)))
+    {
+      if(SUSD_GucBatteryVoltageStatus[LulCount] == (uint16)SUSD_IN_RANGE)
+      {
+          /* Set bit 5 in permit execution to indicate appropriate Battery voltage level/s relevant to this SW-C is active */
+    	  for(LulCount1 = SUSD_ZERO; LulCount1 < LpVoltThreshold[LulCount].NumberOfSWCs; LulCount1++)
+    	  {
+    	       uint16 Swc_index = LpVoltThreshold[LulCount].SWCRangeMapping[LulCount1].SWC_Index;
+    		   SUSD_GaaSWCPermitExecution[Swc_index] = (SUSD_GaaSWCPermitExecution[Swc_index] | ((SUSD_SWC_ExecutionStatusType)0x20));
+    		   /* Rte Interface API to indicate the SW-C about the battery voltage */
+    		   (LpVoltThreshold[LulCount].SWCRangeMapping[LulCount1].SWCPermitExecutionInterface)(SUSD_GaaSWCPermitExecution[Swc_index]);
+    	  }
+      }
+      else
+      {
+        /* Clear bit 5 in permit execution to indicate appropriate Battery voltage level/s relevant to this SW-C is not active */
+		for(LulCount1 = SUSD_ZERO; LulCount1 < LpVoltThreshold[LulCount].NumberOfSWCs; LulCount1++)
+		{
+		   uint16 Swc_index = LpVoltThreshold[LulCount].SWCRangeMapping[LulCount1].SWC_Index;
+		   SUSD_GaaSWCPermitExecution[Swc_index] = (SUSD_GaaSWCPermitExecution[Swc_index] & ((SUSD_SWC_ExecutionStatusType)0xDF));
+		   /* Rte Interface API to indicate the SW-C about the battery voltage */
+		   (LpVoltThreshold[LulCount].SWCRangeMapping[LulCount1].SWCPermitExecutionInterface)(SUSD_GaaSWCPermitExecution[Swc_index]);
+		}
+      }
+    }
+    «ENDIF-»
+  }
+  /* check Disable NvM functionalities */
+  /*Satisfies: [$SDD_SUSD 246]*/
+  /* Read Battery Voltage Sensor Status */
+  (void)Rte_Read_RP_SUSD_BattVltgSnsrStsAvl_BattVltgSnsrStsEnum(&LucBattVltgSnsrSts);
+  /*Satisfies: [$SDD_SUSD 247]*/
+  /* PRQA S 1891 1 # voltage is multiplied by 10 to check conditions*/
+  if(((Rte_CData_SUSD_PDP_SUSD_C_DisableNVMWrite_Voltage()*10u) <= SUSD_GucVehicleBattVoltage)
+      && (LucBattVltgSnsrSts == Battery_Voltage_Available))
+  {
+    /* voltage level OK and sensor status available: write NVM allowed */
+    /* [$Satisfies $SDD_SUSD 248] */
+    (void)Rte_Write_PP_SUSD_BatteryVoltage_DisableNVMWrite_DisableWriteData(0u);
+  }
+  else
+  {
+    /* voltage level too low or sensor not available: do not write NVM */
+    /* [$Satisfies $SDD_SUSD 248] */
+    (void)Rte_Write_PP_SUSD_BatteryVoltage_DisableNVMWrite_DisableWriteData(1u);
+  }
+}
+
+#if(SUSD_VEHICLE_BATTERY_STATE_OF_CHARGE_SUPPORTED == STD_ON)
+/***********************************************************************************
+
+  Function name :   SUSD_BswM_VehicleBatteryStateOfCharge
+  Description   :   Function to check the vehicle battery state of charge and send the mode request to BswM
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* PRQA S 1532 1 # This Function can be used in the multiple file and can not be turned into static as well as moved to static code */
+FUNC(void, SUSD_CODE) SUSD_BswM_VehicleBatteryStateOfCharge(void)
+{
+	/* Satisfies: [$SDD_SUSD 167]*/
+	BatteryStateOfChargeType BatteryCharge;
+	(void)Rte_Read_RP_SUSD_BatteryStateOfCharge_BatteryStateOfCharge(&BatteryCharge);
+	if(BatteryCharge==SOC_LOW)
+	{
+       (void)Rte_Switch_PP_SUSD_BatteryCharge_DisableWkups_BatteryChargeDisableWkups(SUSD_BSWM_DISABLE_WAKEUPS);
+	}
+	else
+	{
+	   (void)Rte_Switch_PP_SUSD_BatteryCharge_DisableWkups_BatteryChargeDisableWkups(SUSD_BSWM_ENABLE_WAKEUPS);
+	}
+
+}
+#endif
+
+/***********************************************************************************
+
+  Function name :   SUSD_HardwareReady
+  Description   :   Function to be filled by integrator when there is Hardware ready and initialized
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* PRQA S 1503 1 # When the SUSD is integrated, this runnable will be called */
+FUNC(void, SUSD_CODE) SUSD_HardwareReady(void)
+{
+  /* To be set to true when the hardware related to PN is ready */
+  SUSD_GblPnHwAvailable = TRUE;
+  /* To be set to true when the hardware related to LIN is ready */
+  SUSD_GblLinHwAvailable = TRUE;
+  /* To be set to true when the hardware required by SW-C is ready */
+  SUSD_GblSWCHwAvailable = TRUE;
+
+  /*Update also the Permit Execution Logic*/
+  SUSD_SUM_PermitExecution();
+  SUSD_SWC_PermitExecution();
+
+}
+
+«IF (sUSD.sUSDGeneral.sUSD_PowerModing_Slave_Supported)-» 
+
+static FUNC(boolean, SUSD_CODE) SUSD_PrimaryPowerModeStrategy(void)
+{
+    boolean rv;
+    SignalStatusType Signal_Availability = SUM_SSM_SIGNAL_STATUS_UNINITIALIZED;
+#if (SUSD_SINGLEPORT_SUPPORTED == STD_OFF)
+#if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+    boolean Signal_FsFA = FALSE;
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+    boolean Signal_FcFA = FALSE;
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+    boolean Signal_FoFA = FALSE;
+#endif
+#else
+    boolean Signal_FxFA = FALSE;
+#endif
+
+    «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-» 
+    /* Read the signal availability for primary vehicle power and backup vehicle power mode from SSM */
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_BackupPowerMode_Av_SignalAvailability(&Signal_Availability);
+    «ELSE-»
+    /* Read the signal availability for primary vehicle power mode from SSM */
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_Av_SignalAvailability(&Signal_Availability);
+    «ENDIF-»
+
+#if (SUSD_SINGLEPORT_SUPPORTED == STD_OFF)
+#if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+    /* Read System Power Mode Failed Safety Fault Active from SSM */
+    «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_BackupPowerMode_FsFA_DTC_STATUS_FSFA(&Signal_FsFA);
+    «ELSE-» 
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_FsFA_DTC_STATUS_FSFA(&Signal_FsFA);
+    «ENDIF-»
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+    /* Read System Power Mode Failed Security Fault Active from SSM */
+    «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_BackupPowerMode_FcFA_DTC_STATUS_FCFA(&Signal_FcFA);
+    «ELSE-»
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_FcFA_DTC_STATUS_FCFA(&Signal_FcFA);
+    «ENDIF-»
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+    /* Read System Power Mode Failed Continuous Operation Fault Active from SSM */
+    «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_BackupPowerMode_FoFA_DTC_STATUS_FOFA(&Signal_FoFA);
+    «ELSE-»
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_FoFA_DTC_STATUS_FOFA(&Signal_FoFA);
+    «ENDIF-»
+#endif
+#else
+    /* PRQA S 4404 EOF # enum is casted to bool,confirmed condition is checked */
+    «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_BackupPowerMode_FxFA_DTC_STATUS_FXFA(&Signal_FxFA);
+    «ELSE-»
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_FxFA_DTC_STATUS_FXFA(&Signal_FxFA);
+    «ENDIF-»
+#endif
+    rv = (Signal_Availability == SUM_SSM_SIGNAL_STATUS_AVAILABLE);
+#if (SUSD_SINGLEPORT_SUPPORTED == STD_OFF)
+#if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+    rv = ((rv == TRUE) && (Signal_FsFA == FALSE));
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+    rv = ((rv == TRUE) && (Signal_FcFA == FALSE));
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+    rv = ((rv == TRUE) && (Signal_FoFA == FALSE));
+#endif
+#else
+    rv = ((rv == TRUE) && (Signal_FxFA == FALSE));
+#endif
+    return rv;
+}
+
+static FUNC(void, SUSD_CODE) SUSD_SetSystemPowerMode(void)
+{
+  «IF SUSD_IsPMMServiceBased(sUSD.sUSDGeneral)-»
+    «SUSD_GetImplementationDataTypeName(sUSD.sUSDGeneral.sum_SUSD_ServiceBased_PMM_Ref)» eventData;
+  «ELSEIF SUSD_IsPMMGroupSignal(sUSD.sUSDGeneral)-»
+  «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+    RxSignal_PrimaryPowerMode_BackupPowerMode_GroupSignal eventData = {0};
+  «ELSE-»
+    RxSignal_PrimaryPowerMode_GroupSignal eventData = {0};
+  «ENDIF-»
+  «ELSE-»
+    «sUSD.sUSDGeneral.sum_SUSD_Sig_PrimaryPowerMode_Ref.comSignalType.toLowerCase()» eventData;
+  «ENDIF-»
+  «IF SUSD_IsE2EConfigured(sUSD.sUSDGeneral, "PrimaryPowerMode") || SUSD_IsPMMServiceBased(sUSD.sUSDGeneral)-»
+    Rte_TransformerError rteTransformerError;
+  «ENDIF-»
+
+#if (SUSD_SINGLEPORT_SUPPORTED == STD_ON)
+	static SUM_VehiclePowerMode_Signal_States LastSystemPowerModeReceived = SUSD_VPM_SPM_INITIAL;
+	boolean SystemPowerModeFxI = FALSE;
+      «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-» 
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_BackupPowerMode_FxI_RxSerialData_FxI(&SystemPowerModeFxI);
+    «ELSE-»
+    /*Read System Power Mode Failed Single Port Indication from SSFM */
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_FxI_RxSerialData_FxI(&SystemPowerModeFxI);
+    «ENDIF-»
+
+    if (SystemPowerModeFxI == FALSE)
+    {
+      /* Read the vehicle power mode */
+        «IF SUSD_IsE2EConfigured(sUSD.sUSDGeneral, "PrimaryPowerMode") || SUSD_IsPMMServiceBased(sUSD.sUSDGeneral)-»
+          «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+        (void)Rte_Read_RP_Com_SUSD_PrimaryPowerMode_BackupPowerMode_PrimaryPowerMode_BackupPowerMode_RxSignal(&eventData, &rteTransformerError);
+          «ELSE-»
+        (void)Rte_Read_RP_Com_SUSD_VeVSM_e_PrimaryPowerMode_VeVSM_e_PrimaryPowerModeRxSignal(&eventData, &rteTransformerError);
+          «ENDIF-»
+        «ELSE-»
+          «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+        (void)Rte_Read_RP_Com_SUSD_PrimaryPowerMode_BackupPowerMode_PrimaryPowerMode_BackupPowerMode_RxSignal(&eventData);
+          «ELSE-»
+        (void)Rte_Read_RP_Com_SUSD_VeVSM_e_PrimaryPowerMode_VeVSM_e_PrimaryPowerModeRxSignal(&eventData);
+          «ENDIF-»
+        «ENDIF-»
+        «IF SUSD_IsPMMServiceBased(sUSD.sUSDGeneral)-»
+        SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.«SUSD_GetImplementationDataTypeElementName(sUSD.sUSDGeneral.sum_SUSD_ServiceBased_PMM_Ref)»;
+        «ELSEIF SUSD_IsPMMGroupSignal(sUSD.sUSDGeneral)-»
+        SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.RxSignal_«sUSD.sUSDGeneral.sum_SUSD_Sig_PrimaryPowerMode_Ref.shortName»;
+        «ELSE-»
+        SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData;
+        «ENDIF-»
+        LastSystemPowerModeReceived = SUSD_VehiclePowerMode;
+    }
+    else
+    {
+        SUSD_VehiclePowerMode = LastSystemPowerModeReceived;
+    }
+
+#elif((SUSD_VPM_ASIL_A_SUPPORT == STD_ON) || (SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity) || (SUSD_VPM_SECURITY_SUPPORT == With_OBD))
+    static SUM_VehiclePowerMode_Signal_States LastSystemPowerModeReceived = SUSD_VPM_SPM_INITIAL;
+
+# if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+    boolean SystemPowerModeFsI = FALSE;
+# endif
+# if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+    boolean SystemPowerModeFcI = FALSE;
+# endif
+# if(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+    boolean SystemPowerModeFoI = FALSE;
+# endif
+
+# if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+    /*Read System Power Mode Failed Safety Indication from SSM */
+    «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-» 
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_BackupPowerMode_FsI_FsI_Safety(&SystemPowerModeFsI);
+    «ELSE-»
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_FsI_FsI_Safety(&SystemPowerModeFsI);
+    «ENDIF-»
+# endif
+# if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+    /*Read System Power Mode Failed Security Indication from SSM */
+    «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-» 
+        (void) Rte_Read_RP_SUSD_SystemPowerMode_BackupPowerMode_FcI_FcI_Security(&SystemPowerModeFcI);
+    «ELSE-»
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_FcI_FcI_Security(&SystemPowerModeFcI);
+    «ENDIF-»
+# endif
+# if(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+    /*Read System Power Mode Failed Continuous Operation Indication from SSM */
+    «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-» 
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_BackupPowerMode_FoI_ContnOperation(&SystemPowerModeFoI);
+    «ELSE-»
+    (void) Rte_Read_RP_SUSD_SystemPowerMode_FoI_ContnOperation(&SystemPowerModeFoI);
+    «ENDIF-»
+# endif
+
+    if (
+# if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+        (SystemPowerModeFsI == FALSE)
+# endif
+# if((SUSD_VPM_ASIL_A_SUPPORT == STD_ON) && (SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity) || (SUSD_VPM_ASIL_A_SUPPORT == STD_ON) && (SUSD_VPM_SECURITY_SUPPORT == With_OBD))
+        &&
+# endif
+# if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+        (SystemPowerModeFcI == FALSE)
+# elif(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+        (SystemPowerModeFoI == FALSE)
+# endif
+        )
+    {
+      /* Read the vehicle power mode */
+        «IF SUSD_IsE2EConfigured(sUSD.sUSDGeneral, "PrimaryPowerMode") || SUSD_IsPMMServiceBased(sUSD.sUSDGeneral)-»
+          «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+        (void)Rte_Read_RP_Com_SUSD_PrimaryPowerMode_BackupPowerMode_PrimaryPowerMode_BackupPowerMode_RxSignal(&eventData, &rteTransformerError);
+          «ELSE-»
+        (void)Rte_Read_RP_Com_SUSD_VeVSM_e_PrimaryPowerMode_VeVSM_e_PrimaryPowerModeRxSignal(&eventData, &rteTransformerError);
+          «ENDIF-»
+        «ELSE-»
+          «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+        (void)Rte_Read_RP_Com_SUSD_PrimaryPowerMode_BackupPowerMode_PrimaryPowerMode_BackupPowerMode_RxSignal(&eventData);
+          «ELSE-»
+        (void)Rte_Read_RP_Com_SUSD_VeVSM_e_PrimaryPowerMode_VeVSM_e_PrimaryPowerModeRxSignal(&eventData);
+          «ENDIF-»
+        «ENDIF-»
+        «IF SUSD_IsPMMServiceBased(sUSD.sUSDGeneral)-»
+        SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.«SUSD_GetImplementationDataTypeElementName(sUSD.sUSDGeneral.sum_SUSD_ServiceBased_PMM_Ref)»;
+        «ELSEIF SUSD_IsPMMGroupSignal(sUSD.sUSDGeneral)-»
+        SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.RxSignal_«sUSD.sUSDGeneral.sum_SUSD_Sig_PrimaryPowerMode_Ref.shortName»;
+        «ELSE-»
+        SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData;
+        «ENDIF-»
+        LastSystemPowerModeReceived = SUSD_VehiclePowerMode;
+    }
+    else
+    {
+        SUSD_VehiclePowerMode = LastSystemPowerModeReceived;
+    }
+#else
+    /* Read the vehicle power mode */
+      «IF SUSD_IsE2EConfigured(sUSD.sUSDGeneral, "PrimaryPowerMode") || SUSD_IsPMMServiceBased(sUSD.sUSDGeneral)-»
+        «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+      (void)Rte_Read_RP_Com_SUSD_PrimaryPowerMode_BackupPowerMode_PrimaryPowerMode_BackupPowerMode_RxSignal(&eventData, &rteTransformerError);
+        «ELSE-»
+      (void)Rte_Read_RP_Com_SUSD_VeVSM_e_PrimaryPowerMode_VeVSM_e_PrimaryPowerModeRxSignal(&eventData, &rteTransformerError);
+        «ENDIF-»
+      «ELSE-»
+        «IF SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+      (void)Rte_Read_RP_Com_SUSD_PrimaryPowerMode_BackupPowerMode_PrimaryPowerMode_BackupPowerMode_RxSignal(&eventData);
+        «ELSE-»
+      (void)Rte_Read_RP_Com_SUSD_VeVSM_e_PrimaryPowerMode_VeVSM_e_PrimaryPowerModeRxSignal(&eventData);
+        «ENDIF-»
+      «ENDIF-»
+      «IF SUSD_IsPMMServiceBased(sUSD.sUSDGeneral)-»
+      SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.«SUSD_GetImplementationDataTypeElementName(sUSD.sUSDGeneral.sum_SUSD_ServiceBased_PMM_Ref)»;
+      «ELSEIF SUSD_IsPMMGroupSignal(sUSD.sUSDGeneral)-»
+      SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.RxSignal_«sUSD.sUSDGeneral.sum_SUSD_Sig_PrimaryPowerMode_Ref.shortName»;
+      «ELSE-»
+      SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData;
+      «ENDIF-»
+#endif
+
+    SUSD_VehiclePowerModeInv = FALSE;
+}
+«IF !SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-»
+static FUNC(boolean, SUSD_CODE) SUSD_PowerModeBackupStrategy1(void)
+{
+    boolean rv;
+    SignalStatusType Signal_Availability = SUM_SSM_SIGNAL_STATUS_UNINITIALIZED;
+#if (SUSD_SINGLEPORT_SUPPORTED == STD_OFF)
+#if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+    boolean Signal_FsFA = FALSE;
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+    boolean Signal_FcFA = FALSE;
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+    boolean Signal_FoFA = FALSE;
+#endif
+#else
+    boolean Signal_FxFA = FALSE;
+#endif
+
+  /* Read the signal availability for back up vehicle power mode from SSM */
+    (void) Rte_Read_RP_SUSD_SystemBackupPowerMode_Av_SignalAvailability(&Signal_Availability);
+
+
+
+#if (SUSD_SINGLEPORT_SUPPORTED == STD_OFF)
+#if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+    /* Read System Power Mode Failed Safety Fault Active from SSM */
+    (void) Rte_Read_RP_SUSD_SystemBackupPowerMode_FsFA_DTC_STATUS_FSFA(&Signal_FsFA);
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+    /* Read System Power Mode Failed Security Fault Active from SSM */
+    (void) Rte_Read_RP_SUSD_SystemBackupPowerMode_FcFA_DTC_STATUS_FCFA(&Signal_FcFA);
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+    /* Read System Power Mode Failed Continuous Operation Fault Active from SSM */
+    (void) Rte_Read_RP_SUSD_SystemBackupPowerMode_FoFA_DTC_STATUS_FOFA(&Signal_FoFA);
+#endif
+#else
+        /* Read System Power Mode Failed Single Port Fault Active from SSFM */
+        (void) Rte_Read_RP_SUSD_SystemBackupPowerMode_FxFA_DTC_STATUS_FXFA(&Signal_FxFA);
+
+#endif
+    rv = (Signal_Availability == SUM_SSM_SIGNAL_STATUS_AVAILABLE);
+#if (SUSD_SINGLEPORT_SUPPORTED == STD_OFF)
+#if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+    rv = ((rv == TRUE) && (Signal_FsFA == FALSE));
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+    rv = ((rv == TRUE) && (Signal_FcFA == FALSE));
+#endif
+#if(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+    rv = ((rv == TRUE) && (Signal_FoFA == FALSE));
+#endif
+#else
+    rv = ((rv == TRUE) && (Signal_FxFA == FALSE));
+#endif
+    return rv;
+}
+
+static FUNC(void, SUSD_CODE) SUSD_SetSystemBackupPowerMode(void)
+{
+  «IF SUSD_IsBPMMServiceBased(sUSD.sUSDGeneral)-»
+    «SUSD_GetImplementationDataTypeName(sUSD.sUSDGeneral.sum_SUSD_ServiceBased_BPMM_Ref)» eventData;
+  «ELSEIF SUSD_IsBPMMGroupSignal(sUSD.sUSDGeneral)-»
+    RxSignal_BackupPowerMode_GroupSignal eventData = {0};
+  «ELSE-»
+    «sUSD.sUSDGeneral.sum_SUSD_Sig_BackupPowerMode_Ref.comSignalType.toLowerCase()» eventData;
+  «ENDIF-»
+  «IF SUSD_IsE2EConfigured(sUSD.sUSDGeneral, "BackupPowerMode") || SUSD_IsBPMMServiceBased(sUSD.sUSDGeneral)-»
+    Rte_TransformerError rteTransformerError;
+  «ENDIF-»
+
+#if (SUSD_SINGLEPORT_SUPPORTED == STD_ON)
+    static SUM_VehiclePowerMode_Signal_States LastSystemBackupPowerModeReceived = SUSD_VPM_SPM_INITIAL;
+    boolean SystemBackupPowerModeFxI = FALSE;
+    /*Read System Power Mode Failed Single Port Indication from SSFM */
+    (void) Rte_Read_RP_SUSD_SystemBackupPowerMode_FxI_RxSerialData_FxI(&SystemBackupPowerModeFxI);
+    if (SystemBackupPowerModeFxI == FALSE)
+    {
+    /* Read the backup vehicle power mode */
+      «IF SUSD_IsE2EConfigured(sUSD.sUSDGeneral, "BackupPowerMode") || SUSD_IsBPMMServiceBased(sUSD.sUSDGeneral)-»
+      (void)Rte_Read_RP_Com_SUSD_VeVSM_e_BackupPowerMode_VeVSM_e_BackupPowerModeRxSignal(&eventData, &rteTransformerError);
+      «ELSE-»
+      (void)Rte_Read_RP_Com_SUSD_VeVSM_e_BackupPowerMode_VeVSM_e_BackupPowerModeRxSignal(&eventData);
+      «ENDIF-»
+      «IF SUSD_IsBPMMServiceBased(sUSD.sUSDGeneral)-»
+      SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.«SUSD_GetImplementationDataTypeElementName(sUSD.sUSDGeneral.sum_SUSD_ServiceBased_BPMM_Ref)»;
+      «ELSEIF SUSD_IsBPMMGroupSignal(sUSD.sUSDGeneral)-»
+      SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.RxSignal_«sUSD.sUSDGeneral.sum_SUSD_Sig_BackupPowerMode_Ref.shortName»;
+      «ELSE-»
+      SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData;
+      «ENDIF-»
+      LastSystemBackupPowerModeReceived = SUSD_VehiclePowerMode;
+    }
+    else
+    {
+        SUSD_VehiclePowerMode = LastSystemBackupPowerModeReceived;
+    }     
+#elif((SUSD_VPM_ASIL_A_SUPPORT == STD_ON) || (SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity) || (SUSD_VPM_SECURITY_SUPPORT == With_OBD))
+    static SUM_VehiclePowerMode_Signal_States LastSystemBackupPowerModeReceived = SUSD_VPM_SBPM_INITIAL;
+
+# if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+    boolean SystemBackupPowerModeFsI = FALSE;
+# endif
+# if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+    boolean SystemBackupPowerModeFcI = FALSE;
+# endif
+# if(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+    boolean SystemBackupPowerModeFoI = FALSE;
+# endif
+
+# if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+    /*Read System Backup Power Mode Failed Safety Indication from SSM */
+    (void) Rte_Read_RP_SUSD_SystemBackupPowerMode_FsI_FsI_Safety(&SystemBackupPowerModeFsI);
+# endif
+# if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+    /*Read System Backup Power Mode Failed Security Indication from SSM */
+        (void) Rte_Read_RP_SUSD_SystemBackupPowerMode_FcI_FcI_Security(&SystemBackupPowerModeFcI);
+
+# endif
+# if(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+    /*Read System Backup Power Mode Failed Continuous Operation Indication from SSM */
+    (void) Rte_Read_RP_SUSD_SystemBackupPowerMode_FoI_ContnOperation(&SystemBackupPowerModeFoI);
+# endif
+
+    if (
+# if(SUSD_VPM_ASIL_A_SUPPORT == STD_ON)
+        (SystemBackupPowerModeFsI == FALSE)
+# endif
+# if((SUSD_VPM_ASIL_A_SUPPORT == STD_ON) && (SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity) || (SUSD_VPM_ASIL_A_SUPPORT == STD_ON) && (SUSD_VPM_SECURITY_SUPPORT == With_OBD))
+        &&
+# endif
+# if(SUSD_VPM_SECURITY_SUPPORT == With_Cybersecurity)
+        (SystemBackupPowerModeFcI == FALSE)
+# elif(SUSD_VPM_SECURITY_SUPPORT == With_OBD)
+        (SystemBackupPowerModeFoI == FALSE)
+# endif
+        )
+    {
+      /* Read the backup vehicle power mode */
+        «IF SUSD_IsE2EConfigured(sUSD.sUSDGeneral, "BackupPowerMode") || SUSD_IsBPMMServiceBased(sUSD.sUSDGeneral)-»
+        (void)Rte_Read_RP_Com_SUSD_VeVSM_e_BackupPowerMode_VeVSM_e_BackupPowerModeRxSignal(&eventData, &rteTransformerError);
+        «ELSE-»
+        (void)Rte_Read_RP_Com_SUSD_VeVSM_e_BackupPowerMode_VeVSM_e_BackupPowerModeRxSignal(&eventData);
+        «ENDIF-»
+        «IF SUSD_IsBPMMServiceBased(sUSD.sUSDGeneral)-»
+        SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.«SUSD_GetImplementationDataTypeElementName(sUSD.sUSDGeneral.sum_SUSD_ServiceBased_BPMM_Ref)»;
+        «ELSEIF SUSD_IsBPMMGroupSignal(sUSD.sUSDGeneral)-»
+        SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.RxSignal_«sUSD.sUSDGeneral.sum_SUSD_Sig_BackupPowerMode_Ref.shortName»;
+        «ELSE-»
+        SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData;
+        «ENDIF-»
+        LastSystemBackupPowerModeReceived = SUSD_VehiclePowerMode;
+    }
+    else
+    {
+        SUSD_VehiclePowerMode = LastSystemBackupPowerModeReceived;
+    }
+#else
+  /* Read the backup vehicle power mode */
+    «IF SUSD_IsE2EConfigured(sUSD.sUSDGeneral, "BackupPowerMode") || SUSD_IsBPMMServiceBased(sUSD.sUSDGeneral)-»
+    (void)Rte_Read_RP_Com_SUSD_VeVSM_e_BackupPowerMode_VeVSM_e_BackupPowerModeRxSignal(&eventData, &rteTransformerError);
+    «ELSE-»
+    (void)Rte_Read_RP_Com_SUSD_VeVSM_e_BackupPowerMode_VeVSM_e_BackupPowerModeRxSignal(&eventData);
+    «ENDIF-»
+    «IF SUSD_IsBPMMServiceBased(sUSD.sUSDGeneral)-»
+    SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.«SUSD_GetImplementationDataTypeElementName(sUSD.sUSDGeneral.sum_SUSD_ServiceBased_BPMM_Ref)»;
+    «ELSEIF SUSD_IsBPMMGroupSignal(sUSD.sUSDGeneral)-»
+    SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData.RxSignal_«sUSD.sUSDGeneral.sum_SUSD_Sig_BackupPowerMode_Ref.shortName»;
+    «ELSE-»
+    SUSD_VehiclePowerMode = (SUM_VehiclePowerMode_Signal_States)eventData;
+    «ENDIF-»
+#endif
+    SUSD_VehiclePowerModeInv = FALSE;
+}
+«ENDIF-»
+«IF (sUSD.sUSDGeneral.sUSD_RunCrankPlausibility_Supported)-»
+static FUNC(void, SUSD_CODE) SUSD_SetRunCrankPowerMode(void)
+{
+    /* Power Mode Backup Strategy 2
+     * Vehicle power mode based on Run Crank */
+    if (SUSD_RunCrankActiveInv == FALSE)
+    {
+        /* RunCrankActive is valid */
+        if (SUSD_RunCrankActive == TRUE)
+        {
+            SUSD_VehiclePowerMode = SUM_PMS_PROPULSION;
+        }
+        else
+        {
+            SUSD_VehiclePowerMode = SUM_PMS_OFF;
+        }
+        SUSD_VehiclePowerModeInv = FALSE;
+    }
+}
+«ENDIF-»
+
+/***********************************************************************************
+
+  Function name :   SUSD_ClearRunningResetEvent
+  Description   :   Function to update the PMS_Confirmed, WakeupAfterReset and TimerExpired flags after running reset occurs
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_ClearRunningResetEvent(void)
+{
+    WakeupAfterReset = FALSE;
+    TimerExpired = FALSE;
+}
+/***********************************************************************************
+
+  Function name :   SUSD_PowerModeStrategyHandler
+  Description   :   Function to handle Power Mode Strategy functionality
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_PowerModeStrategyHandler(void)
+{
+      «IF !SUSD_IsSameSignalReference(sUSD.sUSDGeneral)-» 
+    if (SUSD_PowerModeBackupStrategy1() == TRUE)
+    {
+        SUSD_SetSystemBackupPowerMode();
+        SUSD_ClearRunningResetEvent();
+    }
+    «ENDIF-»
+
+    if (SUSD_PrimaryPowerModeStrategy() == TRUE)
+    {
+        SUSD_SetSystemPowerMode();
+        SUSD_ClearRunningResetEvent();
+    }  
+
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_VehiclePowerModeHandler
+  Description   :   Function to handle Vehicle Power Mode functionality
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_VehiclePowerModeHandler(void)
+{
+    /* Always process all signals to save previously received signal values */  
+«IF (sUSD.sUSDGeneral.sUSD_RunCrankPlausibility_Supported)-»
+    SUSD_SetRunCrankPowerMode();
+«ENDIF-»
+
+    SUSD_PowerModeStrategyHandler();
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_VehiclePowerMode
+  Description   :   Function to handle Power Mode Slave functionality
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 106] [$SDD_SUSD 107] [$SDD_SUSD 108] [$SDD_SUSD 109] [$SDD_SUSD 149] [$SDD_SUSD 175]*/
+/* PRQA S 1532 1 # This Function can be used in the multiple file and can not be turned into static as well as moved to static code */
+FUNC(void, SUSD_CODE) SUSD_VehiclePowerModeDetermination(void)
+{
+    /* Store the current VPM before determining the new one */
+    SUM_VehiclePowerMode_Signal_States LastDeterminedVPM = SUSD_VehiclePowerMode;
+    /* Set VPM invalidity to TRUE. If a valid VPM is determined by the functions
+     * below, they will take care to set its invalidity to FALSE. */
+    SUSD_VehiclePowerModeInv = TRUE;
+    /* Check wakeup flag after running reset occurs */
+    if (WakeupAfterReset == TRUE)
+    {
+      if (TimerExpired == TRUE)
+      {
+«IF (sUSD.sUSDGeneral.sUSD_RunCrankPlausibility_Supported)-»
+        SUSD_SetRunCrankPowerMode();
+«ENDIF-»
+        SUSD_ClearRunningResetEvent();
+      }
+      else
+      {
+          SUSD_PowerModeStrategyHandler();
+      }
+    }
+    else
+    {
+      SUSD_VehiclePowerModeHandler();
+    }
+
+    /* If the VPM has changed, save it to NvM */
+    if (LastDeterminedVPM != SUSD_VehiclePowerMode)
+    {
+        /* save Vehicle Power Mode State */
+    	/* PRQA S 3469 1 # The function like macros is used. This is necessary to get value via RTE variable */
+        *Rte_Pim_VehiclePowerMode_State() = SUSD_VehiclePowerMode;
+        /* Set RAM Block status changed */
+        /* [$Satisfies $SDD_SUSD 250] */
+        (void) Rte_Call_RP_NvMService_VehPowerMode_SetRamBlockStatus(TRUE);
+        /* request NvM to store Vehicle Power Mode State in Non-Volatile Memory */
+        /* [$Satisfies $SDD_SUSD 250] */
+        (void) Rte_Call_RP_NvMService_VehPowerMode_WriteBlock(&SUSD_VehiclePowerMode);
+        /* save the latest Vehicle Power Mode value */
+        LastDeterminedVPM = SUSD_VehiclePowerMode;
+    }
+
+    /* Indicate Vehicle Power Mode to SWCs */
+    /* [$Satisfies $SDD_SUSD 248] */
+    (void) Rte_Write_PP_SUSD_VehiclePowerMode_VehiclePowerMode(LastDeterminedVPM);
+    /* Indicate Vehicle Power Mode Invalidity to SWCs */
+    /* [$Satisfies $SDD_SUSD 248] */
+    (void) Rte_Write_PP_SUSD_VehiclePowerMode_Inv_VehiclePowerMode_Inv(SUSD_VehiclePowerModeInv);
+}
+«ENDIF-»
+
+«IF (sUSD.sUSDGeneral.sUSD_RunCrankPlausibility_Supported)-»
+
+/* Satisfies: [$SDD_SUSD 112] [$SDD_SUSD 113] */
+static FUNC(void, SUSD_CODE) SUSD_RunCrankActiveDetermination(void)
+{
+    static RunCrankPlausibility LastValidPrimRunCrankReceived = SUSD_INACTIVE;
+    static RunCrankPlausibility LastValidSecRunCrankReceived = SUSD_INACTIVE;
+
+    SignalStatusType SignalAvailability = SUM_SSM_SIGNAL_STATUS_UNINITIALIZED;
+    RunCrankPlausibility SignalInvalidity = TRUE;
+    RunCrankPlausibility SignalFoFA = TRUE;
+    RunCrankPlausibility SignalFoI = TRUE;
+  
+    SUSD_RunCrankActiveInv=TRUE;
+    /*The Run/Crank Active will be filled with the Run/Crank input
+     * only if the debouncing has been completed. Otherwise, its invalidity
+     * is kept equal to TRUE.
+     */
+    if(SUSD_DebouncingCompleted==TRUE)
+    {
+		  SUSD_RunCrankActive = SUSD_RunCrankInput;
+		  SUSD_RunCrankActiveInv = SUSD_RunCrankInputInv;
+    }
+
+    /*Run Crank Active Determination using Backup Power Mode Master state */
+    /* Read the signal availability for Secondary Run/Crank Command Active from SSM */
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_Av_SignalAvailability(&SignalAvailability);
+    /* Read the signal invalidity for Secondary Run/Crank Command Active from SSC */
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_Inv_VDPSecInv(&SignalInvalidity);
+    /* Read the signal Failed Continuous Operation Fault Active for Secondary Run/Crank Command Active from SSM */
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_FoFA_DTC_STATUS_FOFA(&SignalFoFA);
+
+    if ((SignalInvalidity == FALSE) && (SignalAvailability == SUM_SSM_SIGNAL_STATUS_AVAILABLE ) && (SignalFoFA == FALSE))
+    {
+        /* Read the signal Failed Continuous Operation Indication for Secondary Run/Crank Command Active from SSM */
+        (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_FoI_ContnOperation(&SignalFoI);
+
+        /* NOTE:
+         * If the signal has Failed Continuos Operation Indication active, we reason that this cannot be the first
+         * time we receive the signal. Therefore, we assume that LastValidSecRunCrankReceived has been initialised
+         * with the last known valid signal received.
+         */
+        if (SignalFoI == FALSE)
+        {
+            (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_VDPSecActive(&SUSD_RunCrankActive);
+            LastValidSecRunCrankReceived = SUSD_RunCrankActive;
+        }
+        else
+        {
+            SUSD_RunCrankActive = LastValidSecRunCrankReceived;
+        }
+        SUSD_RunCrankActiveInv = FALSE;
+    }
+
+    /* Run/Crank Active determination using Power Mode Master state */
+    /* Read the signal availability for Primary Run/Crank Command Active from SSM */
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_Av_SignalAvailability(&SignalAvailability);
+    /* Read the signal invalidity for Primary Run/Crank Command Active from SSC */
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_Inv_VDPPrimInv(&SignalInvalidity);
+    /* Read the signal Failed Continuous Operation Fault Active for Primary Run/Crank Command Active from SSM */
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_FoFA_DTC_STATUS_FOFA(&SignalFoFA);
+
+    if ((SignalInvalidity == FALSE) && (SignalAvailability == SUM_SSM_SIGNAL_STATUS_AVAILABLE ) && (SignalFoFA == FALSE))
+    {
+
+        /* Read the signal Failed Continuous Operation Indication for Primary Run/Crank Command Active from SSM */
+        (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_FoI_ContnOperation(&SignalFoI);
+
+        /* NOTE:
+         * If the signal has Failed Continuos Operation Indication active, we reason that this cannot be the first
+         * time we receive the signal. Therefore, we assume that LastValidPrimRunCrankReceived has been initialised
+         * with the last known valid signal received.
+         */
+        if (SignalFoI == FALSE)
+        {
+            (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_VDPPrimActive(&SUSD_RunCrankActive);
+            LastValidPrimRunCrankReceived = SUSD_RunCrankActive;
+        }
+        else
+        {
+            SUSD_RunCrankActive = LastValidPrimRunCrankReceived;
+        }
+        SUSD_RunCrankActiveInv = FALSE;
+    }
+
+    /* We have finally determined Run/Crank Active and its validity: notify SWCs */
+    /* [$Satisfies $SDD_SUSD 248] */
+    (void) Rte_Write_PP_SUSD_RunCrankActive_SWC_RunCrankPlausibilityData(SUSD_RunCrankActive);
+    /* [$Satisfies $SDD_SUSD 248] */
+    (void) Rte_Write_PP_SUSD_RunCrankActive_Inv_SWC_VDPRunCrankActive_Inv(SUSD_RunCrankActiveInv);
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_RunCrankPlausibility
+  Description   :   Function for Run Crank functionality
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* PRQA S 1532 1 # This Function can be used in the multiple file and can not be turned into static as well as moved to static code */
+FUNC(void, SUSD_CODE) SUSD_RunCrankPlausibility(void)
+{
+    /* Initially set invalidity to true, when valid Run/Crank is available then set to false */
+    SUSD_RunCrankActiveInv = TRUE;
+
+    /* Always process all signals to save previously received signal values */
+    SUSD_RunCrankInputDiscreteAnalog();
+
+    SUSD_RunCrankInputValidity();
+
+    SUSD_RunCrankActiveDetermination();
+
+    /* Perform Run/Crank Stuck High/Low diagnostics */
+    SUSD_RunCrankStuckHighDiagnosticCriteria();
+    SUSD_RunCrankStuckLowDiagnosticCriteria();
+}
+
+/* Satisfies: [$SDD_SUSD 118] [$SDD_SUSD 062]*/
+static FUNC(uint16, SUSD_CODE) SUSD_RunCrankInputVoltage(void)
+{
+    uint8 InputPercentageValue = SUSD_ZERO;
+
+    (void) Rte_Read_RP_SUSD_RunCrankInputPercentage_VDPPercentage(&InputPercentageValue);
+
+    /* Obtain the current Input Voltage value using the current Run Crank Input Percentage value
+     * and the Percentage to Voltage Conversion Factor calibration value */
+    return (uint16) ((InputPercentageValue * Rte_CData_SUSD_PDP_PercentageToVolConvFactor()) / 100u);
+}
+
+/* This macro determines the current Run/Crank input value based on the binary
+ * value (Low/High) of the last N samples, where N is the minimum value for which
+ * N * SUSD_RUNCRANK_PERIODICITY >= Rte_CData_SUSD_PDP_RunCrankInput_DebounceTime().
+ * If the last N samples were equal (all Low or all High), the Run/Crank input
+ * value is determined to be that same state (Low or High respectively).
+ * When the current sample interrupts the sequence of equal samples, the count
+ * for the value of the current sample is started, and the count for the other
+ * value is reset.
+ * The macro also signals when the debouncing has been completed.
+ * NOTE: There is no risk of integer overflow.
+ * SUSD_RUNCRANK_PERIODICITY is limited to a maximum of 500 (ms).
+ * Since __STATES_COUNTER[__SAMPLE_STATE] will increase by increments of 1,
+ * it follows that ((__STATES_COUNTER[__SAMPLE_STATE]) * SUSD_RUNCRANK_PERIODICITY)
+ * will increase by increments of 500.
+ * This means that ((__STATES_COUNTER[__SAMPLE_STATE]) * SUSD_RUNCRANK_PERIODICITY)
+ * will overshoot the value of K_RunCrankInput_DebounceTime by a maximum of 499
+ * before __STATES_COUNTER[__SAMPLE_STATE] stops increasing.
+ * K_RunCrankInput_DebounceTime is in turn limited to a maximum of 10000 (ms).
+ * This means that ((__STATES_COUNTER[__SAMPLE_STATE]) * SUSD_RUNCRANK_PERIODICITY)
+ * will always be in the range [500, 10500), and therefore will never overflow an uint16.
+ */
+/* Satisfies: [$SDD_SUSD 071] */
+static FUNC(void, SUSD_CODE) Runcrak_Count_input_sample(uint16* State_Couter,boolean Sample_State)
+{
+	boolean State_var;
+    if ((((State_Couter)[(Sample_State)]) * SUSD_RUNCRANK_PERIODICITY) >= Rte_CData_SUSD_PDP_RunCrankInput_DebounceTime())
+    {
+        (State_var) = (Sample_State);
+        SUSD_RunCrankInput = (State_var);
+        SUSD_DebouncingCompleted = TRUE;\
+        /* [$Satisfies $SDD_SUSD 248] */
+        (void) Rte_Write_PP_SUSD_RunCrankInput_SWC_VDPInput(SUSD_RunCrankInput);\
+    }
+    else
+    {
+        (State_Couter)[(Sample_State)]++;
+        (State_Couter)[SUSD_ONE - (Sample_State)] = SUSD_ZERO;
+        SUSD_DebouncingCompleted = FALSE;
+    }
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_RunCrankInputDiscreteAnalog
+  Description   :   Function to handle RunCrank Input Discrete and Analog Type
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 062] [$SDD_SUSD 069] [$SDD_SUSD 070] [$SDD_SUSD 071]
+ * [$SDD_SUSD 072] [$SDD_SUSD 114] [$SDD_SUSD 115] [$SDD_SUSD 116] [$SDD_SUSD 117] */
+static FUNC(void, SUSD_CODE) SUSD_RunCrankInputDiscreteAnalog(void)
+{
+    /* Discrete input */
+    boolean InputDiscreteValue = SUSD_LOW;
+
+    /* Count occurrences of High/Low state for Run/Crank Input
+     * NOTE: Since the ECU will always be reset after changing calibration parameters,
+     * we can use a single data structure to count both Analog/Discrete state counts
+     * without fear of mixing the two up. */
+    static uint16 StateCount[SUSD_TWO] = {SUSD_ZERO, SUSD_ZERO};
+
+    switch (Rte_CData_SUSD_PDP_SUSD_C_RunCrankInputType()) {
+        case SUSD_DISCRETE: /*Run Crank Active Determination based on Discrete Run Crank Input */
+            /* Obtain the current input value */
+            (void) Rte_Read_RP_SUSD_RunCrankInputDiscreteActive_VDPDiscreteActive(&InputDiscreteValue);
+            /* If we have counted the currently active value consecutively for enough cycles, the input is determined */
+            Runcrak_Count_input_sample(StateCount,InputDiscreteValue);
+            break;
+        case SUSD_ANALOG: 
+            /*Run Crank Active Determination based on Analog Run Crank Input */
+			SUSD_RunCrankInputAnalog(StateCount);			
+            break;
+        default: /* Do nothing: RunCrankInputType is either DISCRETE or ANALOG */
+            break;
+    }
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_RunCrankInputValidity
+  Description   :   Function for RunCrank Input Validity
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 119] [$SDD_SUSD 125] [$SDD_SUSD 131] */
+static FUNC(void, SUSD_CODE) SUSD_RunCrankInputValidity(void)
+{
+    boolean StuckLow_FA = FALSE;
+    boolean StuckHigh_FA = FALSE;
+
+    /*Read Run/Crank Input Stuck Low Diagnostic Fault Active from ERRH*/
+    (void) Rte_Read_RP_RunCrankInputStuckLow_FA_StatusReq_FA_LowStatus_DTC_Confirm(&StuckLow_FA);
+    /*Read Run/Crank Input Stuck High Diagnostic Fault Active from ERRH*/
+    (void) Rte_Read_RP_RunCrankInputStuckHigh_FA_StatusReq_FA_HighStatus_DTC_Confirm(&StuckHigh_FA);
+
+    /* Indicate to SWCs */
+    (void) Rte_Write_PP_RunCrankInputStuckLowDiag_FA_LowDiagFA(StuckLow_FA);
+    (void) Rte_Write_PP_RunCrankInputStuckHighDiag_FA_HighDiagFA(StuckHigh_FA);
+
+    SUSD_RunCrankInputInv = ((StuckLow_FA == TRUE) || (StuckHigh_FA == TRUE));
+
+    /* Notify SWCs */
+    /* [$Satisfies $SDD_SUSD 248] */
+    (void) Rte_Write_PP_SUSD_RunCrankInput_Inv_SWC_VDPInputInv(SUSD_RunCrankInputInv);
+}
+
+static FUNC(boolean, SUSD_CODE) SUSD_BatteryVoltageInRange(void)
+{
+    static boolean VoltageInRange = FALSE;
+    Impl_SUSD_VehcleBatryVlg BatteryVoltage = SUSD_ZERO;
+	
+    /* Read the Battery Voltage value from SW-C in volts */
+    (void) Rte_Read_RP_SUSD_VehicleBatteryVoltage_VehicleVoltage(&BatteryVoltage);
+	
+    /* Check for Controller Voltage In Range with hysteresis of 0.5 V when going low */
+	if ((BatteryVoltage >= (uint16)SUSD_CONTROLLER_VOLTAGE_THRESHOLD)
+		|| ((VoltageInRange == TRUE) && (BatteryVoltage >= (uint16)(SUSD_CONTROLLER_VOLTAGE_THRESHOLD - SUSD_CONTROLLER_VOLTAGE_HYSTERESIS_LOW))))
+	{
+        VoltageInRange = TRUE;
+    }
+    else
+    {
+        VoltageInRange = FALSE;
+    }
+
+    return VoltageInRange;
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_RunCrankStuckHighDiagnosticCriteria
+  Description   :   Function for RunCrank Input Stuck High Diagnostic
+                    Enable/Failure Criteria
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 063] [$SDD_SUSD 064] [$SDD_SUSD 065] [$SDD_SUSD 120]
+ * [$SDD_SUSD 121] [$SDD_SUSD 122] [$SDD_SUSD 123] [$SDD_SUSD 124] */
+static FUNC(void, SUSD_CODE) SUSD_RunCrankStuckHighDiagnosticCriteria(void)
+{
+    boolean RunCrankCondition = FALSE;
+
+    /*Variables to read Power Mode Master parameters*/
+    boolean PrimaryRunCrank = SUSD_LOW;
+    boolean PrimaryRunCrankInvalidity = TRUE;
+    SignalStatusType PrimaryRunCrankAvailability = SUM_SSM_SIGNAL_STATUS_UNINITIALIZED;
+    boolean PrimaryRunCrankFoFA = TRUE;
+
+    /*Variables to read Backup Power Mode Master parameters*/
+    boolean SecondaryRunCrank = SUSD_LOW;
+    boolean SecondaryRunCrankInvalidity = TRUE;
+    SignalStatusType SecondaryRunCrankAvailability = SUM_SSM_SIGNAL_STATUS_UNINITIALIZED;
+    boolean SecondaryRunCrankFoFA = TRUE;
+
+    /* Since we are operating with hysteresis, we need to run this function
+     * every cycle even if we do not need the condition to enable diagnostic
+     * (i.e. if RunCrankInputStuckHi_Enable were FALSE) */
+    boolean BatteryVoltageInRange = SUSD_BatteryVoltageInRange();
+
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_VDPPrimActive(&PrimaryRunCrank);
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_Inv_VDPPrimInv(&PrimaryRunCrankInvalidity);
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_Av_SignalAvailability(&PrimaryRunCrankAvailability);
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_FoFA_DTC_STATUS_FOFA(&PrimaryRunCrankFoFA);
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_VDPSecActive(&SecondaryRunCrank);
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_Inv_VDPSecInv(&SecondaryRunCrankInvalidity);
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_Av_SignalAvailability(&SecondaryRunCrankAvailability);
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_FoFA_DTC_STATUS_FOFA(&SecondaryRunCrankFoFA);
+
+    /* Compute the Run/Crank enable condition.
+     * If the Primary Run/Crank is good, its value determines the condition.
+     * If the Primary Run/Crank is not good and the Secondary is, its value determines the condition.
+     */
+    if ((SecondaryRunCrankInvalidity == FALSE) && (SecondaryRunCrankAvailability == SUM_SSM_SIGNAL_STATUS_AVAILABLE) && (SecondaryRunCrankFoFA == FALSE))
+    {
+        RunCrankCondition = (SecondaryRunCrank == SUSD_LOW);
+    }
+
+    if ((PrimaryRunCrankInvalidity == FALSE) && (PrimaryRunCrankAvailability == SUM_SSM_SIGNAL_STATUS_AVAILABLE) && (PrimaryRunCrankFoFA == FALSE))
+    {
+        RunCrankCondition = (PrimaryRunCrank == SUSD_LOW);
+    }
+
+    /* The Run Crank Input Stuck High diagnostics shall be enabled when all the following conditions are TRUE */
+    if ((Rte_CData_SUSD_PDP_RunCrankInputStuckHi_Enable() == TRUE)
+            && (BatteryVoltageInRange == TRUE)
+            && (RunCrankCondition == TRUE))
+    {
+        /* Run Crank Input Stuck High diagnostics is enabled */
+        SUSD_RunCrankStuckHighDiagnostic_EnabledCount++;
+
+        if (SUSD_RunCrankInput == SUSD_HIGH)
+        {
+            /* Run Crank Input Stuck High diagnostic has failed */
+            SUSD_RunCrankStuckHighDiagnostic_FailCount++;
+        }
+    }
+
+    /*check whether the diagnostic services permitting the setting of DTCs */
+    if (Rte_Mode_RP_SUSD_ControlDTCSetting_ControlDTCSetting() == RTE_MODE_MDG_ControlDTCSetting_SUM_ENABLEDTCSETTING)
+    {
+        if (SUSD_RunCrankStuckHighDiagnostic_FailCount >= (uint32) Rte_CData_SUSD_PDP_RunCrankInputStuckHi_FailCount())
+        {
+            (void) Rte_Write_PP_RunCrankInputStuckHighDiagStatus_HighStatus((uint8) SUSD_DIAGNOSTIC_FAILED);
+            SUSD_RunCrankStuckHighDiagnostic_EnabledCount = SUSD_ZERO;
+            SUSD_RunCrankStuckHighDiagnostic_FailCount = SUSD_ZERO;
+        }
+        else if (SUSD_RunCrankStuckHighDiagnostic_EnabledCount >= (uint32) Rte_CData_SUSD_PDP_RunCrankInputStuckHi_SampleCount())
+        {
+            (void) Rte_Write_PP_RunCrankInputStuckHighDiagStatus_HighStatus((uint8) SUSD_DIAGNOSTIC_PASSED);
+            SUSD_RunCrankStuckHighDiagnostic_EnabledCount = SUSD_ZERO;
+            SUSD_RunCrankStuckHighDiagnostic_FailCount = SUSD_ZERO;
+        }
+        else
+        {
+            (void) Rte_Write_PP_RunCrankInputStuckHighDiagStatus_HighStatus((uint8) SUSD_DIAGNOSTIC_NO_STATUS_TO_REPORT);
+        }
+    }
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_RunCrankStuckLowDiagnosticCriteria
+  Description   :   Function for RunCrank Input Stuck Low Diagnostic
+                    Enable/Failure Criteria
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 066] [$SDD_SUSD 067] [$SDD_SUSD 068] [$SDD_SUSD 126]
+ * [$SDD_SUSD 127] [$SDD_SUSD 128] [$SDD_SUSD 129] [$SDD_SUSD 130]*/
+static FUNC(void, SUSD_CODE) SUSD_RunCrankStuckLowDiagnosticCriteria(void)
+{
+    boolean RunCrankCondition = FALSE;
+
+    /*Variables to read Power Mode Master parameters*/
+    boolean PrimaryRunCrank = SUSD_LOW;
+    boolean PrimaryRunCrankInvalidity = TRUE;
+    SignalStatusType PrimaryRunCrankAvailability = SUM_SSM_SIGNAL_STATUS_UNINITIALIZED;
+    boolean PrimaryRunCrankFoFA = TRUE;
+
+    /*Variables to read Backup Power Mode Master parameters*/
+    boolean SecondaryRunCrank = SUSD_LOW;
+    boolean SecondaryRunCrankInvalidity = TRUE;
+    SignalStatusType SecondaryRunCrankAvailability = SUM_SSM_SIGNAL_STATUS_UNINITIALIZED;
+    boolean SecondaryRunCrankFoFA = TRUE;
+
+    boolean BatteryVoltageInRange = SUSD_BatteryVoltageInRange();
+
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_VDPPrimActive(&PrimaryRunCrank);
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_Inv_VDPPrimInv(&PrimaryRunCrankInvalidity);
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_Av_SignalAvailability(&PrimaryRunCrankAvailability);
+    (void) Rte_Read_RP_SUSD_PrimaryRunCrankCmdActive_FoFA_DTC_STATUS_FOFA(&PrimaryRunCrankFoFA);
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_VDPSecActive(&SecondaryRunCrank);
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_Inv_VDPSecInv(&SecondaryRunCrankInvalidity);
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_Av_SignalAvailability(&SecondaryRunCrankAvailability);
+    (void) Rte_Read_RP_SUSD_SecondaryRunCrankCmdActive_FoFA_DTC_STATUS_FOFA(&SecondaryRunCrankFoFA);
+
+    /* Compute the Run/Crank enable condition.
+     * If the Primary Run/Crank is good, its value determines the condition.
+     * If the Primary Run/Crank is not good and the Secondary is, its value determines the condition.
+     */
+    if ((SecondaryRunCrankInvalidity == FALSE) && (SecondaryRunCrankAvailability == SUM_SSM_SIGNAL_STATUS_AVAILABLE) && (SecondaryRunCrankFoFA == FALSE))
+    {
+        RunCrankCondition = (SecondaryRunCrank == SUSD_HIGH);
+    }
+
+    if ((PrimaryRunCrankInvalidity == FALSE) && (PrimaryRunCrankAvailability == SUM_SSM_SIGNAL_STATUS_AVAILABLE) && (PrimaryRunCrankFoFA == FALSE))
+    {
+        RunCrankCondition = (PrimaryRunCrank == SUSD_HIGH);
+    }
+
+    /* The Run Crank Input Stuck High diagnostics shall be enabled when all the following conditions are TRUE */
+    if ((Rte_CData_SUSD_PDP_RunCrankInputStuckLow_Enable() == TRUE)
+            && (BatteryVoltageInRange == TRUE)
+            && (RunCrankCondition == TRUE))
+    {
+        /* Run Crank Input Stuck Low diagnostics is enabled */
+        SUSD_RunCrankStuckLowDiagnostic_EnabledCount++;
+
+        if (SUSD_RunCrankInput == SUSD_LOW)
+        {
+            /* Run Crank Input Stuck Low diagnostic has failed */
+            SUSD_RunCrankStuckLowDiagnostic_FailCount++;
+        }
+    }
+
+    /*check whether the diagnostic services permitting the setting of DTCs */
+    if (Rte_Mode_RP_SUSD_ControlDTCSetting_ControlDTCSetting() == RTE_MODE_MDG_ControlDTCSetting_SUM_ENABLEDTCSETTING)
+    {
+        if (SUSD_RunCrankStuckLowDiagnostic_FailCount >= (uint32) Rte_CData_SUSD_PDP_RunCrankInputStuckLow_FailCount())
+        {
+            (void) Rte_Write_PP_RunCrankInputStuckLowDiagStatus_LowStatus((uint8) SUSD_DIAGNOSTIC_FAILED);
+            SUSD_RunCrankStuckLowDiagnostic_EnabledCount = SUSD_ZERO;
+            SUSD_RunCrankStuckLowDiagnostic_FailCount = SUSD_ZERO;
+        }
+        else if (SUSD_RunCrankStuckLowDiagnostic_EnabledCount >= (uint32) Rte_CData_SUSD_PDP_RunCrankInputStuckLow_SampleCount())
+        {
+            (void) Rte_Write_PP_RunCrankInputStuckLowDiagStatus_LowStatus((uint8) SUSD_DIAGNOSTIC_PASSED);
+            SUSD_RunCrankStuckLowDiagnostic_EnabledCount = SUSD_ZERO;
+            SUSD_RunCrankStuckLowDiagnostic_FailCount = SUSD_ZERO;
+        }
+        else
+        {
+            (void) Rte_Write_PP_RunCrankInputStuckLowDiagStatus_LowStatus((uint8) SUSD_DIAGNOSTIC_NO_STATUS_TO_REPORT);
+        }
+    }
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_RunCrankInputAnalog
+  Description   :   Function to handle RunCrank Input Analog Type
+                    Enable/Failure Criteria
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_RunCrankInputAnalog(uint16 *StateCount)
+{
+	/* Analog input */
+    uint16 InputVoltageValue;
+	static boolean AnalogState = SUSD_LOW;
+	InputVoltageValue = SUSD_RunCrankInputVoltage();
+	if (InputVoltageValue < Rte_CData_SUSD_PDP_RunCrankInputThresholdLow())
+	{
+		/* Low state is determined for this sample */
+		Runcrak_Count_input_sample(StateCount,SUSD_LOW);
+    	AnalogState = SUSD_LOW;
+	}
+	else if (InputVoltageValue >= Rte_CData_SUSD_PDP_RunCrankInputThresholdHigh())
+	{
+		/* High state is determined for this sample */
+		Runcrak_Count_input_sample(StateCount,SUSD_HIGH);
+    	AnalogState = SUSD_HIGH;
+	}
+	else
+	{
+		/* We are in the dead band between the Low and High thresholds.
+		 * Retain previous state, but reset both value counts. */
+		SUSD_RunCrankInput = AnalogState;
+		/* [$Satisfies $SDD_SUSD 248] */
+		(void) Rte_Write_PP_SUSD_RunCrankInput_SWC_VDPInput(SUSD_RunCrankInput);
+		StateCount[SUSD_LOW] = SUSD_ZERO;
+		StateCount[SUSD_HIGH] = SUSD_ZERO;
+	}
+}
+
+«ENDIF-»
+
+/***********************************************************************************
+
+  Function name :   SUSD_ECUWakeupDetectionRecordsUpdate
+  Description   :   Function to handle ECU Wakeup Detection Records Update
+  Parameter in  :   Wakeup Detection Record
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   None
+ ************************************************************************************/
+/* Satisfies: [$SDD_SUSD 162] [$SDD_SUSD 163] [$SDD_SUSD 164] [$SDD_SUSD 165]*/
+static FUNC(void, SUSD_CODE) SUSD_ECUWakeupDetectionRecordsUpdate(const SUSD_ECUWakeupDetectionRecord *Data)
+{
+    /* Variable to iterate on ECU Wakeup Detection Records */
+    uint32  ECUWakeupDetRec;
+    /* Count of ECU Wakeup Detection Records */
+    uint32 ECUWakeupDetRecCount = SUSD_NO_OF_WAKEUPDETRECS-1u;
+
+    /*Find the currently stored count of ECU Wakeup Detection Records*/
+    for(ECUWakeupDetRec = SUSD_ZERO; ECUWakeupDetRec < SUSD_NO_OF_WAKEUPDETRECS; ECUWakeupDetRec++)
+    {
+        if(    (SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].ECUWakeupDetectionRecordId[0] == 0u)
+            && (SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].ECUWakeupDetectionRecordId[1] == 0u)
+            && (SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].ECUWakeupDetectionRecordId[2] == 0u)
+            && (SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].ECUWakeupDetectionRecordId[3] == 0u))
+        {
+            ECUWakeupDetRecCount = ECUWakeupDetRec;
+            break;
+        }
+    }
+
+    /* When the next source is captured record 1 will move to record 2 and so on.
+     * When the 11th record is captured the last record 10 will be pushed out.*/
+    for(ECUWakeupDetRec = ECUWakeupDetRecCount; ECUWakeupDetRec > 0u; ECUWakeupDetRec--)
+    {
+        SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].ECUWakeupDetectionRecordId[0] = SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec-1u].ECUWakeupDetectionRecordId[0];
+        SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].ECUWakeupDetectionRecordId[1] = SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec-1u].ECUWakeupDetectionRecordId[1];
+        SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].ECUWakeupDetectionRecordId[2] = SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec-1u].ECUWakeupDetectionRecordId[2];
+        SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].ECUWakeupDetectionRecordId[3] = SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec-1u].ECUWakeupDetectionRecordId[3];
+
+        SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].TimeStampOfOccurence[0]    = SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec-1u].TimeStampOfOccurence[0];
+        SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].TimeStampOfOccurence[1]    = SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec-1u].TimeStampOfOccurence[1];
+        SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].TimeStampOfOccurence[2]    = SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec-1u].TimeStampOfOccurence[2];
+        SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].TimeStampOfOccurence[3]    = SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec-1u].TimeStampOfOccurence[3];
+        SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec].TimeStampOfOccurence[4]    = SUSD_ECUWakeupDetectionRecordsArray[ECUWakeupDetRec-1u].TimeStampOfOccurence[4];
+    }
+
+    /* Each time the ECU awakens the SUM_SUSD will capture the source of the wake up and
+     * store the wakeups in a first in first out order starting with record 1. */
+    SUSD_ECUWakeupDetectionRecordsArray[0].ECUWakeupDetectionRecordId[0] = Data->ECUWakeupDetectionRecordId[0];
+    SUSD_ECUWakeupDetectionRecordsArray[0].ECUWakeupDetectionRecordId[1] = Data->ECUWakeupDetectionRecordId[1];
+    SUSD_ECUWakeupDetectionRecordsArray[0].ECUWakeupDetectionRecordId[2] = Data->ECUWakeupDetectionRecordId[2];
+    SUSD_ECUWakeupDetectionRecordsArray[0].ECUWakeupDetectionRecordId[3] = Data->ECUWakeupDetectionRecordId[3];
+
+    SUSD_ECUWakeupDetectionRecordsArray[0].TimeStampOfOccurence[0]    = Data->TimeStampOfOccurence[0];
+    SUSD_ECUWakeupDetectionRecordsArray[0].TimeStampOfOccurence[1]    = Data->TimeStampOfOccurence[1];
+    SUSD_ECUWakeupDetectionRecordsArray[0].TimeStampOfOccurence[2]    = Data->TimeStampOfOccurence[2];
+    SUSD_ECUWakeupDetectionRecordsArray[0].TimeStampOfOccurence[3]    = Data->TimeStampOfOccurence[3];
+    SUSD_ECUWakeupDetectionRecordsArray[0].TimeStampOfOccurence[4]    = Data->TimeStampOfOccurence[4];
+
+    /*Update the ECU Wakeup Detection Records NVM Block*/
+    /* [$Satisfies $SDD_SUSD 250] */
+    Susd_NvmWriteBlock(&susd_NVMECUWakeUpDetectionRecordsBlock_FP, &Susd_LastRequestResult_ECUWakeUpDetectionRecords);
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_No_Active_Wakeup
+  Description   :   Function used to check if there are active wakeups
+  Parameter in  :   None
+  Parameter out :   No/yes_Active_Wakeup
+  Return value  :   None
+ ************************************************************************************/
+/* PRQA S 1532 1 # This Function can be used in the multiple file and can not be turned into static as well as moved to static code */
+FUNC(uint8, SUSD_CODE) SUSD_No_Active_Wakeup(void)
+{
+	return NoActiveWakeup;
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_CheckVehicleBatteryVoltageState
+  Description   :   Check if the battery voltage is in a specific state
+  Parameter in  :   UpperLimit - upper boundary of battery voltage
+  	  	  	  	  	LowerLimit - lower boundary of battery voltage
+  	  	  	  	  	CurrentVoltage - current battery voltage
+  	  	  	  	  	PrevState -  battery voltage state
+  	  	  	  	  	State - state to check: SUSD_IN_RANGE(0), SUSD_OUT_OF_RANGE_LOW(1), SUSD_OUT_OF_RANGE_HIGH(2)
+  Parameter out :   OutState
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_CheckVehicleBatteryVoltageState(uint16 UpperLimit, uint16 LowerLimit,
+																  uint16 CurrentVoltage, uint16* OutState, uint16 State)
+{
+	switch (State) {
+		case SUSD_OUT_OF_RANGE_HIGH:
+			if(CurrentVoltage > UpperLimit)
+			{
+				*OutState = (uint16)SUSD_OUT_OF_RANGE_HIGH;
+			}
+			break;
+		case SUSD_OUT_OF_RANGE_LOW:
+			if(CurrentVoltage < LowerLimit)
+			{
+				*OutState = (uint16)SUSD_OUT_OF_RANGE_LOW;
+			}
+			break;
+		default:
+			/* SUSD_IN_RANGE */
+			if((CurrentVoltage >= LowerLimit)&&(CurrentVoltage <= UpperLimit))
+			{
+				*OutState = (uint16)SUSD_IN_RANGE;
+			}
+			break;
+	}
+}
+
+
+
+/***********************************************************************************
+
+  Function name :   SUSD_SetInitState
+  Description   :   Function to update status of init function done
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   None
+ ************************************************************************************/
+static FUNC(void, SUSD_CODE) SUSD_SetInitState(void)
+{
+	SUSD_Init_state = E_OK;
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_GetInitState
+  Description   :   Function to get status of init function done
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   Init state
+ ************************************************************************************/
+FUNC(uint8, SUSD_CODE) SUSD_GetInitState(void)
+{
+	return SUSD_Init_state;
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_ReadFirstBootAfterFlash_Flag
+  Description   :   Function to get First Boot Post Flash Flag from memory
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   uint8 FirstBootPostFlash Flag
+  Remarks       :   [$Satisfies $SDD_SUSD 182]
+ ************************************************************************************/
+static FUNC(uint8, RTE_CODE) SUSD_ReadFirstBootAfterFlash_Flag (void)
+{
+    return *(susd_NvMService_FirstBootPostFlashBlock_FP.NvmRamBlock);
+}
+
+/***********************************************************************************
+
+  Function name :   SUSD_WriteFirstBootAfterFlash_Flag
+  Description   :   store the First Boot Post Flash Flag in memory
+  Parameter in  :   uint8 FirstBootAfterFlash_Flag
+  Parameter out :   None
+  Return value  :   None
+  Remarks       :   [$Satisfies $SDD_SUSD 182]
+ ************************************************************************************/
+static FUNC(void, RTE_CODE) SUSD_WriteFirstBootAfterFlash_Flag (uint8 FirstBootAfterFlash_Flag)
+{
+    *(susd_NvMService_FirstBootPostFlashBlock_FP.NvmRamBlock) = FirstBootAfterFlash_Flag;
+
+    /* [$Satisfies $SDD_SUSD 250] */
+    (void)Rte_Call_RP_NvMService_FirstBootPostFlash_Flag_WriteBlock(susd_NvMService_FirstBootPostFlashBlock_FP.NvmRamBlock);
+}
+
+/***********************************************************************************
+
+  Function name :   Sum_SUSD_isFirstBootAfterFlash
+  Description   :   Returns the flag indicating whether this is the first boot after a flash operation.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   boolean - TRUE if it's the first boot after flash, otherwise FALSE
+  Remarks       :   [$Satisfies $SDD_SUSD 182]
+ ************************************************************************************/
+/* PRQA S 1532 2 # Function defined here for modularity reason */
+FUNC(boolean, SUSD_CODE) Sum_SUSD_isFirstBootAfterFlash (void)
+{
+    return isFirstBootAfterFlash;
+}
+
+#define SUSD_STOP_SEC_CODE
+#include "SUSD_MemMap.h"
+/********************************** END OF FILE ******************************************************/
+«ENDFILE»
+«ENDDEFINE»

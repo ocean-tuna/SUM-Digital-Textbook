@@ -1,0 +1,16 @@
+@startuml Srvcmgr_LearningSession_DID_E0CC
+Title DID 0xE0CC: Learning Table State
+start
+group SrvcMgr_DID_E0CC_ConditionCheckRead;
+#palegreen:E_OK;
+end group
+stop
+
+start
+group SrvcMgr_DID_E0CC_ReadData
+:Sd_GetLearningTableState(&LearningState);
+: *Data = LearningState;
+#palegreen:E_OK;
+end group
+stop
+@enduml

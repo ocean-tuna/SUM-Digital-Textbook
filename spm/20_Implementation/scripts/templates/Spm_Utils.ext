@@ -1,0 +1,325 @@
+import bsw;
+import bsw::SPMModule;
+import bsw::EthIf;
+import bsw::EthSM;
+import bsw::DemModule;
+import bsw::DcmModule;
+
+extension templates::mathlib;
+extension org::eclipse::xtend::util::stdlib::elementprops;
+extension org::eclipse::xtend::util::stdlib::io;
+extension org::eclipse::xtend::util::stdlib::counter;
+
+Integer Spm_ComputeIpAddr(String ip):
+	let ip_vals = ip.split("\\."):
+		let ip_int = ( (ip_vals.get(0).asInteger() * 16777216) +
+						(ip_vals.get(1).asInteger() * 65536) +
+							(ip_vals.get(2).asInteger() * 256) +
+								(ip_vals.get(3).asInteger()) ):
+			ip_int
+;
+
+boolean GetDIDE0DDIsConfigured(SpmGeneral general):
+	general.spmDiagnostic != null && general.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref != null
+;
+
+boolean GetDIDE0DEIsConfigured(SpmGeneral general):
+	general.spmDiagnostic != null && general.spmDiagnostic.spmDID0xE0DEDcmRef != null
+;
+
+boolean GetDIDE0DFIsConfigured(SpmGeneral general):
+	general.spmDiagnostic != null && general.spmDiagnostic.spmDID0xE0DFDcmRef != null
+;
+
+boolean AnyE0DEOrE0DFIsConfigured(SpmGeneral general):
+	general.spmDiagnostic != null && (general.spmDiagnostic.spmDID0xE0DEDcmRef != null || general.spmDiagnostic.spmDID0xE0DFDcmRef != null)
+;
+
+boolean Get_DID_UsePortAsync(DcmDspDid did):
+	(did != null) &&
+	did.dcmDspDidSignal.first().dcmDspDidDataRef.dcmDspDataUsePort == "USE_DATA_ASYNCH_CLIENT_SERVER"
+;
+
+boolean Get_DID_HasCheckRead(DcmDspDid did):
+	(did != null) &&
+	did.dcmDspDidSignal.first().dcmDspDidDataRef.dcmDspDataConditionCheckReadFncUsed != null &&
+	did.dcmDspDidSignal.first().dcmDspDidDataRef.dcmDspDataConditionCheckReadFncUsed == true
+;
+
+String GetDidE0DDData(SpmGeneral general):
+	general.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref.dcmDspDidSignal.first().dcmDspDidDataRef.shortName
+;
+
+Integer Spm_GetMaxNumberOfSpmWkUpStep(SpmPgttEntries entries):
+	let ListOfSize = entries.spmWkUpSeq.collect(e | e.spmWkUpStep.size).sortBy(e | e - 2*e) :
+	ListOfSize.get(0)
+;
+
+Integer Spm_GetMaxNumberOfIPAssociatedToEachTrgDvc(SpmPgttEntries entries):
+	let ListOfSize = entries.spmTrgDvc.collect(e | e.spmTrgDvcID.size).sortBy(e | e - 2*e) :
+	ListOfSize.get(0)
+;
+
+Integer Spm_GetIntFromCmdType(String type):
+	switch(type)
+	{
+		case "SEND_TC10_SWTCH_1" : 0
+		case "SEND_TC10_SWTCH_2" : 1
+		case "SEND_ETH_WKUP_FRM_A" : 2
+		case "SEND_ETH_WKUP_FRM_B" : 3
+		case "SEND_ETH_WKUP_FRM_C" : 4
+		case "SEND_CAN_WKUP_FRM_A" : 5
+		case "SEND_CAN_WKUP_FRM_B" : 6
+		case "SEND_CAN_WKUP_FRM_C" : 7
+		case "SEND_BOARD_LV_WKUP_GPIO" : 8
+		default : 9
+	}
+;
+
+String Spm_GetLowPriorityFromParameter(String type):
+	switch(type)
+	{
+		case "SPM_PRF_AP_NOTAPP" : "SPM_NOT_APPLICABLE"
+		case "SPM_PRF_AP_LOW" : "SPM_LOW"
+		case "SPM_PRF_AP_MEDIUM_LOW" : "SPM_MEDIUM_LOW"
+		case "SPM_PRF_AP_MEDIUM" : "SPM_MEDIUM"
+		case "SPM_PRF_AP_MEDIUM_HIGH" : "SPM_MEDIUM_HIGH"
+		case "SPM_PRF_AP_HIGH" : "SPM_HIGH"
+		case "SPM_PRF_AP_CRITICAL" : "SPM_CRITICAL"
+		case "SPM_PRF_AP_EMERGENCY" : "SPM_EMERGENCY"
+		case "SPM_PRF_AP_ACCESS" : "SPM_ACCESS"
+		default :
+		throwError("enum value " + type + " for parameter SpmVehDefActPriorON/SpmVehDefActPriorOFF is not supported")
+	}
+;
+
+boolean Spm_ECU_INTERMEDIATE(Spm spm):
+	spm.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_INTERMEDIATE"
+;
+
+boolean Spm_IsTC10CommandPresent(Spm spm):
+	(spm.spmConfigSet.spmPgttEntries.spmWkUpSeq.spmWkUpStep.select(e|e.spmCommandType == "SEND_TC10_SWTCH_1").size > 0) ||
+	(spm.spmConfigSet.spmPgttEntries.spmWkUpSeq.spmWkUpStep.select(e|e.spmCommandType == "SEND_TC10_SWTCH_2").size > 0)
+;
+
+boolean Spm_IsETHCommandPresent(Spm spm):
+	(spm.spmConfigSet.spmPgttEntries.spmWkUpSeq.spmWkUpStep.select(e|e.spmCommandType == "SEND_ETH_WKUP_FRM_A").size > 0) ||
+	(spm.spmConfigSet.spmPgttEntries.spmWkUpSeq.spmWkUpStep.select(e|e.spmCommandType == "SEND_ETH_WKUP_FRM_B").size > 0) ||
+	(spm.spmConfigSet.spmPgttEntries.spmWkUpSeq.spmWkUpStep.select(e|e.spmCommandType == "SEND_ETH_WKUP_FRM_C").size > 0)
+;
+
+Integer Spm_GetUniqueVlanIdByCmdType(Spm spm, String cmdType):
+	// Note: this function is called after verifying that a VlanId exists corresponding to command type. Hence, the case where return list is empty is not handled
+	Spm_GetDvcVlanIdByCmdType(spm, cmdType).toList().get(0)
+;
+
+Boolean Spm_IsThereAnyManagedDevice(Spm spm) :
+	spm.spmConfigSet.spmPgttEntries.spmTrgDvc.spmTrgDvcVariantHndlng.exists(v | v.spmTrgAssocWkUpFrm != null && v.spmTrgAssocWkupBit != null)
+;
+
+List[Integer] Spm_GetDvcVlanIdByCmdType(Spm spm, String cmdType):
+	// Returns VLAN IDs of devices that uses cmdType for wakeup
+	Spm_ReturnSetOfSecondOctetTrgDvc(
+		spm.spmConfigSet.spmPgttEntries.spmTrgDvc
+			.select(t | t.spmTrgDvcVariantHndlng.exists(h |
+				h.spmWkUpSeqRef != null &&
+				h.spmWkUpSeqRef.spmWkUpStep.exists(s | s.spmCommandType == cmdType)))
+			.spmTrgDvcID)
+;
+
+Boolean Spm_ExistMultipleVariantConfigured(Spm spm): 
+	spm.spmConfigSet.spmPgttEntries.spmVariantCfg.size > 1
+;
+
+Boolean Spm_ExistsNetworkHndForVlanId(Spm spm, Integer id):
+	// Returns if network exists with given VlanId
+	spm.eRootContainer.ethSM.ethSMNetwork
+	.exists(e | e.ethSMEthIfControllerRef.ethIfVlanId == id)
+;
+
+Integer Spm_ReturnSecondOctetIp(String ip):
+	let ip_vals = ip.split("\\."):
+	ip_vals.get(1).asInteger()
+;
+
+Integer Spm_ReturnSecondOctetTcpIpStaticIpAddress(String ip):
+	let ip_vals = ip.split("\\."):
+	ip_vals.get(1).asInteger()
+;
+
+List[Integer] Spm_ReturnSetOfSecondOctetTrgDvc(List[String] input):
+	input.collect(e | Spm_ReturnSecondOctetIp(e)).toSet()
+;
+
+// By chk file, we know that the number of spmVariantIntermediateDstAddr for each variant is the same
+Integer Spm_ReturnSizeIntermediateList(Spm spm):
+	spm.spmConfigSet.spmPgttEntries.spmVariantCfg.first().spmVariantIntermediateDstAddr.size
+;
+
+Integer Spm_GetWkUpFrmVal(String literal):
+	switch(literal)
+	{
+		case "WKUP_FRM_A": 0
+		case "WKUP_FRM_B" : 1
+		case "WKUP_FRM_C" : 2
+		default: 255
+	}
+;
+
+Integer Spm_GetLowVoltLVOptmzerChkApplicationInterfaceID(Spm spm):
+	spm.spmConfigSet.spmLowVoltagePowerInfo.spmLowVoltLVOptmzerChkApplicationInterfaceID
+;
+
+String Spm_GetNameVarDataProtoTypeFromNamingConv(String portIntfPth):
+	let vdp = portIntfPth.split("/").last():
+		vdp
+;
+
+boolean Spm_CheckDID_xE0DE_ConfiguredInDcm(Dcm dcm):
+	let esit = dcm.dcmConfigSet.dcmDsp.dcmDspDid.collect(e|e.dcmDspDidIdentifier).contains(57566):
+		esit
+;
+
+boolean Spm_CheckDID_xE0DF_ConfiguredInDcm(Dcm dcm):
+	let esit = dcm.dcmConfigSet.dcmDsp.dcmDspDid.collect(e|e.dcmDspDidIdentifier).contains(57567):
+		esit
+;
+
+String Spm_Serializer_U32_2_U8(String src, String dst, String pos, String padd):
+	let code = "{ /* Serialize item " + dst + " (4Bytes) */\n" +
+		padd + src +"[" + pos + "] = (uint8)(" + dst + " >> 24U);\n" +
+		padd + src +"[" + pos + " + 1U] = (uint8)(" + dst + " >> 16U);\n" +
+		padd + src +"[" + pos + " + 2U] = (uint8)(" + dst + " >> 8U);\n" +
+		padd + src +"[" + pos + " + 3U] = (uint8)(" + dst + ");\n" +
+		padd + pos + " += 4U;\n" + padd.subString(0, padd.length-2) + "}":
+			code
+;
+
+String Spm_Serializer_U16_2_U8(String src, String dst, String pos, String padd):
+	let code = "{ /* Serialize item " + dst + " (2Bytes) */\n" +
+	    padd + src +"[" + pos + "] = (uint8)(" + dst + " >> 8U);\n" +
+		padd + src +"[" + pos + " + 1U] = (uint8)(" + dst + ");\n" +
+		padd + pos + " += 2U;\n" + padd.subString(0, padd.length-2) + "}":
+			code
+;
+
+String Spm_Serializer_U8_2_U8(String src, String dst, String pos, String padd):
+	let code = "{ /* Serialize item " + dst + " (1Byte) */\n" +
+		padd + src +"[" + pos + "] = (uint8)(" + dst + ");\n" +
+		padd + pos + " += 1U;\n" + padd.subString(0, padd.length-2) + "}":
+			code
+;
+
+String Spm_SerializeData(String src, String dst, String pos, Integer size, String padd):
+	switch(size)
+	{
+		case 1: Spm_Serializer_U8_2_U8(src, dst, pos, padd)
+		case 2: Spm_Serializer_U16_2_U8(src, dst, pos, padd)
+		case 4: Spm_Serializer_U32_2_U8(src, dst, pos, padd)
+		default: "/* Serializer is not valid */"
+	}
+;
+
+// TODO rename better
+List[SdClientService] Spm_GetUniqueSdClientServiceIds(List[SdClientService] services):
+	services.collect(e|Spm_GetSdClientServiceAndInstanceId(e)).toSet().toList()
+;
+
+List[Integer] Spm_GetSdClientServiceAndInstanceId(SdClientService service):
+	{service.sdClientServiceId, service.sdClientServiceInstanceId}
+;
+
+Integer Spm_GetSdClientServiceCntForId(List[SdClientService] services, Integer serviceId, Integer serviceInstanceId):
+	services.select(e|(e.sdClientServiceId == serviceId && e.sdClientServiceInstanceId == serviceInstanceId))
+	.size
+;
+List[Integer] Spm_GetMajorVerForSdClientServiceId(List[SdClientService] services, Integer serviceId, Integer serviceInstanceId):
+	services.select(e|(e.sdClientServiceId == serviceId && e.sdClientServiceInstanceId == serviceInstanceId))
+	.sdClientServiceMajorVersion.toSet().toList()
+;
+
+Integer Spm_GetSmFrameQueueLength(Spm spm):
+	if(spm.spmGeneral.spm_SmFrame_QueueLength == 0) then
+		spm.spmConfigSet.spmPgttEntries.spmTrgDvc.size * spm.spmConfigSet.spmPowPrf.select(e|e.spmProfileIsLocal == true).size
+	else
+		spm.spmGeneral.spm_SmFrame_QueueLength
+;
+
+Integer Spm_GetPmHeartbeatFrameQueueLength(Spm spm):
+	if(spm.spmGeneral.spm_PmHeartbeat_QueueLength == 0) then
+		spm.spmConfigSet.spmPgttEntries.spmTrgDvc.size
+	else
+		spm.spmGeneral.spm_PmHeartbeat_QueueLength
+;
+Integer Spm_GetEthWakeupUniFrameQueueLength(Spm spm):
+	if(spm.spmGeneral.spm_PmETHwakeUpUNIC_QueueLength == 0) then
+		spm.spmConfigSet.spmPgttEntries.spmTrgDvc.size
+	else
+		spm.spmGeneral.spm_PmETHwakeUpUNIC_QueueLength
+;
+Integer Spm_GetEthWakeupMultiFrameQueueLength(Spm spm):
+	if(spm.spmGeneral.spm_PmETHwakeUpMULTIC_QueueLength == 0) then
+		((spm.spmGeneral.spmSMMainFuncPeriodicity/5)+1).toInteger()
+	else
+		spm.spmGeneral.spm_PmETHwakeUpMULTIC_QueueLength
+;
+
+Integer Spm_GetLocalRequestsQueueLength(Spm spm):
+	if(spm.spmGeneral.spm_LocalRequests_QueueLength == 0) then
+		(spm.spmConfigSet.spmPowPrf.size * 2).toInteger()
+	else
+		spm.spmGeneral.spm_LocalRequests_QueueLength
+;
+
+/* Retrieve Information for the LowVoltageSoftwareActivationPriorityRequest*/
+/* Implementation Data type*/
+string Spm_GetImplementationDatatypeName (String path):
+
+	Spm_GetImplementationDatatypePath(path).split("/").last()
+;
+/* SubElement */
+String Spm_GetImplementationDatatypeSubElementName(String path):
+	path.toString().split("/").last()
+;
+
+/* Path of the Implementation Data type */
+string Spm_GetImplementationDatatypePath (String path):
+
+	let subelement = "/"+ Spm_GetImplementationDatatypeSubElementName(path):
+		path.toString().replaceAll(subelement,"")
+
+;
+
+/* Check that the references for Service Based communication are configured */
+Boolean Spm_IsLowVoltPrioServiceConfigured(SpmLowVoltagePowerInfo lvp):
+
+	(lvp != null && 
+	lvp.spmLowVoltSwActPrioReqSignal != null &&
+	lvp.spmLowVoltSwActPrioReqDataServiceBased != null &&
+	lvp.spmLowVoltSwActPrioReqDataTypeMappingSet != null) ? true : false
+;
+
+/* Retrieve the missing references for service-based communication */
+String Spm_MissingRefsForLowVoltPrio(SpmLowVoltagePowerInfo lvp):
+	let missrefs = " " :
+		(lvp.spmLowVoltSwActPrioReqSignal == null ? "SpmLowVoltSwActPrioReqSignal, " : "") +
+        (lvp.spmLowVoltSwActPrioReqDataServiceBased == null ? "SpmLowVoltSwActPrioReqDataServiceBased, " : "") +
+        (lvp.spmLowVoltSwActPrioReqDataTypeMappingSet == null ? "SpmLowVoltSwActPrioReqDataTypeMappingSet, " : "")
+       		
+;
+
+/* Check if the Heartbeat reception is configured */
+Boolean Spm_PwrMgrHeartbeatRxIsConfigured (SpmVLANCom vlan):
+	if (vlan.spmVLANComPwrMgrHeartbeat != null &&
+		vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatRxSendRecvIntRef != null &&
+		vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatRxImpDataTypeRef != null) then
+			(vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatRxSendRecvIntRef.size > 0 &&
+			vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatRxImpDataTypeRef.size > 0) 
+	else
+		false
+;
+
+
+
+
+

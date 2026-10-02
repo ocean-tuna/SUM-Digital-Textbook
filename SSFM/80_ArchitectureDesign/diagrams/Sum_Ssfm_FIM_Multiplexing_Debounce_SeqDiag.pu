@@ -1,0 +1,34 @@
+@startuml Sum_Ssfm_FIM_Multiplexing_Debounce_SeqDiag
+
+participant RTE as R
+participant DEM as DEM
+box SUM_SSFM
+    participant Sum_Ssfm_EventDebouncer_Manager as Debouncer
+	participant Sum_Ssfm_ContinuousOperationStatusManager as ContOpStatMgr
+	participant Sum_Ssfm_ProtStatusManager as ProtStatMgr
+    participant Sum_Ssfm_SecurityStatus_Manager as SecStatMgr
+	participant Sum_Ssfm_SafetyStatusManager as SafStatMgr
+    participant Sum_Ssfm_FaultIndications_DataManager as FIM
+    participant Sum_Ssfm_Service_Manager as SM
+end box
+
+activate FIM
+
+par
+Debouncer -> FIM: Ask for multiplexing
+else
+ContOpStatMgr -> FIM: Ask for multiplexing
+else
+ProtStatMgr -> FIM: Ask for multiplexing
+else
+SecStatMgr -> FIM: Ask for multiplexing
+else
+SafStatMgr -> FIM: Ask for multiplexing
+end
+
+FIM -> SM: Resolve services' DTCs
+FIM -> DEM: Set/Reset related Dem Event using Multiplexing
+
+deactivate FIM
+
+@enduml 

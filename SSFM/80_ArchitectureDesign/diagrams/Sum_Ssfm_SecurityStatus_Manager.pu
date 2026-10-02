@@ -1,0 +1,65 @@
+@startuml Sum_Ssfm_SecurityStatus_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_SecurityStatus_Manager"
+
+**Interfaces Legend**
+    //ri101 //: SecOC Verification Status
+	//ri102 //: Dem_CallbackDTCStatusChangedIndication (Failed Security)
+	//ri107 //: Signal/SignalGroup<n> MAC authentication enabled
+	//II152 //: ERRH_ExecutionStatus / SSM_ExecutionStatus
+	//II170 //: Sum_Ssfm_ErrhDebouncerExecution (Error Debouncer)
+	//II201 //: SerialData<n>_Set_FcI
+	//pi101 //: DiagnosticMonitor (Dem_SetEventStatus)
+	//SerialData_n_FcI //: SerialData<n>_FcI
+	//pi103 //: SerialData<n>_FcFA
+    //II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)  	
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+
+    interface ri101
+	interface ri102
+	interface ri107
+	interface pi101
+	interface SerialData_n_FcI
+	interface pi103
+	interface II152
+	interface II170
+	interface II201
+    interface II184
+
+component [Sum_Ssfm_SecStatus_Manager] as E{
+	portin pri101
+	portin pri102
+	portin pri107
+    portout ppi101
+	portout ppi103
+	interface II152
+	
+}
+
+
+
+	
+	II152 )-- E
+	II170 )-down-E
+	II201 )-down-E
+    ri101 )-down-pri101
+    ri102 )-down-pri102
+	ri102 )-down-pri107
+	
+
+    ppi101 --down0 pi101
+    E --down0 SerialData_n_FcI
+    ppi103 --down0 pi103
+    II184 )-- E
+
+@enduml

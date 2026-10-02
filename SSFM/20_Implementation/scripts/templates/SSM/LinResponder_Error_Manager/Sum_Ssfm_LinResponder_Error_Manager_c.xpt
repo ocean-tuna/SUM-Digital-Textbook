@@ -1,0 +1,732 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_LinResponder_Error_Manager.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM SSM Lin Responder Error Manager=======
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+/* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3673 EOF # The functions are invoked by external function that already have a defined parameter type */
+/* PRQA S 1503 EOF # When the SSFM is integrated, this runnable will be called by the RTE*/
+/* PRQA S 3408 EOF # The function is declared by RTE */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+«IF Ssfm_IsLNM_SlaveInfoError_Configured(sSFM.sum_Ssfm_ConfigSet)-»
+«FOREACH Ssfm_Get_CfgLinResponder(sSFM.sum_Ssfm_ConfigSet) AS SlaveInfoError-»
+static CONST (Sum_Ssfm_LINSignalInfo *, RTE_CODE) Sum_Ssfm_LINSignalInfo_«SlaveInfoError.shortName»[«SlaveInfoError.sum_Ssfm_LINInfo_SerialData.size»];
+«ENDFOREACH-»
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0-»
+static const Sum_Ssfm_DemEvent Sum_Ssfm_LNMError_IeF_DemEvents[«Ssfm_GetLinIefDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError).size»];
+«ENDIF-»
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+static const Sum_Ssfm_DemEvent Sum_Ssfm_LNMError_MissingMsg_DemEvents[«Ssfm_GetLinMissingMsgDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError).size»];
+«ENDIF-»
+static Sum_Ssfm_LNM_SlaveInfoError Sum_Ssfm_LINSlaveInfo[SSFM_NUM_OF_CFG_LINRESPONDER];
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+static boolean Sum_Ssfm_LNMError_MissingMsg_TestEnableFlag[SSFM_NUM_OF_MISSING_MSG_LNMERROR];
+«ENDIF-»
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0-»
+static void Sum_Ssfm_IeF_LINResponder_Manager(const Sum_Ssfm_LNM_SlaveInfoError* slaveInfoError, Sum_Ssfm_Debouncer*  err_debouncer);
+«FOREACH Ssfm_Get_LNMError_LinSlaveInfo(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") AS SlaveInfoError-»
+«LET SlaveInfoError.sum_Ssfm_LNMResponderErr_EventFilter_Ref AS DEB_INSTANCE-»
+«IF Ssfm_isXofYFilterType(DEB_INSTANCE)-»
+static uint16 Sum_Ssfm_Get_C_DebX_IeF_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»(void);
+static uint16 Sum_Ssfm_Get_C_DebY_IeF_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»(void);
+«ENDIF-»
+«ENDLET-»
+«ENDFOREACH-»
+«IF Ssfm_IsAnyTimeBasedFilterInLinSlaveError(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError)-»
+static void Sum_Ssfm_Errh_FP_SSFM_IntElectFault_CbkWindowMoving(Sum_Ssfm_Debouncer* debouncer_instance);
+«ENDIF-»
+«ENDIF-»
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+static uint32 Sum_Ssfm_Get_CalibPar_MissingMsg_CalibratableTime(void);
+static void Sum_Ssfm_Check_MissingMsg_TestEnableCondition(Sum_Ssfm_Debouncer*  err_debouncer);
+static void Sum_Ssfm_LinResponder_MissingMessage_Debouncer(Sum_Ssfm_Debouncer*  err_debouncer);
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_Process_MissingMsg_Normal(Sum_Ssfm_Debouncer* const deb_event);
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_Process_MissingMsg_LossComm(Sum_Ssfm_Debouncer* const deb_event);
+«ENDIF-»
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+
+ *********************************************************************************************************************************************************
+ */
+static Sum_Ssfm_LNM_SlaveInfoError Sum_Ssfm_LINSlaveInfo[SSFM_NUM_OF_CFG_LINRESPONDER] =
+{
+«FOREACH Ssfm_Get_CfgLinResponder(sSFM.sum_Ssfm_ConfigSet) AS SlaveInfoError-»
+	/* «SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»*/
+	{
+		/* Read BatteryVoltageRangeMinToMax mapping to this Internal Electronic Fault of LIN Responder «SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName» from SUSD */
+«IF Ssfm_IsAnyErrorAssociatedWithLinInfo(SlaveInfoError, "SSFM_LNM_RESPONDER_IEF")-»
+		&Rte_Read_RP_SUSD_SSFM_Errh_BatteryVoltage_BatteryVoltageRangeMinToMax_IeF_«SlaveInfoError.sum_Ssfm_LINInfo_Event.sum_Ssfm_IeF_DemEvent_Ref.demDTCRef.shortName»_OperatingRange,
+«ELSE-»
+		NULL_PTR,
+«ENDIF-»
+«IF Ssfm_IsAnyErrorAssociatedWithLinInfo(SlaveInfoError, "SSFM_LNM_RESPONDER_MISSING_MSG")-»
+		/* Write NodeTimeout of «SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName» to LNM */
+		&Rte_Write_PP_SSM_LNM_NodeTimeout_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»_NodeTimeout,
+		/* Read NodeStatusId for «SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName» from LNM */
+		&Rte_Read_RP_LNM_ERRH_NodeStatusId_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»_NodeStatusId,
+		/* Read NodeStatusTimer for «SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName» from LNM */
+		&Rte_Read_RP_LNM_ERRH_NodeStatusId_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»_NodeStatusTimer,
+«ELSE-»
+		/* Write NodeTimeout of «SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName» to LNM */
+		NULL_PTR,
+		/* Read NodeStatusId for «SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName» from LNM */
+		NULL_PTR,
+		/* Read NodeStatusTimer for «SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName» from LNM */
+		NULL_PTR,
+«ENDIF-»
+		/* Read Internal Electronic Fault «SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName» from LNM */
+«IF Ssfm_IsAnyErrorAssociatedWithLinInfo(SlaveInfoError, "SSFM_LNM_RESPONDER_IEF")-»
+		&Rte_Read_RP_LNM_SSFM_ERRH_IeF_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»_IntElectFault,
+«ELSE-»
+		NULL_PTR,
+«ENDIF-»
+		/* Number of LIN Signals for this LIN Slave ECU */
+		«SlaveInfoError.sum_Ssfm_LINInfo_SerialData.size»,
+		/* Pointer to the list of LIN Signals List */
+		&Sum_Ssfm_LINSignalInfo_«SlaveInfoError.shortName»[0],
+		/* Internal state of LIN Responder */
+		SUM_SSFM_EcuNodeState_Normal,
+		/* Elapsed time */
+		0u,
+		/* LNM_ErrorStatus */
+		0u
+	},
+«ENDFOREACH-»
+};
+
+«FOREACH Ssfm_Get_CfgLinResponder(sSFM.sum_Ssfm_ConfigSet) AS SlaveInfoError-»
+/* Array to reference the LIN signals managed by the slave ECU in the SSM_LINSignals structure */
+static CONST (Sum_Ssfm_LINSignalInfo *, RTE_CODE) Sum_Ssfm_LINSignalInfo_«SlaveInfoError.shortName»[«SlaveInfoError.sum_Ssfm_LINInfo_SerialData.size»] =
+{
+«FOREACH Ssfm_GetAllLinSlaveSignal(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo) AS LIN_Signal ITERATOR i-»
+	«IF Ssfm_IsLINSlaveAssociated(SlaveInfoError, LIN_Signal)-»
+	&Sum_Ssfm_LINSignal[«Ssfm_Get_AllLINSerialDatas(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData).indexOf(LIN_Signal)»],
+	«ENDIF-»
+«ENDFOREACH-»
+};
+«ENDFOREACH-»
+
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0-»
+/* PRQA S 1504 1 #  The array will be used later in other module */
+Sum_Ssfm_Debouncer Sum_Ssfm_Ief_LNMError_Debouncers[SSFM_NUM_OF_IEF_LNMERROR] = {
+«FOREACH Ssfm_Get_LNMError_LinSlaveInfo(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") AS SlaveInfoError ITERATOR i-»
+«LET SlaveInfoError.sum_Ssfm_LNMResponderErr_EventFilter_Ref AS DEB_INSTANCE-»
+	{
+		/* Error filter type */
+		SUM_SSFM_ErrorFilter_«Ssfm_GetFilterType(DEB_INSTANCE)-»,
+		«IF Ssfm_isXofYFilterType(DEB_INSTANCE)-»
+		/* Number of configured X threshold */
+		&Sum_Ssfm_Get_C_DebX_IeF_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»,
+		/* Number of configured Y threshold */
+		&Sum_Ssfm_Get_C_DebY_IeF_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»,
+		«ELSE-»
+		/* Number of configured X threshold */
+		NULL_PTR,
+		/* Number of configured Y threshold */
+		NULL_PTR,
+		«ENDIF-»
+		/* Callback function */
+		«IF Ssfm_IsTimeBasedFilterType(DEB_INSTANCE)-»
+		&Sum_Ssfm_Errh_FP_SSFM_IntElectFault_CbkWindowMoving,
+		«ELSE-»
+		NULL_PTR,
+		«ENDIF-»
+		/* Counter failed event */
+		0u,
+		/* Number of sample or ms*/
+		0u,
+		/* First failed flag */
+		FALSE,
+		/* Last Evaluation Status */
+		SUM_SSFM_EvaluationSts_Unknown,
+		/* Reference to Safety Serial Data */
+		{.LINRespInfo = &Sum_Ssfm_LINSlaveInfo[«Ssfm_Get_LNMError_LinResponder_index(SlaveInfoError, "SSFM_LNM_RESPONDER_IEF")»]}, /* PRQA S 1053 # To use the union type. */
+		/* Owner Type*/
+		SUM_SSFM_DebouncerRefType_IeF_LNMError,
+		/* Reference to IeF LNM Errors DemEvent */
+		«FOREACH Ssfm_GetLinIefDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError) AS DemEvent-»
+		«IF DemEvent.shortName == SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LINInfo_Event.sum_Ssfm_IeF_DemEvent_Ref.shortName-»
+		&(Sum_Ssfm_LNMError_IeF_DemEvents[«Ssfm_GetLinIefDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError).indexOf(DemEvent)»]),
+		«ENDIF-»
+		«ENDFOREACH-»
+	},
+«ENDLET-»
+«ENDFOREACH-»
+};
+
+static const Sum_Ssfm_DemEvent Sum_Ssfm_LNMError_IeF_DemEvents[«Ssfm_GetLinIefDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError).size»] =
+{
+«FOREACH Ssfm_GetLinIefDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError) AS DemEvent-»
+	{
+		/* Call Dem to SetEventStatus Internal Electronic Fault of «DemEvent.demDTCRef.shortName» */
+		&Rte_Call_RP_Dem_SSFM_DiagnosticMonitor_Ief_«DemEvent.demDTCRef.shortName»_SetEventStatus,
+		/* DTC Value */
+		«DemEvent.demDTCRef.demDtcValue»u,
+	},
+«ENDFOREACH-»
+};
+«ENDIF-»
+
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+/* PRQA S 1514 1 #  The array will be used later in other module */
+Sum_Ssfm_Debouncer Sum_Ssfm_MissingMsg_LNMError_Debouncers[SSFM_NUM_OF_MISSING_MSG_LNMERROR] = {
+«FOREACH Ssfm_Get_LNMError_LinSlaveInfo(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") AS SlaveInfoError ITERATOR i-»
+«LET SlaveInfoError.sum_Ssfm_LNMResponderErr_EventFilter_Ref AS DEB_INSTANCE-»
+	{
+		/* Error filter type */
+		SUM_SSFM_ErrorFilter_LinResp_MissingMsg_Timeout,
+		/* Number of configured X threshold */
+		NULL_PTR,
+		/* Number of configured Y threshold */
+		NULL_PTR,
+		/* Callback function */
+		NULL_PTR,
+		/* Counter failed event */
+		0u,
+		/* Number of sample or ms*/
+		0u,
+		/* First failed flag */
+		FALSE,
+		/* Last Evaluation Status */
+		SUM_SSFM_EvaluationSts_Unknown,
+		/* Reference to ECU Info */
+		{.LINRespInfo = &Sum_Ssfm_LINSlaveInfo[«Ssfm_Get_LNMError_LinResponder_index(SlaveInfoError, "SSFM_LNM_RESPONDER_MISSING_MSG")»]}, /* PRQA S 1053 # To use the union type. */
+		/* Owner Type*/
+		SUM_SSFM_DebouncerRefType_MissingMsg_LNMError,
+		/* Reference to DemEvent */
+		«FOREACH Ssfm_GetLinMissingMsgDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError) AS DemEvent-»
+		«IF DemEvent.shortName == SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LINInfo_Event.sum_Ssfm_MissingMsg_DemEvent_Ref.shortName-»
+		&(Sum_Ssfm_LNMError_MissingMsg_DemEvents[«Ssfm_GetLinMissingMsgDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError).indexOf(DemEvent)»]),
+		«ENDIF-»
+		«ENDFOREACH-»
+	},
+«ENDLET-»
+«ENDFOREACH-»
+};
+
+static const Sum_Ssfm_DemEvent Sum_Ssfm_LNMError_MissingMsg_DemEvents[«Ssfm_GetLinMissingMsgDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError).size»] =
+{
+«FOREACH Ssfm_GetLinMissingMsgDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError) AS DemEvent-»
+	{
+		/* Call Dem to SetEventStatus Missing message of «DemEvent.demDTCRef.shortName» */
+		&Rte_Call_RP_Dem_SSFM_DiagnosticMonitor_MissingMsg_«DemEvent.demDTCRef.shortName»_SetEventStatus,
+		/* DTC Value */
+		«DemEvent.demDTCRef.demDtcValue»u,
+	},
+«ENDFOREACH-»
+};
+«ENDIF-»
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0-»
+«FOREACH Ssfm_Get_LNMError_LinSlaveInfo(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") AS SlaveInfoError-»
+«LET SlaveInfoError.sum_Ssfm_LNMResponderErr_EventFilter_Ref AS DEB_INSTANCE-»
+«IF Ssfm_isXofYFilterType(DEB_INSTANCE)-»
+static uint16 Sum_Ssfm_Get_C_DebX_IeF_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»(void)
+{
+	return Rte_CData_«DEB_INSTANCE.shortName»_X();
+}
+static uint16 Sum_Ssfm_Get_C_DebY_IeF_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»(void)
+{
+	return Rte_CData_«DEB_INSTANCE.shortName»_Y();
+}
+«ENDIF-»
+«ENDLET-»
+«ENDFOREACH-»
+
+«FOREACH Ssfm_Get_LNMError_LinSlaveInfo(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") AS SlaveInfoError ITERATOR i-»
+/**
+ * @brief           SSFM/SSM runnable function to be called upon any change in the status Internal Electronic Fault of «SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC (void, SUM_SSFM_CODE) Runnable_SSFM_LNM_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»_IntElectFault_Changed(void)
+{
+	/* [$Satisfies $DDS_SSFM 135] */
+	uint8 operating_range;
+	Std_ReturnType ret_val;
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	/*[$Satisfies $DDS_SSFM 189]*/
+	if (Sum_Ssfm_LINSlaveInfo[«Ssfm_Get_LNMError_LinResponder_index(SlaveInfoError, "SSFM_LNM_RESPONDER_IEF")»].Rte_Read_SUSD_SSFM_BatteryVoltage_IeF != NULL_PTR)
+	{
+		ret_val = Sum_Ssfm_LINSlaveInfo[«Ssfm_Get_LNMError_LinResponder_index(SlaveInfoError, "SSFM_LNM_RESPONDER_IEF")»].Rte_Read_SUSD_SSFM_BatteryVoltage_IeF(&operating_range);
+		if ((ret_val == RTE_E_OK) && (dtcs_are_disabled == FALSE))
+		{
+			«IF dem.demGeneral.demOBDSupport == "DEM_OBD_NO_OBD_SUPPORT"-»
+			if(operating_range == IN_Range)
+			«ELSE-»
+			if(operating_range != OUT_OF_RANGE_LOW)
+			«ENDIF-»
+			{
+				Sum_Ssfm_IeF_LINResponder_Manager(&Sum_Ssfm_LINSlaveInfo[«Ssfm_Get_LNMError_LinResponder_index(SlaveInfoError, "SSFM_LNM_RESPONDER_IEF")»], &Sum_Ssfm_Ief_LNMError_Debouncers[«i.counter0-»]);
+			}
+		}
+		else
+		{
+			/* do nothing */
+		}
+	}
+
+}
+«ENDFOREACH-»
+
+/**
+ * @brief           SSFM/SSM function to manage the internal logic and perform debounce for Internal Electronic Fault for the LIN Responder
+ *
+ * @param[in]       Sum_Ssfm_LNM_SlaveInfoError      - const Sum_Ssfm_LNM_SlaveInfoError*: Sum_Ssfm_LNM_SlaveInfoError structure to access the LNM_SlaveInfoError
+ * @param[in]       debouncer_instance               - Sum_Ssfm_Debouncer*: Sum_Ssfm_Debouncer structure to access the type of the debouncer owner
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static void Sum_Ssfm_IeF_LINResponder_Manager(const Sum_Ssfm_LNM_SlaveInfoError* slaveInfoError, Sum_Ssfm_Debouncer*  err_debouncer)
+{
+	/* [$Satisfies $DDS_SSFM 133] */
+	Sum_Ssfm_EvaluationStatus debouncer_status;
+	Dem_EventStatusType event_status;
+	uint8 linslave_IefFA;
+
+    if (slaveInfoError->Rte_Read_LNM_SSFM_IntElectFault != NULL_PTR )
+    {
+    	/* Check if DTC is set for internal electronic failure fault active */
+		(void) slaveInfoError->Rte_Read_LNM_SSFM_IntElectFault(&linslave_IefFA);
+		/* Execute Debouncer with linslave_IefFA: SIGNAL_VALID: 0u, SIGNAL_INVALID 1u */
+		debouncer_status = Sum_Ssfm_ErrhDebouncerExecution(err_debouncer, (linslave_IefFA == 1u) ? SUM_SSFM_EventSts_Failed : SUM_SSFM_EventSts_Passed);
+
+		/* Check if debouncer status is still in debouncing or not */
+		if ((debouncer_status != SUM_SSFM_EvaluationSts_InDebouncing) && (debouncer_status != SUM_SSFM_EvaluationSts_Unknown))
+		{
+			/* Convert the event status result after performing debouncing */
+			event_status = ((debouncer_status) == SUM_SSFM_EvaluationSts_Passed) ? DEM_EVENT_STATUS_PASSED : DEM_EVENT_STATUS_FAILED;
+			/* Set the event status from Dem_SetEventStatus */
+			(void) err_debouncer->DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(event_status);
+		}
+		else
+		{
+			/* do nothing */
+		}
+    }
+}
+
+/**
+ * @brief           Callback function for updating LcFA interfaces on DTC status update
+ * @details         Executed when the DEM notifies a status change on a DTC through the Ssfm_Dem_CB_DTCStatusChanged callback.
+ *                  It forwards eventual Loss of Communication fault events to SWCs through the LcFA interfaces.
+ *
+ * @param[in]       DTC           ID of the DTC whose status has been updated
+ * @param[in]       DTCStatusOld  Old status of the updated DTC
+ * @param[in]       DTCStatusNew  New status of the updated DTC
+ * @return          void
+ */
+void Sum_Ssfm_IeF_Dem_CB_DTCStatusChanged(uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew)
+{
+	/* [$Satisfies $DDS_SSFM 134] */
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 1-»
+	uint16 index_debouncer;
+«ENDIF-»
+	uint16 index_signal;
+	boolean confirmed_evstatus;
+	/* Unused parameter */
+	(void)DTCStatusOld;
+
+	confirmed_evstatus = ((SSFM_DEM_DTC_TEST_FAILED_MASK & DTCStatusNew) == SSFM_DEM_DTC_TEST_FAILED_MASK) ? TRUE : FALSE;
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 1-»
+	/* Search the DTC through the DTCs linked to the configured ECUs */
+	for (index_debouncer = 0u; index_debouncer < SSFM_NUM_OF_IEF_LNMERROR; index_debouncer++)
+	{
+		if (Sum_Ssfm_Ief_LNMError_Debouncers[index_debouncer].DemEvent->DTCValue == DTC)
+		{
+			/* Loop through the Signals associated with this LIN Slave ECU */
+			for (index_signal = 0u; index_signal < Sum_Ssfm_Ief_LNMError_Debouncers[index_debouncer].DebouncerOwner.LINRespInfo->NoOfLINSignals; index_signal++)
+			{
+				Sum_Ssfm_Ief_LNMError_Debouncers[index_debouncer].DebouncerOwner.LINRespInfo->pLINSignalInfo[index_signal]->Rte_Write_SSFM_SWC_Signal_Inv(confirmed_evstatus);
+			}
+		}
+	}
+«ELSE-»
+	/* Handle the single LIN Slave ECU case */
+	if (Sum_Ssfm_Ief_LNMError_Debouncers[0].DemEvent->DTCValue == DTC)
+	{
+		/* Loop through the Signals associated with this LIN Slave ECU */
+		for (index_signal = 0u; index_signal < Sum_Ssfm_LINSlaveInfo[0].NoOfLINSignals; index_signal++)
+		{
+			Sum_Ssfm_LINSlaveInfo[0].pLINSignalInfo[index_signal]->Rte_Write_SSFM_SWC_Signal_Inv(confirmed_evstatus);
+		}
+	}
+«ENDIF-»
+}
+«IF Ssfm_IsAnyTimeBasedFilterInLinSlaveError(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError)-»
+/**
+ * @brief           SSFM/ERRH callback function of debouncing and notify DEM in case of timebased moving window expired
+ *
+ * @param[in]       debouncer_instance      - Sum_Ssfm_Debouncer*: Sum_Ssfm_Debouncer structure to access the type of the debouncer owner
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 3673 1 # The pointer is not pointing to const to be aligned with the other callbacks used for debouncing callback */
+static void Sum_Ssfm_Errh_FP_SSFM_IntElectFault_CbkWindowMoving(Sum_Ssfm_Debouncer* debouncer_instance)
+{
+	/* [$Satisfies $DDS_SSFM 136] */
+	/* Set the event status Dem_SetEventStatus after timebased moving window expired*/
+	/* PRQA S 2983 1 # For testing purpose to check the result */
+	debouncer_instance->DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_PASSED);
+}
+«ENDIF-»
+«ENDIF-»
+
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+«FOREACH Ssfm_Get_LNMError_LinSlaveInfo(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") AS SlaveInfoError ITERATOR i-»
+/**
+ * @brief           SSFM runnable function to be called upon any change in the status Missing Message Error of «SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC (void, SUM_SSFM_CODE) Runnable_SSFM_LNM_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.parent.shortName»_«SlaveInfoError.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LNM_ResponderInfo_Ref.shortName»_MissingMsg_Changed(void)
+{
+	/* [$Satisfies $DDS_SSFM 180] */
+	uint8 operating_range;
+
+	if (E_OK == Rte_Read_RP_SUSD_SSFM_Errh_BatteryVoltage_BatteryVoltageRangeMinToMax_OperatingRange(&operating_range))
+	{
+		«IF dem.demGeneral.demOBDSupport == "DEM_OBD_NO_OBD_SUPPORT"-»
+		if(operating_range == IN_Range)
+		«ELSE-»
+		if(operating_range != OUT_OF_RANGE_LOW)
+		«ENDIF-»
+		{
+			Sum_Ssfm_LNMError_MissingMsg_TestEnableFlag[«i.counter0-»] = TRUE;
+		}
+		else
+		{
+			/* do nothing */
+		}
+	}
+}
+«ENDFOREACH-»
+
+ /**
+ * @brief           SSFM getter of calibration parameter for Missing Message Calibratable Time
+ *
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          uint32 - Rte_CData_SUM_SSFM_Sum_Ssfm_C_MissingMsg_CalibratableTime
+ */
+static uint32 Sum_Ssfm_Get_CalibPar_MissingMsg_CalibratableTime(void)
+{
+	return (Rte_CData_Sum_Ssfm_C_MissingMsg_CalibratableTime() * 1000u);
+}
+
+/**
+ * @brief           SSFM function to check the vehicle is within the first 5 seconds of a power-up reset, a running reset, a recovery from an under voltage condition or a recovery from an over voltage.
+ *
+ * @param[in]       err_debouncer      - Sum_Ssfm_Debouncer*: Sum_Ssfm_Debouncer structure to access debouncer
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 3206 1 # The function will be updated in the future */
+static void Sum_Ssfm_Check_MissingMsg_TestEnableCondition(Sum_Ssfm_Debouncer*  err_debouncer)
+{
+	/* [$Satisfies $DDS_SSFM 181] */
+	boolean battery_voltage_flag;
+	boolean reset_recovery_flag;
+
+	battery_voltage_flag = Sum_Ssfm_Errh_GetBatteryVoltageRecoveryTimerFlag();
+	reset_recovery_flag = Sum_Ssfm_Errh_GetResetPowerUpRecoveryTimerFlag();
+
+	/* Checks for battery voltage status and recovery timer for overvoltage/undervoltage */
+	if((battery_voltage_flag == TRUE) && (reset_recovery_flag == TRUE))
+	{
+		Sum_Ssfm_LinResponder_MissingMessage_Debouncer(err_debouncer);
+	}
+	else
+	{
+		/* do nothing */
+	}
+
+}
+
+/**
+ * @brief           SSFM function to monitor the debouncer of the LIN Responder missing message error
+ *
+ * @param[in]       Sum_Ssfm_Debouncer *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          Sum_Ssfm_EvaluationStatus
+ */
+static void Sum_Ssfm_LinResponder_MissingMessage_Debouncer(Sum_Ssfm_Debouncer*  err_debouncer)
+{
+	/* [$Satisfies $DDS_SSFM 182] */
+	(void) err_debouncer->DebouncerOwner.LINRespInfo->Rte_Read_LNM_SSFM_NodeStatusId(&err_debouncer->DebouncerOwner.LINRespInfo->error_status);
+	/* The SUM_SSFM_EventSts_Passed is just a place holder for LINInfo debouncer. The actual state will be realized internally. */
+	(void) Sum_Ssfm_ErrhDebouncerExecution(err_debouncer, SUM_SSFM_EventSts_Passed);
+}
+
+/**
+ * @brief           SSFM function to handling the state of the LIN Responder missing message error
+ *
+ * @param[in]       Sum_Ssfm_Debouncer *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          Sum_Ssfm_EvaluationStatus
+ */
+Sum_Ssfm_EvaluationStatus Sum_Ssfm_LinResponder_MissingMsg_Handler(Sum_Ssfm_Debouncer* const deb_event)
+{
+	/* [$Satisfies $DDS_SSFM 182] */
+	Sum_Ssfm_EvaluationStatus ret_val = SUM_SSFM_EvaluationSts_InDebouncing;
+
+	switch (deb_event->DebouncerOwner.LINRespInfo->LinRespState)
+	{
+		case SUM_SSFM_EcuNodeState_Normal:
+			ret_val = Sum_Ssfm_Process_MissingMsg_Normal(deb_event);
+			break;
+		/* Check if timer has expired and missing message has occurred */
+		case SUM_SSFM_EcuNodeState_LostComm:
+			ret_val = Sum_Ssfm_Process_MissingMsg_LossComm(deb_event);
+			break;
+		default:
+			/* Do nothing */
+			break;
+	}
+	return ret_val;
+}
+
+/**
+ * @brief           SSFM function to process normal state of the LIN Responder missing message error
+ *
+ * @param[in]       Sum_Ssfm_Debouncer *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          Sum_Ssfm_EvaluationStatus
+ */
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_Process_MissingMsg_Normal(Sum_Ssfm_Debouncer* const deb_event)
+{
+	/* [$Satisfies $DDS_SSFM 182] */
+	Sum_Ssfm_EvaluationStatus ret_val;
+	if (deb_event->DebouncerOwner.LINRespInfo->error_status == ERROR_EVENT_ACTIVE)
+	{
+		/* Start timer when missing message occurs */
+		deb_event->DebouncerOwner.LINRespInfo->TimerElapsed = 0u;
+		deb_event->DebouncerOwner.LINRespInfo->LinRespState = SUM_SSFM_EcuNodeState_LostComm;
+		ret_val = SUM_SSFM_EvaluationSts_InDebouncing;
+	}
+	else
+	{
+		ret_val = SUM_SSFM_EvaluationSts_Passed;
+		/* Notify the Dem that no missing message has been observed */
+		deb_event->DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_PASSED);
+	}
+	return ret_val;
+}
+
+/**
+ * @brief           SSFM function to process lostcom state of the LIN Responder missing message error
+ *
+ * @param[in]       Sum_Ssfm_Debouncer *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          Sum_Ssfm_EvaluationStatus
+ */
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_Process_MissingMsg_LossComm(Sum_Ssfm_Debouncer* const deb_event)
+{
+	/* [$Satisfies $DDS_SSFM 182] */
+	Sum_Ssfm_EvaluationStatus ret_val;
+	if (deb_event->DebouncerOwner.LINRespInfo->error_status == ERROR_EVENT_ACTIVE)
+	{
+		/* Get evaluation status periodic checked by runnable*/
+		ret_val = deb_event->LastEvalStatus;
+	}
+	else
+	{
+		/* Reset timer when missing message error is back to normal state */
+		deb_event->DebouncerOwner.LINRespInfo->TimerElapsed = 0u;
+		deb_event->DebouncerOwner.LINRespInfo->LinRespState = SUM_SSFM_EcuNodeState_Normal;
+		ret_val = SUM_SSFM_EvaluationSts_Passed;
+		/* Notify the Dem that no missing message has been observed */
+		deb_event->DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_PASSED);
+	}
+	return ret_val;
+}
+
+/**
+ * @brief           SSFM function to execute when timeout callback from Com
+ * @param[in]       uint16 - LINSlaveInfo index
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+void Sum_Ssfm_LINResponder_CbkRxTOut_Handler(uint16 LINSlaveInfo_idx)
+{
+	/* [$Satisfies $DDS_SSFM 182] */
+   /* Indicate missing message with the LIN Responder to LNM, set interface NodeTimeout to LNM as DTC ACTIVE */
+   (void) Sum_Ssfm_LINSlaveInfo[LINSlaveInfo_idx].Rte_Write_SSM_LNM_NodeTimeout(DTC_ACTIVE);
+}
+
+/**
+ * @brief           SSFM function to be called upon the reception of new data for a given SerialData.
+ * @param[in]       uint16 - LINSlaveInfo index
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+void Sum_Ssfm_LINResponder_CbkRxRec_Handler(uint16 LINSlaveInfo_idx)
+{
+	/* [$Satisfies $DDS_SSFM 182] */
+	boolean recovery_flag = TRUE;
+	uint8 linsignal_idx;
+	for (linsignal_idx = 0u; linsignal_idx < Sum_Ssfm_LINSlaveInfo[LINSlaveInfo_idx].NoOfLINSignals; linsignal_idx++)
+	{
+		if (Sum_Ssfm_LINSlaveInfo[LINSlaveInfo_idx].pLINSignalInfo[linsignal_idx]->SigSts_Supervision != SUM_SSFM_SigSts_Supervision_Received)
+		{
+			/* if any of lin signal status supervision is not received, set the recovery flag to FALSE */
+			recovery_flag = FALSE;
+			break;
+		}
+		else
+		{
+			/* do nothing */
+		}
+	}
+	if (recovery_flag == TRUE)
+	{
+		/* When all lin signals status supervision of corresponding Lin Responder are received, set interface NodeTimeout to LNM as DTC INACTIVE */
+		(void) Sum_Ssfm_LINSlaveInfo[LINSlaveInfo_idx].Rte_Write_SSM_LNM_NodeTimeout(DTC_INACTIVE);
+	}
+}
+
+
+/**
+ * @brief           SSFM runnable function to be called periodically to monitor for the test enable criteria flag to execute the Missing Message errror and perform the debouncing time.
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC (void, SUM_SSFM_CODE) Runnable_SSFM_Execution_LNMError_MissingMessage(void)
+{
+	/* [$Satisfies $DDS_SSFM 182] */
+	/* Time in microseconds */
+	uint16 deb_index;
+	static boolean Sum_Ssfm_BatteryVoltageWithinTimer[SSFM_NUM_OF_MISSING_MSG_LNMERROR];
+	static uint32 time_in_range[SSFM_NUM_OF_MISSING_MSG_LNMERROR];
+	static uint32 NodeStatusTimer[SSFM_NUM_OF_MISSING_MSG_LNMERROR];
+	for (deb_index = 0u; deb_index < SSFM_NUM_OF_MISSING_MSG_LNMERROR; deb_index++)
+	{
+		if (Sum_Ssfm_LNMError_MissingMsg_TestEnableFlag[deb_index] == TRUE)
+		{
+			if (Sum_Ssfm_BatteryVoltageWithinTimer[deb_index] == TRUE)
+			{
+				/* Increment the time spent in the calibratable range */
+				time_in_range[deb_index] += SSFM_RUNNABLE_MISSING_MSG_PERIODICITY_MS;
+			}
+			else
+			{
+				/* If transitioning into range, reset the timer */
+				Sum_Ssfm_BatteryVoltageWithinTimer[deb_index] = TRUE;
+				time_in_range[deb_index] = 0u;
+			}
+			/* Check if the time in range exceeds the calibratable time */
+			if (time_in_range[deb_index] >= Sum_Ssfm_Get_CalibPar_MissingMsg_CalibratableTime())
+			{
+				Sum_Ssfm_Check_MissingMsg_TestEnableCondition(&Sum_Ssfm_MissingMsg_LNMError_Debouncers[deb_index]);
+				/* Reset for the next period check */
+				time_in_range[deb_index] = 0u;
+				/* Reset or keep accumulating based on requirement */
+				Sum_Ssfm_BatteryVoltageWithinTimer[deb_index]  = FALSE;
+				Sum_Ssfm_LNMError_MissingMsg_TestEnableFlag[deb_index] = FALSE;
+			}
+		}
+		/* Monitoring the debouncing time via NodeStatusTimer from LNM */
+		if (Sum_Ssfm_MissingMsg_LNMError_Debouncers[deb_index].LastEvalStatus == SUM_SSFM_EvaluationSts_InDebouncing)
+		{
+			(void) Sum_Ssfm_MissingMsg_LNMError_Debouncers[deb_index].DebouncerOwner.LINRespInfo->Rte_Read_LNM_SSFM_NodeStatusTimer(&NodeStatusTimer[deb_index]);
+			/* Check if timer has expired */
+			if(Sum_Ssfm_MissingMsg_LNMError_Debouncers[deb_index].DebouncerOwner.LINRespInfo->TimerElapsed >= NodeStatusTimer[deb_index])
+			{
+				Sum_Ssfm_MissingMsg_LNMError_Debouncers[deb_index].DebouncerOwner.LINRespInfo->TimerElapsed = 0u;
+				Sum_Ssfm_MissingMsg_LNMError_Debouncers[deb_index].LastEvalStatus = SUM_SSFM_EvaluationSts_Failed;
+				/* Notify the Dem that a LossOfCommunication event has been observed */
+				Sum_Ssfm_MissingMsg_LNMError_Debouncers[deb_index].DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(DEM_EVENT_STATUS_FAILED);
+			}
+			else
+			{
+				Sum_Ssfm_MissingMsg_LNMError_Debouncers[deb_index].DebouncerOwner.LINRespInfo->TimerElapsed += SSFM_RUNNABLE_MISSING_MSG_PERIODICITY_MS;
+				Sum_Ssfm_MissingMsg_LNMError_Debouncers[deb_index].LastEvalStatus = SUM_SSFM_EvaluationSts_InDebouncing;
+			}
+		}
+	}
+}
+«ENDIF-»
+«ENDIF-»
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

@@ -1,0 +1,178 @@
+@startuml Sum_SUSD_AR_SeqDiagram_P1
+title Activity Records Feature - Sequence Diagram
+
+participant RTE as RTE
+participant SUM_SUSD as SUSD
+participant NvM as NVM
+participant EcuM as ECUM
+
+
+== Periodic Handling (RE_Sum_SUSD_ActivityRecord_Handler) ==
+group Periodicity: Sum_SUSD_AR_Periodicity
+    RTE -> SUSD : RE_Sum_SUSD_ActivityRecord_Handler()
+    activate SUSD
+
+    SUSD -> RTE : Read ECU Voltage (RP_SUSD_VehicleBatteryVoltage_VehicleVoltage)
+    RTE -> SUSD : ECU Voltage
+    alt Voltage > 12V
+        SUSD -> SUSD : Increment Sum_SUSD_AR_VoltageOver12_Timer
+    else Voltage <= 12V
+        SUSD -> SUSD : Reset Sum_SUSD_AR_VoltageOver12_Timer
+    end
+    alt Voltage < 10V
+        SUSD -> SUSD : Increment Sum_SUSD_AR_VoltageUnder10_Timer
+    else Voltage >= 10V
+        SUSD -> SUSD : Reset Sum_SUSD_AR_VoltageUnder10_Timer
+    end
+
+    SUSD -> RTE : Read Vehicle Power Mode
+    RTE -> SUSD : Vehicle Power Mode
+    alt Power Mode == Propulsion
+        SUSD -> SUSD : Increment Sum_SUSD_AR_Propulsion_Timer
+    else Power Mode != Propulsion
+        SUSD -> SUSD : Reset Sum_SUSD_AR_Propulsion_Timer
+    end
+
+
+    alt Current State is Sum_SUSD_AR_State_Wakeup
+        SUSD -> SUSD : Sum_SUSD_ActivityRecord_WakeUp_Handler()
+        activate SUSD #AliceBlue
+
+        SUSD -> NVM : Read Sum_SUSD_FirstBootAfterFlash
+        activate NVM
+        NVM --> SUSD : Sum_SUSD_FirstBootAfterFlash value
+        deactivate NVM
+
+        alt First Boot After Flash (Flag not set)
+            note right of SUSD #LightYellow
+                Resets:
+                - Total Activity Timer
+                - Total Wakeup Counter
+                - Active Delay Timer
+                - Monitor Disabled (to False)
+                - Activity Records
+            end note
+            SUSD -> NVM : Set Sum_SUSD_FirstBootAfterFlash = True
+            activate NVM
+            NVM --> SUSD : Store Acknowledged
+            deactivate NVM
+        end
+        
+        alt Monitor Disabled == True
+            SUSD -> SUSD : Current State = Sum_SUSD_AR_State_Disabled
+            note right of SUSD : Transition to Disabled
+        else Monitor Disabled == False
+            SUSD -> SUSD : Increment Total Wakeup Counter
+            alt Vehicle Power Mode == Propulsion
+                SUSD -> SUSD : Current State = Sum_SUSD_AR_State_Inactive
+                note right of SUSD : Transition to Inactive
+            else Vehicle Power Mode != Propulsion
+                SUSD -> SUSD : Current State = Sum_SUSD_AR_State_ToActive
+                note right of SUSD : Transition to ToActive
+            end
+        end
+        deactivate SUSD
+
+    else Current State is Sum_SUSD_AR_State_Disabled
+        SUSD -> SUSD : Sum_SUSD_ActivityRecord_Disabled_Handler()
+        activate SUSD #LightSalmon
+        alt Sum_SUSD_AR_Propulsion_Timer >= 60s AND Sum_SUSD_AR_VoltageOver12_Timer >= 10s
+            SUSD -> SUSD : Set Monitor Disabled = False
+            SUSD ->  RTE : BatteryVltg_MonrDisbl(False)
+            SUSD -> SUSD : Current State = Sum_SUSD_AR_State_Inactive
+            note right of SUSD : Transition to Inactive
+        end
+        deactivate SUSD
+
+    else Current State is Sum_SUSD_AR_State_Inactive
+        SUSD -> SUSD : Sum_SUSD_ActivityRecord_Inactive_Handler()
+        activate SUSD #LightGreen
+        alt Vehicle Power Mode != Propulsion
+            SUSD -> SUSD : Increment Sum_SUSD_AR_ActiveDelay_Timer
+            alt Sum_SUSD_AR_ActiveDelay_Timer > k_AR_Active_Delay OR COMM_ACTIVE
+                SUSD -> SUSD : Current State = Sum_SUSD_AR_State_Active
+                note right of SUSD #LightYellow
+                    Resets:
+                    - Total Activity Timer
+                    - Total Wakeup Counter
+                    - Activity Records
+                end note
+                note right of SUSD : Transition to Active
+            end
+        else Vehicle Power Mode == Propulsion
+            SUSD -> SUSD : Reset Sum_SUSD_AR_ActiveDelay_Timer
+        end
+        deactivate SUSD
+
+    else Current State is Sum_SUSD_AR_State_ToActive
+        SUSD -> SUSD : Sum_SUSD_ActivityRecord_ToActive_Handler()
+        activate SUSD #LightSkyBlue
+        alt Wakeup source is Record 0x02 or 0x03
+            SUSD -> SUSD : Current State = Sum_SUSD_AR_State_Active
+            SUSD -> SUSD : Update DID position for Record {X} if new
+            SUSD -> SUSD : Increment Record {X} Wake Up Counter 
+            SUSD -> SUSD : Populate Record {X} Last Wake Up Reason 
+            note right of SUSD : Transition to Active
+        else Other wakeup sources/init delay logic
+            SUSD -> SUSD : Start/Increment Sum_SUSD_AR_InitDelay_Timer
+            alt Wakeup (0x20-0x25) before Sum_SUSD_AR_InitDelay_Timer > k_AR_Init_Delay
+                SUSD -> SUSD : Use received reason for Record {X}
+                SUSD -> SUSD : Current State = Sum_SUSD_AR_State_Active
+                SUSD -> SUSD : Update DID position for Record {X} if new
+                SUSD -> SUSD : Increment Record {X} Wake Up Counter 
+                SUSD -> SUSD : Populate Record {X} Last Wake Up Reason 
+                note right of SUSD : Transition to Active
+            else Sum_SUSD_AR_InitDelay_Timer > k_AR_Init_Delay (or no specific wakeup)
+                SUSD -> SUSD : Stop Sum_SUSD_AR_InitDelay_Timer
+                SUSD -> SUSD : Assume Reason 0x01 for Record {X}
+                SUSD -> SUSD : Current State = Sum_SUSD_AR_State_Active
+                SUSD -> SUSD : Update DID position for Record {X} if new
+                SUSD -> SUSD : Increment Record {X} Wake Up Counter 
+                SUSD -> SUSD : Populate Record {X} Last Wake Up Reason 
+                note right of SUSD : Transition to Active
+            end
+        end
+        deactivate SUSD
+
+    else Current State is Sum_SUSD_AR_State_Active
+        SUSD -> SUSD : Sum_SUSD_ActivityRecord_Active_Handler()
+        activate SUSD #PaleGoldenrod
+        
+        alt Sum_SUSD_AR_VoltageUnder10_Timer >= 10s
+            SUSD -> SUSD : Set Monitor Disabled = True
+            SUSD ->  RTE : BatteryVltg_MonrDisbl(True)
+            SUSD -> NVM : Store all DID information
+            activate NVM
+            NVM --> SUSD : Store Acknowledged
+            deactivate NVM
+            SUSD -> SUSD : Current State = Sum_SUSD_AR_State_Disabled
+            note right of SUSD : Transition to Disabled
+        end
+
+        alt Vehicle Power Mode == Propulsion AND Monitor Disabled == False
+            SUSD -> SUSD : Current State = Sum_SUSD_AR_State_Inactive
+            note right of SUSD : Transition to Inactive
+        end
+
+        SUSD -> SUSD : Increment Sum_SUSD_AR_TotalActivity_Timer 
+
+        alt Sum_SUSD_AR_TotalActivity_Timer > NvM value + 3600s
+            SUSD -> NVM : Store all DID information
+            activate NVM
+            NVM --> SUSD : Store Acknowledged
+            deactivate NVM
+        end
+
+        alt Sub-State Changed
+            SUSD -> SUSD : Reset Record_{X}_CurrentActivityTimer for previous sub-state(s)
+            SUSD -> SUSD : Update Last Active Reason for new sub-state(s)
+        end
+
+        SUSD -> SUSD : Increment Record_{X}_CurrentActivityTimer for active sub-state(s)
+        SUSD -> SUSD : Increment Record_{X}_TotalActivityTimer for active sub-state(s)
+        SUSD -> SUSD : Update Last Active Reason if current reason deactivates
+        deactivate SUSD
+    end
+    deactivate SUSD
+end
+@enduml

@@ -1,0 +1,1441 @@
+\chapter{Runtime View (Dynamic View)}
+
+\section{Component description}
+
+\subsection{Initialization}
+\label{sec:InitDynamic}
+\RequirementTag{ADS_SSFM}{180}
+
+The initialization of the RTA-SUM SSFM module requires the definition of a specific function \code{Sum_Ssfm_Initialization()} that can be invoked from outside of the SUM SSFM.
+
+The initialization of the SUM SSFM takes in account both the SSFM sub-modules ERRH and SSM. Each requiring synchronization between the two sub-modules is in scope to the implementation.
+
+The initialization function \textbf{shall} be scheduled by at least one of these mechanisms:
+\begin{itemize}
+    \item As BswM Callout \textit{during} the initialization of the ECU;
+    \item As Periodic runnable (Task mapping \textbf{is} required)
+\end{itemize}
+
+The initialization function \textbf{shall} implement a mechanism that avoids further initialization \textit{after} the first round \textit{AND between} the module wake-up and the next shutdown. 
+
+The initialization routine \textbf{shall} run before the first evaluation of the permit execution.
+{\Satisfies{SRS_SSFM 350}}
+
+\RequirementTag{ADS_SSFM}{208}
+\\
+For non-discoverable SOME/IP PDUs (IsNonDiscoverable flag set to TRUE), the initialization sequence \textbf{shall} set the signal status to Available and notify RTE consumers via the availability port. These PDUs remain Available throughout the ECU lifecycle without state machine execution.
+\\
+{\Satisfies{SRS_SSFM 350} \Satisfies{SRS_SSFM 369}}
+\subsection{Execution Manager}
+\label{sec:ExecManagerDynamic}
+\RequirementTag{ADS_SSFM}{003}
+\\
+The execution manager implements the function \code{Runnable_SSFM_ExecutionManager()}. 
+This one \textbf{shall} be able to detect each information in the interface \textit{SUSD_PermitExecution}, and then it \textbf{shall} produce the permit execution value on the interface \textit{$<$SubModule$>$_ShutdownPermission}.
+\\
+The function \code{Runnable_SSFM_ExecutionManager()} \textbf{shall} be visible from the extern of the module, in order to be scheduled at sytem level.
+\\
+{\Satisfies{SRS_SSFM 002} \Satisfies{SRS_SSFM 133} \Satisfies{SRS_SSFM 004}}
+\\
+\\
+\RequirementTag{ADS_SSFM}{004}
+\\
+The function \code{Runnable_SSFM_ExecutionManager()} \textbf{shall} be unique for all the sub-modules and, it \textbf{shall} meet all synchronization and dependencies requirements for the sub-modules, in particular:
+\begin{enumerate}
+    \item The runnable \textbf{shall} check the initialization status \textit{before} reading the \textit{SUSD_PermitExecution} interface on the dedicated port.
+    \item The runnable \textbf{shall} evaluate the execution conditions for the SSM sub-module \textit{after} the ERRH sub-modules \textit{AND only if} this has been permitted.
+\end{enumerate}
+{\Satisfies{SRS_SSFM 002} \Satisfies{SRS_SSFM 133}}
+
+It's suggested to define two different function for the two submodules \textit{so that} each one implements its own execution management routine (\code{Sum_SSfm_ErrhExecutionManager()} and \code{Sum_SSfm_SsmExecutionManager()}).
+In this case it will be possible to reduce the routine complexity from a software point of view. The implementation takes in account to identify how global information can be shared among modules components, function, and subfunction (look to component definition at \ref{subsec:ExecManagerStatic}). By an architectural point of view it's suggested to implement them in a way such that the
+encapsulation and loose coupling attributes are satisfied.
+
+The function \code{Runnable_SSFM_ExecutionManager()} \textbf{should} be time-based scheduled with a periodicity eqauls to the configuratiion parameter 
+\ConfigurationParameterExtRef{Sum_Ssfm_ExecutonManagerPeriodicity}
+
+\RequirementTag{ADS_SSFM}{018}
+\\
+The implementation of the function \code{Sum_Ssfm_ErrhExecutionManager()} \textbf{should} meet the following model (Diagram~\ref{diagram:generated/diagrams/Sum_Ssfm_ExecutionManagemenet_StateDiag}) for the ERRH side:
+
+{\Satisfies{SRS_SSFM 134} \Satisfies{SRS_SSFM 135} \Satisfies{SRS_SSFM 312} \Satisfies{SRS_SSFM 313}}
+
+\RequirementTag{ADS_SSFM}{005}
+\\
+The implementation of the function \code{Sum_Ssfm_SsmExecutionManager()} \textbf{should} meet the following model (Diagram~\ref{diagram:generated/diagrams/Sum_Ssfm_ExecutionManagemenet_StateDiag}) for the SSM side:
+
+{\Satisfies{SRS_SSFM 003} \Satisfies{SRS_SSFM 005}}
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_ExecutionManagemenet_StateDiag}{SSFM Execution status Management}
+
+{\Satisfies{SRS_SSFM 003} \Satisfies{SRS_SSFM 005} \Satisfies{SRS_SSFM 134} \Satisfies{SRS_SSFM 135}}
+
+\subsubsection{Operation Cycle Management}
+\RequirementTag{ADS_SSFM}{028}
+\\
+\label{sec:OperationCycleManagementDynamic}
+SUM_SSFM shall wait for project specific criteria to start the operation cycle. In particular, it will start the operation cycle when it will be notified from the application SW-C (set the value TRUE) through the port interface \textit{c}. If the port
+is left unconnected, it is assumed that there are no project specific requirements and the operation cycle will immediately start after the wakeup bit transitions to TRUE.
+
+The sequence to start the operation cycle is running in \textit{SUM_SSFM_Run_Mode} state of execution management routine \code{Sum_SSfm_ErrhExecutionManager()}.
+
+{\Satisfies{SRS_SSFM 169}}
+
+\subsubsection{DTC Enable Criteria}
+\RequirementTag{ADS_SSFM}{035}
+\\
+\label{sec:DTCEnableCriteria}
+SUM_SSFM ERRH sub module shall verify the DTCs enable criteria.It shall check it with two flags
+\begin{itemize}
+    \item \code{Sum_Ssfm_ResetPowerUpRecoveryTimer} is set to TRUE only after 5 second passed from the last power up or reset.Otherwise, the flag will be FALSE.
+    \item \code{Sum_Ssfm_BatteryVoltageRecoveryTimer} is set to TRUE only after 5 second passed from the recovery from an under voltage condition or a recovery from an over voltage condition.Otherwise, the flag will be FALSE.\\
+	SUM_SSFM shall receive the value of battery voltage level from SUM_SUSD through port interface \textit{BatteryVoltageRangeMinToMax}. The received values will be battery over voltage, battery under voltage or battery normal.\\
+	\textbf{Note (OBD ECU):} OBD ECUs shall not inhibit the setting of OBD relevant lost communication DTCs during an overvoltage condition. Therefore, if the battery voltage is in overvoltage range, the voltage enable condition is treated as satisfied regardless of the battery voltage recovery timer flag.
+\end{itemize}
+
+{\Satisfies{SRS_SSFM 259}\Satisfies{SRS_SSFM 261} }
+
+\subsection{Fault Indications Manager}
+\label{sec:FaultIndicationaDynamic}
+
+\subsubsection{Received SerialData Handler}
+\RequirementTag{ADS_SSFM}{009}
+\\
+\label{sec:ReceivedSerialDataDynamic}
+Whenever the SecOC notifies the Com of a successful MAC verification or the Com becomes directly aware of an unauthenticated SerialData reception, it asks the RTE to trigger a SUM\_SSFM data-received event. 
+When the RTE produces the data received event, the SUM\_SSFM reads the data from the received SerialData and the transformer error; Then SUM\_SSFM:
+\begin{enumerate}
+    \item For authenticated SerialDatas resets the corresponding FcI interface to false.
+    \item For safety protected SerialDatas sets the state of the corresponding FoI and FpI interface based on the transformer error.
+    \item If the SerialData is authenticated and not safety protected since the received SerialData being called implies the MAC Verification, it resets the FpI.
+    \item Requests to update the FsI state according to the FoI and FpI value (if applicable).
+    \item Sets the FxI interface accordingly (in case of single port FxI support is enabled).
+\end{enumerate}
+    
+{\Satisfies{SRS_SSFM 112}}
+
+\RequirementTag{ADS_SSFM}{105}
+\\
+If the serial data is LcFA enabled and service based, the current provider of the serial data, and the corresponding Loss of Function DTC
+will be resolved and then the Node Status Manager will be asked to assess the Loss of Function. 
+\\
+{\Satisfies{SRS_SSFM 304}}
+
+\subsubsection{Security Status Manager}
+\RequirementTag{ADS_SSFM}{012}
+\\
+\label{sec:SecurityStatusDynamic}
+The Security Status Manager resets the SerialDatas FcI interfaces to false whenever required by the Received SerialData Handler
+or when a SECOC_NO_VERIFICATION error occurs and the MAC Authentication is disabled.
+Moreover, whenever the SecOC notifies a MAC verification failure (SECOC_VERIFICATIONFAILURE, SECOC_FRESHNESSFAILURE, SECOC_AUTHENTICATIONBUILDFAILURE or SECOC_VERIFICATIONFAILURE_OVERWRITTEN),
+SECOC_VERIFICATIONFAILURE_ OVERWRITTEN or (SECOC_NO_VERIFICATION and MAC Authentication enabled)),  
+the Security Status Manager verifies if the notification concerns one of the configured SerialDatas and, 
+in case, it sets the corresponding FcI interface to true.
+Moreover, it asks Protection Status Manager to set set the corresponding FpI to true and requests for updating the FsI through the Safety Status Manager.
+In case the user enabled the single port FxI support, the interface will be set by the corresponding FxI based on the following table:
+
+\begin{table}[H]
+    \begin{tabular}{|l|l|}
+    \hline
+    \textbf{E2E Profile} &  \textbf{FxI Source}\\ \hline
+    PROFILE_GM_01                  & FoI \\ \hline
+    Other                          & FsI \\ \hline
+    \end{tabular}
+\end{table}
+
+Note: This section is not applicable for LIN.
+
+{\Satisfies{SRS_SSFM 055} \Satisfies{SRS_SSFM 056} \Satisfies{SRS_SSFM 057} \Satisfies{SRS_SSFM 064} \Satisfies{SRS_SSFM 070} }
+
+
+\RequirementTag{ADS_SSFM}{090}
+\\
+Upon the calculation of FcI, the Security Status Manager informs Fault Indication Data Manager 
+to handle the debouncing and maturation logic and setting the corresponding Dem even accordingly.
+
+{\Satisfies{SRS_SSFM 173} \Satisfies{SRS_SSFM 179} \Satisfies{SRS_SSFM 181} \Satisfies{SRS_SSFM 182} \Satisfies{SRS_SSFM 301}}
+
+
+\subsubsection{Continuous Operation Status Manager}
+\RequirementTag{ADS_SSFM}{015}
+\\
+\label{sec:ContinuousOperationStatusDynamic}
+The Continuous Operation Status Manager is responsible for setting and resetting the SerialDatas' FoI interface upon the Received SerialData Handler request.
+The Received SerialData Handler provides the Continuous Operation Status Manager with the transformer error populated at the event of RTE_Read and asks to set or reset the FoI interface accordingly.
+
+The FoI interface state will be changed according to the following table:
+
+\begin{table}[H]
+    \begin{tabular}{|l|l|}
+    \hline
+    \textbf{Transformer Error} &  \textbf{FoI Value}\\ \hline
+    E_OK                           & False \\ \hline
+    E_SAFETY_NODATA_OK             & False \\ \hline
+    E_SAFETY_INIT_OK               & False \\ \hline
+    E_SAFETY_INVALID_OK            & False \\ \hline
+    E_SAFETY_VALID_REP             & True \\ \hline
+    E_SAFETY_VALID_SEQ             & True \\ \hline
+    E_SAFETY_NODATA_REP            & True \\ \hline
+    E_SAFETY_NODATA_SEQ            & True \\ \hline
+    E_SAFETY_INIT_REP              & True \\ \hline
+    E_SAFETY_INIT_SEQ              & True \\ \hline
+    E_SAFETY_INVALID_REP           & True \\ \hline
+    E_SAFETY_INVALID_SEQ           & True \\ \hline
+    E_SAFETY_SOFT_RUNTIMEERROR     & True \\ \hline
+    E_SAFETY_HARD_RUNTIMEERROR     & True \\ \hline
+    E_SER_GENERIC_ERROR            & True \\ \hline
+    E_SER_WRONG_PROTOCOL_VERSION   & True \\ \hline
+    E_SER_WRONG_INTERFACE_VERSION  & True \\ \hline
+    E_SER_MALFORMED_MESSAGE        & True \\ \hline
+    E_SER_WRONG_MESSAGE_TYPE       & True \\ \hline
+    Other values                   & Remains unchanged \\ \hline
+    \end{tabular}
+\end{table}
+
+{\Satisfies{SRS_SSFM 060} \Satisfies{SRS_SSFM 061}}
+
+
+\RequirementTag{ADS_SSFM}{091}
+\\
+
+Upon the calculation of FoI, the Continuous Operation Status Manager informs Fault Indication Data Manager 
+to handle the debouncing and maturation logic and setting the corresponding Dem even accordingly.
+
+{\Satisfies{SRS_SSFM 006} \Satisfies{SRS_SSFM 177} \Satisfies{SRS_SSFM 179} \Satisfies{SRS_SSFM 181} \Satisfies{SRS_SSFM 182} \Satisfies{SRS_SSFM 301}}
+
+
+\subsubsection{Protection Status Manager}
+\RequirementTag{ADS_SSFM}{020}
+\\
+\label{sec:ProtectionStatusDynamic}
+The Protection Status Manager is responsible for setting and resetting the SerialDatas' FpI interface. It provides other modules with two different ways to set or reset the FpI Interface of a given SerialData.
+\begin{enumerate}
+    \item By receiving the protection status value: In this case the FpI will be directly set to the desired state.
+    \item By receiving the transformer error, populated at the event of SerialData read: In this case the FpI state will be determined based on the following table.
+\end{enumerate}
+The Protection Status Manager is asked to set the state of the FpI in two cases; either through the Received SerialData Handler, or at the event of a MAC verification failure. 
+
+\begin{table}[H]
+    \begin{tabular}{|l|l|}
+    \hline
+    \textbf{Transformer Error} &  \textbf{FpI Value}\\ \hline
+    E_OK                           & False \\ \hline
+    E_SAFETY_NODATA_OK             & False \\ \hline
+    E_SAFETY_INIT_OK               & False \\ \hline
+    E_SAFETY_INVALID_OK            & False \\ \hline
+    E_SAFETY_VALID_ERR             & True \\ \hline
+    E_SAFETY_NODATA_ERR            & True \\ \hline
+    E_SAFETY_INIT_ERR              & True \\ \hline
+    E_SAFETY_INVALID_ERR           & True \\ \hline
+    E_SAFETY_SOFT_RUNTIMEERROR     & True \\ \hline
+    E_SAFETY_HARD_RUNTIMEERROR     & True \\ \hline
+    E_SER_GENERIC_ERROR            & True \\ \hline
+    E_SER_WRONG_PROTOCOL_VERSION   & True \\ \hline
+    E_SER_WRONG_INTERFACE_VERSION  & True \\ \hline
+    E_SER_MALFORMED_MESSAGE        & True \\ \hline
+    E_SER_WRONG_MESSAGE_TYPE       & True \\ \hline
+    Other values                   & Remains unchanged \\ \hline
+    \end{tabular}
+\end{table}
+
+{\Satisfies{SRS_SSFM 064} \Satisfies{SRS_SSFM 065} \Satisfies{SRS_SSFM 066}}
+
+\RequirementTag{ADS_SSFM}{092}
+\\
+
+Upon the calculation of FpI, the Protection Status Manager informs Fault Indication Data Manager 
+to handle the debouncing and maturation logic and setting the corresponding Dem even accordingly.
+
+{\Satisfies{SRS_SSFM 175} \Satisfies{SRS_SSFM 179} \Satisfies{SRS_SSFM 181} \Satisfies{SRS_SSFM 182} \Satisfies{SRS_SSFM 301}}
+
+
+\subsubsection{Safety Status Manager}
+\RequirementTag{ADS_SSFM}{030}
+\\
+\label{sec:SafetyStatusDynamic}
+The Safety Status Manager is responsible for setting and resetting the SerialDatas' FsI interface. 
+Whenever other modules asks the Continuous Operation Status Manager or the Protection Status Manager to set or reset the FoI and/or FpI,
+they should also ask the Safety Status Manager to update the FsI accordingly.
+
+The Safety Status Manager does not accept any value to force the FsI state. Instead, upon the request, it evaluates the FoI and FpI and sets the FsI to true if any of them is reporting an error.
+The Safety Status Manager is asked to update the state of the FsI in two cases; either through the Received SerialData Handler, or at the event of a MAC verification failure. 
+
+{\Satisfies{SRS_SSFM 064} \Satisfies{SRS_SSFM 065} \Satisfies{SRS_SSFM 066}}
+
+\RequirementTag{ADS_SSFM}{093}
+\\
+
+Upon the calculation of FsI, the Safety Status Manager informs Fault Indication Data Manager 
+to handle the debouncing and maturation logic and setting the corresponding Dem even accordingly.
+
+{\Satisfies{SRS_SSFM 170} \Satisfies{SRS_SSFM 179} \Satisfies{SRS_SSFM 181} \Satisfies{SRS_SSFM 182} \Satisfies{SRS_SSFM 301}}
+
+
+\subsubsection{Fault Indication Data Manager}
+
+\RequirementTag{ADS_SSFM}{094}
+\\
+\label{sec:FaultIndicationDM}
+After setting or resetting a Dem Event, the Fault indication Data Manager, waits for its confirmation. When the confirmation is received,
+the Fault Indication Data Manager applies the demultiplexing logic by a logical AND between the TestFailed bit of the Dem Status byte,
+and the matured fault indication (SSFM internal fault active) status of the corresponding indications. 
+\\
+{\Satisfies{SRS_SSFM 171} \Satisfies{SRS_SSFM 174} \Satisfies{SRS_SSFM 176} \Satisfies{SRS_SSFM 178}}
+
+\RequirementTag{ADS_SSFM}{095}
+\\
+The result of demultiplexing for each indication will be propagated through the designated interface for each Fault Active Status using:
+\code{SSFM_IF_SerialData_FcFA}, \code{SSFM_IF_SerialData_FoFA}, \code{SSFM_IF_SerialData_FpFA}, \code{SSFM_IF_SerialData_FsFA} or \code{SSFM_IF_SerialData_FxFA}.
+\\
+{
+    \Satisfies{SRS_SSFM 180} \Satisfies{SRS_SSFM 183} \Satisfies{SRS_SSFM 058} \Satisfies{SRS_SSFM 059} 
+    \Satisfies{SRS_SSFM 062} \Satisfies{SRS_SSFM 063} \Satisfies{SRS_SSFM 067} \Satisfies{SRS_SSFM 068}
+    \Satisfies{SRS_SSFM 074} \Satisfies{SRS_SSFM 075}
+}
+
+\RequirementTag{ADS_SSFM}{098}
+\\
+The Fault Indications Data Manager is responsible to apply an OR logic among all the fault indications that use the same DTC Value as the current Fault Indication under process. 
+After resolving the DTCs for the service based SerialDatas, if the logical OR results in a fault active status, it sets the Dem Event. Otherwise, the Dem Event will be cleared.
+\\
+{\Satisfies{SRS_SSFM 171} \Satisfies{SRS_SSFM 174} \Satisfies{SRS_SSFM 176} \Satisfies{SRS_SSFM 178}}
+
+\RequirementTag{ADS_SSFM}{106}
+\\
+Since the Fault Indications Data Manager is responsible for resolving the DTC for Loss of Function functionality,
+the same logic as above will be applied to the Loss of Function DTCs as well 
+by combining the received two high bytes with the LoF DTC low byte.
+\\
+{\Satisfies{SRS_SSFM 304}}
+
+\RequirementTag{ADS_SSFM}{149}
+\\
+The Fault Indication Data Manager will use the Event Debouncer functionality to confirm the error maturation. Upon the calculation of FxI,
+the Fault Indication Data Manager passes the latest status to the Event Debouncer Manager after checking the following as test enable criteria:
+\begin{itemize}
+    \item  Operating voltage is strictly in the normal range
+    \item \code{Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive}: is TRUE to check instant active status and maintain per-PN/AP timers
+    \item \code{Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive_StabilityCheck}: is TRUE to check 5-second stability criteria
+    \item \code{Sum_Ssfm_ResetPowerUpRecoveryTimer}: is TRUE to ensure 5 seconds have passed since last power-up or reset
+    \item \code{Sum_Ssfm_BatteryVoltageRecoveryTimer}: is TRUE to ensure 5 seconds have passed since recovery from under-voltage or over-voltage condition
+    \item \code{sum_Ssfm_Errh_C_DTC_UXXXX_83_SignalProtectionIncorrect}: is enabled
+\end{itemize}
+In return, the Event Debouncer provides the maturation 
+evaluation status. The multiplexing logic directly sets the Dem Event if the evaluation status confirms the maturation. Whenever the serial data represents
+a service, the corresponding DTC will be resolved through Fault Indications Data Manager.  
+
+However, if the error is not matured yet, the Fault Indication Data Manager applies the multiplexing logic.
+\\
+{   \Satisfies{SRS_SSFM 170} \Satisfies{SRS_SSFM 173} \Satisfies{SRS_SSFM 175} \Satisfies{SRS_SSFM 177} 
+    \Satisfies{SRS_SSFM 179} \Satisfies{SRS_SSFM 181} \Satisfies{SRS_SSFM 182} \Satisfies{SRS_SSFM 301}
+    \Satisfies{SRS_SSFM 368} \Satisfies{SRS_SSFM 369}
+}
+
+\subsubsection{Signal-Based Multiple-Provider Manager}
+
+\RequirementTag{ADS_SSFM}{112}
+\\
+The Signal-Based Multiple-Provider Manager is responsible for monitoring calibration parameters providing the information
+about the provider of multiple provider SerialDatas (\code{SSM_C_<PDU name>_IsReceivedFrom_<ECU name>}).
+At the time of initialization the Signal-Based Multiple-Provider Manager checks the status of each calibration parameter,
+and records the current provider of each multiple provider SerialData. This information will be later used to set the
+Invalid Data and Loss of Comm DTCs. 
+\\
+{
+    \Satisfies{SRS_SSFM 081} \Satisfies{SRS_SSFM 082} \Satisfies{SRS_SSFM 083}
+}
+\subsubsection{Service Manager}
+
+\RequirementTag{ADS_SSFM}{099}
+\\
+The Service Manager is responsible for resolving the corresponding DTC of the service based SerialDatas. As for the first step, Service Manager
+resolves the corresponding IP address through the "SD" API called \textbf{Sd_GetNodeAddress}. Given the IP address, the two high bytes of the desired DTC value will be resolved 
+through the \textbf{SPM_SSFM_GetDTCIdentifier} interface. Combining these two high bytes with the Invalid Data DTC low byte results in a resolved DTC for the given SerialData.
+\\
+{\Satisfies{SRS_SSFM 299} \Satisfies{SRS_SSFM 300} \Satisfies{SRS_SSFM 301} \Satisfies{SRS_SSFM 305}}
+
+\subsubsection{Single Port FxI Manager}
+\RequirementTag{ADS_SSFM}{079}
+\\
+\label{sec:SinglePortFxI}
+The single port FxI manager is responsible for setting the FxI interface upon any change in the FxI status. Whenever the 
+Sum_Ssfm_FxI_FxFA_SinglePortsSupport is enabled, the other fault indication status managers stop notifying the SWCs, and instead 
+SSFM provides a single FxI port to inform them with the latests status. The single FxI interface is populated by the FxIs given
+the following logic:
+
+\begin{table}[H]
+    \begin{tabular}{|l|l|}
+    \hline
+    \textbf{E2E Profile} &  \textbf{FxI Source}\\ \hline
+    PROFILE_GM_01                  & FoI \\ \hline
+    Other                          & FsI \\ \hline
+    \end{tabular}
+\end{table}
+
+{\Satisfies{SRS_SSFM 296}}
+
+
+\subsection{Message Information Handler}
+\subsubsection{CANETH Signal Status Handler}
+\label{sec:Can_signal_status}
+\RequirementTag{ADS_SSFM}{041}
+\\
+The Message Information Handler is responsible for handling signal status availability conditions. 
+\begin{enumerate}
+    \item Check whether the relevant Partial Networks are active of the SerialData. If there is no relevant Partial Network of the SerialData is active then the CAN\\ETH signal status availability changes to SUM_SSFM_SigSts_Disable.
+    \item Monitor occurrence of Disable Normal communication request from SUM_DIAG. If the result is TRUE then the CAN\\ETH signal status availability changes to SUM_SSFM_SigSts_Disable.
+    \item Set the supervision status through Data Receive event and Com callback Timeout configured for the SerialData. The \code{Runnable_SSFM_Received_<SerialData>} and \code{Sum_Ssfm_COMCbkTOut_<SerialData>} functions are considered to set the supervision status.
+    \item Check whether SecOC verification status is failed getting from AuthenticatedSerialData FcI. If the result is TRUE, the SecOC verification status of the SerialData is failed.
+\end{enumerate}
+
+{ \Satisfies{SRS_SSFM 012} \Satisfies{SRS_SSFM 016} \Satisfies{SRS_SSFM 017} \Satisfies{SRS_SSFM 018} \Satisfies{SRS_SSFM 019} \Satisfies{SRS_SSFM 020} \Satisfies{SRS_SSFM 129}}
+
+\subsubsection{Disable PDUs based on calibration}
+\label{sec:Disable_pdus}
+\label{sec:Disable_pdus}
+\RequirementTag{ADS_SSFM}{027}
+\\
+The message information handler implements the function \code{Sum_Ssfm_SsmDisablePdu_Tx()} and called in static function \code{Sum_Ssfm_SsmInit()} by \code{Runnable_SSFM_Init()}.
+The function \code{Sum_Ssfm_SsmDisablePdu_Tx()} \textbf{shall} be visible from the extern of the module, in order to be scheduled in \code{Runnable_SSFM_Init()} at sytem level.
+The message information handler shall:
+\paragraph{For Transmitter}
+\begin{enumerate}
+    \item Check for calibration parameters \CalibrationParameterRef{SSM_C_Disable_<Pduname>} of the Tx PDUs for TRUE/FALSE on initialization of SSFM and shall publish them.
+    \item If \CalibrationParameterRef{SSM_C_Disable_<Pduname>} is TRUE for a particular PDU then SSFM shall invoke SUM_BswM_DisablePdu to BswM.
+    \item BswM shall invoke Com for disabling the PDU.
+\end{enumerate}
+Note: SUM_BswM_DisablePdu is considered a Mode Request interface to request disabling of specific Tx pdus as VDP which shall be indicated to Com by BswM
+
+\paragraph{For Receiver}
+\begin{enumerate}
+    \item Map the SerialData to a Rx PDU by referring to \ConfigurationParameterExtRef{Sum_Ssfm_C_SsmDisable_Rx_PDURef}.
+    \item Check for calibration parameters \CalibrationParameterRef{SSM_C_Disable_<Pduname>} is FALSE then receive SerialData status shall change the availability status to SUM_SSFM_SigSts_Uninitialized.
+    \item Check for calibration parameters \CalibrationParameterRef{SSM_C_Disable_<Pduname>} is TRUE then receive SerialData status shall be SUM_SSFM_SigSts_Disable.
+    \end{enumerate}
+{ \Satisfies{SRS_SSFM 001} \Satisfies{SRS_SSFM 017} \Satisfies{SRS_SSFM 078} \Satisfies{SRS_SSFM 079} \Satisfies{SRS_SSFM 080} }
+
+\subsubsection{Reception of COM callback timeout}
+\RequirementTag{ADS_SSFM}{104}
+\\
+The Message Info Handler implements the COM timeout callback function which is responsible for monitoring the timeout of serial data.
+Upon the reception, the supervision status will be set to timeout and the signal availability will be asked to update. 
+If the serial data is LcFA enabled, the Node Status Manager will be asked to assess the loss of comm.
+If the serial data is LcFA enabled and service based, the current provider of the serial data, and the corresponding Loss of Function DTC
+will be resolved through the Fault Indications Data Manager, and then the Node Status Manager will be asked to assess the Loss of Function. 
+
+{ \Satisfies{SRS_SSFM 304}}
+
+\subsubsection{DTC enabling based on partial networks'status}
+\todo{For each signal based PDU connected with at least one PN, derive if the DTC is allowed or not. As of now, for every signal a PN_DTC_Enabled_Flag is maintained to inform whether PN-involved DTCs are settable.
+	This section can be updated when the flag information is effectively used to set DTCs.}
+
+\subsection{Signal Status Availability Manager}
+\RequirementTag{ADS_SSFM}{044}
+\\
+The Signal Status Availability Manager is responsible for setting the CANETH and service based communication of signal status availability following Finite State Machine (Diagram~\ref{diagram:generated/diagrams/Sum_Ssfm_CANETH_Av_Manager_StateDiag}) for all configured SerialDatas, upon any change in the signal status availability conditions mentioned above.
+The Signal Status Availability Manager implements some of the runnables that will be called by RTE to inform it about a change in availability status:
+\begin{enumerate}
+    \item \code{Runnable_SSFM_PNStatusChanged_<PN_ID>}: Will be called when the status of a PN is changed. All the conditions of the status availability will be checked for the related SerialDatas through \code{Sum_Ssfm_SigStsAvailability_Manager_CANETH}.
+    \item \code{Runnable_SSFM_DIAG_DisableNormalCommChanged_Ch<Channel_ID>}: Will be called when a change in the Disable Normal Communication request from SUM_DIAG happens. All the conditions of the status availability will be checked for the related SerialDatas through \code{Sum_Ssfm_SigStsAvailability_Manager_CANETH}.
+\end{enumerate}  
+The entire sequence diagram of signal status availability manager can be referred to (Diagram~\ref{diagram:generated/diagrams/Sum_Ssfm_SigStat_Av_Manager_SeqDiag}).
+
+{ \Satisfies{SRS_SSFM 001} \Satisfies{SRS_SSFM 015} \Satisfies{SRS_SSFM 016} \Satisfies{SRS_SSFM 021}}
+
+\RequirementTag{ADS_SSFM}{075}
+\\
+Moreover, the signal status availability manager is responsible for monitoring the SPM_ServiceActivationStatusNotification interface in order to receive the 
+latest status of services. Upon any change in a service status the SPM will notify SSFM through the given sender-receiver interface and the runnable 
+\code{Runnable_SSFM_ServiceActivationStatusReceived} will be triggered. The runnable evaluates the changes in services' status then:
+\begin{enumerate}
+    \item Asks the CANETH Signal Status Manager to update the availability status of the corresponding service-based SerialData.
+    \item Checks \code{Sum_Ssfm_Node_MissingMsg_TestEnableConditions} and, only if the test is enabled, invokes \code{Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm} to re-evaluate the loss of communication status of the affected SerialData.
+\end{enumerate}
+{ \Satisfies{SRS_SSFM 295} \Satisfies{SRS_SSFM 371} \Satisfies{SRS_SSFM 256}}
+
+
+\subsubsection{CANETH Signal Status Manager}
+\label{sec:CanEthsignalstatus}
+\RequirementTag{ADS_SSFM}{043}
+\\
+The CANETH Signal Status Manager implements the function \\ \code{Sum_Ssfm_SigStsAvailability_Manager_CANETH} which is responsible for setting the availability status by request.
+\\
+
+Whenever a change occurs in the availability conditions, the \code{Sum_Ssfm_SigStsAvailability_Manager_CANETH} will be called for the corresponding SerialData and the function will handle the state machine accordingly.
+
+The following runnables and callbacks will trigger the \code{Sum_Ssfm_SigStsAvailability_Manager_CANETH} for a desired SerialData:
+\begin{enumerate}
+    \item \code{Runnable_SSFM_PNStatusChanged_<PN_ID>}
+    \item \code{Runnable_SSFM_DIAG_DisableNormalCommChanged_Ch<Channel_ID>}
+    \item \code{Sum_Ssfm_COMCbkTOut_<SerialData>}
+    \item \code{Runnable_SSFM_Received_<SerialData>}
+    \item \code{SSFM_Verification_Status_Callout} 
+    \item \code{Runnable_SSFM_ServiceActivationStatusReceived}
+\end{enumerate}  
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_CANETH_Av_Manager_StateDiag}{SSFM CAN Availability State Management}
+{ \Satisfies{SRS_SSFM 001} \Satisfies{SRS_SSFM 012} \Satisfies{SRS_SSFM 015} \Satisfies{SRS_SSFM 016} \Satisfies{SRS_SSFM 021} \Satisfies{SRS_SSFM 295}}
+
+\RequirementTag{ADS_SSFM}{209}
+\\
+For non-discoverable SOME/IP PDUs (IsNonDiscoverable flag set to TRUE), the function immediately returns without state machine execution. These PDUs remain Available throughout the ECU lifecycle as they are initialized to Available status during module initialization and require no availability monitoring.
+\\
+{\Satisfies{SRS_SSFM 369}}
+\\
+
+\subsubsection{LIN Info Handler and LIN Signal Status Manager}
+
+\RequirementTag{ADS_SSFM}{153}
+
+The LIN Info Handler monitors the status of MSCL Bit through the LNM_SSM_MSCL_LIN interface. 
+Upon any change in the status, the LIN Signal Status Manager will be informed to determine the disable conditions of availability status.
+
+{ \Satisfies{SRS_SSFM 023} \Satisfies{SRS_SSFM 024} \Satisfies{SRS_SSFM 117}}
+
+\RequirementTag{ADS_SSFM}{154}
+
+The LIN Info Handler monitors the status of LinSM CurrentSchedule through the LinSM_CurrentSchedule interface. 
+Upon any change in the status, the LIN Signal Status Manager will be informed to determine the disable conditions of availability status.
+
+{\Satisfies{SRS_SSFM 022} \Satisfies{SRS_SSFM 025} \Satisfies{SRS_SSFM 026} }
+
+\RequirementTag{ADS_SSFM}{155}
+
+The change of supervision status will be informed to the LIN Signal Status Manager by Received SerialData Handler and Message Info Handler,
+to determine the the LIN signal availability status.
+
+{ \Satisfies{SRS_SSFM 029} \Satisfies{SRS_SSFM 030} \Satisfies{SRS_SSFM 031} \Satisfies{SRS_SSFM 032} }
+
+\RequirementTag{ADS_SSFM}{156}
+
+Every time that LIN Signal Status Manager is being informed of a possible change in the availability status,
+the status will be recalculated and SWCs will be informed using the RxMonitoredSignal_Av interface.
+
+{ \Satisfies{SRS_SSFM 027} \Satisfies{SRS_SSFM 028} \Satisfies{SRS_SSFM 029} 
+  \Satisfies{SRS_SSFM 030} \Satisfies{SRS_SSFM 031} \Satisfies{SRS_SSFM 032}
+  \Satisfies{SRS_SSFM 033}  \Satisfies{SRS_SSFM 114}
+}
+
+\subsection{Error Event Debouncer Manager}
+\RequirementTag{ADS_SSFM}{055}
+\\
+The Error Event Debouncer Manager is responsible for evaluating the event status result from the error event notifications.
+
+The Error Event Debouncer Manager implements:
+\begin{enumerate}
+    \item \code{Runnable_SSFM_Debouncer_MovingWindow_TimeBased}: The periodic runnable that will be used by moving window X of Y time based to monitor the runnable counter and check when it is exceeded Y_Threshold
+    \item \code{Sum_Ssfm_ErrhDebouncerExecution}: which is responsible for executing the event status evaluation depending on filtering type.
+\end{enumerate} 
+
+The \code{Sum_Ssfm_ErrhDebouncerMovingWindow} will be called via \code{Sum_Ssfm_ErrhDebouncerExecution} and will handle the state of the debouncing.
+Error Event Debouncer Manager sets the evaluation result to \code{InDebouncing} by default while performing evaluation for a new event notification. Whenever the below conditions are fulfilled, 
+the evaluation result changes accordingly:
+\begin{itemize}
+    \item The Evaluation result is considered as Passed when the number of failed samples (X counts) do not reach the fault threshold in the sample window (Time/Samples).
+    \item The Evaluation result is considered as Failed when the number of failed samples (X counts) reach the fault threshold in the sample window (Time/Samples).
+    \item The detection of the first failed sample within test window will result in restarting new window.
+\end{itemize} 
+
+{ \Satisfies{SRS_SSFM 153} \Satisfies{SRS_SSFM 285} \Satisfies{SRS_SSFM 286} \Satisfies{SRS_SSFM 287} \Satisfies{SRS_SSFM 288} \Satisfies{SRS_SSFM 289} \Satisfies{SRS_SSFM 151}}
+
+\subsection{ERRH DTC U19A3 57 Handler}
+The ERRH DTC U19A3 57 Handler is responsible to set the failure status of the following failures:
+
+\subsubsection{DTC U19A3 57: Control Module-invalid/incompatible configuration}
+\RequirementTag{ADS_SSFM}{057}
+\\
+Whenever a notification receives from SUM_SSC regarding a change in the status of the DTC  U19A3 57, the ERRH DTC U19A3 57 Handler will perform the following logic.
+
+In order to handle the U19A3 57, the corresponding calibration parameter \CalibrationParameterRef{Sum_Ssfm_Errh_U19A3_57_InvIncCfg} should be set to true.
+In this case, SSFM reads the battery voltage range status from SUM_SUSD \code{BatteryVoltageRangeMinToMax} interface to check if the battery voltage is in normal range (not under voltage if OBD is supported).
+Then the SSFM reads the U19A3 57 status from SUM_SSC \code{SSC_ERRH_DTC_U19A3_57_Status} interface and informs Dem accordingly.
+The U19A3 57 status will be informed to Dem through the \code{DiagnosticMonitor} interface.
+
+{ \Satisfies{SRS_SSFM 290} \Satisfies{SRS_SSFM 291} \Satisfies{SRS_SSFM 292} \Satisfies{SRS_SSFM 293}  \Satisfies{SRS_SSFM 315} }
+
+\subsection{ERRH DTC U19A3_92 Handler}
+\RequirementTag{ADS_SSFM}{070}
+\\
+Whenever the SSFM receives a notification from the BswM regarding an error detected in the Security Peripheral, the ERRH DTC U19A3_92 Handler will perform the following logic.
+
+In order to handle the U19A3_92, the corresponding calibration parameter \CalibrationParameterRef{Sum_Ssfm_Errh_C_DTC_U19A3_92_SecPer_PerIncOp} should be set to true.
+In this case, SSFM reads the battery voltage range status from SUM_SUSD \code{BatteryVoltageRangeMinToMax} interface to check if the battery voltage is in normal range (not under voltage if OBD is supported).
+Then the SSFM reads the SecP error and sets the DTC if any of the general, sequence or memory failure is detected, otherwise the DTC is reset.
+The U19A3_92 status will be informed to Dem through the \code{DiagnosticMonitor} interface.
+
+{ \Satisfies{SRS_SSFM 145} \Satisfies{SRS_SSFM 146} \Satisfies{SRS_SSFM 195} \Satisfies{SRS_SSFM 268} \Satisfies{SRS_SSFM 315} \Satisfies{SRS_SSFM 270} }
+
+\subsection{ERRH DTC U19A3_8A Handler}
+\label{subsection:ERRHDTCU19A38AHandler}
+\RequirementTag{ADS_SSFM}{082}
+SUM_SSC shall identify the key slot information associated with individual MAC verify failure reported by the SecOC verification status indication for authentic PDUs and provide notification to SUM_SSFM-ERRH for individual MAC verify failure events using the SSC_E_KeySlotVerify interface.
+
+In order to handle the U19A3_8A, the corresponding calibration parameter \CalibrationParameterRef{Sum_Ssfm_Errh_C_DTC_KeySlotVerify} should be set to true.
+In this case, SSFM reads the battery voltage range status from SUM_SUSD \code{BatteryVoltageRangeMinToMax} interface to check if the battery voltage is in normal range (not under voltage if OBD is supported).
+Then the SSFM reads the SecP error. If no failure is detected, SSFM shall process the keyslotverify error to update the value of NumberOfFailures.
+The SSFM shall read the calibration parameter \CalibrationParameterRef{Sum_Ssfm_Errh_C_SlowestPDU_RateTimer} (configured individually per key slot) to compare with the last received PDU timer and the value of NumberOfFailures to handle FailedAuthenticationTimer, AuthenticationWindowTimer, then update KeySlotState.
+The SSFM shall read KeySlotState and read the calibration parameter \CalibrationParameterRef{Sum_Ssfm_Errh_C_FailedAuthenticationTimer} to compare with FailedAuthenticationTimer of per keyslots to determine the set/reset DTC.
+The status of U19A3_8A should be set and communicated to the Dem through the \code{DiagnosticMonitor} interface.
+ 
+
+{ \Satisfies{SRS_SSFM 143} \Satisfies{SRS_SSFM 144} \Satisfies{SRS_SSFM 204} \Satisfies{SRS_SSFM 281} \Satisfies{SRS_SSFM 296} \Satisfies{SRS_SSFM 297} \Satisfies{SRS_SSFM 315} \Satisfies{SRS_SSFM 270} }
+
+\subsection{ERRH DTC U19A3_54 Handler}
+The ERRH DTC U19A3_54 Handler is responsible to set the failure status of the following failures:
+
+\subsubsection{DTC U19A3 54 : Security Peripheral Missing Setup/Learn}
+\RequirementTag{ADS_SSFM}{113}
+\\
+Whenever a notification receives from SUM_SSC regarding a change in the status of the DTC U19A3 54, the ERRH DTC U19A3 54 Handler will perform the following logic.
+
+In order to handle the U19A3 54, the corresponding calibration parameter \CalibrationParameterRef{SSC_SWC_IVMAS_IVMAS_Status} should be set to a value indicating Key Provisioning is supported (1 or 3).
+In this case, SSFM reads the battery voltage range status from SUM_SUSD \code{BatteryVoltageRangeMinToMax} interface to check if the battery voltage is in normal range (not under voltage if OBD is supported).
+Then the SSFM reads the U19A3 54 status from SUM_SSC \code{SSC_ERRH_DTC_U19A3_54_Status} interface and informs Dem accordingly.
+The U19A3 54 status will be informed to Dem through the \code{DiagnosticMonitor} interface.
+
+{ \Satisfies{SRS_SSFM 306} \Satisfies{SRS_SSFM 307} \Satisfies{SRS_SSFM 308} \Satisfies{SRS_SSFM 309} \Satisfies{SRS_SSFM 310} }
+
+
+\subsection{ERRH DTC U19A6_54 Handler}
+The ERRH DTC U19A6_54 Handler is responsible to set the failure status of the following failures:
+
+\subsubsection{DTC U19A6 54 : Service Discovery Failure ? Missing Setup/Learn}
+\RequirementTag{ADS_SSFM}{159}
+\\
+Whenever a notification is received from SUM_SrvcMgr regarding a change in the status of the DTC U19A6 54, the ERRH DTC U19A6 54 Handler will perform the following logic.
+
+In order to handle the U19A6 54, the corresponding calibration parameter \CalibrationParameterRef{Sum_Ssfm_Errh_C_DTC_U19A6_54_MissingSetup} should be set to true.
+In this case, SSFM reads the battery voltage range status from SUM_SUSD \code{BatteryVoltageRangeMinToMax} interface to check if the battery voltage is in normal range (not under voltage if OBD is supported).
+SSFM will also check the DIAG_GetMEC interface and if the MEC value is not equal to zero it terminates processing of the DTC.
+Then the SSFM reads the U19A6 54 status from SUM_SrvcMgr \code{SrvcMgr_ERRH_DTC_U19A6_54_Status} interface and informs Dem accordingly.
+The U19A6 54 status will be informed to Dem through the \code{DiagnosticMonitor} interface.
+
+{\Satisfies{SRS_SSFM 336} \Satisfies{SRS_SSFM 337} \Satisfies{SRS_SSFM 338} \Satisfies{SRS_SSFM 339} \Satisfies{SRS_SSFM 340}  \Satisfies{SRS_SSFM 270}}
+
+\subsection{ERRH DTC U19A6_87 Handler}
+\label{subsection:ERRHDTCU19A687Handler}
+The ERRH DTC U19A6_87 Handler is responsible to set the failure status of the following failures:
+
+\subsubsection{DTC U19A6 87 : Service Discovery - Missing Message}
+\RequirementTag{ADS_SSFM}{164}
+\\
+Whenever SSFM tries to resolve the provider ip address of a service, the U19A6 87 Handler will be informed to propagate the latest status of missing message.
+
+In order to handle the U19A6 87, the corresponding calibration parameter \CalibrationParameterRef{Sum_Ssfm_Errh_C_DTC_U19A6_87_MissingMessage} should be set to true.
+In this case, SSFM reads the battery voltage range status from SUM_SUSD \code{BatteryVoltageRangeMinToMax} interface to check if the battery voltage is in normal range (not under voltage if OBD is supported).
+SSFM will also check the SrvcMgr_SSFM_LearningTableStatus interface and if the Learning table state is not equal to SUM_RID_0654_STATUS_COMPLETE and SUM_RID_0654_STATUS_INCOMPLETE, it terminates processing of the DTC.
+The U19A6 87 status will be informed to Dem through the \code{DiagnosticMonitor} interface.
+
+If there is a service failed to be resolved, the DTC will be set as failed. Instead, if there are no such services, the DTC will be reset.
+Whenever service resolution fails in the Service Manager (e.g., \code{Sd\_GetNodeAddress} returns \code{E\_NOT\_OK} or IP address = \code{0}), SSFM shall notify \textbf{SrvcMgr} of the missing ServiceId via \code{SSFM\_SrvcMgr\_SDMissingMessage}.
+
+{\Satisfies{SRS_SSFM 332} \Satisfies{SRS_SSFM 270} \Satisfies{SRS_SSFM 362}}
+
+\subsection{ERRH DTC U198C_8A Handler}
+The ERRH DTC U198C_8A Handler is responsible to set the failure status of the Primary Security Information - Authentication Failure.
+
+\RequirementTag{ADS_SSFM}{171}
+\\
+Whenever a notification is received from SUM_SSC regarding a change in the status of the DTC U198C 8A, the ERRH DTC U198C 8A Handler will perform the following logic.
+The designated runnable, first, checks the vehicle region signal availability and FsFA. Signal shall be available and FsFA should be false to proceed.
+Then, SSFM checks the X/Y debouncing filter of the DTC.
+As the last check, SSFM checks if both \code{ResetPowerUpRecoveryTimerFlag} and \code{BatteryVoltageRecoveryTimerFlag} are set to true, making sure that it has passed enough time since the latest battery recovery or reset and power-up.
+Finally, the SSFM reads the U198C 8A status from SUM_SSC \code{SSC_ERRH_DTC_U198C_8A_Status} interface and informs Dem accordingly.
+The U198C 8A status will be informed to Dem through the \code{DiagnosticMonitor} interface.
+
+{\Satisfies{SRS_SSFM 345} \Satisfies{SRS_SSFM 270}} 
+
+{\Satisfies{SRS_SSFM 332}}
+
+\subsection{ERRH DTC U198C_54 Handler}
+\label{subsection:ERRHDTCU198C54Handler}
+The ERRH DTC U198C_54 Handler is responsible to set the failure status of the Primary Security Information - Missing Setup/Learning.
+
+\RequirementTag{ADS_SSFM}{177}
+\\
+Whenever a notification is received from SUM_SSC regarding a change in the status of the DTC U198C 54, the ERRH DTC U198C 54 Handler will perform the following logic.
+The designated runnable, first, checks the calibration parameter \CalibrationParameterRef{Sum_Ssfm_Errh_C_DTC_U198C_54_MissSetup} to be true.
+Then, SSFM checks if both \code{ResetPowerUpRecoveryTimerFlag} and \code{BatteryVoltageRecoveryTimerFlag} are set to true, making sure that it has passed enough time since the latest battery recovery or reset and power-up.
+SSFM reads the U198C 54 status from SUM_SSC \code{SSC_ERRH_DTC_U198C_54_Status} interface and a filter (debouncing) mechanism is applied.
+
+The X/Y debouncing method is used to set or clear the DTC code U198C 54. The debouncer status is evaluated, and the event status is updated in DEM through the \code{DiagnosticMonitor} interface.
+{\Satisfies{SRS_SSFM 349} \Satisfies{SRS_SSFM 270} \Satisfies{SRS_SSFM 355}}
+
+
+\subsection{ERRH DTC U198C_49 Handler}
+The ERRH DTC U198C_49 Handler is responsible to set the failure status of the Primary Security Information - Key Provisioning.
+
+\RequirementTag{ADS_SSFM}{187}
+\\
+Whenever a notification is received from SUM_SSC regarding a change in the status of the DTC U198C 49, the SSFM DTC U198C_49 Handler will perform the following logic:
+
+\begin{enumerate}
+    \item The handler first checks the relevant calibration parameter \CalibrationParameterRef{Sum_Ssfm_Errh_U198C_49_DTCProcess} to be enabled.
+    \item It then verifies that both \code{ResetPowerUpRecoveryTimerFlag} and \code{BatteryVoltageRecoveryTimerFlag} are set to true, ensuring sufficient time has passed since the last power-up or battery recovery.
+    \item The KP Keys Provisioned flag, calculated in the SSC module, is checked. If keys are not provisioned, the DTC is set as failed. If keys are provisioned, the filter (debouncing) mechanism is applied.
+    \item The X/Y debouncing method is used to set or clear the DTC code U198C 49. The debouncer status is evaluated, the event status is updated in DEM accordingly.
+\end{enumerate}
+
+The U198C 49 status will be informed to Dem through the \code{DiagnosticMonitor} interface.
+
+{\Satisfies{SRS_SSFM 352} \Satisfies{SRS_SSFM 353} \Satisfies{SRS_SSFM 354}}
+
+
+\subsection{ERRH DTC U19A6_57 Handler}
+The ERRH DTC U19A6_57 Handler is responsible for setting/resetting the failure status of U19A6_57 DTC.
+
+\RequirementTag{ADS_SSFM}{190}
+\\
+The primary purpose of this DTC is to serve as an indicator to know when DID E0CE should be read for diagnostic information about failed service acknowledgments.
+
+Whenever a notification is received from SUM_SrvcMgr regarding a change in the status of the DTC U19A6 57, the SSFM DTC U19A6_57 Handler will perform the following logic:
+
+\begin{enumerate}
+    \item The handler first checks the relevant calibration parameter \CalibrationParameterRef{Sum_Ssfm_Errh_C_DTC_U19A6_57_PhyECUInvIncComp} to be enabled.
+    \item Then, the battery voltage range is retrieved through SUM_SUSD. If OBD operating voltage is strictly in the normal range, further DTC status will be monitored. If the battery voltage requirement is not satisfied, the notification from SrvcMgr will be ignored.
+    \item The status of DTC U19A6_57 is read from SrvcMgr via the boolean interface \code{SrvcMgr_SSFM_SrvcDscvryFlr_U19A6_57} and a filter (debouncing) mechanism is applied.
+    \item The X/Y debouncing method is used to set or clear the DTC code U19A6 57. The debouncer status is evaluated, and the event status is updated in DEM accordingly.
+\end{enumerate}
+
+The U19A6 57 status will be informed to Dem through the \code{DiagnosticMonitor} interface.
+
+{\Satisfies{SRS_SSFM 356}}
+
+
+\subsection{Lost Communication with Provider}
+\label{subsec:LostCommunicationWithProvider}
+\subsubsection{Test Enable Conditions for Missing Message Detection}
+\RequirementTag{ADS_SSFM}{211}
+
+Node Status Manager implements the function \code{Sum_Ssfm_Node_MissingMsg_TestEnableConditions} that checks the Test Enable Conditions before \code{Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm} allowing the loss of communication FSM to be evaluated. All of the following conditions must be satisfied:
+\begin{enumerate}
+    \item The MissingMessage DTC is enabled: the calibration parameter (\code{U0XXX87\_ENABLE}) must be set AND DTCs must not be globally disabled by PNC RX disable (via \code{Sum\_Ssfm\_Errh\_GetDTCsDisabled}). \textbf{This condition is evaluated first; if not met, the remaining conditions are not evaluated.}
+    \item Vehicle Supply voltage is within calibratable range. \textbf{Exception for OBD ECUs:} if the \code{Rte\_Read} of the operating range returns \code{E\_OK} and the battery voltage is in overvoltage, this condition is still considered satisfied --- OBD ECUs shall not inhibit the setting of OBD relevant lost communication DTCs during an overvoltage condition. If \code{Rte\_Read} does not return \code{E\_OK}, the voltage is conservatively treated as out of range.
+    \item Not within first 5 seconds of reset/recovery
+    \item Monitored PDU/Signal is part of active PN or AP AND has been active for 5 seconds or longer
+    \item Bus-off condition is not current (signal-based only)
+\end{enumerate}
+
+{\Satisfies{SRS_SSFM 256}}
+
+\subsubsection{Update SerialData loss of communication status}
+\RequirementTag{ADS_SSFM}{050}
+
+Node Status Manager implements the function \code{Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm} to keep track of the communication loss status of each signal.
+\\
+
+Upon any change in the status of the signal that possibly can affect the Node Status, the \code{Sum_Ssfm_Node_MissingMsg_TestEnableConditions} function is called first. Only if the test enable conditions are met, \code{Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm} will be called to assess the situation and
+set the new state for the lost communication of the given SerialData (if applicable). If the evaluation results in a change in the lost communication status,
+\code{Sum_Ssfm_prv_UpdateECULostComm} will be called for all of the controllers related to the SerialData, only if the SerialData is signal-based.
+Instead, if the SerialData is service-based the \code{Sum_Ssfm_prv_UpdateTrgDvcLostComm} will be called to handle the Node Status at target device level.
+
+The following triggers invoke \code{Sum_Ssfm_Node_MissingMsg_TestEnableConditions} followed by \code{Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm}:
+\begin{enumerate}
+    \item \code{Runnable_SSFM_Received_SerialData\_<SerialData>}
+    \item \code{Sum_Ssfm_COMCbkTOut\_<SerialData>}
+    \item \code{Runnable_SSFM_PNStatusChanged\_<PN\_ID>}
+    \item \code{Runnable_SSFM_DIAG_DisableNormalCommChanged\_Ch<Channel\_ID>}
+    \item \code{Runnable_SSFM_ServiceActivationStatusReceived} 
+\end{enumerate}
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_NodeSts_Manager_UpdateSerialDataLostComm_StateDiag}{NodeSts Manager SerialData state machine}
+{ \Satisfies{SRS_SSFM 036} \Satisfies{SRS_SSFM 039} \Satisfies{SRS_SSFM 040} \Satisfies{SRS_SSFM 045} \Satisfies{SRS_SSFM 294} \Satisfies{SRS_SSFM 043} \Satisfies{SRS_SSFM 044} \Satisfies{SRS_SSFM 371} \Satisfies{SRS_SSFM 256}}
+
+\RequirementTag{ADS_SSFM}{210}
+\\
+Non-discoverable SOME/IP PDUs (LostCommInfo set to NULL\_PTR) are excluded from loss of communication monitoring as they are always present on the Ethernet network and do not require timeout-based detection.
+\\
+{\Satisfies{SRS_SSFM 369}}
+\\
+
+\subsubsection{Update Loss Of Communication With Node DTC status}
+\RequirementTag{ADS_SSFM}{097}
+
+Node Status Manager implements the runnable \code{Runnable_SSFM_LossCommWithNode} to keep track of the loss of communication with node status for each configured target device. 
+Upon receiving any indication from the SPM that a loss of communication with node event has been generated, the \code{Runnable_SSFM_LossCommWithNode} will be activated to
+properly update the status of the Loss Of Communication With Node DTC related to the target device that generated the event, notifying the DEM.
+
+{ \Satisfies{SRS_SSFM 298} }
+
+\subsubsection{Update Controller Loss of Communication Status}
+\RequirementTag{ADS_SSFM}{051}
+
+The function \code{Sum_Ssfm_prv_UpdateECULostComm} is responsible for updating the loss of comm status. Whenever a change happens in the lost communication status of a signal-based SerialData,
+the function \code{Sum_Ssfm_prv_UpdateECULostComm} will be called for current provider controller related to that SerialData. The new status of the controller will be determined based on the following state machine:
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_UpdateECULostComm_StateDiag}{NodeSts Manager ECU state machine}
+{ \Satisfies{SRS_SSFM 041} \Satisfies{SRS_SSFM 294}}
+
+\subsubsection{Update Target Device Loss of Communication Status}
+\RequirementTag{ADS_SSFM}{175}
+
+The function \code{Sum_Ssfm_prv_UpdateTrgDvcLostComm} is responsible for updating the loss of comm status. Whenever a change happens in the lost communication status of a service-based SerialData,
+the function \code{Sum_Ssfm_prv_UpdateTrgDvcLostComm} will be called for current provider target device related to that SerialData.
+
+{ \Satisfies{SRS_SSFM 041} \Satisfies{SRS_SSFM 294}}
+
+
+\subsubsection{Node Status LcFA DTC Confirm Callback}
+\RequirementTag{ADS_SSFM}{064}
+\label{subsec:NodeStatusLcFADTCCbk}
+
+The Node Status Manager is responsible for the reception of the DTC confirmation for the error status of the loss of communication.
+After the reception of confirmation using bit 0 (TestFailed) of the Dem\_UdsStatusByte, the loss of comm status will be published on Signal<n>\_LcFA interfaces to notify SWCs of SerialData's availability.
+If the current ECU is the Central Gateway Module, after the reception of confirmation, the loss of comm status will also be published on NodeStatusECU\_<X>\textbackslash NodeStatusECU\_<X>\_CAN\_<n> interface.
+
+The \code{Sum_Ssfm_IsSerialDataInLossOfComm} function determines per-signal LcFA status. Its behaviour differs based on the SerialData type:
+\begin{itemize}
+    \item \textbf{Signal-based}: LcFA is set when the provider has \code{LossOfComm} set OR \code{NodeStsECU} set.
+    \item \textbf{Service-based}: LcFA is set only when the provider has \code{LossOfComm} set AND the SerialData's individual \code{LostCommSts} equals \code{ECU\_NODE\_STATUS\_MISSINGMSG}. This guarantees that only the specific missing service triggers LcFA, without affecting other services of the same provider.
+\end{itemize}
+
+{\Satisfies{SRS_SSFM 014} \Satisfies{SRS_SSFM 041} \Satisfies{SRS_SSFM 046} \Satisfies{SRS_SSFM 047} \Satisfies{SRS_SSFM 048}  \Satisfies{SRS_SSFM 213} \Satisfies{SRS_SSFM 050}  \Satisfies{SRS_SSFM 158} \Satisfies{SRS_SSFM 372} \Satisfies{SRS_SSFM 373}}
+
+\subsubsection{Node Status Notification Reception}
+\RequirementTag{ADS_SSFM}{065}
+
+The Node Status Manager is responsible for monitoring the interfaces NodeStatusECU_<X>\textbackslash NodeStatusECU_<X>_CAN_<n> published by the gateway module(if applicable).
+Upon the reception of a change, the new status will be used to update the availability of the given controller's signals
+through the NodeStatusECU_<X>\textbackslash NodeStatusECU_<X>_CAN_<n> interface and the Signal<n>_LcFA interfaces, to notify SWCs of SerialData's availability.
+
+{\Satisfies{SRS_SSFM 014} \Satisfies{SRS_SSFM 041} \Satisfies{SRS_SSFM 046} \Satisfies{SRS_SSFM 049} \Satisfies{SRS_SSFM 052} \Satisfies{SRS_SSFM 053} \Satisfies{SRS_SSFM 051} \Satisfies{SRS_SSFM 115}}
+
+\subsubsection{Node Loss Error Manager}
+\RequirementTag{ADS_SSFM}{077}
+\label{subsec:NodeLossErrManager}
+The Node Loss Error Manager is responsible for monitoring the ECU node loss error maturation. 
+The Node Loss Error Manager implements:
+\begin{enumerate}
+    \item \code{Sum_Ssfm_NodeLossError_Manager}: This function is responsible for checking the disable DTC or system conditions to evaluate the maturation of node loss error. Whenever a change happens in the lost communication status of a signal group,
+    the function \code{Sum_Ssfm_NodeLossError_Manager} will be called via the function \code{Sum_Ssfm_ErrhDebouncerExecution} for all the controllers related to that signal group before notifying to AUTOSAR Dem.
+    \item \code{Sum_Ssfm_Process_SSM_NodeLossErrors_Handler}: This function is responsible for handling following Finite State Machine (Diagram~\ref{diagram:generated/diagrams/Sum_Ssfm_NodeSts_Manager_NodeLossErrors_Handler_StateDiag}) of the Node Loss Error.
+    \item \code{Sum_Ssfm_Process_SSM_NodeLossErrors_Normal}: This function is responsible for processing Node Loss Error in Normal state.
+    \item \code{Sum_Ssfm_Process_SSM_NodeLossErrors_LossComm}: This function is responsible for processing Node Loss Error in Loss comm state.
+    \item \code{Runnable_SSFM_NodeLossError_Time_Management}: Periodic runnable is responsible for counting the elapsed time and set the temporary debouncing evaluation status.The Dtc Enable Manager provides the function Sum_Ssfm_Errh_GetDTCsDisabled, which allows the Runnable_SSFM_NodeLossError_Time_Management to retrieve the status value of the DTCs. If the Dtcs status is 
+    Disabled, all active Loss of Communication timers are reset and disabled.
+    
+\end{enumerate} 
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_NodeSts_Manager_NodeLossErrors_Handler_StateDiag}{Node Loss Error Handler state machine}
+{\Satisfies{SRS_SSFM 154} \Satisfies{SRS_SSFM 156} \Satisfies{SRS_SSFM 157} \Satisfies{SRS_SSFM 155}}
+
+
+\subsection{ERRH Run Crank Input Fault Indication Manager}
+\RequirementTag{ADS_SSFM}{073}
+\label{subsec:ERRHRunCrankFault}
+\\
+The ERRH Run Crank Input Fault Indication Manager implements:
+\begin{enumerate}
+    \item \code{Sum_Ssfm_Errh_Process_RunCrankInputStuckDiagnosticStatus}: This function is responsible for processing run crank input stuck diagnostic status.
+    \item \code{Sum_Ssfm_Errh_Process_DTC_Confirmation}: This function is responsible for processing DTC for run crank input stuck fault indication.
+    \item \code{Sum_Ssfm_Errh_Process_DTC_RunCrankInputStuckFault}: This function is responsible for processing DTC confirmation for RunCrankInputStuckFaultDiagnostic.
+    \item \code{Runnable_SSFM_RunCrankHighInputStuckDiagnosticStatus_Changed}: This runnable will be called when the run crank low input stuck diagnostic is changed.
+    \item \code{Runnable_SSFM_RunCrankLowInputStuckDiagnosticStatus_Changed}: This runnable will be called when the run crank high input stuck diagnostic is changed.
+    \item \code{Sum_Ssfm_RunCrank_DTCStatusChanged}: This function will be called in the callback function whenever the Dem notifies a change in the status of a DTC associated with the run crank input stuck diagnostic before providing notification to the SUM_SUSD module. 
+\end{enumerate} 
+
+{\Satisfies{SRS_SSFM 184} \Satisfies{SRS_SSFM 185} \Satisfies{SRS_SSFM 196} \Satisfies{SRS_SSFM 186} \Satisfies{SRS_SSFM 187} \Satisfies{SRS_SSFM 188} \Satisfies{SRS_SSFM 189}}
+
+
+\subsection{Service 0x14 Handler}
+\RequirementTag{ADS_SSFM}{109}
+\\
+The Service 0x14 Handler is responsible for monitoring and aggregation of specific communication session events including aggregation of ClearDiagnosticInformation. The Service 0x14 Handler shall support reception of Clear Diagnostic request and interpret the request type per diagnostic function. 
+The Service 0x14 Handler implements:
+\begin{enumerate}
+    \item \code{Runnable_SSFM_ServiceRequest_Confirmation}: This runnable is invoked when a ClearDiagnosticRequest is received from the DCM module via \code{ServiceRequestNotification} interface. This runnable allows ERRH to clear application related flags upon a ClearDiagnosticInformation confirmation, receives the result of the ClearDiagnosticInformation request as input parameter in the variable ConfirmationStatus and notifies other modules about the result of the ClearDiagnosticInformation request writing in the port SSFM_ClearDiagReq. If the value of ConfirmationStatus is DCM_RES_POS_OK, SUM_SFFM writes 0x01: ClearDiagnosticInformation request approved. Otherwise, SUM_ERRH writes 0x02: ClearDiagnosticInformation request rejected.
+    \item \code{Sum_Ssfm_Errh_Reset_Internal_Statuses}: This function is responsible for reseting all the internal variable statuses of application related DTC flags
+    \item \code{Sum_Ssfm_Errh_Notification_SUSD}: This function will be called in \code{Runnable_SSFM_ServiceRequest_Confirmation} to  provide a notification back to SUSD.
+\end{enumerate} 
+
+{ \Satisfies{SRS_SSFM 160} \Satisfies{SRS_SSFM 172} \Satisfies{SRS_SSFM 199} \Satisfies{SRS_SSFM 213} \Satisfies{SRS_SSFM 220} \Satisfies{SRS_SSFM 223} \Satisfies{SRS_SSFM 224} }
+
+\subsection{DID Handler}
+\subsubsection{DID 0xE0B8 - Communication Figure of Merit}
+
+\RequirementTag{ADS_SSFM}{134}
+
+The DID 0xE0B8 is responsible for reporting the first 255 messages that indicate an unavailability or a continuous operation or protection error. Whenever, 
+one of the mentioned errors is reported the 0xE0B8 handler will update the metrics of the serial data, and if there is any space
+in the list, adds the serial data to the list. 
+
+Please note that, the DID is enabled by default for all ECUs and the data will be always stored on NvM.
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_DID_E0B8_SeqDiag}{DID E0B8 Handler - Sequence Diagram}
+
+{\Satisfies{SRS_SSFM 317}}
+
+\subsubsection{DID 0xE0BA - Signal Status Info Signal Protection Calculation Incorrect}
+\label{sec:DIDE0BA}
+\RequirementTag{ADS_SSFM}{198}
+
+The DID 0xE0BA is responsible for providing signal status information about Signal Protection Calculation failures. This DID provides a list of up to 16 messages with counters associated with failed protection indications (FPI) and failed continuous operation indications (FOI). Upon any signal protection calculation failure event, the E0BA handler will be informed, and the list will be updated accordingly using priority-based management.
+
+When a message reports signal protection failure, the following logic is applied:
+\begin{itemize}
+    \item Messages with the highest total counts for FPI or FOI are kept in the DID buffer
+    \item If the message is already in the list, the existing entry is updated with new counter values and repositioned based on priority (total count)
+    \item If the message is not in the list and there is space (less than 16 messages), the new message is added and sorted by total count.
+    \item If the message is not in the list and the buffer is full, the message with the lowest total count (FPI + FOI) is replaced only if the new message has a higher total count.
+    \item The sorting mechanism maintains ascending order by total count, with FIFO ordering for equal counts using message ID comparison.
+\end{itemize}
+
+The DID uses an automatic sorting deque structure that ensures efficient priority-based replacement when the 16-entry limit is reached. Count capping ensures that FOI and FPI counters do not exceed the maximum value of 255.
+
+{\Satisfies{SRS_SSFM 361}}
+
+\RequirementTag{ADS_SSFM}{199}
+
+The content of the DID shall be stored in NvM using a 96-byte fixed-length buffer. Each message entry consists of:
+\begin{itemize}
+    \item Message ID (4 bytes): CAN ID for CAN messages and PDU Header ID for Ethernet messages, stored in big-endian format
+    \item Failed Continuous Operation Indication Count (1 byte): Range 0-255
+    \item Failed Protection Indication Counts (1 byte): Range 0-255
+\end{itemize}
+
+The data is persisted during shutdown and restored at startup, ensuring continuity across power cycles.
+
+{\Satisfies{SRS_SSFM 361}}
+
+\RequirementTag{ADS_SSFM}{200}
+
+When Clear DTC (UDS 0x14) service is performed, the E0BA handler clears all internal structures and resets the RAM buffer, ensuring all counters and message entries are set to zero (default/cleared values).
+
+{\Satisfies{SRS_SSFM 361}}
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_DID_E0BA_SeqDiag}{DID E0BA Handler - Sequence Diagram}
+
+\subsubsection{DID 0xF094 - SUM_ERRH Local Supervised WdgM Status of SUM_SOH}
+
+\RequirementTag{ADS_SSFM}{135}
+
+The DID F094 is responsible for recording and manage the counts of watchdog manager event occurrences. This DID is specifically employed to track local supervision failure events and report the status of the SUM_SOH supervised entity at the time of DID retrieval. The DID comprises two main elements:
+SUM_ERRH_DID_SOHSupFail_Cntr: This 2-byte unsigned integer records the occurrences of SUM_SOH local supervision failures. When the counter reaches its maximum value of 0xFFFE, it will maintain this value until reset by RID 0x02C0. A counter value of 0xFFFF indicates the counter is not used by SUM_SOH.
+SOH_Local_Supervision_Status: A 1-byte value representing the current local supervision status of the SUM_SOH supervised entity:
+\begin{itemize}
+    \item 0x00: Invalid
+    \item 0x01: SUM_SOH supervised entity local supervision is in the status WDGM_LOCAL_STATUS_OK
+    \item 0x02: SUM_SOH supervised entity local supervision is in the status WDGM_LOCAL_STATUS_DEACTIVATED
+    \item 0x03: SUM_SOH supervised entity local supervision is in the status WDGM_LOCAL_STATUS_FAILED
+    \item 0x04: SUM_SOH supervised entity local supervision is in the status WDGM_LOCAL_STATUS_EXPIRED
+    \item 0x05 - 0xFE: reserved
+\end{itemize}
+
+Please note that, this DID shall be supported by all persistent GMBSW ECUs.
+
+{\Satisfies{SRS_SSFM 318}}
+
+\subsubsection{DID 0xE0B9 - Signal Status Info Availability}
+\label{sec:dyne0b9}
+\RequirementTag{ADS_SSFM}{121}
+
+The DID 0xE0B9 is responsible for providing the last 16 SerialDatas that went to Unavailable status. Upon any change in the signal status 
+the DID 0xE0B9 handler will be informed and the list will be updated. 
+When a message becomes Unavailable the following logic will be applied:
+\begin{itemize}
+    \item If the message is already in the list, the position of the message will not be changed. Only the status, and the duration of unavailability will be changed.
+    \item If the message is not in the list, if there is an empty space in the list (the list contains less than 16 messages), the new message will be added to the first empty space.
+    \item If the message is not in the list and there is no empty space, the oldest available/disabled/uninitialized message in the list will be replaced by the new message.
+\end{itemize}
+
+{\Satisfies{SRS_SSFM 311}}
+
+\RequirementTag{ADS_SSFM}{126}
+
+The content of the DID shall be stored in the NvM. It is done at shutdown and the datas are retrieved at the startup.
+
+{\Satisfies{SRS_SSFM 311}}
+
+\RequirementTag{ADS_SSFM}{185}
+
+The content provided by the DID E0B9 shall be also retrievable by the DEM for the Snapshot (Freeze Frame) of the DTC XXXX87 Missing Message.
+
+{\Satisfies{SRS_SSFM 256}}
+
+\subsubsection{DID 0xE0BB - MAC Verification Per Key Slot}
+\label{sec:dyne0bb}
+\RequirementTag{ADS_SSFM}{206}
+
+The content provided by the DID E0BB shall be also retrievable by the DEM for the Snapshot (Freeze Frame) of the DTC U19A3_8A Missing Message.
+
+{\Satisfies{SRS_SSFM 297}}
+
+\subsection{BSW Errors Manager}
+\RequirementTag{ADS_SSFM}{118}
+\\
+BSW Errors Manager is a strategy for handling BSW production errors and it aggregate all DEM events which are related to BSW production errors specified in AUTOSAR.
+The BSW Errors Manager implements:
+\begin{enumerate}
+    \item \code{Callback to ERRH}: BSW production errors are configured not to automatically set DTCs in DEM. Instead, a corresponding callback for each error \code{Sum_Ssfm_Dem_CB_EventUdsStatusChanged_<DemEventName>} notifies the Error Handling(ERRH) component that an error event has occurred.
+    \item \code{Aggregation and Filtering by ERRH}: ERRH aggregates DEM events in \code{Sum_Ssfm_Dem_CB_EventUdsStatusChanged_<DemEventName>} related to BSW production errors. In \code{Sum_Ssfm_ErrhDebouncerExecution} and \code{Sum_Ssfm_Errh_FP_BSW_Error_CbkWindowMoving} the necessary logic to determine whether the conditions for setting a DTC are met, potentially debouncing the event or performing other checks.
+    \item \code{Notification of DEM for DTC Setting}: If ERRH determines that a DTC should be set, it notifies DEM of the error event corresponding to the appropriate DTC. DEM then maintains the status byte for that event.
+	\item \code{Notification to SOH}: If BSW Error type is of
+									\begin{enumerate} 	
+									\item NVM_E_HARDWARE
+									\item NVM_E_INTEGRITY_FAILED
+									\item NVM_E_REQ_FAILED
+									\item NVM_E_WRONG_BLOCK_ID
+									\item NVM_E_VERIFY_FAILED
+									\item NVM_E_LOSS_OF_REDUNDANCY
+									\item NVM_E_QUEUE_OVERFLOW
+									\item NVM_E_WRITE_PROTECTED
+									\item WDGM_E_SUPERVISION
+									\item WDGM_E_SET_MODE
+									\end{enumerate}		
+	it Notifies SOH through interface ERRH_E_BswEvent
+	\item \code{Publish of CAN BUS_OFF DTC's}: It stores Dtc value if BSW error type is Confirmed CAN BUS_OFF.
+\end{enumerate} 
+
+{\Satisfies{SRS_SSFM 132} \Satisfies{SRS_SSFM 139} \Satisfies{SRS_SSFM 140} \Satisfies{SRS_SSFM 141} \Satisfies{SRS_SSFM 142} \Satisfies{SRS_SSFM 147} \Satisfies{SRS_SSFM 161} \Satisfies{SRS_SSFM 193}}
+
+\subsection{LIN Responder Error Manager}
+\subsubsection{LIN Responder Internal Electronic Fault}
+\RequirementTag{ADS_SSFM}{131}
+The LIN Responder Error Manager shall monitor the LNM_ERRH_IntElectFault<X> interface connected to SUM_LNM. 
+It will use the value read from the LNM_ERRH_IntElectFault<X> interface to update the SSFM_LIN_Signal_Inv<n> interfaces associated with all the LIN signals originating from that LIN Responder to SW-C.
+
+The LIN Responder Error Manager shall use the Event Debouncer functionality to confirm error maturation. 
+Upon calculating the internal electronic fault event, the LIN Responder Error Manager will pass the latest status to the Event Debouncer Manager. 
+In return, the Event Debouncer Manager will provide the maturation evaluation status.
+
+After setting or resetting a Dem Event, the The LIN Responder Error Manager waits for its confirmation.
+When the confirmation is received, the The LIN Responder Error Manager applies a logical AND operation between the Confirmation bit of the Dem Confirmation byte 
+and the matured fault indication (Internal Electronic Fault active) status of the corresponding LIN Responder.
+
+{\Satisfies{SRS_SSFM 076} \Satisfies{SRS_SSFM 077} \Satisfies{SRS_SSFM 152} \Satisfies{SRS_SSFM 316}}
+
+\subsubsection{LIN Responder Missing Message Failure}
+\RequirementTag{ADS_SSFM}{173}
+The reception of new data for a given SerialData or Com_CbkRxTOut callback from Com shall trigger the LIN Responder Error Manager to set the node timeout status via the interface \code{SSM_LNM_NodeTimeout<x>} to SUM\_LNM
+ 
+The LIN Responder Error Manager shall use the Event Debouncer functionality to confirm error maturation of missing message failure by handling 
+the following Finite State Machine (Diagram~\ref{diagram:generated/diagrams/Sum_Ssfm_MissingMsg_StateDiag})
+
+The LIN Responder Error Manager shall monitor internal timer periodically whether the timer expires compared to the time received from the interface \code{LNM_ERRH_NodeStatusIdx<x>}
+When the internal timer expires, the DTC will be set to the Dem through the \code{DiagnosticMonitor} interface.
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_MissingMsg_StateDiag}{LIN Responder Missing Message failure state machine}
+{\Satisfies{SRS_SSFM 346} \Satisfies{SRS_SSFM 347} \Satisfies{SRS_SSFM 348}}
+
+\subsection{DTCTriggered Message Generator Handler}
+\RequirementTag{ADS_SSFM}{124}
+\\
+DTCTriggered Message Handler runnable is responsible for transmitting the DTC_Triggered message for every DTC configured within the system.
+ 
+{\Satisfies{SRS_SSFM 314} \Satisfies{SRS_SSFM 319} \Satisfies{SRS_SSFM 320} \Satisfies{SRS_SSFM 233} \Satisfies{SRS_SSFM 321}}
+
+\RequirementTag{ADS_SSFM}{137}
+\\
+Only when the Communication Active state is TRUE will the DTC_Triggered message be updated within SSFM.
+{\Satisfies{SRS_SSFM 321} \Satisfies{SRS_SSFM 322}}
+
+\RequirementTag{ADS_SSFM}{138}
+\\
+A calibration shall be made available to disable the DTC_Triggered Message.
+{\Satisfies{SRS_SSFM 319} \Satisfies{SRS_SSFM 314}}
+
+\RequirementTag{ADS_SSFM}{139}
+\\
+The DTCTriggered Message Handler runnable will implement the required data to be sent out via the DTC_Triggered port. Once DTC’s are queued in the internal queue it will take the first available item and send the data through the RTE. Important note, the user is responsible to configure the appropriate communication signal and rate of the DTCTriggered Message Handler runnable so that no data is lost during transmission.
+{\Satisfies{SRS_SSFM 314} \Satisfies{SRS_SSFM 319}}
+
+\RequirementTag{ADS_SSFM}{140}
+\\
+When a clear diagnostic request is requested, the DTC_Triggered Message group shall be sent for all supported DTC’s in the system, with a pass result. Per AUTOSAR DEM specification, when a ClearDiagnosticInformation request comes in, the DEM module will cycle through each Event/DTC and clear the status. After completion, if the DEM module has callbacks configured to notify SSFM of the change status. The standard queue mechanism implemented by Ssfm_Dem_CB_DTCStatusChanged will be used to ensure that all new status are reported via DTCTriggered interface.
+{\Satisfies{SRS_SSFM 314} \Satisfies{SRS_SSFM 320} \Satisfies{SRS_SSFM 233} \Satisfies{SRS_SSFM 319} \Satisfies{SRS_SSFM 326}}
+
+\RequirementTag{ADS_SSFM}{141}
+\\
+The Ssfm_Dem_CB_DTCStatusChanged shall check whether the DTC status Confirmed bit is set to “True” and the Runnable_SSFM_DTCTriggeredMessage_Handler shall check if that particular DTC has not already been transmitted during this operation cycle before queuing the DTC_Triggered interface.
+{\Satisfies{SRS_SSFM 314} \Satisfies{SRS_SSFM 320} \Satisfies{SRS_SSFM 233} \Satisfies{SRS_SSFM 319} \Satisfies{SRS_SSFM 323} \Satisfies{SRS_SSFM 324}}
+
+\RequirementTag{ADS_SSFM}{142}
+\\
+The Runnable_SSFM_DTCTriggeredMessage_Handler runnable shall only write message every 1000ms. This is to ensure that the DTC_Triggered message is transmitted on the bus and received, by remote ECU’s. The ECU shall wait 1500ms before updating the data with information for a different confirmed DTC + FTB combination.
+{\Satisfies{SRS_SSFM 325} \Satisfies{SRS_SSFM 329}}
+
+\RequirementTag{ADS_SSFM}{143}
+\\
+If no new DTC is set after 1500ms has expired, the DTCsManagement runnable shall retain the last transmitted DTC_Triggered signal as follows:
+\begin{itemize}
+    \item Diagnostic Trouble Code Triggered = FALSE
+    \item Diagnostic Trouble Code Source = Source ID of ECU
+    \item Diagnostic Trouble Code Number = last reported DTC
+    \item Diagnostic Trouble Code Failure Type = the associated failure type
+    \item Diagnostic Trouble Code Status Byte = the associated status byte
+\end{itemize}
+These values shall be transmitted until a new DTC is set and should be triggered.
+{\Satisfies{SRS_SSFM 327} \Satisfies{SRS_SSFM 328} \Satisfies{SRS_SSFM 329}}
+
+\RequirementTag{ADS_SSFM}{144}
+\\
+The Runnable_SSFM_DTCTriggeredMessage_Handler runnable shall implement the below flowchart provided by GM. This describes the sequence expected from the DTC_Triggered message.
+{\Satisfies{SRS_SSFM 330}}
+
+\RequirementTag{ADS_SSFM}{145}
+\\
+After a DTC_Triggered message has been sent for a particular DTC, a DTC_Triggered message should not be sent again during the current operation cycle.
+{\Satisfies{SRS_SSFM 323} \Satisfies{SRS_SSFM 326}}
+
+\RequirementTag{ADS_SSFM}{146}
+\\
+If a particular DTC’s previous state was failed, and is now passed, the DTC_Triggered message shall be updated and sent out with the DTC’s new status.
+{\Satisfies{SRS_SSFM 324}}
+
+\RequirementTag{ADS_SSFM}{147}
+\\
+The maximum periodicity of the DTCsManagement runnable shall be 1500ms. This is to ensure that the data can be updated for the DTC_Triggered message fast enough to support the DTC_Triggered interfaces.
+{\Satisfies{SRS_SSFM 329} \Satisfies{SRS_SSFM 325}}
+
+\subsection{Dtc Enable Manager}
+\RequirementTag{ADS_SSFM}{162}
+\label{subsec:DTCEnableManager1}
+
+The Dtc Enable Manager is responsible for receiving the DTCs status, utilizing service ControlDTCSetting 0x85, and transmitting this information to the SWCs.
+\\Through the SUM_ControlDTCSetting port interface, the SSFM-ERRH receives the current DTCs status from the BswM. Based on the DTCs status value, either ENAIBLED or DISABLED,
+the corresponding Runnable is triggered. Once the runnable is triggered, the status value is sent to the SWCs via the DisableDTCs port interface. 
+
+The Dtc Enable Manager uses the Runnable_SSFM_RemoteProgrammingOtaPsf_Status_Handler, it sets the DisableDTCs interface to TRUE and prevents the setting of DTC when DIAG_RmtPrgmOtaPsf is both RTE_E_OK and TRUE. Otherwise, it sets the DisableDTCs interface to FALSE.
+
+
+{\Satisfies{SRS_SSFM 149} \Satisfies{SRS_SSFM 150} \Satisfies{SRS_SSFM 152} \Satisfies{SRS_SSFM 351}}
+
+
+\subsection{LIN BusOff Handler}
+\RequirementTag{ADS_SSFM}{167}
+\label{subsec:LIN BusOff Handler}
+
+The SSFM receives notifications from the LNM about LIN Bus Off events and counts errors when switching from NO_COMM to FULL_COMM. 
+SUM_LNM must then update the Bus Off error event status to SUM_SSFM-ERRH through the event port.
+
+When an event occurs, the Runnable_SSFM_LNM_LIN_Busoff<n> function is activated. The SSFM checks preconditions to set the DTC for Network <n>. 
+The conditions for processing the DTC are: if the supply voltage is out of range, the DTC is not processed; 
+if the reset or power-up timer is 5 seconds or less, the DTC is also not processed. 
+If the OBD ECU detects that the supply voltage is too high, the DTC is processed, and the results are updated.
+
+{\Satisfies{SRS_SSFM 343} \Satisfies{SRS_SSFM 344}}
+
+
+\subsection{QoS Management}
+\label{subsec:QoSDynamic}
+
+The SSFM is responsible for managing the Quality of Service (QoS) by monitoring the received service events/signal group diagnostics and payload received in the form of service event or signal group from the host. 
+The payload is received through the interface SSFM_IF_QoS_PayloadRx_<SerialData.shortName>. 
+
+SSFM assumes that the a ConsolidatedService can be mapped to at most one SerialData.
+
+\RequirementTag{ADS_SSFM}{196}
+
+SSFM will provide the QoS status of each SerialData (QoS of the service event/signal group mapped to the SerialData) that has a QoS referenced in its configuration and will forward each 
+QoS status received in the ConsolidatedService after the aggregation. 
+
+{\Satisfies{SRS_SSFM 357}}
+
+\RequirementTag{ADS_SSFM}{197}
+
+The process is triggered upon the reception of the callback from the Com that notifies the reception of the new data from the the host. 
+Inside the callback, the function Sum_Ssfm_QoS_Manager_UpdateOnReceivedConsolidatedService_<SerialData.shortName> is responsible for 
+retrieve the ConsolidatedService QoS payload, compute the QoS status for the SerialData itself, extract the QoS status from the payload,
+aggregate the QoS status of each QoS referenced with the PDU's QoS status and write the aggregated QoS status through the interface SSFM_IF_QoS_Indication.
+
+{\Satisfies{SRS_SSFM 358} \Satisfies{SRS_SSFM 357}}
+
+\section{Run-time scenarios}
+\label{sec:RunTimeScenarios}
+\subsection{Initialization}
+\RequirementTag{ADS_SSFM}{181}
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Initialization}{Ssfm Initialization}
+{\Satisfies{SRS_SSFM 350}}
+
+\subsection{SSFM Execution status Management}
+\RequirementTag{ADS_SSFM}{006}
+\\
+Preconditions:
+\begin{enumerate}
+    \item SSFM-ERRH submodule IS INITIALIZED;
+    \item SSFM-SSM submodule is INITIALIZED;
+\end{enumerate}
+Scenario:
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_ExecutionManager_SeqDiag}{SSFM Execution Manager - Functionality enabler}
+
+{ \Satisfies{SRS_SSFM 002} \Satisfies{SRS_SSFM 133}}
+
+\RequirementTag{ADS_SSFM}{022}
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_ExecutionManager_SeqDiag}{SSFM_ERRH Execution Manager - Functionality enabler}
+
+{\Satisfies{SRS_SSFM 133} \Satisfies{SRS_SSFM 134} \Satisfies{SRS_SSFM 135} \Satisfies{SRS_SSFM 259} \Satisfies{SRS_SSFM 261} \Satisfies{SRS_SSFM 312} \Satisfies{SRS_SSFM 313}}
+
+\RequirementTag{ADS_SSFM}{023}
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Ssm_ExecutionManager_SeqDiag}{SSFM_SSM Execution Manager - Functionality enabler}
+
+{\Satisfies{SRS_SSFM 002} \Satisfies{SRS_SSFM 003} \Satisfies{SRS_SSFM 004} \Satisfies{SRS_SSFM 005}}
+
+\subsection{SSFM Fault Indications Management}
+\subsubsection{Received SerialData Handler}
+\RequirementTag{ADS_SSFM}{010}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_ReceivedSerialDataHandler_SeqDiag}{SSFM Received SerialData Handler - Sequence Diagram}
+{ \Satisfies{SRS_SSFM 112}  \Satisfies{SRS_SSFM 011} }
+
+
+\subsubsection{Security Status Manager}
+\RequirementTag{ADS_SSFM}{013}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_SecurityStatusManager_SeqDiag}{SSFM Security Status Manager - Sequence Diagram}
+{ \Satisfies{SRS_SSFM 055} \Satisfies{SRS_SSFM 056} \Satisfies{SRS_SSFM 057}}
+
+\subsubsection{Coninuous Operation Status Manager}
+\RequirementTag{ADS_SSFM}{016}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_ContinuousOperationStatusManager_SeqDiag}{SSFM Coninuous Operation Status Manager - Sequence Diagram}
+{ \Satisfies{SRS_SSFM 060} \Satisfies{SRS_SSFM 061}}
+
+\subsubsection{Protection Status Manager}
+\RequirementTag{ADS_SSFM}{021}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_ProtStatusManager_SeqDiag}{SSFM Protection Status Manager - Sequence Diagram}
+{\Satisfies{SRS_SSFM 064} \Satisfies{SRS_SSFM 065} \Satisfies{SRS_SSFM 066}}
+
+\subsubsection{Safety Status Manager}
+\RequirementTag{ADS_SSFM}{031}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_SafetyStatusManager_SeqDiag}{SSFM Safety Status Manager - Sequence Diagram}
+{\Satisfies{SRS_SSFM 069} \Satisfies{SRS_SSFM 070} \Satisfies{SRS_SSFM 072} \Satisfies{SRS_SSFM 073}}
+
+
+\subsubsection{Fault Indication Data Manager}
+\RequirementTag{ADS_SSFM}{096}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_FaultIndication_DataManager_SeqDiag}{SSFM Fault Indication Data Manager - Sequence Diagram}
+{
+    \Satisfies{SRS_SSFM 171} \Satisfies{SRS_SSFM 174} \Satisfies{SRS_SSFM 176} \Satisfies{SRS_SSFM 178}
+    \Satisfies{SRS_SSFM 180} \Satisfies{SRS_SSFM 183} \Satisfies{SRS_SSFM 058} \Satisfies{SRS_SSFM 059} 
+    \Satisfies{SRS_SSFM 062} \Satisfies{SRS_SSFM 063} \Satisfies{SRS_SSFM 067} \Satisfies{SRS_SSFM 068}
+    \Satisfies{SRS_SSFM 074} \Satisfies{SRS_SSFM 075}
+}
+
+\RequirementTag{ADS_SSFM}{102}
+\UMLDiagram{generated/diagrams/Sum_Ssfm_FIM_Multiplexing_Debounce_SeqDiag}{SSFM Fault Indication Data Manager - Multiplexing - Sequence Diagram}
+{\Satisfies{SRS_SSFM 299} \Satisfies{SRS_SSFM 300} \Satisfies{SRS_SSFM 301}}
+
+\subsection{SSFM Message Information Handler}
+\subsubsection{Disable PDU}
+\label{sec:disable_pdu_calibration}
+\RequirementTag{ADS_SSFM}{026}
+\\
+Preconditions:
+SSFM-SSM submodule is UNINITIALIZED(after wakeup from sleep/shutdown or changing the calibration values).
+Scenario:
+\UMLDiagram{generated/diagrams/Sum_Ssfm_MessageInfo_Handler_DisablePDU_SeqDiag}{SSFM Message Information Handler - SSFM Init with PDU disabling}
+{ \Satisfies{SRS_SSFM 078} \Satisfies{SRS_SSFM 079} \Satisfies{SRS_SSFM 080}}
+
+\subsubsection{COM Timeout Callback}
+\RequirementTag{ADS_SSFM}{107}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_MessageInfo_Handler_COMCbkTOut_SeqDiag}{SSFM Message Information Handler - COM Timeout Callback}
+{ \Satisfies{SRS_SSFM 304}}
+
+\subsubsection{DTC enabling based on partial networks'status}
+\todo{For each signal based PDU connected with at least one PN, derive if the DTC is allowed or not. As of now, for every signal a PN_DTC_Enabled_Flag is maintained to inform wether PN-involved DTCs are settable.
+	This section can be updated when the flag information is effectively used to set DTCs.}
+
+\subsubsection{PN/AP Activity and Stability Check}
+\RequirementTag{ADS_SSFM}{060}
+\\
+Preconditions:
+SSFM-SSM submodule is INITIALIZED and SerialData is configured.
+
+The Message Information Handler implements two functions for checking PN/AP activity:
+
+\begin{itemize}
+    \item \code{Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive}: Checks instant active status and maintains per-PN/AP timers
+    \item \code{Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive_StabilityCheck}: Checks 5-second stability criteria (used for Loss of Communication test enable)
+\end{itemize}
+
+Scenario:
+\UMLDiagram{generated/diagrams/Sum_Ssfm_MessageInfo_Handler_PN_AP_Activity_Check_SeqDiag}{SSFM Message Information Handler - PN/AP Activity Check with Timer Management}
+{ \Satisfies{SRS_SSFM 039} \Satisfies{SRS_SSFM 040} \Satisfies{SRS_SSFM 041} \Satisfies{SRS_SSFM 042}}
+
+\subsection{Signal Status Availability Manager}
+\RequirementTag{ADS_SSFM}{040}
+\\
+\label{sec:signal_status_av}
+\UMLDiagram{generated/diagrams/Sum_Ssfm_SigStat_Av_Manager_SeqDiag}{SSFM Signal Status Availability Manager - Sequence Diagram}
+{ \Satisfies{SRS_SSFM 016} \Satisfies{SRS_SSFM 017} \Satisfies{SRS_SSFM 018} \Satisfies{SRS_SSFM 019} \Satisfies{SRS_SSFM 020}}
+
+\subsubsection{CAN Signal Status Manager}
+\label{sec:CAN_signal_status}
+\RequirementTag{ADS_SSFM}{045}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_CANETH_SigStat_Av_Manager_SeqDiag}{SSFM CANETH Signal Status Availability Manager - Sequence Diagram}
+{ \Satisfies{SRS_SSFM 016} \Satisfies{SRS_SSFM 017} \Satisfies{SRS_SSFM 018} \Satisfies{SRS_SSFM 019} \Satisfies{SRS_SSFM 020}}
+
+\RequirementTag{ADS_SSFM}{046}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_CANETH_SigStat_Av_Manager_Check_Disable_Condition_SeqDiag}{SSFM CANETH Signal Status Availability Manager - Check Disable Conditions - Sequence Diagram}
+{ \Satisfies{SRS_SSFM 016} \Satisfies{SRS_SSFM 009}}
+
+\subsection{DID E0BB - MAC Verification Per Key Slot}
+\RequirementTag{ADS_SSFM}{205}
+
+The following sequence diagram illustrates the data flow for DID E0BB, including NvM restore at startup, runtime updates, DCM read requests, and NvM save at shutdown:
+
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_DID_E0BB_SeqDiag}{RTA-SUM SSFM DID E0BB Sequence Diagram}{0.5}
+
+{\Satisfies{SRS_SSFM 367}}
+
+\subsubsection{LIN Signal Status Manager}
+\todo{Need to be completed in the future}
+
+
+\subsection{SSFM Error Event Debouncer Management}
+\label{sec:error_debouncer_manager}
+\todo{Need to be completed in the future}
+
+\subsection{ERRH DTC U19A3 57 Handler}
+\subsubsection{ERRH DTC U19A3 57 - Control Module - invalid/incompatible configuration}
+\RequirementTag{ADS_SSFM}{058}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_U19A3_57_SeqDiag}{SSFM ERRH DTC U19A3 57 - Control Module - invalid/incompatible configuration - Sequence Diagram}
+{ \Satisfies{SRS_SSFM 290} \Satisfies{SRS_SSFM 291}  \Satisfies{SRS_SSFM 315}}
+
+\subsection{ERRH DTC U19A3_92 Handler}
+\subsubsection{ERRH DTC U19A3_92 - Control Module Security Peripheral - Performance or Incorrect Operation}
+\RequirementTag{ADS_SSFM}{071}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_U19A3_92_SeqDiag}{SSFM ERRH DTC U19A3_92 - Control Module Security Peripheral - Performance or Incorrect Operation - Sequence Diagram}
+{ \Satisfies{SRS_SSFM 145} \Satisfies{SRS_SSFM 146} \Satisfies{SRS_SSFM 195} \Satisfies{SRS_SSFM 268} \Satisfies{SRS_SSFM 315}}
+
+\subsection{ERRH DTC U19A3_8A Handler}
+\label{subsection:ERRHDTCU19A38AHandler}
+\subsubsection{ERRH DTC U19A3_8A - Control Module Security Peripheral - Authentication Failure}
+\RequirementTag{ADS_SSFM}{083}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_U19A3_8A_SeqDiag}{SSFM ERRH DTC U19A3_8A - Control Module Security Peripheral - Authentication Failure - Sequence Diagram}
+{ \Satisfies{SRS_SSFM 143} \Satisfies{SRS_SSFM 144} \Satisfies{SRS_SSFM 152} \Satisfies{SRS_SSFM 204} \Satisfies{SRS_SSFM 281} \Satisfies{SRS_SSFM 296} \Satisfies{SRS_SSFM 297} \Satisfies{SRS_SSFM 315} }
+
+\subsection{ERRH DTC U19A3_54 Handler}
+\subsubsection{ERRH DTC U19A3_54 - Security Peripheral Missing Setup/Learn}
+\RequirementTag{ADS_SSFM}{114}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_U19A3_54_SeqDiag}{SSFM ERRH DTC U19A3_54 - Security Peripheral - Missing Setup/Learn}
+{ \Satisfies{SRS_SSFM 306} \Satisfies{SRS_SSFM 307} \Satisfies{SRS_SSFM 308} \Satisfies{SRS_SSFM 309} \Satisfies{SRS_SSFM 310}}
+
+\subsection{ERRH DTC U19A6_54 Handler}
+\subsubsection{ERRH DTC U19A6_54 - Service Discovery Failure ? Missing Setup/Learn}
+\RequirementTag{ADS_SSFM}{160}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_U19A6_54_SeqDiag}{SSFM ERRH DTC U19A6_54 - Service Discovery Failure ? Missing Setup/Learn}
+{\Satisfies{SRS_SSFM 336} \Satisfies{SRS_SSFM 337} \Satisfies{SRS_SSFM 338} \Satisfies{SRS_SSFM 339} \Satisfies{SRS_SSFM 340}}
+
+\subsection{ERRH DTC U19A6_87 Handler}
+\subsubsection{ERRH DTC U19A6_87 - Service Discovery - Missing Message}
+\RequirementTag{ADS_SSFM}{165}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_U19A6_87_SeqDiag}{SSFM ERRH DTC U19A6_87 - Service Discovery - Missing Message}
+{\Satisfies{SRS_SSFM 332}}
+
+\subsection{ERRH DTC U198C_8A Handler}
+\subsubsection{ERRH DTC U198C_8A - Primary Security Information - Authentication Failure}
+\RequirementTag{ADS_SSFM}{170}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_U198C_8A_SeqDiag}{SSFM ERRH DTC U198C_8A - Primary Security Information - Authentication Failure}
+{\Satisfies{SRS_SSFM 345}}
+
+\subsection{ERRH DTC U198C_54 Handler}
+\subsubsection{ERRH DTC U198C_54 - Primary Security Information - Authentication Failure}
+\RequirementTag{ADS_SSFM}{178}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_U198C_54_SeqDiag}{SSFM ERRH DTC U198C_54 - Primary Security Information - Missing Setup/Learn}
+{\Satisfies{SRS_SSFM 349}}
+
+\subsection{ERRH DTC U198C_49 Handler}
+\subsubsection{ERRH DTC U198C_49 - Primary Security Information Internal Electronic Failure}
+\RequirementTag{ADS_SSFM}{188}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_U198C_49_SeqDiag}{SSFM ERRH DTC U198C_49 - Primary Security Information Internal Electronic Failure}
+{\Satisfies{SRS_SSFM 354}}
+
+\subsection{ERRH DTC U19A6_57 Handler}
+\RequirementTag{ADS_SSFM}{193}
+\\
+\UMLDiagram{generated/diagrams/Sum_Ssfm_Errh_U19A6_57_SeqDiag}{SSFM ERRH DTC U19A6_57 - Service Discovery Failure - Physical ECU Invalid/Incompatible SW Component}
+{\Satisfies{SRS_SSFM 356}}
+
+\subsection{Lost Communication with Provider}
+\RequirementTag{ADS_SSFM}{052}
+
+\UMLDiagram{generated/diagrams/Sum_Ssfm_NodeStsManager_SeqDiag}{SSFM Node Status Manager - Sequence Diagram}
+{ \Satisfies{SRS_SSFM 036} \Satisfies{SRS_SSFM 039} \Satisfies{SRS_SSFM 040} \Satisfies{SRS_SSFM 045} \Satisfies{SRS_SSFM 041}}
+
+\subsection{ERRH Run Crank Input Fault Indication Manager}
+\RequirementTag{ADS_SSFM}{069}
+\\
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_RunCrankFaultIndications_SeqDiag}{RTA-SUM SSFM ERRH Run Crank Input Manager}{0.5}
+{\Satisfies{SRS_SSFM 152} \Satisfies{SRS_SSFM 184} \Satisfies{SRS_SSFM 185} \Satisfies{SRS_SSFM 196} \Satisfies{SRS_SSFM 186} \Satisfies{SRS_SSFM 187} \Satisfies{SRS_SSFM 188} \Satisfies{SRS_SSFM 189}}
+
+\subsection{Service 0x14 Handler}
+\RequirementTag{ADS_SSFM}{110}
+\\
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_Service0x14_Handler_SeqDiag}{RTA-SUM SSFM ERRH Service 0x14 Handler - Sequence Diagram}{0.4}
+{
+    \Satisfies{SRS_SSFM 160} \Satisfies{SRS_SSFM 172} \Satisfies{SRS_SSFM 199}
+    \Satisfies{SRS_SSFM 220} \Satisfies{SRS_SSFM 223} \Satisfies{SRS_SSFM 224}
+    \Satisfies{SRS_SSFM 365}
+}
+
+\subsection{BSW Errors Manager}
+\RequirementTag{ADS_SSFM}{119}
+\\
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_Bsw_Errors_Manager_SeqDiag}{RTA-SUM SSFM Bsw Errors Manager - Sequence Diagram}{0.4}
+{\Satisfies{SRS_SSFM 132} \Satisfies{SRS_SSFM 139} \Satisfies{SRS_SSFM 140} \Satisfies{SRS_SSFM 147} \Satisfies{SRS_SSFM 169}}
+
+\subsection{LIN Responder Error Manager}
+\subsubsection{LIN Responder Internal Electronic Fault}
+\RequirementTag{ADS_SSFM}{132}
+\\
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_LinResponder_IeF_SeqDiag}{RTA-SUM SSFM LinResponder Internal Electronic Fault - Sequence Diagram}{0.2}
+{\Satisfies{SRS_SSFM 076} \Satisfies{SRS_SSFM 077} \Satisfies{SRS_SSFM 316}}
+
+\subsubsection{LIN Responder Missing Message Failure}
+\RequirementTag{ADS_SSFM}{174}
+\\
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_LinResponder_MissingMsg_SeqDiag}{RTA-SUM SSFM LinResponder Missing Message - Sequence Diagram}{0.2}
+{\Satisfies{SRS_SSFM 346} \Satisfies{SRS_SSFM 347} \Satisfies{SRS_SSFM 348}}
+
+\subsection{DTCTriggered Message Generator Handler}
+\RequirementTag{ADS_SSFM}{125}
+\\
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_DTCTriggeredMessage_Generator_Handler_SeqDiag}{RTA-SUM SSFM Errh DtcTriggerd Message Generator Handler - Sequence Diagram}{0.4}
+{\Satisfies{SRS_SSFM 314} \Satisfies{SRS_SSFM 319} \Satisfies{SRS_SSFM 320} \Satisfies{SRS_SSFM 233} \Satisfies{SRS_SSFM 242} \Satisfies{SRS_SSFM 321} \Satisfies{SRS_SSFM 322} \Satisfies{SRS_SSFM 323} \Satisfies{SRS_SSFM 324} \Satisfies{SRS_SSFM 325} \Satisfies{SRS_SSFM 326} \Satisfies{SRS_SSFM 327} \Satisfies{SRS_SSFM 328} \Satisfies{SRS_SSFM 329}
+\Satisfies{SRS_SSFM 330}
+}
+
+\subsection{LIN BusOff Handler}
+\RequirementTag{ADS_SSFM}{168}
+\\
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_LinBusOff_Handler_SeqDiag}{RTA-SUM SSFM LIN BusOff Handler - Sequence Diagram}{0.4}
+{\Satisfies{SRS_SSFM 343} \Satisfies{SRS_SSFM 344} }
+
+\subsection{DTC Enable Manager}
+\RequirementTag{ADS_SSFM}{184}
+\\
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_Errh_DTC_Enable_Manager_SeqDiag}{RTA-SUM SSFM DTC Enable Manager - Sequence Diagram}{0.4}
+{\Satisfies{SRS_SSFM 149} \Satisfies{SRS_SSFM 152} \Satisfies{SRS_SSFM 351} }
+
+\subsection{Freeze Frame}
+\label{sec:FreezeFrame}
+\subsubsection{DID 0xE0B9 - Signal Status Info Availability}
+\RequirementTag{ADS_SSFM}{186}
+\\
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_XXXX87_FreezeFrame}{RTA-SUM SSFM DTC XXXX87 Freeze Frame}{0.4}
+{\Satisfies{SRS_SSFM 256}}
+
+\subsubsection{DID 0xE0BB - MAC Verification Per Key Slot}
+\RequirementTag{ADS_SSFM}{207}
+\\
+\UMLDiagramModified{generated/diagrams/Sum_Ssfm_U19A3_8A_FreezeFrame}{RTA-SUM SSFM DTC U19A3_8A Freeze Frame}{0.4}
+{\Satisfies{SRS_SSFM 297}}

@@ -1,0 +1,11 @@
+{
+    "module": "SPM",
+    "version": "8.1.0",
+    "content": {
+        "../../../20_Implementation/api": "api",
+        "../../../20_Implementation/src": "src",
+        "../../../20_Implementation/scripts": "scripts",
+        "../../../10_Documents/RTA-SUM_SPM_Docs/OUT/demo": "doc",
+        "../../../40_Test/SPM_CantataUT/Cantata/results/test_report.html": "doc"
+    }
+}

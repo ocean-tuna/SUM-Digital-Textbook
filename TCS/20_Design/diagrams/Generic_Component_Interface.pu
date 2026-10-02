@@ -1,0 +1,49 @@
+@startuml Generic_Component_Interface
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "SUM_TCS"
+
+**Interfaces Legend**
+   //pi01 //: TCS_SWC_Clock 
+   //ri02 //: SUSD_TCS_PermitExecution
+   //pi03 //: TCS_SUSD_ShutdownPermission
+   //ri04 //: RP_SUSD_TCS_BatteryVoltage_DisableNVMWrite
+   //ri05 //: TimeSyncMessage_Av (SUM_SSFM)
+   //ri06 //: TimeSyncMessage (Com)
+   //pi07 //: TCS_Dcm_Clock
+   //pi08 //: TCS_Dem_Clock
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+}
+
+component [SUM_TCS] as SUM_TCS{
+	portin pri02
+	portin pri04
+	portin pri05
+	portin pri06
+	portout ppi07
+	portout ppi08
+	portout ppi01
+	portout ppi03
+
+}
+
+
+   pri02 --up-( ri02
+   pri04 --up-( ri04
+   pri05 --up-( ri05
+   pri06 --up-( ri06
+   
+   ppi07 --down-( pi07
+   ppi08 --down-( pi08
+   ppi01 --down-( pi01
+   ppi03 --down-( pi03
+
+
+@enduml

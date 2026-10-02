@@ -1,0 +1,129 @@
+
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+«IMPORT bsw::EthSM»
+«IMPORT bsw::ComModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_PwrMgr.h"»
+
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source file for Sum_Spm_PwrMgr
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+/* EOF */
+
+#ifndef _SUM_SPM_PWRMGR_H_
+#define _SUM_SPM_PWRMGR_H_
+
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_Services.h"
+#include "Sum_Spm_VariantManagement.h"
+«IF Spm_IsTC10CommandPresent(spm)== true -»
+#include "ComM_Cfg.h"                   /* Needed to include the macros that defines ComM channel names */
+«ENDIF -»
+
+/* PRQA S 3472 EOF # Following macro are used for sake of clarity to access fields of the PGTT.  */
+/* PRQA S 3469 EOF # Following macro are called to access fields of the PGTT. */
+
+#define SPM_GET_PGTT_INST_TRGDVC_DTCID(j)				( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[j].TrgDvcDtcBaseID )
+/* [$Satisfies $DDS_SPM 0418] */
+#define SPM_GET_PGTT_INST_NUMBER_IP_ASSOCIATED(i)		( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[i].Spm_NumberIPAssociated )
+/* [$Satisfies $DDS_SPM 0129] *//* [$Satisfies $DDS_SPM 0418] */
+#define SPM_GET_PGTT_INST_TRGDVCIP(i, j)				( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[i].Spm_TrgDvc_ListIP[j] )
+#define SPM_GET_PGTT_INST_TRGDVC_IPLIST(i)				( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[i].Spm_TrgDvc_ListIP )
+/* [$Satisfies $DDS_SPM 0127] */
+
+/* GDT-138*/
+#define SPM_GET_PGTT_INST_WKUPCOM_PTH_SIZE(j)	    	( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[j].WkUpVariantSeq[Spm_ActiveVariantIdx_u8].WkUpSeqLen )
+#define SPM_GET_PGTT_INST_TIMEOUT(j)					( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[j].TrgDvcDtcMaturaTimeOut )
+#define SPM_GET_PGTT_INST_POWERONDEVICERETRY_WAITTIME(j)    ( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[j].SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence )
+#define SPM_GET_PGTT_INST_POWERONDEVICERETRY_PERIODICITY(j) ( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[j].SpmTrgDvcPowerOnDeviceRetryPeriodicity )
+
+#define SPM_GET_PGTT_INST_WKUPCOM_TYPE(j,k)				( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[j].WkUpVariantSeq[Spm_ActiveVariantIdx_u8].WkUpSeq[k].WkUpCommType )
+/* [$Satisfies $DDS_SPM 0132] */
+#define SPM_GET_PGTT_INST_WKUPCOM_ITH(j,k)				( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[j].WkUpVariantSeq[Spm_ActiveVariantIdx_u8].WkUpSeq[k].WkUpCommValue )
+#define SPM_GET_PGTT_INST_WKUPDLY_ITH(j,k)				( SpmPgttRowEntry_CfgTable[0u] -> TrgDvcLst[j].WkUpVariantSeq[Spm_ActiveVariantIdx_u8].WkUpSeq[k].WkUpStepDly )
+
+#define STATE_TRGDVC(i) 								( Spm_PowMgr_TrgDvc_List[i].MonitoringTypeInfo.StateOfTrgDvc )
+#define INDEX_STEP_TRGDVC(i)							( Spm_PowMgr_TrgDvc_List[i].WkUpSeqTypeInfo.IndexStepInPgtt )
+#define INDEX_COLUMN_TRGDVC(i)							( Spm_PowMgr_TrgDvc_List[i].IndexColumnInPgtt )
+#define STEPDLY_TRACKER_TRGDVC(i)						( Spm_PowMgr_TrgDvc_List[i].WkUpSeqTypeInfo.DlyTracker )
+#define POWER_ON_DEVICE_RETRY_PERIODICITY_TRACKER(i)			( Spm_PowMgr_TrgDvc_List[i].WkUpSeqTypeInfo.PowerOnDeviceRetry_Periodicity )
+#define POWER_ON_DEVICE_RETRY_WAIT_TIME_TRACKER(i)				( Spm_PowMgr_TrgDvc_List[i].WkUpSeqTypeInfo.PowerOnDeviceRetry_WaitTime)
+#define POWER_ON_DEVICE_RETRY_STEP(i)					( Spm_PowMgr_TrgDvc_List[i].WkUpSeqTypeInfo.spmPowerOnDeviceDRetry )
+#define POWER_SEQ_STATE_TRGDVC(i)					( Spm_PowMgr_TrgDvc_List[i].WkUpSeqTypeInfo.PowerSeqState )
+#define DTCTIMEOUT_TRACKER_TRGDVC(i)					( Spm_PowMgr_TrgDvc_List[i].MonitoringTypeInfo.DTCTImeoutTracker )
+#define IS_LAST_COMMAND_SENT(i)   						( INDEX_STEP_TRGDVC(i) == SPM_GET_PGTT_INST_WKUPCOM_PTH_SIZE(i) )
+#define ARE_ALL_CMD_REMOVED(i)   						( INDEX_STEP_TRGDVC(i) == 0u )
+#define HB_SEQ_TRACKER_TRGDVC(i)		    			( Spm_PowMgr_TrgDvc_List[i].MonitoringTypeInfo.WkUpSeqHBState )
+
+
+#define SUM_SPM_PERIOD_PM_MAINFUNCTION_MS 5u /** Periodicity in ms of the Runnable_SPM_PowerManager_MainFunction. */
+
+#define SPM_PERIOD_WKUP_MS				     ( Rte_CData_Spm_WkUp_Periodicity_ms() )
+«IF Spm_ECU_INTERMEDIATE(spm) == true &&  spm.spmGeneral.spmCANWkUpFrmRef != null -»
+/* [$Satisfies $DDS_SPM 0048] */
+#define SPM_PERIOD_CAN_WKUP_TICK				  SPM_PERIOD_WKUP_MS / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS /** Periodicity in tick of the WkUp Frame. */
+«ENDIF -»
+
+«IF Spm_IsETHCommandPresent(spm) == true -»
+/* [$Satisfies $DDS_SPM 0048] */
+#define SPM_PERIOD_ETH_WKUP_TICK				  SPM_PERIOD_WKUP_MS / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS /** Periodicity in tick of the WkUp Frame. */
+«ENDIF -»
+
+#define SPM_ETH_PERIOD_BP_MS				     ( Rte_CData_Spm_Ethernet_Periodicity_BurstPhase_ms() )
+#define SPM_CAN_PERIOD_BP_MS				     ( Rte_CData_Spm_Can_Periodicity_BurstPhase_ms() )
+
+#define SPM_ETH_BP_INTERVAL				     	 ( Rte_CData_Spm_Ethernet_BurstPhase_Interval() )
+#define SPM_CAN_BP_INTERVAL				     	 ( Rte_CData_Spm_Can_BurstPhase_Interval() )
+
+#define SPM_ETH_PERIOD_BP_VAL				     SPM_ETH_PERIOD_BP_MS / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS /** Periodicity in tick of the Ethernet Burst phase. */
+#define SPM_CAN_PERIOD_BP_VAL				     SPM_CAN_PERIOD_BP_MS / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS /** Periodicity in tick of the Can Burst phase. */
+
+«IF Spm_ReturnSizeIntermediateList(spm) > 0 -»
+#define SPM_GET_PGTT_INTERMEDIATE_DST_IP(i)					( SpmPgttRowEntry_CfgTable[0u] ->  IntermediateNodeIPList[Spm_ActiveVariantIdx_u8][i] )
+#define SPM_GET_PGTT_INTERMEDIATE_DST_IP_SIZE				( SpmPgttRowEntry_CfgTable[0u] ->  IntermediateNodeIPListSize )
+«ENDIF -»
+
+extern uint8 Spm_WkUpCmdLocalBuffer[];
+
+«IF Spm_IsThereAnyManagedDevice(spm) && Spm_ECU_INTERMEDIATE(spm) == true-»
+extern void Sum_Spm_WkupEdgeNodes();
+«ENDIF»
+boolean Sum_Spm_Shutdown_Delay_Has_Expired(void);
+void Sum_Spm_Set_Shutdown_Delay_Timer_Expire_State(boolean has_Expired);
+
+#endif
+
+«ENDFILE-»
+«ENDDEFINE»

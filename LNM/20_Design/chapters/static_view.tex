@@ -1,0 +1,424 @@
+\chapter{Building Block View (Static View)}
+
+\section{Overview}
+
+\section{Configuration}
+
+LNM configuration is done the same way as for standard BSW modules. A parameter definition file is included with the module which allows 
+the users to configure the available parameters.
+
+\subsection{Included Containers}
+
+\input{generated/tables/containers.tex}
+
+\subsection{LNM_General}
+\label{sec:LNM_General}
+
+\ConfigurationParameter{LNM_MainFunction_Period}
+{Period in seconds of LNM_MainFunction runnable}
+{1..1}
+{ECUC-FLOAT-PARAM-DEF}
+{0.001..0.2}
+{0.1}
+
+
+\ConfigurationParameter{LNM_ScheduleManagement_Period}
+{Period in seconds of Schedule Management runnable}
+{1..1}
+{ECUC-FLOAT-PARAM-DEF}
+{0.001..0.2}
+{0.1}
+
+
+\ConfigurationParameter{LNM_NetworkStatus_Period}
+{Period in seconds of Network Status runnable}
+{1..1}
+{ECUC-FLOAT-PARAM-DEF}
+{0.001..0.2}
+{0.1}
+
+
+\ConfigurationParameter{LNM_NetworkFaultManager_Period}
+{Period in seconds of Network Fault Manager runnable}
+{1..1}
+{ECUC-FLOAT-PARAM-DEF}
+{0.001..0.2}
+{0.1}
+
+
+\ConfigurationParameter{LNM_PermitExecution_Mask}
+{Bit mask that must be checked with PermitExecution to allow execution of SUM_LNM functions}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..255}
+{254}
+
+
+\ConfigurationParameter{LNM_WupTxRetries_Commander}
+{Init value configuration for the calibration parameter LNM_WupTxRetries_Commander}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..255}
+{10}
+
+
+\ConfigurationParameter{CyberFill_Supported}
+{Enable or Disable CyberFill feature}
+{1..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}
+
+
+\ConfigurationParameter{LNM_CyberFillValue}
+{Defines the CyberFill value that must be provided by SUM_LNM. This parameter is mandatory if CyberFill functionality is enabled}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..255}
+{0}
+
+
+\ConfigurationParameter{LNM_TWuDelay_Commander}
+{Defines the time delay in ms before a table is scheduled during a commander wakeup }
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..255}
+{100}
+
+
+\ConfigurationParameter{LNM_TWuDelay_Responder}
+{Defines the time delay in ms before a table is scheduled during a responder wakeup }
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..255}
+{100}
+
+
+\ConfigurationParameter{LNM_DID_F1BE_Reference}
+{Reference to the Dcm configuration of DID F1BE}
+{1..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+
+\ConfigurationParameter{LnmGenerateInitRunnable}
+{Enable or Disable the Runnable Init feature.}
+{1..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}
+
+\ConfigurationParameter{LnmInitFuncPeriodicity}
+{Specifies time in ms for the periodicity of the runnable Runnable_LNM_Init.}
+{0..1}
+{ECUC-FLOAT-PARAM-DEF}
+{1.0..5000.0}
+{1000.0}
+
+\Requirement{510}
+{
+
+\ConfigurationParameter{Sum_Lnm_ConfGen_Enabled}
+{If false enables the generation of Sum_Lnm_SWCD.arxml, if true the ConfGen will generate that file.}
+{1..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}
+
+}
+{\Satisfies{SRS_LNM 468}}
+
+
+\ConfigurationParameter{Sum_Lnm_ScheduleChannelUserFuncs_Enabled}
+{Enable the use of user functions for changing the Schedule Table and Channel State for the LIN network.}
+{1..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}
+
+
+\ConfigurationParameterExt{LNM_C_DTC_LostCommWithLinResp_Enabled}
+{Initial value for the LNM calibration parameter controlling whether to enable the Lost Communication with LIN Responder Device DTC. Setting this parameter to true will let LNM aggregate the DTC.}
+{1..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}
+
+\subsection{LNM_Network}
+
+
+\ConfigurationParameter{LNM_ActivationSignalType}
+{Defines the source of activation signal}
+{0..1}
+{ECUC-ENUMERATION-PARAM-DEF}
+{Com, SWC, Rule}
+{SWC}
+
+
+\ConfigurationParameter{LNM_ActivationMask}
+{Defines the bit mask of relevant bits for activation. Bits set to 1 are not relevant for activation}
+{0..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..255}
+{254}
+
+
+\ConfigurationParameter{LNM_DeactivationMask}
+{Defines the bit mask of relevant bits for deactivation. Bits set to 1 are not relevant for deactivation}
+{0..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..255}
+{254}
+
+
+\ConfigurationParameter{LNM_ChannelEnable_InitValue}
+{Define the initial value for the LNM calibration parameter, to enable or disable the MSCL for the selected channel}
+{0..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{true}
+
+
+\ConfigurationParameter{LNM_MSCL_Strategy}
+{Defines the strategy used for MSCL}
+{1..1}
+{ECUC-ENUMERATION-PARAM-DEF}
+{Calibration,Evaluation}
+{Calibration}
+
+
+\ConfigurationParameter{LNM_Network_ID}
+{Defines the ID of the LIN network. It is used to select the correct byte position in DID F1BE}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{1..16}
+{1}
+
+
+\ConfigurationParameter{LNM_C_DTC_LINBusOff}
+{Defines whether DTC for LIN Bus off for the given LIN network shall be enabled or not.}
+{1..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}
+
+
+\ConfigurationParameter{Sum_LNM_LinSMNetworkId_ref}
+{Reference to the unique LinSM network index}
+{0..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+
+\ConfigurationParameter{Sum_LNM_Rule_ref}
+{Reference to the the activation rule}
+{0..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+\ConfigurationParameter{LNM_C_PreSleepDelay}
+{Calibration parameter for Time in ms, indicates the delay from the instance the schedule switching criteria is satisfied to transition from a RUN_ONCE or a RUN_CONTINUOUS FULL_COMM state to a NO_COMM state, until the transition to the NULL schedule occurs when the SLEEP command is issued.}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..4000}
+{25}
+
+\subsubsection{LNM_Responders}
+\label{subsubsec:LNM_Responders}
+
+\ConfigurationParameter{LNM_C_ResponderPresent_InitValue}
+{Define the initial value for the LNM calibration parameter if MSCL strategy is via Calibration}
+{0..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{true}
+
+
+\ConfigurationParameter{LNM_LossOfComm_withDevice_Timer}
+{Defines the amount of time [ms] before set Loss of Communication with Device}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..65535}
+{0}
+
+
+\ConfigurationParameter{LNM_Internal_Electronic_Failure_Supported}
+{Define if the responder supports Internal Electronic Failure}
+{1..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}
+
+
+\ConfigurationParameter{LNM_IEF_APINFO2_Supported}
+{If Internal Electronic Failure DTC is supported, select if APINFO2 (Reset Status) to detect fault condition is supported}
+{0..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}		
+
+
+\ConfigurationParameter{LNM_IEF_Reset_Threshold}
+{If APINFO2 is supported to set Internal Electronic Failure DTC, set the threshold of reset notification that are accepted before setting the DTC}
+{0..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..255}
+{3}
+
+
+\ConfigurationParameter{LNM_IEF_APINFO4_Supported}
+{If Internal Electronic Failure DTC is supported, select if APINFO4 (Application Status) to detect fault condition is supported}
+{0..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}
+
+
+\ConfigurationParameter{LNM_Responder_Device_Not_Configured_Supported}
+{Select if the current responder supports the LIN Responder Device Not Configured DTC. It requires APINFO3 signal support }
+{1..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}
+
+
+\ConfigurationParameter{LNM_Config_Retries}
+{Number of retries for configuration of the responder before Responder Device Not Configured is set}
+{0..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..7}
+{3}		
+
+
+\ConfigurationParameter{LNM_MSCL_BitIndex}
+{Defines the bit index in MSCL for the selected Responder. MSCL Bit 7 of BYTE 2 is reserved for the Config Bit}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..7}
+{0}
+
+
+\ConfigurationParameter{LNM_MSCL_ByteIndex}
+{Defines the MSCL Byte of the selected Responder}
+{1..1}
+{ECUC-ENUMERATION-PARAM-DEF}
+{MSCL_BYTE_1,MSCL_BYTE_2}
+{MSCL_BYTE_1}
+
+
+\subsubsection{LNM_ScheduleStates}
+
+\ConfigurationParameter{LNM_ScheduleRef}
+{Reference to the schedule table associated to the corresponding state}
+{0..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+
+\subsubsection{LNM_ScheduleTransitions}
+
+
+\ConfigurationParameter{LNM_StartStateRef}
+{Reference to the start state of the corresponding transition}
+{0..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+
+\ConfigurationParameter{LNM_EndStateRef}
+{Reference to the end state of the corresponding transition}
+{0..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+
+\ConfigurationParameter{LNM_TransitionRuleRef}
+{Reference to the rule that is implementing the logic of the selected transition}
+{0..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+
+\subsection{LNM_Arbitration}
+\label{subsec:LNM_Arbitration}
+
+\subsubsection{LNM_ScheduleSignal}
+
+
+\ConfigurationParameter{LNM_ScheduleSignalSource}
+{Defines the source of schedule signal}
+{0..1}
+{ECUC-ENUMERATION-PARAM-DEF}
+{Com, SWC, VPM}
+{SWC}
+
+
+\ConfigurationParameter{LNM_ScheduleSignalType}
+{Defines the type of schedule signal}
+{0..1}
+{ECUC-ENUMERATION-PARAM-DEF}
+{boolean, uint8, uint16}
+{uint8}
+
+
+\subsubsection{LNM_Condition}
+
+
+\ConfigurationParameter{LNM_CompareOperator}
+{Defines the logic operation that is performed on input signal}
+{0..1}
+{ECUC-ENUMERATION-PARAM-DEF}
+{==, !=, <, >, <=, >=}
+{==}
+
+
+\ConfigurationParameter{LNM_CompareValue}
+{Defines the value to which the input signal is compared. In case of boolean variables it is assumed that: TRUE == 1 and BOOLEAN == 0}
+{0..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..65535}
+{0}
+
+
+\ConfigurationParameter{LNM_CompareVPMValue}
+{Defines the value to which the vehicle power mode is compared.}
+{0..1}
+{ECUC-ENUMERATION-PARAM-DEF}
+{OFF, ACCESSORY, RUN, STARTREQUEST, PROPULSION, TRANSPORT}
+{N/A}
+
+
+\ConfigurationParameter{LNM_InputRef}
+{Reference to the input signal of the selected condition}
+{0..1}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+
+\subsubsection{LNM_Rule}
+
+
+\ConfigurationParameter{LNM_LogicOperator}
+{Defines the logic operation that relates all the respective referenced conditions and rules. Logic AND (\&), Logic OR (|)}
+{0..1}
+{ECUC-ENUMERATION-PARAM-DEF}
+{\&, |}
+{\&}
+
+
+\ConfigurationParameter{LNM_ConditionRef}
+{Reference to basic LNM_Condition or LNM_Rule to build complex logic operations. IMPORTANT: Since LNM_Rules can reference others LNM_Rules, recursion must be carefully avoided at configuration time}
+{0..Inf}
+{ECUC-REFERENCE-DEF}
+{N/A}
+{N/A}
+
+

@@ -1,0 +1,40 @@
+@startuml Sum_Ssfm_Errh_U19A3_8A_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_Errh_U19A3_8A_Handler"
+
+**Interfaces Legend**
+   //ri111 //: SECPError_Notification 
+   //ri100 //: Sum_Ssfm_BatteryVoltageRange_Min_To_MaxV
+   //pi121 //: Dem_SetEventStatus (E_KeySlotVerify)
+   //ri112 //: Dem_CallbackDTCStatusChangedIndication
+   //CI02 :// Sum_Ssfm_Errh_C_DTC_KeySlotVerify
+   //II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)   
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+
+interface CI02
+interface II184
+
+component [SSFM::Sum_Ssfm_Errh_U19A3_8A_Handler] as U19A3_8A{
+    portin pri112
+	portin pri111
+	portin pri100
+    portout ppi121
+
+}
+   pri112 --up-( ri112
+   pri111 --up-( ri111
+   pri100 --up-( ri100
+   ppi121 --0 pi121
+   U19A3_8A --left-( CI02
+   U19A3_8A --left-( II184
+@enduml

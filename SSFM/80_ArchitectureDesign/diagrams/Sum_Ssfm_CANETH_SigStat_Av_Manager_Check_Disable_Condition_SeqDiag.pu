@@ -1,0 +1,30 @@
+@startuml Sum_Ssfm_CANETH_SigStat_Av_Manager_Check_Disable_Condition_SeqDiag
+
+box SUM_SSFM
+    participant Sum_Ssfm_CANETH_Av_Manager as CANETH_AV
+    participant Sum_Ssfm_MessageInfo_Handler as IH
+end box
+
+participant SUM_PNC as PNC
+participant SUM_DIAG as DIAG
+
+
+CANETH_AV -> CANETH_AV: Ask for check if disable conditions are met
+
+
+IH <- CANETH_AV: Check if at least one Partial Network is active
+loop for each configured Partial Network of SerialData
+    IH -> PNC: Read from interface PNC_ActiveRxPDUEnable<SerialData_Name>
+    IH <-- PNC
+end
+IH --> CANETH_AV
+
+IH <- CANETH_AV: Check occurrence of Disable Normal communication request
+IH -> DIAG: Read from interface DIAG_DisableNormalComm<channel>
+IH <-- DIAG
+IH --> CANETH_AV
+
+IH <- CANETH_AV: Check if the calibration parameter of SerialData is disable
+IH --> CANETH_AV
+
+@enduml 

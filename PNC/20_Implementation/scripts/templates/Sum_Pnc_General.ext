@@ -1,0 +1,97 @@
+/* Define the workspace */
+import bsw;
+import bsw::PNCModule;
+import bsw::ComMModule;
+import bsw::UdpNmModule;
+import emf;
+extension org::eclipse::xtend::util::stdlib::io;
+
+
+String PNC_getNoOfPNC_Activation_Sensors():
+"NoOfPNC_Activation_Sensors"
+;
+
+String PNC_getNoOfPNC_Activation_Signals():
+"NoOfPNC_Activation_Signals"
+;
+
+String PNC_getNoOfPNC_Activation_Signals_Stat():
+"NoOfPNC_Activation_Signals_Stat"
+;
+
+String PNC_getNoOfPNC_Active_TxPDU_Enable():
+"NoOfPNC_Active_TxPDU_Enable"
+;
+
+String PNC_getNoOfPNC_Active_RxPDU_Enable():
+"NoOfPNC_Active_RxPDU_Enable"
+;
+
+Integer PNC_getPNNumber(ComMPnc this):
+let PN_Number = (this.comMPncId):
+    PN_Number
+;
+
+Boolean IsPDUDisableFeatureEnabled(PNC cfg):
+	if cfg.pNCGeneral.sSFMConfigSet_Ref != null then
+	(
+		if cfg.pNCGeneral.sSFMConfigSet_Ref.sum_Ssfm_C_SsmDisable_Tx_PDU != null then
+		(
+			if cfg.pNCGeneral.sSFMConfigSet_Ref.sum_Ssfm_C_SsmDisable_Tx_PDU.size > 0 then
+			(
+				true
+			)
+			else
+				false
+		)
+		else
+			false
+	)
+	else
+		false
+;
+
+Integer GetNoOfDisablePDUs(PNC cfg):
+	if IsPDUDisableFeatureEnabled(cfg) then
+		cfg.pNCGeneral.sSFMConfigSet_Ref.sum_Ssfm_C_SsmDisable_Tx_PDU.size
+	else
+		0
+;
+
+boolean isUsingUDP(PNCConfigSet cfg):
+	if cfg.sUM_PNC_PARTIAL_NETWORK_PARAMETER.repeat_Message_Time_Ref.collect(e|e.metaType).toSet().selectFirst(e|true).metaType.toString().contains("Udp") then
+		true
+	else
+		false
+;
+
+boolean validateNMConfigured(PNCConfigSet cfg):
+	if cfg.sUM_PNC_PARTIAL_NETWORK_PARAMETER.repeat_Message_Time_Ref.collect(e|e.metaType).toSet().size  == 1 then
+		true
+	else
+		false
+;
+
+Integer GetPartialNetworkID(SUM_PNC_PARTIAL_NETWORK_PARAMETER cfg):
+    if cfg.partialNetworkName == "All Nodes" then
+        33
+    else if cfg.partialNetworkName == "Wireless Charging" then
+        34
+    else if cfg.partialNetworkName == "Short Duration Event" then
+        35
+    else if cfg.partialNetworkName == "Diagnose Mechatronics Ethernet" then
+        36
+    else if cfg.partialNetworkName == "Any Diagnose CAN PN" then
+        37
+    else
+        0
+;
+
+Integer GetPN_RecordID_Type(PNC cfg):
+    if cfg.pNCGeneral.sum_PNC_Local_RecordID_Type == "Enumerated" then
+        1
+    else if cfg.pNCGeneral.sum_PNC_Local_RecordID_Type == "BitMapped" then
+        2
+    else
+        0
+;

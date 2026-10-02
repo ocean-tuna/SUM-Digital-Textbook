@@ -1,0 +1,239 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_HeartBeat_Mgr.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for Spm Heartbeat manager
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#include "Sum_Spm_HeartBeat_Mgr.h"
+#include "Rte_SPM.h"
+#include "Sum_Spm_PBCfg.h"
+#include "Sum_Spm_MetaData.h"
+#include "Sum_Common_Utils.h"
+
+/* It is a getter function */
+#pragma PRQA_NO_SIDE_EFFECTS Sum_Spm_GetPreviousHBval
+
+/* PRQA S 3469 EOF # Following macro are used for sake of clarity.  */
+/* PRQA S 3472 EOF # Following macro are used for sake of clarity.  */
+#define SPM_GET_HB_SRCIP(i)				( SPM_NetworkInfo_Wrap[i].SPM_NetInfo->SrcIP )
+
+/* PRQA S 1532 EOF # Defined here for modularity reason						                    */
+
+/**
+ * @brief define the maximum value for the heartbeat counter
+ */
+
+
+/*
+ *------------------------------------------------------------------------------------------------------------------------------------------------
+ * Private Attributes
+ *------------------------------------------------------------------------------------------------------------------------------------------------
+ */
+static Spm_HB_Tx_InfoType Spm_HB_Tx_Info = {
+	/* [$Satisfies $DDS_SPM 0305] */
+	{0u, 0u, 0u},
+	0x00u,
+	0x00u
+};
+
+/*
+ * ----------------------------------------------------------------------------------------------------------------------------------------------
+ *	Private Methods Declaration
+ *-----------------------------------------------------------------------------------------------------------------------------------------------
+ */
+
+/*
+ *-----------------------------------------------------------------------------------------------------------------------------------------------
+ * Public Methods Definitions
+ *-----------------------------------------------------------------------------------------------------------------------------------------------
+ */
+static void Spm_HandlerHBTxTimer(void);
+
+/**
+ * @brief Handles the polling of received heartbeat data over the network.
+ *
+ * This function receives and processes heartbeat (HB) data from all configured devices in the system.
+ * For each valid heartbeat received, it finds the corresponding source ID in the power manager target
+ * device list and updates the heartbeat data in the MonitoringType structure.
+ * 
+ * The function performs the following operations for each valid heartbeat:
+ *  1. Sets the WkUpSeqHBState flag to TRUE (used for FSM state transitions)
+ *  2. Updates the penultimate heartbeat value with the previous heartbeat value.
+ *  3. Updates the previous heartbeat value with the current heartbeat value received.
+ * 
+ * State transitions are handled by the FSM manager independently of this function.
+ * The function should be called periodically to ensure timely processing of heartbeat data.
+ */
+void Spm_PM_Rx_Polling_Handler(void){
+
+	SPM_HB_dt_Prv Sum_Spm_HB_data;
+	sint16 Sum_Spm_IndexOfSrcId;
+	uint8 metaData_loc[SPM_METADAT_SIZE]; /* PRQA S 3678 # the value cannot be constant because it is written by API Rte_Receive, also if it is not currently used */
+	uint8 idx_net;
+
+	/* PRQA S 2877 1 # This loop will never be executed more than once for configuration reason. */
+	for(idx_net = 0u; idx_net < SUM_SPM_NUMBER_OF_NET_CONF; idx_net++){
+
+		/* Dequeue all the HB received over the NW. */
+		while( E_OK == Spm_HandleVLANCommunication(SPM_NetworkInfo_Wrap[idx_net].SPM_NetInfo->VlanID,
+										           SPM_RECV_HNDL,
+										           SPM_HB_COMHNDLING,
+										           &Sum_Spm_HB_data, 
+										           NULL_PTR,
+										           NULL_PTR,
+										           (uint8 *)&metaData_loc[0u]) )										 
+	   	{
+			/* -------- Reserved for control in the future -------- */
+			SUM_SPM_UNUSED(metaData_loc); /* PRQA S 3469 # This is not a function-like macro, but just a unique way to put a x param as unused ((void)x) */
+
+			/* Find the index of the SrcID inside the Spm_PowMgr_TrgDvc_List list -> how can i do it in order to not do always a binary search? */
+			Sum_Spm_IndexOfSrcId = Spm_GetIndexTrgDvcFromIP(Sum_Spm_HB_data.SrcPMId);
+
+			/* Check if the Id is find inside the conf array and if monitoring is active */
+			if(Sum_Spm_IndexOfSrcId != SPM_INVALID)
+			{
+				Sum_Spm_SetStateHBRemote((uint8)Sum_Spm_IndexOfSrcId, TRUE);
+				Sum_Spm_SetPenultimateHBval((uint8)Sum_Spm_IndexOfSrcId, Sum_Spm_GetPreviousHBval((uint8)Sum_Spm_IndexOfSrcId));
+				Sum_Spm_SetPreviousHBval((uint8)Sum_Spm_IndexOfSrcId, Sum_Spm_HB_data.HrtBtCntr);
+			}
+		}
+	}
+}
+
+/**
+ * @brief Handles the heartbeat transmission timer.
+ *
+ * This function is periodically invoked to manage the transmission of heartbeat messages. It performs the following actions:
+ *
+ *   1. Decrements the heartbeat timer counter.
+ *   2. If the timer counter reaches zero or if the Permit execution is de-asserted (so the system is preparing to shut down):
+ *       a. Iterates through all working devices.
+ *          i. Sets the PM source ID in the payload for each device.
+ *          ii. Sends the heartbeat payload for the device using `Rte_Send_PP_SPM_rSPM_Hb_SPM_HB_dt`.
+ *       b. Increments the heartbeat counter in the payload for the next transmission.
+ *       c. Manages the initial burst phase:
+ *          i. If in the initial burst phase, increments the phase counter and sets the timer for the initial bounce delay.
+ *          ii. If the initial burst phase is complete, sets the timer for the steady state delay.
+ *
+ * @details This function assumes the existence of a timer that triggers it periodically and relies on functions like `Rte_Send_PP_SPM_rSPM_Hb`.
+ */
+static void Spm_HandlerHBTxTimer(void){
+	uint8 i;
+
+	(Spm_HB_Tx_Info.Spm_TimerTracker_Tick)--;
+	/* Check the conditions for sending the Hb message: timer expired or shutdown status. If the system is preparing to shutdown, the Hb message should only be sent once. */
+	/* PRQA S 3415 2 #  No side effect since the function is a getter. */
+	if((Spm_HB_Tx_Info.Spm_TimerTracker_Tick == 0x00u)|| (Sum_Spm_GetHBCounterShallBeSentFullScale() && (Sum_Spm_IsFinalHeartbeatSent() == FALSE))) {
+
+		/* [$Satisfies $DDS_SPM 0309] */
+		Spm_HB_Tx_Info.Spm_PayloadToWrite.NmbrPrfAct = Spm_GetNotInactiveLocalProfNumberForHB();
+
+		/* PRQA S 2877 1 # This loop will never be executed more than once for configuration reason. */
+		for(i = 0U; i < SUM_SPM_NUMBER_OF_NET_CONF; i++){
+«IF Spm_ExistMultipleVariantConfigured(spm) == false -»	
+			if(TRUE == Spm_GetHBFrameNeedsToBeSentOverThisVLAN(i)){
+				/* [$Satisfies $DDS_SPM 0300] */
+				Spm_HB_Tx_Info.Spm_PayloadToWrite.SrcPMId = SPM_GET_HB_SRCIP(i);
+				/* [$Satisfies $DDS_SPM 0302] *//* [$Satisfies $DDS_SPM 0301] */
+				(void)SPM_Send_PMFrame(&Spm_HB_Tx_Info.Spm_PayloadToWrite);
+			}
+«ELSE-»
+			/* [$Satisfies $DDS_SPM 0300] */
+			Spm_HB_Tx_Info.Spm_PayloadToWrite.SrcPMId = SPM_GET_HB_SRCIP(i);
+			/* [$Satisfies $DDS_SPM 0302] *//* [$Satisfies $DDS_SPM 0301] */
+			(void)SPM_Send_PMFrame(&Spm_HB_Tx_Info.Spm_PayloadToWrite);
+«ENDIF-»
+		}
+
+		/* [$Satisfies $DDS_SPM 0306] */
+		(Spm_HB_Tx_Info.Spm_PayloadToWrite.HrtBtCntr)++;
+		/* [$Satisfies $DDS_SPM 0308] */
+		if(Spm_HB_Tx_Info.Spm_InitialBurstPhase < (SPM_NUMBER_OF_INITIALSENDING - 0x01u)){
+			Spm_HB_Tx_Info.Spm_InitialBurstPhase++;
+			Spm_HB_Tx_Info.Spm_TimerTracker_Tick = SPM_INITIAL_DEBOUNCE_DELAY_HB_TICK;
+		}else{
+			Spm_HB_Tx_Info.Spm_TimerTracker_Tick = SPM_STEADYSTATE_DELAY_HB_TICK;
+		}
+		/* [$Satisfies $DDS_SPM 0650] */
+		/* Latch final heartbeat sent status after actually sending the shutdown heartbeat */
+		if (Sum_Spm_GetHBCounterShallBeSentFullScale() == TRUE) {
+			Sum_Spm_Set_FinalHeartbeatSent(TRUE);
+		}
+
+	}
+}
+
+/**
+ * @brief Handles the transmission of heartbeat messages based on the current state and network communication status.
+ *
+ * This function checks the current Permit Execution value received from SUSD.
+ * If the system is preparing to shut down, it sets the heartbeat counter to its maximum value and then handles
+ * the heartbeat transmission timer.
+ *
+ */	/* [$Satisfies $DDS_SPM 0307] *//* [$Satisfies $SRS_SPM 0053] */
+void Spm_PM_HB_Tx_Handler(void){
+
+	if(TRUE == Sum_Spm_GetHBCounterShallBeSentFullScale()){
+		Spm_HB_Tx_Info.Spm_PayloadToWrite.HrtBtCntr = SPM_HB_CNTR_MAX_VALUE;
+	}
+
+	/*Start the HB once communication stack is ready*/
+	if((uint8)RTE_MODE_MDG_SPM_CommunicationReady_SPM_COM_READY == Rte_Mode_RP_SPM_BswM_CommunicationReady_SPM_MDG_CR())
+	{
+		/* Handle the timers. */
+		Spm_HandlerHBTxTimer();
+	}
+}
+
+/**
+ * @brief Setter function to initialize the TimerTracker.
+ *
+ */
+void SPM_PM_Init_HB_BurstPhase(void){
+	Spm_HB_Tx_Info.Spm_TimerTracker_Tick = SPM_INITIAL_DEBOUNCE_DELAY_HB_TICK;
+}
+
+/**
+ * @brief getter function to retrieve the status of the initial Hb burst phase.
+ *
+ */
+boolean Sum_Spm_InitialHbBurstPhaseCompleted(void){
+	return (Spm_HB_Tx_Info.Spm_InitialBurstPhase == (SPM_NUMBER_OF_INITIALSENDING - 0x01u));
+}
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

@@ -1,0 +1,1391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00051.xsd">
+  <!--
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : ECU Configuration Parameter Definition
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+
+ ======================================== SDV cadence Version: 27.179.2p0 ========================================  
+ -->
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>AUTOSAR_Spm</SHORT-NAME>
+        <AR-PACKAGES>
+      	   <AR-PACKAGE>
+      		<SHORT-NAME>EcucModuleDefs</SHORT-NAME>
+            <ELEMENTS>
+                <ECUC-MODULE-DEF>
+                    <SHORT-NAME>Spm</SHORT-NAME>
+                    <CATEGORY>STANDARDIZED_MODULE_DEFINITION</CATEGORY>
+                    <REFINED-MODULE-DEF-REF DEST="ECUC-MODULE-DEF">/AUTOSAR_Spm/EcucModuleDefs/Spm</REFINED-MODULE-DEF-REF>
+                    <DESC>
+                        <L-2 L="EN">Configuration of the SPM module</L-2>
+                    </DESC>
+                    <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                    <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    <CONTAINERS>
+
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <SHORT-NAME>SpmConfigSet</SHORT-NAME>
+                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <DESC>
+                                <L-2 L="EN">Container for the configuration of module instance specific set</L-2>
+                            </DESC>
+                            <SUB-CONTAINERS>
+                                 
+                           <!-- [$Satisfies $DDS_SPM 0529] -->
+                           <ECUC-PARAM-CONF-CONTAINER-DEF>
+                               <SHORT-NAME>SpmPowPrf</SHORT-NAME>
+                               <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                               <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                               <DESC>
+                                   <L-2 L="EN">Container for the configuration of Power Profile. At least one power profile needs to be configured for the ECU.</L-2>
+                               </DESC>
+                               <PARAMETERS>
+                                  
+                                 <!-- [$Satisfies $DDS_SPM 0514] -->
+                                 <ECUC-INTEGER-PARAM-DEF>
+                                     <SHORT-NAME>SpmSrvcAndInstID</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <MAX>4294967291</MAX>
+                                     <DESC>
+                                         <L-2 L="EN">The parameter defines the Profile associated software service identifier and the service instance number. Software service represents the 16 most significant bits of the configured number. The instance number the 16 less significant ones. It is assumed at least one profile is managed by the current node.</L-2>
+                                     </DESC>
+                                 </ECUC-INTEGER-PARAM-DEF>
+                                  
+                                 <ECUC-INTEGER-PARAM-DEF>
+                                     <SHORT-NAME>SpmProfNumber</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <MIN>0</MIN>
+                                     <MAX>255</MAX>
+                                     <DESC>
+                                         <L-2 L="EN">The parameter defines the Profile number.</L-2>
+                                     </DESC>
+                                 </ECUC-INTEGER-PARAM-DEF>
+                                  
+                                 <!-- [$Satisfies $DDS_SPM 0515] -->
+                                 <ECUC-BOOLEAN-PARAM-DEF>
+                                     <SHORT-NAME>SpmProfileIsLocal</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DEFAULT-VALUE>False</DEFAULT-VALUE>
+                                     <DESC>
+                                         <L-2 L="EN">The parameter addresses if the current Power Profile is Local to the ECU or it is a remote service. For Local profile the value is TRUE.</L-2>
+                                     </DESC>
+                                 </ECUC-BOOLEAN-PARAM-DEF>
+                                  
+                                 <!-- [$Satisfies $DDS_SPM 0516] -->
+                                 <ECUC-BOOLEAN-PARAM-DEF>
+                                     <SHORT-NAME>SpmLocActivationAllowed</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DEFAULT-VALUE>False</DEFAULT-VALUE>
+                                     <DESC>
+                                         <L-2 L="EN">The parameter defines if the profile can be locally activated. This means that the activation request can be done by an ECU-local SWC using CLIENT/SERVER operation. Only local profile can be activated from a local SWC. So the default value is FALSE.</L-2>
+                                     </DESC>
+                                 </ECUC-BOOLEAN-PARAM-DEF>
+                                  
+                                 <!-- [$Satisfies $DDS_SPM 0517] -->
+                                 <ECUC-INTEGER-PARAM-DEF>
+                                     <SHORT-NAME>SpmApplIntfID</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <MIN>0</MIN>
+                                     <MAX>65535</MAX>
+                                     <DESC>
+                                         <L-2 L="EN">The parameter defines the profile enumeration value to be used for asking the profile activation locally. This parameter is configured only in case SpmLocActivationAllowed is TRUE. Lower multiplicity is 0 because it is valid only for local profiles</L-2>
+                                     </DESC>
+                                 </ECUC-INTEGER-PARAM-DEF>
+                                  
+                                 <!-- [$Satisfies $DDS_SPM 0518] -->
+                                 <ECUC-INTEGER-PARAM-DEF>
+                                     <SHORT-NAME>SpmProfBitMapIndex</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <MIN>0</MIN>
+                                     <MAX>511</MAX>
+                                     <DESC>
+                                         <L-2 L="EN">The parameter maps the profile status as a specific bit of value. This value is reported by the DID E0DD and specified in SDV-6001.</L-2>
+                                     </DESC>
+                                 </ECUC-INTEGER-PARAM-DEF>
+                                  
+                                 <ECUC-INTEGER-PARAM-DEF>
+                                     <SHORT-NAME>SpmProfActivationTimeOut</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>0</UPPER-MULTIPLICITY>
+                                     <MIN>0</MIN>
+                                     <MAX>255</MAX>
+                                     <DESC>
+                                         <L-2 L="EN">OBSOLETE - NAMING MISMATCH</L-2>
+                                     </DESC>
+                                 </ECUC-INTEGER-PARAM-DEF>
+                                  
+                                 <!-- [$Satisfies $DDS_SPM 0049] -->
+                                 <ECUC-INTEGER-PARAM-DEF>
+                                     <SHORT-NAME>SpmProfActivationTimeOutVehOff</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <MIN>0</MIN>
+                                     <MAX>65535</MAX>
+                                     <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                     <DESC>
+                                         <L-2 L="EN">The parameter defines the duration in Seconds of a valid timing-window before deactivating the profile automatically. Valid only for local profiles. The default value is 0, meaning that the profile is automatically deactivated when VehiclePowerMode is OFF.</L-2>
+                                     </DESC>
+                                 </ECUC-INTEGER-PARAM-DEF>
+                                  
+                                 <ECUC-ENUMERATION-PARAM-DEF>
+                                     <SHORT-NAME>SpmVehONDefActPriorON</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>0</UPPER-MULTIPLICITY>
+                                     <LITERALS>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_NOTAPP</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_LOW</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_MEDIUM</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_HIGH</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_CRITICAL</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_EMERGENCY</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                     </LITERALS>
+                                     <DESC>
+                                         <L-2 L="EN">OBSOLETE - NAMING MISMATCH</L-2>
+                                     </DESC>
+                                 </ECUC-ENUMERATION-PARAM-DEF>
+                                  
+                                 <!-- [$Satisfies $DDS_SPM 0501] -->
+                                 <ECUC-ENUMERATION-PARAM-DEF>
+                                     <SHORT-NAME>SpmVehDefActPriorON</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DEFAULT-VALUE>SPM_PRF_AP_NOTAPP</DEFAULT-VALUE>
+                                     <LITERALS>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_NOTAPP</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_LOW</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_MEDIUM_LOW</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_MEDIUM</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_MEDIUM_HIGH</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_HIGH</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_CRITICAL</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_EMERGENCY</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_ACCESS</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                     </LITERALS>
+                                     <DESC>
+                                         <L-2 L="EN">The parameter defines the profile activation priority when vehicle is going to ON. The Lower multiplicity  is 0 because it is valid only for local profiles, while the Upper multiplicity is 1 because it is unique for each profile. Default value is SPM_PRF_AP_NOTAPP.</L-2>
+                                     </DESC>
+                                 </ECUC-ENUMERATION-PARAM-DEF>
+                                  
+                                 <!-- [$Satisfies $DDS_SPM 0502] -->
+                                 <ECUC-ENUMERATION-PARAM-DEF>
+                                     <SHORT-NAME>SpmVehDefActPriorOFF</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DEFAULT-VALUE>SPM_PRF_AP_NOTAPP</DEFAULT-VALUE>
+                                     <LITERALS>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_NOTAPP</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_LOW</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_MEDIUM_LOW</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_MEDIUM</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_MEDIUM_HIGH</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_HIGH</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_CRITICAL</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_EMERGENCY</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                         <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_AP_ACCESS</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                     </LITERALS>
+                                     <DESC>
+                                         <L-2 L="EN">The parameter defines the profile activation priority when vehicle is going to OFF. The Lower multiplicity is 0 because it is valid only for local profiles, while the Upper multiplicity is 1 because it is unique for each profile. The default value is SPM_PRF_AP_NOTAPP.</L-2>
+                                     </DESC>
+                                 </ECUC-ENUMERATION-PARAM-DEF>
+                               </PARAMETERS>
+                               <REFERENCES>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmComIPduGroupEvnt_Tx</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                     <DESC>
+                                       <L-2 L="EN">The parameter defines the reference to data PDU to enable/disable in Tx once a profile request has been satisfied if the configuration requires profile to be consumed.</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Com/EcucModuleDefs/Com/ComConfig/ComIPduGroup</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmComIPduGroupEvnt_Rx</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                     <DESC>
+                                       <L-2 L="EN">The parameter defines the references to data PDU to enable/disable in Rx once a profile request has been satisfied if the configuration requires profile to be consumed.</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Com/EcucModuleDefs/Com/ComConfig/ComIPduGroup</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                               </REFERENCES>
+                               <SUB-CONTAINERS>
+                                    
+                              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  <SHORT-NAME>SpmProfileSwDep</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                  <DESC>
+                                      <L-2 L="EN">Container for the configuration of Power Profile Software Dependency</L-2>
+                                  </DESC>
+                                  <PARAMETERS>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0503] -->
+                                    <ECUC-ENUMERATION-PARAM-DEF>
+                                        <SHORT-NAME>SpmProfDepType</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DEFAULT-VALUE>SPM_PRF_DEP_ACT_AND_CONS</DEFAULT-VALUE>
+                                        <LITERALS>
+                                            <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_DEP_ACT_AND_CONS</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                            <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_ACTIVATED</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                            <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_PRF_CONSUMED</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                        </LITERALS>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines the type of dependency for the power profile. If SPM_PRF_DEP_ACT_AND_CONS then the profile is activated as services and services-data PDU are switched ON in RX by the current ECU instance. If SPM_PRF_ACTIVATED only service is activated. If SPM_PRF_CONSUMED only service-data pdu are switched ON in RX for the current ECU instance. All the dependencies need to be identified by this parameter (mandatory).</L-2>
+                                        </DESC>
+                                    </ECUC-ENUMERATION-PARAM-DEF>
+                                  </PARAMETERS>
+                                  <REFERENCES>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0519] -->
+<ECUC-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmProfRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">The parameter defines the reference to configured profile that acts as current profile dependency.</L-2>
+                                        </DESC>
+                                        <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPowPrf</DESTINATION-REF>
+                                    </ECUC-REFERENCE-DEF>
+                                  </REFERENCES>
+                              </ECUC-PARAM-CONF-CONTAINER-DEF>
+                               </SUB-CONTAINERS>
+                           </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                           <!-- [$Satisfies $DDS_SPM 0528] -->
+                           <ECUC-PARAM-CONF-CONTAINER-DEF>
+                               <SHORT-NAME>SpmPgttEntries</SHORT-NAME>
+                               <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                               <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                               <DESC>
+                                   <L-2 L="EN">Container for the configuration of Power Graph. SPM uses it for getting network information for its inter-ECU communication. Mandatory container.</L-2>
+                               </DESC>
+                               <SUB-CONTAINERS>
+                                    
+                              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  <SHORT-NAME>SpmTrgDvc</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                  <DESC>
+                                      <L-2 L="EN">Container for the configuration of Remote device information. At least one target device needs to be in communication with the current SPM instance.</L-2>
+                                  </DESC>
+                                  <PARAMETERS>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0419] -->
+                                    <ECUC-STRING-PARAM-DEF>
+                                        <SHORT-NAME>SpmTrgDvcID</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                        <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                            <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                <MAX-LENGTH>15</MAX-LENGTH>
+                                                <MIN-LENGTH>7</MIN-LENGTH>
+                                                <REGULAR-EXPRESSION>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+</REGULAR-EXPRESSION>
+                                            </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                        </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines all the IPv4 address for the target device. Each Target device could have more IP addresses since it can be reached from different VLAN.</L-2>
+                                        </DESC>
+                                    </ECUC-STRING-PARAM-DEF>
+                                     
+                                    <ECUC-INTEGER-PARAM-DEF>
+                                        <SHORT-NAME>SpmTrgDvcDtcBaseID</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <MIN>0</MIN>
+                                        <MAX>65535</MAX>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines the base DTC (2 bytes) to set when the target communication is lost.</L-2>
+                                        </DESC>
+                                    </ECUC-INTEGER-PARAM-DEF>
+                                     
+                                    <ECUC-INTEGER-PARAM-DEF>
+                                        <SHORT-NAME>SpmTrgDvcDtcTimeOut</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <MIN>0</MIN>
+                                        <MAX>65535</MAX>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines the maturation time to set when the target communication is lost.</L-2>
+                                        </DESC>
+                                    </ECUC-INTEGER-PARAM-DEF>
+                                     
+                                    <ECUC-INTEGER-PARAM-DEF>
+                                        <SHORT-NAME>SpmTrgDvcPowerOnDeviceRetryPeriodicity</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <MIN>0</MIN>
+                                        <MAX>65535</MAX>
+                                        <DEFAULT-VALUE>10000</DEFAULT-VALUE>
+                                        <DESC>
+                                            <L-2 L="EN">This parameter defines the periodicity of the PowerOnDevice retry. Please, configure a value that it is greater than the sum of the SpmSeqStepDly of the wake-up sequence steps PLUS the value of SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence PLUS the sum of the delay values between steps in the sequence PLUS the SpmTrgDvcDtcTimeOut of this TargetDevice. The value is in milliseconds.</L-2>
+                                        </DESC>
+                                    </ECUC-INTEGER-PARAM-DEF>
+                                     
+                                    <ECUC-INTEGER-PARAM-DEF>
+                                        <SHORT-NAME>SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <MIN>0</MIN>
+                                        <MAX>65535</MAX>
+                                        <DEFAULT-VALUE>1000</DEFAULT-VALUE>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines the time in milliseconds to wait between the OFF and ON sequence of the target device during the PowerOnDevice retry. Please, configure a value that it is greater than 250 ms to see changes in the WUF. The value it is in milliseconds.</L-2>
+                                        </DESC>
+                                    </ECUC-INTEGER-PARAM-DEF>
+                                     
+                                    <ECUC-INTEGER-PARAM-DEF>
+                                        <SHORT-NAME>SpmTrgDvcDiagAddr</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <MIN>0</MIN>
+                                        <MAX>255</MAX>
+                                        <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines the diagnostic address associated to the target for the diagnostic sessions.</L-2>
+                                        </DESC>
+                                    </ECUC-INTEGER-PARAM-DEF>
+                                  </PARAMETERS>
+                                  <SUB-CONTAINERS>
+                                       
+                                 <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                     <SHORT-NAME>SpmTrgDvcVariantHndlng</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                     <DESC>
+                                         <L-2 L="EN">Per-variant configuration for a target device.</L-2>
+                                     </DESC>
+                                     <PARAMETERS>
+                                        
+                                       <!-- [$Satisfies $DDS_SPM 0526] -->
+                                       <ECUC-ENUMERATION-PARAM-DEF>
+                                           <SHORT-NAME>SpmTrgAssocWkUpFrm</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <LITERALS>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>WKUP_FRM_A</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>WKUP_FRM_B</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>WKUP_FRM_C</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                           </LITERALS>
+                                           <DESC>
+                                               <L-2 L="EN">Wake-up frame for this variant/target combination. Present only when Directly Managed by the Waking Device is True.</L-2>
+                                           </DESC>
+                                       </ECUC-ENUMERATION-PARAM-DEF>
+                                        
+                                       <!-- [$Satisfies $DDS_SPM 0525] -->
+                                       <ECUC-INTEGER-PARAM-DEF>
+                                           <SHORT-NAME>SpmTrgAssocWkupBit</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <MIN>0</MIN>
+                                           <MAX>63</MAX>
+                                           <DESC>
+                                               <L-2 L="EN">Wake-up bit for this variant/target combination. Present only when Directly Managed by the Waking Device is True.</L-2>
+                                           </DESC>
+                                       </ECUC-INTEGER-PARAM-DEF>
+                                     </PARAMETERS>
+                                     <REFERENCES>
+                                        
+<ECUC-REFERENCE-DEF>
+                                           <SHORT-NAME>SpmTrgDvcVariantRef</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <DESC>
+                                             <L-2 L="EN">Reference to the SpmVariantCfg container identifying which variant this entry applies to.</L-2>
+                                           </DESC>
+                                           <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmVariantCfg</DESTINATION-REF>
+                                       </ECUC-REFERENCE-DEF>
+                                        
+                                       <!-- [$Satisfies $DDS_SPM 0509] -->
+<ECUC-REFERENCE-DEF>
+                                           <SHORT-NAME>SpmWkUpSeqRef</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <DESC>
+                                             <L-2 L="EN">The parameter defines the reference to the wake-up sequence to use. In case this value is not configured, then it means the target device is a requester for the current SPM.</L-2>
+                                           </DESC>
+                                           <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmWkUpSeq</DESTINATION-REF>
+                                       </ECUC-REFERENCE-DEF>
+                                     </REFERENCES>
+                                 </ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  </SUB-CONTAINERS>
+                              </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  <SHORT-NAME>SpmWkngDvc</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESC>
+                                      <L-2 L="EN">Container for the configuration of local node network configurations.</L-2>
+                                  </DESC>
+                                  <PARAMETERS>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0504] -->
+                                    <ECUC-ENUMERATION-PARAM-DEF>
+                                        <SHORT-NAME>SpmNodeType</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DEFAULT-VALUE>SPM_NODE_INTERMEDIATE</DEFAULT-VALUE>
+                                        <LITERALS>
+                                            <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_NODE_EDGE</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                            <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SPM_NODE_INTERMEDIATE</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                        </LITERALS>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines the type of dependency for the power profile. The possibilities are SPM_NODE_EDGE and SPM_NODE_INTERMEDIATE. The default value is considering the node as an intermediate. Mandatory parameter.</L-2>
+                                        </DESC>
+                                    </ECUC-ENUMERATION-PARAM-DEF>
+                                  </PARAMETERS>
+                              </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                              <!-- [$Satisfies $DDS_SPM 0677] -->
+                              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  <SHORT-NAME>SpmVariantCfg</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                  <DESC>
+                                      <L-2 L="EN">Device-level configuration per variant. One instance per named variant. Always present - no-variant PGTT produces exactly one instance.</L-2>
+                                  </DESC>
+                                  <PARAMETERS>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0677] -->
+                                    <ECUC-ENUMERATION-PARAM-DEF>
+                                        <SHORT-NAME>SpmVariantWkupFrame</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <LITERALS>
+                                            <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>WKUP_FRM_A</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                            <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>WKUP_FRM_B</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                            <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>WKUP_FRM_C</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                        </LITERALS>
+                                        <DESC>
+                                            <L-2 L="EN">Wake-up frame for this variant. From Wakeup Frame Information per variant.</L-2>
+                                        </DESC>
+                                    </ECUC-ENUMERATION-PARAM-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0677] -->
+                                    <ECUC-INTEGER-PARAM-DEF>
+                                        <SHORT-NAME>SpmVariantWkupBit</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <MIN>0</MIN>
+                                        <MAX>63</MAX>
+                                        <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                        <DESC>
+                                            <L-2 L="EN">Wake-up bit position (0..63) for this variant. From Wakeup Frame Information per variant.</L-2>
+                                        </DESC>
+                                    </ECUC-INTEGER-PARAM-DEF>
+                                     
+                                    <ECUC-STRING-PARAM-DEF>
+                                        <SHORT-NAME>SpmVariantIntermediateDstAddr</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                        <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                            <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                <MAX-LENGTH>15</MAX-LENGTH>
+                                                <MIN-LENGTH>7</MIN-LENGTH>
+                                                <REGULAR-EXPRESSION>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+</REGULAR-EXPRESSION>
+                                            </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                        </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                        <DESC>
+                                            <L-2 L="EN">IP address(es) of intermediate nodes for this variant. Mirrors SpmWkngDvc.SpmIntermediateDstAddrs for the no-variant path.</L-2>
+                                        </DESC>
+                                    </ECUC-STRING-PARAM-DEF>
+                                  </PARAMETERS>
+                                  <SUB-CONTAINERS>
+                                       
+                                 <!-- [$Satisfies $DDS_SPM 0678] -->
+                                 <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                     <SHORT-NAME>SpmVariantHBVLANCfg</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                     <DESC>
+                                         <L-2 L="EN">Per-VLAN heartbeat network configuration for a hardware variant. One instance per VLAN per variant. Mirrors SpmWkngDvc network params for the no-variant path.</L-2>
+                                     </DESC>
+                                     <PARAMETERS>
+                                        
+                                       <!-- [$Satisfies $DDS_SPM 0678] -->
+                                       <ECUC-INTEGER-PARAM-DEF>
+                                           <SHORT-NAME>SpmVLANId</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <MIN>0</MIN>
+                                           <MAX>65535</MAX>
+                                           <DESC>
+                                               <L-2 L="EN">VLAN identifier for this variant heartbeat entry.</L-2>
+                                           </DESC>
+                                       </ECUC-INTEGER-PARAM-DEF>
+                                        
+                                       <!-- [$Satisfies $DDS_SPM 0678] -->
+                                       <ECUC-STRING-PARAM-DEF>
+                                           <SHORT-NAME>SpmSrcIp</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                               <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                   <MAX-LENGTH>15</MAX-LENGTH>
+                                                   <MIN-LENGTH>7</MIN-LENGTH>
+                                                   <REGULAR-EXPRESSION>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+</REGULAR-EXPRESSION>
+                                               </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                           </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                           <DESC>
+                                               <L-2 L="EN">Source IP address on this VLAN for this variant.</L-2>
+                                           </DESC>
+                                       </ECUC-STRING-PARAM-DEF>
+                                        
+                                       <!-- [$Satisfies $DDS_SPM 0678] -->
+                                       <ECUC-STRING-PARAM-DEF>
+                                           <SHORT-NAME>SpmDstIp</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                               <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                   <MAX-LENGTH>15</MAX-LENGTH>
+                                                   <MIN-LENGTH>7</MIN-LENGTH>
+                                                   <REGULAR-EXPRESSION>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+</REGULAR-EXPRESSION>
+                                               </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                           </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                           <DESC>
+                                               <L-2 L="EN">Multicast destination IP address on this VLAN for this variant.</L-2>
+                                           </DESC>
+                                       </ECUC-STRING-PARAM-DEF>
+                                     </PARAMETERS>
+                                 </ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  </SUB-CONTAINERS>
+                              </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  <SHORT-NAME>SpmWkUpSeq</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                  <DESC>
+                                      <L-2 L="EN">Container for the configuration of a wake-up sequence.</L-2>
+                                  </DESC>
+                                  <PARAMETERS>
+                                     
+                                    <ECUC-INTEGER-PARAM-DEF>
+                                        <SHORT-NAME>SpmComStepSeparatPeridoForShutDownInit</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>0</UPPER-MULTIPLICITY>
+                                        <MIN>1</MIN>
+                                        <MAX>65535</MAX>
+                                        <DEFAULT-VALUE>1</DEFAULT-VALUE>
+                                        <DESC>
+                                            <L-2 L="EN">(OBSOLETE - NOT SUPPORTED ANYMORE)parameter defines the type of command in the step</L-2>
+                                        </DESC>
+                                    </ECUC-INTEGER-PARAM-DEF>
+                                  </PARAMETERS>
+                                  <SUB-CONTAINERS>
+                                       
+                                 <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                     <SHORT-NAME>SpmWkUpStep</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                     <DESC>
+                                         <L-2 L="EN">Container for the configuration of a specific step for a wake-up sequence.</L-2>
+                                     </DESC>
+                                     <PARAMETERS>
+                                        
+                                       <!-- [$Satisfies $DDS_SPM 0511] -->
+                                       <ECUC-INTEGER-PARAM-DEF>
+                                           <SHORT-NAME>SpmStepID</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <MIN>1</MIN>
+                                           <MAX>255</MAX>
+                                           <DESC>
+                                               <L-2 L="EN">parameter defines the type of command in the step</L-2>
+                                           </DESC>
+                                       </ECUC-INTEGER-PARAM-DEF>
+                                        
+                                       <!-- [$Satisfies $DDS_SPM 0512] -->
+                                       <ECUC-ENUMERATION-PARAM-DEF>
+                                           <SHORT-NAME>SpmCommandType</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <LITERALS>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SEND_TC10_SWTCH_1</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SEND_TC10_SWTCH_2</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SEND_ETH_WKUP_FRM_A</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SEND_ETH_WKUP_FRM_B</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SEND_ETH_WKUP_FRM_C</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SEND_CAN_WKUP_FRM_A</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SEND_CAN_WKUP_FRM_B</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SEND_CAN_WKUP_FRM_C</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                               <ECUC-ENUMERATION-LITERAL-DEF><SHORT-NAME>SEND_BOARD_LV_WKUP_GPIO</SHORT-NAME></ECUC-ENUMERATION-LITERAL-DEF>
+                                           </LITERALS>
+                                           <DESC>
+                                               <L-2 L="EN">The parameter defines the type of command in the step. Each command type will address a different way to wake-up a target device.</L-2>
+                                           </DESC>
+                                       </ECUC-ENUMERATION-PARAM-DEF>
+                                        
+                                       <!-- [$Satisfies $DDS_SPM 0513] -->
+                                       <ECUC-INTEGER-PARAM-DEF>
+                                           <SHORT-NAME>SpmCommandValue</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <MIN>0</MIN>
+                                           <MAX>255</MAX>
+                                           <DESC>
+                                               <L-2 L="EN">parameter defines the value for the command step</L-2>
+                                           </DESC>
+                                       </ECUC-INTEGER-PARAM-DEF>
+                                        
+                                       <!-- [$Satisfies $DDS_SPM 0510] -->
+                                       <ECUC-INTEGER-PARAM-DEF>
+                                           <SHORT-NAME>SpmSeqStepDly</SHORT-NAME>
+                                           <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                           <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                           <MIN>0</MIN>
+                                           <MAX>65535</MAX>
+                                           <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                           <DESC>
+                                               <L-2 L="EN">The parameter defines the delay in milliseconds to spend before executing the next step in the sequence. The value is mandatory but it is assumed 0 as default value.</L-2>
+                                           </DESC>
+                                       </ECUC-INTEGER-PARAM-DEF>
+                                     </PARAMETERS>
+                                 </ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  </SUB-CONTAINERS>
+                              </ECUC-PARAM-CONF-CONTAINER-DEF>
+                               </SUB-CONTAINERS>
+                           </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                           <ECUC-PARAM-CONF-CONTAINER-DEF>
+                               <SHORT-NAME>SpmLowVoltagePowerInfo</SHORT-NAME>
+                               <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                               <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                               <DESC>
+                                   <L-2 L="EN">Container for the configuration of LowVoltageSoftwareActivationPriorityRequest.</L-2>
+                               </DESC>
+                               <PARAMETERS>
+                                  
+                                 <ECUC-INTEGER-PARAM-DEF>
+                                     <SHORT-NAME>SpmLowVoltLVOptmzerChkApplicationInterfaceID</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <MIN>0</MIN>
+                                     <MAX>65535</MAX>
+                                     <DESC>
+                                         <L-2 L="EN">LVOptmzerChk Application Interface ID of the power profile associated with the LV Energy Optimizer.</L-2>
+                                     </DESC>
+                                 </ECUC-INTEGER-PARAM-DEF>
+                               </PARAMETERS>
+                               <REFERENCES>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmLowVoltSwActPrioReqSignal</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the ComSignal (Service Based) that carries the LowVoltageSoftwareActivationPriorityRequest information.</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/EcucDefs/Com/ComConfig/ComSignal</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                                  
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmLowVoltSwActPrioReqDataServiceBased</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the implementation data type element for service based LowVoltageSoftwareActivationPriorityRequest.</L-2>
+                                     </DESC>
+                                     <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE-ELEMENT</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                  
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmLowVoltSwActPrioReqDataTypeMappingSet</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the DATA-TYPE-MAPPING-SET in the system extract for service-based operations.</L-2>
+                                     </DESC>
+                                     <DESTINATION-TYPE>DATA-TYPE-MAPPING-SET</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmLowVoltSwActPrioNvmRef</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to NvM LowVoltageSoftwareActivationPriorityRequest NvMBlockDescriptor.</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                               </REFERENCES>
+                           </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <SHORT-NAME>SpmGeneral</SHORT-NAME>
+                            <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                            <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                            <DESC>
+                                <L-2 L="EN">Container for the Configuration of project specific settings</L-2>
+                            </DESC>
+                            <PARAMETERS>
+                               
+                              <ECUC-FLOAT-PARAM-DEF>
+                                  <SHORT-NAME>SpmSMMainFuncPeriodicity</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <MIN>5.0</MIN>
+                                  <DEFAULT-VALUE>10.0</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">Periodicity in milliseconds for the execution of SPM Software Manager functionalities.</L-2>
+                                  </DESC>
+                              </ECUC-FLOAT-PARAM-DEF>
+                               
+                              <ECUC-FLOAT-PARAM-DEF>
+                                  <SHORT-NAME>SpmPMMainFuncPeriodicity</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <MIN>5.0</MIN>
+                                  <DEFAULT-VALUE>5.0</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">(CURRENTLY NOT SUPPORTED. VALUE Fixed to 5ms) Periodicity in milliseconds for the execution of the SPM Power manager functionalities.</L-2>
+                                  </DESC>
+                              </ECUC-FLOAT-PARAM-DEF>
+                               
+                              <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>SpmBurstPhsPeriodicity</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <MIN>5</MIN>
+                                  <DEFAULT-VALUE>5</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">BurstPhsPeriodicity is a period less than the usual one, that happens as soon as SPM starts counting and sharing its heartbeat and the wake-up frame. This period is maintained for the first 3 counts. The parameter configures the message periodicity in milliseconds for this phase before switching to the normal one.</L-2>
+                                  </DESC>
+                              </ECUC-INTEGER-PARAM-DEF>
+                               
+                              <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>SpmPermitExecutionMask</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <MIN>0</MIN>
+                                  <MAX>255</MAX>
+                                  <DEFAULT-VALUE>254</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">The parameter is a bitmap (1 Byte length) that defines the DON'T CARE wake-up sources that trigger the SPM execution. The DON'T CARE wake-up sources needs to be configured as 1.</L-2>
+                                  </DESC>
+                              </ECUC-INTEGER-PARAM-DEF>
+                               
+                              <ECUC-STRING-PARAM-DEF>
+                                  <SHORT-NAME>SpmWkUpHelperFunction</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                      <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                          <REGULAR-EXPRESSION>^\S*$</REGULAR-EXPRESSION>
+                                      </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                  </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                  <DESC>
+                                      <L-2 L="EN">The parameter defines the name of the wake-up helper function to be used by SPM, in case the ECU support the SDV-8217 defined Custom wake-up mechanism. The support of this function is valid only for intermediate nodes as CHM MCU.</L-2>
+                                  </DESC>
+                              </ECUC-STRING-PARAM-DEF>
+                               
+                              <ECUC-FLOAT-PARAM-DEF>
+                                  <SHORT-NAME>SpmInitFuncPeriodicity</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <MIN>1.0</MIN>
+                                  <MAX>5000.0</MAX>
+                                  <DEFAULT-VALUE>1000.0</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">Period in milliseconds that configures the runnable init function periodicity. This parameter is required when SpmGenerateInitRunnable is set to TRUE.</L-2>
+                                  </DESC>
+                              </ECUC-FLOAT-PARAM-DEF>
+                               
+                              <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>SpmGenerateInitRunnable</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DEFAULT-VALUE>False</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">The parameter shall generate SPM init runnable if it is configured as TRUE. Otherwise the SPM_Init() function shall be called by a BswM action list during startup</L-2>
+                                  </DESC>
+                              </ECUC-BOOLEAN-PARAM-DEF>
+                               
+                              <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>Spm_SmFrame_QueueLength</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">Maximum queue length of SM Frame Rx messages. If the parameter is not configured it takes the number of target devices * number of local profiles as default value.</L-2>
+                                  </DESC>
+                              </ECUC-INTEGER-PARAM-DEF>
+                               
+                              <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>Spm_PmHeartbeat_QueueLength</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">Maximum queue length of PM heartbeat Rx messages. If the parameter is not configured it takes the number of target devices as default value.</L-2>
+                                  </DESC>
+                              </ECUC-INTEGER-PARAM-DEF>
+                               
+                              <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>Spm_PmETHwakeUpUNIC_QueueLength</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">Maximum queue length of PM eth wakeup Unicast Rx messages. If the parameter is not configured it takes the number of target devices as default value.</L-2>
+                                  </DESC>
+                              </ECUC-INTEGER-PARAM-DEF>
+                               
+                              <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>Spm_PmETHwakeUpMULTIC_QueueLength</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">Maximum queue length of PM eth wakeup Multicast Rx messages. If the parameter is not configured it takes the following as a default value ((SM main function periodicity / 5) + 1) SM main function periodicity.</L-2>
+                                  </DESC>
+                              </ECUC-INTEGER-PARAM-DEF>
+                               
+                              <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>Spm_LocalRequests_QueueLength</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">Maximum queue length of local activation/deactivatino requests as well as diagnostic requests. If the parameter is not configured it take the number of active profiles * 2 as default value.</L-2>
+                                  </DESC>
+                              </ECUC-INTEGER-PARAM-DEF>
+                               
+                              <!-- [$Satisfies $DDS_SPM 0640] -->
+                              <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>SpmHBShutdownDelayMs</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <MIN>0</MIN>
+                                  <MAX>65000</MAX>
+                                  <DEFAULT-VALUE>2000</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">Initial value for the calibration parameter indicating the time (in ms) the PM has to wait, after the last burst HeartBeat has been sent, before allowing the shutdown (Keep-Awake Timer)</L-2>
+                                  </DESC>
+                              </ECUC-INTEGER-PARAM-DEF>
+                               
+                              <!-- [$Satisfies $DDS_SPM 0646] -->
+                              <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>SpmSMStayAwakeTimeMs</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <MIN>0</MIN>
+                                  <MAX>65000</MAX>
+                                  <DEFAULT-VALUE>2000</DEFAULT-VALUE>
+                                  <DESC>
+                                      <L-2 L="EN">Calibration parameter value indicating the time (in ms) during which the SM should stay awake if the only requester is in fault or restart state, before allowing shutdown.</L-2>
+                                  </DESC>
+                              </ECUC-INTEGER-PARAM-DEF>
+                            </PARAMETERS>
+                            <SUB-CONTAINERS>
+                                 
+                           <ECUC-PARAM-CONF-CONTAINER-DEF>
+                               <SHORT-NAME>SpmDiagnostic</SHORT-NAME>
+                               <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                               <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                               <DESC>
+                                   <L-2 L="EN">Container with the reference needed for DIDs.</L-2>
+                               </DESC>
+                               <REFERENCES>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the DcmDspDid for supporting DID 0xE0DD Activation Profile Activation Status</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                                  
+                                 <!-- [$Satisfies $DDS_SPM 0627] -->
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmDID0xE0DEDcmRef</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the DcmDspDid for supporting DID 0xE0DE Locally Activated Activation Profile Off Power Mode Activity Records</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                                  
+                                 <!-- [$Satisfies $DDS_SPM 0628] -->
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmDID0xE0DFDcmRef</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the DcmDspDid for supporting DID 0xE0DF Remotely Activated Activation Profile Off Power Mode Activity Records</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmDID0xE0DENvmRef</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the NvM block for DID 0xE0DE Locally Activated Activation Profile Off Power Mode Activity Records</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmDID0xE0DFNvmRef</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the NvM block for DID 0xE0DF Remotely Activated Activation Profile Off Power Mode Activity Records</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                               </REFERENCES>
+                           </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                           <ECUC-PARAM-CONF-CONTAINER-DEF>
+                               <SHORT-NAME>SpmETHWkUpFrmRef</SHORT-NAME>
+                               <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                               <UPPER-MULTIPLICITY>0</UPPER-MULTIPLICITY>
+                               <DESC>
+                                   <L-2 L="EN">Container with the reference to the ETH wake-up frame.</L-2>
+                               </DESC>
+                               <REFERENCES>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmETHSwitchNetwork</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>0</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the network handle ID</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_EthSM/EcucModuleDefs/EthSM/EthSMNetwork</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmETHWkUpFrmTxRef</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>0</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the SOAd Pdu in Tx</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SoAd/EcucModuleDefs/SoAd/SoAdConfig/SoAdPduRoute</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmETHWkUpFrmRxRef</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>0</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">Reference to the SOAd Pdu in Rx</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SoAd/EcucModuleDefs/SoAd/SoAdConfig/SoAdSocketRoute</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                               </REFERENCES>
+                           </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                           <ECUC-PARAM-CONF-CONTAINER-DEF>
+                               <SHORT-NAME>SpmCANWkUpFrmRef</SHORT-NAME>
+                               <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                               <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                               <DESC>
+                                   <L-2 L="EN">Container for the configuration of the SPM used CAN wake-up frames</L-2>
+                               </DESC>
+                               <REFERENCES>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmCANWkUpFrmTxRef</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>3</UPPER-MULTIPLICITY>
+                                     <DESC>
+                                       <L-2 L="EN">parameters defines the references to CanIfPdu in Tx side for SPM CAN wake-up frames</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_CanIf/EcucModuleDefs/CanIf/CanIfInitCfg/CanIfTxPduCfg</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                                  
+<ECUC-REFERENCE-DEF>
+                                     <SHORT-NAME>SpmCANWkUpFrmRxRef</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                     <DESC>
+                                       <L-2 L="EN">parameters defines the references to CanIfPdu in Rx side for SPM CAN wake-up frames</L-2>
+                                     </DESC>
+                                     <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_CanIf/EcucModuleDefs/CanIf/CanIfInitCfg/CanIfRxPduCfg</DESTINATION-REF>
+                                 </ECUC-REFERENCE-DEF>
+                               </REFERENCES>
+                           </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                           <!-- [$Satisfies $DDS_SPM 0607] -->
+                           <ECUC-PARAM-CONF-CONTAINER-DEF>
+                               <SHORT-NAME>SpmVLANCom</SHORT-NAME>
+                               <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                               <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                               <DESC>
+                                   <L-2 L="EN">Container for the configuration of VLAN communication for configurable interfaces and data types.</L-2>
+                               </DESC>
+                               <PARAMETERS>
+                                  
+                                 <ECUC-INTEGER-PARAM-DEF>
+                                     <SHORT-NAME>SpmVLANId</SHORT-NAME>
+                                     <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                     <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                     <MIN>0</MIN>
+                                     <MAX>255</MAX>
+                                     <DESC>
+                                         <L-2 L="EN">The parameter defines the VLAN identifier for the configured interface.</L-2>
+                                     </DESC>
+                                 </ECUC-INTEGER-PARAM-DEF>
+                               </PARAMETERS>
+                               <SUB-CONTAINERS>
+                                    
+                              <!-- [$Satisfies $DDS_SPM 0608] -->
+                              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  <SHORT-NAME>SpmVLANComPwrMgrHeartbeat</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESC>
+                                      <L-2 L="EN">Container for the configuration of VLAN communication items for heartbeat frames.</L-2>
+                                  </DESC>
+                                  <PARAMETERS>
+                                     
+                                    <ECUC-STRING-PARAM-DEF>
+                                        <SHORT-NAME>SpmHbTxAbsPth</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                            <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                <REGULAR-EXPRESSION>^\/\S*$</REGULAR-EXPRESSION>
+                                            </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                        </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface is defined.</L-2>
+                                        </DESC>
+                                    </ECUC-STRING-PARAM-DEF>
+                                     
+                                    <ECUC-STRING-PARAM-DEF>
+                                        <SHORT-NAME>SpmHbRxAbsPth</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                            <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                <REGULAR-EXPRESSION>^\/\S*$</REGULAR-EXPRESSION>
+                                            </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                        </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</L-2>
+                                        </DESC>
+                                    </ECUC-STRING-PARAM-DEF>
+                                  </PARAMETERS>
+                                  <REFERENCES>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0611] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmPwrMgrHeartbeatTxImpDataTypeRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to PwrMgrHeartbeat Tx Implementation Data Type</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0613] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmPwrMgrHeartbeatTxSendRecvIntRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to PwrMgrHeartbeat Tx Sender Receiver Interface</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>SENDER-RECEIVER-INTERFACE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0612] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmPwrMgrHeartbeatRxImpDataTypeRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to PwrMgrHeartbeat Rx Implementation Data Type</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0614] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmPwrMgrHeartbeatRxSendRecvIntRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to PwrMgrHeartbeat Rx Sender Receiver Interface</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>SENDER-RECEIVER-INTERFACE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                  </REFERENCES>
+                              </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                              <!-- [$Satisfies $DDS_SPM 0615] -->
+                              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  <SHORT-NAME>SpmVLANComPwrMgrWakeupFrames</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESC>
+                                      <L-2 L="EN">Container for the configuration of VLAN communication items for wake-up frames.</L-2>
+                                  </DESC>
+                                  <PARAMETERS>
+                                     
+                                    <ECUC-STRING-PARAM-DEF>
+                                        <SHORT-NAME>SpmWkupTxAbsPth</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                            <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                <REGULAR-EXPRESSION>^\/\S*$</REGULAR-EXPRESSION>
+                                            </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                        </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface is defined.</L-2>
+                                        </DESC>
+                                    </ECUC-STRING-PARAM-DEF>
+                                     
+                                    <ECUC-STRING-PARAM-DEF>
+                                        <SHORT-NAME>SpmWkupRxAbsPth</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                            <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                <REGULAR-EXPRESSION>^\/\S*$</REGULAR-EXPRESSION>
+                                            </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                        </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</L-2>
+                                        </DESC>
+                                    </ECUC-STRING-PARAM-DEF>
+                                  </PARAMETERS>
+                                  <REFERENCES>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0616] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmPwrMgrWakeupTxImpDataTypeRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to PwrMgrWakeup Tx Implementation Data Type</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0617] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmPwrMgrWakeupRxImpDataTypeRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to PwrMgrWakeup Rx Implementation Data Type</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0618] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmPwrMgrWakeupTxSendRecvIntRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to PwrMgrWakeup Tx Sender Receiver Interface</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>SENDER-RECEIVER-INTERFACE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0619] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmPwrMgrWakeupRxSendRecvIntRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to PwrMgrWakeup Rx Sender Receiver Interface</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>SENDER-RECEIVER-INTERFACE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                  </REFERENCES>
+                              </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  <SHORT-NAME>SpmVLANComPwrMgrWakeupFramesMulticast</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESC>
+                                      <L-2 L="EN">Container for the configuration of VLAN communication items for wake-up frames multicast.</L-2>
+                                  </DESC>
+                                  <PARAMETERS>
+                                     
+                                    <ECUC-STRING-PARAM-DEF>
+                                        <SHORT-NAME>SpmWkupRxAbsPthMulticast</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                            <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                <REGULAR-EXPRESSION>^\/\S*$</REGULAR-EXPRESSION>
+                                            </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                        </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</L-2>
+                                        </DESC>
+                                    </ECUC-STRING-PARAM-DEF>
+                                  </PARAMETERS>
+                                  <REFERENCES>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0642] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmPwrMgrWakeupRxImpDataTypeMulticastRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to PwrMgrWakeup Rx Multicast Implementation Data Type</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0643] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmPwrMgrWakeupRxSendRecvIntMulticastRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to PwrMgrWakeup Rx Multicast Sender Receiver Interface</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>SENDER-RECEIVER-INTERFACE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                  </REFERENCES>
+                              </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                              <!-- [$Satisfies $DDS_SPM 0620] -->
+                              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                                  <SHORT-NAME>SpmVLANComSwrMgrInfo</SHORT-NAME>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESC>
+                                      <L-2 L="EN">Container for the configuration of VLAN communication items for software manager info frames</L-2>
+                                  </DESC>
+                                  <PARAMETERS>
+                                     
+                                    <ECUC-STRING-PARAM-DEF>
+                                        <SHORT-NAME>SpmSmTxAbsPth</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                            <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                <REGULAR-EXPRESSION>^\/\S*$</REGULAR-EXPRESSION>
+                                            </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                        </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface is defined.</L-2>
+                                        </DESC>
+                                    </ECUC-STRING-PARAM-DEF>
+                                     
+                                    <ECUC-STRING-PARAM-DEF>
+                                        <SHORT-NAME>SpmSmRxAbsPth</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <ECUC-STRING-PARAM-DEF-VARIANTS>
+                                            <ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                                <REGULAR-EXPRESSION>^\/\S*$</REGULAR-EXPRESSION>
+                                            </ECUC-STRING-PARAM-DEF-CONDITIONAL>
+                                        </ECUC-STRING-PARAM-DEF-VARIANTS>
+                                        <DESC>
+                                            <L-2 L="EN">The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</L-2>
+                                        </DESC>
+                                    </ECUC-STRING-PARAM-DEF>
+                                  </PARAMETERS>
+                                  <REFERENCES>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0621] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmSwMgrInfoTxImpDataTypeRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to SwMgrInfo Tx Implementation Data Type</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0622] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmSwMgrInfoRxImpDataTypeRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to SwMgrInfo Rx Implementation Data Type</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0623] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmSwMgrInfoTxSendRecvIntRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to SwMgrInfo Tx Sender Receiver Interface</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>SENDER-RECEIVER-INTERFACE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                     
+                                    <!-- [$Satisfies $DDS_SPM 0624] -->
+<ECUC-FOREIGN-REFERENCE-DEF>
+                                        <SHORT-NAME>SpmSwMgrInfoRxSendRecvIntRef</SHORT-NAME>
+                                        <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                        <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                        <DESC>
+                                          <L-2 L="EN">parameters defines the references to SwMgrInfo Rx Sender Receiver Interface</L-2>
+                                        </DESC>
+                                        <DESTINATION-TYPE>SENDER-RECEIVER-INTERFACE</DESTINATION-TYPE>
+</ECUC-FOREIGN-REFERENCE-DEF>
+                                  </REFERENCES>
+                              </ECUC-PARAM-CONF-CONTAINER-DEF>
+                               </SUB-CONTAINERS>
+                           </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+
+                    </CONTAINERS>
+                </ECUC-MODULE-DEF>
+            </ELEMENTS>
+           </AR-PACKAGE>
+        </AR-PACKAGES>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>            

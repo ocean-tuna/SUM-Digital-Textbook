@@ -1,0 +1,5 @@
+6;12
+\cellcolor{ETASlightgray}\textbf{Name};UDSDiagnosticServiceIds
+\cellcolor{ETASlightgray}\textbf{Type};enum
+\cellcolor{ETASlightgray}\textbf{Members};DiagnosticSessionControl (0x10) \newline EcuReset (0x11) \newline SecurityAccess (0x27) \newline CommunicationControl (0x28) \newline TesterPresent (0x3E) \newline AccessTimingParameter (0x83) \newline SecuredDataTransmission(0x84) ControlDTCSetting (0x85) \newline ResponseOnEvent (0x86) \newline LinkControl (0x87) \newline ReadDataByIdentifier (0x22) \newline ReadMemoryByAddress (0x23) \newline ReadScalingDataByIdentifier (0x24) \newline ReadDataByPeriodicIdentifier (0x2A) \newline DynamicallyDefineDataIdentifier (0x2C) \newline WriteMemoryByAddress (0x3D) \newline ClearDiagnosticInformation (0x14) \newline ReadDTCInformation (0x19) \newline InputOutputControlByIdentifier (0x2F) \newline RoutineControl (0x31) \newline RequestDownload (0x34) \newline RequestUpload (0x35) \newline TransferData (0x36) \newline RequestTransferExit (0x37) \newline RequestFileTransfer (0x38)
+\cellcolor{ETASlightgray}\textbf{Description};Contains enumerated values for all UDS diagnostic services

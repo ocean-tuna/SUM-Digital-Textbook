@@ -1,0 +1,49 @@
+@startuml Sum_Ssfm_DID_E0BB_SeqDiag
+
+control Scheduler as TE
+
+participant Dcm as DCM
+participant NvM as NVM
+box SUM_SSFM
+    participant Sum_Ssfm_Initialization as INIT
+    participant Sum_Ssfm_DID_E0BB_Handler as E0BB
+    participant Sum_Ssfm_Errh_U19A3_8A_Handler as U19A3
+end box
+
+== ECU Startup - Restore Data from NvM ==
+TE -> INIT: Runnable_SSFM_Init()
+activate INIT
+INIT -> E0BB: Sum_Ssfm_DID_E0BB_RestoreData()
+activate E0BB
+E0BB -> NVM: Read NvM RAM block
+NVM --> E0BB: Return stored data
+note right of E0BB
+  Restore to internal array:
+  - provider_DTC_Id
+  - failed_auth_timer
+  (based on keySlotState)
+end note
+deactivate E0BB
+deactivate INIT
+
+== Runtime - Key Slot Updates ==
+U19A3 -> U19A3: Update key slot timers\n(failed_auth_timer)
+
+== DCM Read Request ==
+DCM -> E0BB: Runnable_SSFM_DID_E0BB()
+activate E0BB
+E0BB -> E0BB: Read current key slot data\nfrom internal array
+E0BB -> E0BB: Compute KeySlotState\nfrom timer values
+E0BB -> E0BB: Format DID response
+E0BB --> DCM: Return DID data
+deactivate E0BB
+
+== ECU Shutdown - Save Data to NvM ==
+TE -> E0BB: Sum_Ssfm_DID_E0BB_SaveData()
+activate E0BB
+E0BB -> E0BB: Runnable_SSFM_DID_E0BB()\nFormat data for NvM
+E0BB -> NVM: Update NvM RAM block
+E0BB -> NVM: SetRamBlockStatus(TRUE)
+deactivate E0BB
+
+@enduml

@@ -1,0 +1,72 @@
+«IMPORT bsw»
+«IMPORT bsw::PNCModule»
+«EXTENSION templates::mathlib»
+«EXTENSION templates::Sum_Pnc_General»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+
+
+«DEFINE Root FOR Autosar»
+    «EXPAND Expand FOR ecu»
+«ENDDEFINE»
+
+
+«DEFINE Expand FOR Ecu»
+«FILE "Sum_Pnc_Ram.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_PNC
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Module header for extern declarations of PNC variables
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+#ifndef PNC_RAM_H
+#define PNC_RAM_H
+
+ /*
+ *******************************************************************************
+ * Includes
+ *******************************************************************************
+ */
+#include "Sum_Pnc_Cfg.h"
+
+ /*
+ *******************************************************************************
+ * Variables
+ *******************************************************************************
+ */
+/*********************************** UINT8*************************************/
+
+#define  SUM_PNC_START_SEC_VAR_CLEARED_8
+#include "SUM_PNC_MemMap.h" /* PRQA S 5087 EOF */ /* Memmap section to store variables */
+
+/* Variable used to store status(enable/disable) of shut down from
+   SWC and other SUM */
+extern VAR(uint8, PNC_VAR) SUM_PNC_PNC_Number; /* PRQA S 3447 EOF */ /*Extern declarations of pNC variables*/
+
+#define SUM_PNC_STOP_SEC_VAR_CLEARED_8
+#include "SUM_PNC_MemMap.h"
+
+#endif /* PNC_RAM_H */
+/********************************** END OF FILE ******************************************************/
+«ENDFILE»
+«ENDDEFINE»

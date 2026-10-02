@@ -1,0 +1,645 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_SsmTypes.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Header file for SSFM-SSM Types
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_SSM_TYPES_H
+#define SUM_SSFM_SSM_TYPES_H
+/*
+ **********************************************************************************************************************************************************
+ *	Macros
+ **********************************************************************************************************************************************************
+ */
+
+/** @brief Macro to define code shutdown enable to be provided to SUSD */
+#define SUM_SSFM_ENABLE_SHUTDOWN 					(uint8)0xFFu
+/** @brief Macro to check for Reset bit(bit 6) in Permit execution to enable/disable shutdown */
+#define SUM_SSFM_RESETBIT_MASK 						(uint8)0xBFu
+/** @brief Macro addresses the Permit Execution value has passed the masking operation */
+#define SUM_SSFM_EXEC_MASKING_PASSED				(uint8)0xFFu
+/** @brief Macro addresses the SSFM/SSM module as uninitialized */
+#define SUM_SSFM_UNINIT								(boolean)0x00
+/** @brief Macro addresses the SSFM/SSM module as initialized */
+#define SUM_SSFM_INIT								(boolean)0x01u
+
+#define SUM_SSFM_ERRH_MAX_RESET_TIMER           5000u
+#define SUM_SSFM_MS_TO_US_UNIT					1000u
+
+
+#define ECU_NODE_STATUS_NO_MISSINGMSG FALSE
+#define ECU_NODE_STATUS_MISSINGMSG TRUE
+
+/* bit 0: TestFailed */
+#define SSFM_DEM_TF_DTC_BITMASK           0x01u
+/* bit 3: ConfirmedDTC */
+#define SSFM_DEM_CONFIRMED_DTC_BITMASK    0x08u
+/* bit 0 and bit 6: TestFailed and TestNotCompletedThisOperationCycle bit */
+#define SSFM_DEM_TF_TNCTOC_DTC_BITMASK       0x41u
+
+/**
+ * @brief Diagnostic Trouble Codes (DTC) Status Bit Positions
+ *
+ * These macros define the bit positions for various DTC statuses. Each macro corresponds
+ * to a specific status bit within the DTC status byte/word. These statuses are used to
+ * indicate the results of diagnostic tests or the state of the system.
+ */
+
+/*Bit position indicating the test has failed.*/
+#define SSFM_DEM_TESTFAILED             0u
+/*Bit position indicating the test has failed this operation cycle.*/
+#define SSFM_DEM_TESTFAILED_TOC         1u
+/*Bit position for a pending DTC, indicating that an error was detected but it is not yet considered confirmed.*/
+#define SSFM_DEM_PENDINGDTC             2u
+/*Bit position for a confirmed DTC, indicating the error has been confirmed and is considered a fault.*/
+#define SSFM_DEM_CONFIRMEDDTC           3u
+/*Bit position indicating the test is not complete since last clear. This means the diagnostic test has not run to completion since the last time DTCs were cleared.*/
+#define SSFM_DEM_TESTNOTCOMPLETE_SLC    4u
+/*Bit position indicating the test has failed since last clear. This represents a failure that has occurred since the last time DTCs were cleared.*/
+#define SSFM_DEM_TESTFAILED_SLC         5u
+/*Bit position indicating the test has not completed this operation cycle. This means the diagnostic test has not run to completion during the current operation cycle.*/
+#define SSFM_DEM_TESTNOTCOMPLETE_TOC    6u
+/*Bit position used to control the warning indicator lamp. When set, it may trigger a warning light on the vehicle's dashboard.*/
+#define SSFM_DEM_WARNINGINDICATOR       7u
+
+«IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.size > 0-»
+/** @brief Macro for bsw error channel type */
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError AS DEM_EVENT ITERATOR i-»
+«IF DEM_EVENT.sum_Ssfm_Channel_Ref != null-»
+#define SUM_SSFM_BSW_Error_«DEM_EVENT.sum_Ssfm_Channel_Ref.shortName-»	«i.counter0-»u
+«ENDIF-»
+«ENDFOREACH-»
+«ENDIF-»
+
+/*
+ **********************************************************************************************************************************************************
+ * Enum
+ **********************************************************************************************************************************************************
+ */
+
+/** @brief Enum for SSFM Execution Status values */
+typedef enum Sum_Ssfm_ExecutionStatusType
+{
+	SUM_SSFM_Run_Mode      = 0x00u ,
+	SUM_SSFM_Shutdown_Mode = 0x01u,
+	SUM_SSFM_Invalid_Mode  = 0xffu
+} Sum_Ssfm_ExecutionStatus;
+
+typedef enum Sum_Ssfm_SigStatusSupervisionType
+{
+	/*! 0 = Signal Status Supervision Uninitialized */
+	SUM_SSFM_SigSts_Supervision_Uninitialized,
+	/*! 1 = Signal Status Supervision Timeout */
+	SUM_SSFM_SigSts_Supervision_Timeout,
+	/*! 2 = Signal Status Supervision Received */
+	SUM_SSFM_SigSts_Supervision_Received
+} Sum_Ssfm_SigStatusSupervision;
+
+typedef enum Sum_Ssfm_SigStatusType
+{
+	/*! 0 = Signal Status Disabled */
+	SUM_SSFM_SigSts_Disabled,
+	/*! 1 = Signal Status Uninitialized */
+	SUM_SSFM_SigSts_Uninitialized,
+	/*! 2 = Signal Status Unavailable */
+	SUM_SSFM_SigSts_Unavailable,
+	/*! 3 = Signal Status Available */
+	SUM_SSFM_SigSts_Available
+} Sum_Ssfm_SigStatus;
+
+/** @brief Enum for SSFM Event Status values */
+typedef enum Sum_Ssfm_EventStatusType
+{
+    SUM_SSFM_EventSts_Passed,
+    SUM_SSFM_EventSts_Failed
+} Sum_Ssfm_EventStatus;
+
+/** @brief Enum for SSFM FxI Source */
+typedef enum Sum_Ssfm_FxISourceType
+{
+    SUM_SSFM_FxI_Source_FcI,
+    SUM_SSFM_FxI_Source_FoI,
+    SUM_SSFM_FxI_Source_FpI,
+    SUM_SSFM_FxI_Source_FsI,
+	SUM_SSFM_FxI_Source_Invalid,
+} Sum_Ssfm_FxI_Source;
+
+/** @brief Enum for SSFM Evaluation Debouncer Status values */
+typedef enum Sum_Ssfm_EvaluationStatusType
+{
+    SUM_SSFM_EvaluationSts_Passed,
+    SUM_SSFM_EvaluationSts_Failed,
+	SUM_SSFM_EvaluationSts_InDebouncing,
+	SUM_SSFM_EvaluationSts_Unknown
+} Sum_Ssfm_EvaluationStatus;
+
+
+/** @brief Enum for SSFM Error Filter values */
+typedef enum Sum_Ssfm_ErrorFilterType
+{
+    SUM_SSFM_ErrorFilter_None,
+    SUM_SSFM_ErrorFilter_Block,
+	SUM_SSFM_ErrorFilter_MovingWindow_TimeBased,
+	SUM_SSFM_ErrorFilter_MovingWindow_EventBased,
+	SUM_SSFM_ErrorFilter_NodeLoss_Timeout,
+	SUM_SSFM_ErrorFilter_LinResp_MissingMsg_Timeout
+} Sum_Ssfm_ErrorFilter;
+
+/** @brief Enum for Bsw error event type - for bitmap and notifying SOH */
+typedef enum Sum_Ssfm_BswErrorEventType
+{
+	SUM_SSFM_BSW_Error_Event_NONE,
+    SUM_SSFM_BSW_Error_Event_NVM_E_HARDWARE,
+    SUM_SSFM_BSW_Error_Event_NVM_E_INTEGRITY_FAILED,
+	SUM_SSFM_BSW_Error_Event_NVM_E_REQ_FAILED,
+	SUM_SSFM_BSW_Error_Event_NVM_E_WRONG_BLOCK_ID,
+	SUM_SSFM_BSW_Error_Event_NVM_E_VERIFY_FAILED,
+	SUM_SSFM_BSW_Error_Event_NVM_E_LOSS_OF_REDUNDANCY,
+	SUM_SSFM_BSW_Error_Event_NVM_E_QUEUE_OVERFLOW,
+	SUM_SSFM_BSW_Error_Event_NVM_E_WRITE_PROTECTED,
+	SUM_SSFM_BSW_Error_Event_WDGM_E_SUPERVISION,
+	SUM_SSFM_BSW_Error_Event_WDGM_E_SET_MODE
+} Sum_Ssfm_BswErrorEvent;
+
+/** @brief Enum for SSFM ECU Node Internal State values */
+typedef enum Sum_Ssfm_EcuNodeStateType
+{
+    SUM_SSFM_EcuNodeState_Normal,
+    SUM_SSFM_EcuNodeState_LostComm
+} Sum_Ssfm_EcuNodeState;
+
+/** @brief Enum for SSFM debouncer type referenced in the XofY object*/
+typedef enum
+{
+	SUM_SSFM_DebouncerRefType_RunCrank,
+    SUM_SSFM_DebouncerRefType_ECUInfo,
+	SUM_SSFM_DebouncerRefType_ECUInfo_ServiceBased,
+    SUM_SSFM_DebouncerRefType_FIM_FcI,
+	SUM_SSFM_DebouncerRefType_FIM_FoI,
+	SUM_SSFM_DebouncerRefType_FIM_FpI,
+	SUM_SSFM_DebouncerRefType_FIM_FsI,
+	SUM_SSFM_DebouncerRefType_BSW_Error,
+	SUM_SSFM_DebouncerRefType_IeF_LNMError,
+	SUM_SSFM_DebouncerRefType_MissingMsg_LNMError,
+	SUM_SSFM_DebouncerRefType_PrmSec_IntEleFailure,
+	SUM_SSFM_DebouncerRefType_PrmSec_MissingSetup,
+	SUM_SSFM_DebouncerRefType_PhyECU_InvIncComp,
+	SUM_SSFM_DebouncerRefType_FailedAuth,
+} Sum_Ssfm_DebouncerRefType;
+
+/** @brief Enum for DID E0B8 updated metric */
+typedef enum Sum_Ssfm_DID_E0B8_MetricType
+{
+    SUM_SSFM_DID_E0B8_Unavailability,
+    SUM_SSFM_DID_E0B8_ContOp,
+    SUM_SSFM_DID_E0B8_Protected,
+} Sum_Ssfm_DID_E0B8_Metric;
+
+«IF (sum_Ssfm_DtcTriggerMessageSupport_IsTRUE(sSFM.sum_Ssfm_General) == true)-»
+typedef enum Sum_Ssfm_DTCTriggerMessageType
+{
+    SUM_SSFM_Errh_MsgType_Default,
+    SUM_SSFM_Errh_MsgType_Reset,
+    SUM_SSFM_Errh_MsgType_Normal
+}Sum_Ssfm_DTCTriggerMessage;
+«ENDIF»
+
+/** @brief Enum for PN_DTC_Enabled status  */
+typedef enum Sum_Ssfm_PnDtcEnabledStatusType {
+	SUM_SSFM_Pn_Dtc_Not_Enabled,
+	SUM_SSFM_Pn_Dtc_Enabled
+} Sum_Ssfm_PnDtcEnabledStatus;
+
+typedef FUNC(Std_ReturnType, RTE_CODE) 					(*FP_Rte_Read_RP_PNC_RxStatus_Sig)(boolean* data);
+typedef FUNC(Std_ReturnType, RTE_CODE) 					(*FP_Rte_Write_PP_SerialData_LcFA)(boolean data);
+typedef struct Sum_Ssfm_ECUInfoType 					Sum_Ssfm_ECUInfo;
+typedef struct Sum_Ssfm_DebouncerType 					Sum_Ssfm_Debouncer;
+
+typedef struct Sum_Ssfm_FxI_SerialDataType 				Sum_Ssfm_FxI_SerialData;
+typedef struct Sum_Ssfm_SerialData_LostCommInfoType 	Sum_Ssfm_SerialData_LostCommInfo;
+typedef struct Sum_Ssfm_MessageInfoGroupType 			Sum_Ssfm_MessageInfoGroup;
+typedef struct Sum_Ssfm_ServiceInfo_SerialDataType 		Sum_Ssfm_ServiceInfo_SerialData;
+
+typedef struct Sum_Ssfm_SerialDataType 					Sum_Ssfm_SerialData;
+
+typedef struct Sum_Ssfm_SsmCalibData 					Sum_Ssfm_SsmPBCalibData;
+typedef struct Sum_Ssfm_DemEventType 					Sum_Ssfm_DemEvent;
+typedef struct Sum_Ssfm_Errh_ErrorSUSDType 				Sum_Ssfm_Errh_ErrorSUSD;
+typedef struct Sum_Ssfm_BswErrorsType 					Sum_Ssfm_Errh_BswErrors;
+«IF Sum_Ssfm_Errh_U198C_49_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+typedef struct Sum_Ssfm_UcodeErrorType					Sum_Ssfm_U198C_49ErrorType;
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U198C_54_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+typedef struct Sum_Ssfm_UcodeErrorType					Sum_Ssfm_U198C_54ErrorType;
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U19A6_57_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+typedef struct Sum_Ssfm_UcodeErrorType					Sum_Ssfm_U19A6_57ErrorType;
+«ENDIF-»
+
+«IF Sum_Ssfm_Errh_U198C_8A_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+typedef struct Sum_Ssfm_UcodeErrorType					Sum_Ssfm_U198C_8AErrorType;
+«ENDIF-»
+
+
+typedef struct Sum_Ssfm_LNM_SlaveInfoErrorType 			Sum_Ssfm_LNM_SlaveInfoError;
+typedef struct Sum_Ssfm_LINSignalInfoType 				Sum_Ssfm_LINSignalInfo;
+typedef struct Sum_Ssfm_PnInformationType				Sum_Ssfm_PnInformation;
+typedef struct Sum_Ssfm_LNM_Network_BusoffInfoErrorType Sum_Ssfm_LNM_NetworkInfo;
+struct Sum_Ssfm_FxI_SerialDataType
+{
+	/* SerialData FxI*/
+	boolean FxI;
+	/*! Pointer to function containing the interface to SWCs for indicating FxI status */
+	FUNC(Std_ReturnType, RTE_CODE) (*FP_Rte_Write_PP_FxI_LocalSWC)(boolean data);
+	/* SerialData FxFA*/
+	boolean FxFA;
+	/*! Pointer to function containing the interface to SWCs for indicating FxFA status */
+	FUNC(Std_ReturnType, RTE_CODE) (*FP_Rte_Write_PP_FxFA_LocalSWC)(boolean data);
+	/* Debouncer Ref */
+	Sum_Ssfm_Debouncer* DebouncerRef;
+	/*! Pointer to function to read whether the MAC authentication is enabled or not */
+	FUNC(Std_ReturnType, RTE_CODE) (*FP_AuthenticationEnable)(boolean* data);
+	/* Number of occurrence for DID E0B8 */
+	uint16 OccurrenceCount;
+};
+
+struct Sum_Ssfm_SsmCalibData
+{
+	/*! Pointer containing the Disable PDU flags */
+	boolean (*FP_SSFM_pCdata_Type)();
+	/*! Pointer to indicate BswM to disable the PDU */
+	FUNC(Std_ReturnType, RTE_CODE) (*FP_Rte_Switch_SSFM_BswM_DisablePdu)(uint8 data);
+	/*! Pointer to indicate SUM_PNC and SUM_SSC to disable the PDU with value disable PDU flags*/
+	FUNC(Std_ReturnType, RTE_CODE) (*FP_Rte_Write_SSFM_C_DisablePdu)(VAR(boolean, AUTOMATIC) data);
+};
+
+struct Sum_Ssfm_MessageInfoGroupType
+{
+	/*! Pointer to array of function pointers to read the Rx enable state from Partial network id */
+	P2CONST(FP_Rte_Read_RP_PNC_RxStatus_Sig, TYPEDEF, RTE_CODE) pSigRxStatus;
+	/* Number of participated partial networks */
+	uint8 No_Of_PNs;
+	/* Pointer to array of pointers to the Sum_Ssfm_PnInformation structure describing each participated partial network */
+	Sum_Ssfm_PnInformation ** PN_Info_ptr;
+	/*! DTC setting enabling flag for participated partial networks */
+	Sum_Ssfm_PnDtcEnabledStatus PN_DTC_Enabled_Flag;
+	/*! Pointer to read status of diagnostics normal communication from Channel ID */
+	FUNC(Std_ReturnType, RTE_CODE) (*FP_Rte_Read_RP_DisableNormalComm_Status)(SUM_DiagNormalCom_ModeType*);
+	/*! Pointer to PDU structure to read for Disable Rx PDU */
+	FUNC(boolean, RTE_CODE) (*FP_SSFM_pCdata_Type)(void);
+	/*! Pointer to a function to write Signal status to be notified to SWC */
+	FUNC(Std_ReturnType, RTE_CODE) (*FP_RxMonitoredSignal_Av)(uint8 data);
+	/* enum signal supervision status */
+	Sum_Ssfm_SigStatusSupervision SigSts_Supervision;
+	/* enum signal status */
+	Sum_Ssfm_SigStatus SigSts;
+	/* The timestamp in which message went unavailable, in unit of Ticks */
+	uint32 UnavailableSince;
+	/* The time in ms this message was Unavailable the previous session, in unit of ms */
+	uint16 UnavailableTimePrevSession;
+	/* The number of times the status became Unavailable (For DID E0B8)*/
+	uint16 UnavailableCount;
+};
+
+struct Sum_Ssfm_ECUInfoType
+{
+	uint16 					SizeOfAllLists[3]; // 0: FaultAndRecoveryList, 1: RecoveryOnlyListSize, 2: NonFaultAndRecoveryListSize
+	Sum_Ssfm_SerialData** 	PointerToAllLists[3]; // 0: FaultAndRecoveryList, 1: RecoveryOnlyListSize, 2: NonFaultAndRecoveryListSize
+
+	P2FUNC(uint32, TYPEDEF, FP_SSFM_pCdata_LC_ECU_Timer_Ref)(void);
+	uint32					FaultTimerElapsed;
+
+	boolean 				TempLossOfComm;
+	boolean 				LossOfComm;
+	boolean 				NodeStsECU;
+
+	/*! Pointer to function containing the interface to SWCs for indicating Node Status Loss of Comm*/
+	FUNC(Std_ReturnType, RTE_CODE) (*FP_Rte_Write_PP_NodeStsECU_LcFA)(boolean data);
+	Sum_Ssfm_Debouncer* ECUFilter;
+	/* Function pointer to boolean RTE Calibration NodeLossError */
+	P2FUNC(boolean, TYPEDEF, FP_SSFM_pCdata_DTCProcess)(void);
+	/* Internal state of ECU Node */
+	Sum_Ssfm_EcuNodeState NodeLossState;
+	/* Ip Address List*/
+	uint32* IpAddressList;
+	/* Ip Address List Length*/
+	uint8 IpAddressListLength;
+};
+
+struct Sum_Ssfm_SerialData_LostCommInfoType
+{
+	boolean							LostCommSts;
+	/* The id in the ECUs list for the current provider controller of service-based serial data */
+	Sum_Ssfm_ECUInfo* 				CurrentProvider;
+	/* Function pointer to write the SerialData_LcFA status */
+	FP_Rte_Write_PP_SerialData_LcFA Rte_Write_LcFA;
+	/*! Function pointer to calibration usage of CAN BUS OFF DTC */
+	FUNC(boolean, SUM_SSFM_SSM_CODE) (*FP_SSFM_pCdata_UsageCANBusOffDTC)(void);
+	/* Function pointer to get status of the DTCs BUS OFF for each Eth/CAN channel */
+	FUNC(uint8, SUM_SSFM_SSM_CODE) (*FP_PublBusOffErr)(void);
+};
+
+struct Sum_Ssfm_ServiceInfo_SerialDataType
+{
+	uint16	ServiceID;
+	uint16 	InstanceID;
+	uint8 	MajorVersion;
+	boolean IsActive;
+	boolean DTCAllowed;
+	uint32 	IpAddress;
+	/* timestamp when this service became active (1ms ticks) */
+	uint32 	AvailableSince;
+	boolean IsResolved;
+};
+
+struct Sum_Ssfm_SerialDataType
+{
+	/* secOCDataId */
+	uint8 								secOCDataId[5];
+	/* FxI Data */
+	Sum_Ssfm_FxI_SerialData* 			Authenticated;
+	Sum_Ssfm_FxI_SerialData*			ContOp;
+	Sum_Ssfm_FxI_SerialData*			Protected;
+	Sum_Ssfm_FxI_SerialData*			Safety;
+	/* SerialData FxI Source*/
+	Sum_Ssfm_FxI_Source			 		FxI_Source;
+	/* Message Info */
+	Sum_Ssfm_MessageInfoGroup*			MsgInfoGrp;
+	/* LIN Info */
+	Sum_Ssfm_LINSignalInfo*				LINInfo;
+	/* Lost Comm */
+	Sum_Ssfm_SerialData_LostCommInfo*	LostCommInfo;
+	/* Service Info */
+	Sum_Ssfm_ServiceInfo_SerialData* 	ServiceInfo;
+	/* Message ID */
+	uint32 								MessageID;
+	/* DID E0B8 */
+	boolean 							In_DID_E0B8_List;
+	/* Non-Discoverable SOME/IP Service flag*/
+	boolean 							IsNonDiscoverable;
+};
+
+struct Sum_Ssfm_DemEventType
+{
+	/* Function pointer to Rte_SetDemEventStatus */
+	Std_ReturnType (*Rte_Call_Dem_SSFM_SetEventStatus)(Dem_EventStatusType EventStatus);
+	/* DTC Value */
+	uint32 DTCValue;
+};
+
+struct Sum_Ssfm_BswErrorsType
+{
+
+	/* Function pointer to get flag for controlling whether to process DTC */
+	P2FUNC(boolean, TYPEDEF, FP_ERRH_pCdata_Type)(void);
+	/* Error event type - for bit mapping */
+	Sum_Ssfm_BswErrorEvent BswErrorEvent;
+	/* COM channel type */
+	uint8 BswErrorComChannelType;
+
+};
+
+struct Sum_Ssfm_UcodeErrorType
+{
+	/* Function pointer to boolean RTE Calibration */
+	P2FUNC(boolean, TYPEDEF, FP_SSFM_pCdata_DTCProcess)(void);
+    /* Function pointer to Rte_Read function call */
+    Std_ReturnType (*Rte_Read_SSFM_DiagnosticStatus)(boolean* data);
+
+};
+
+struct Sum_Ssfm_DebouncerType
+{
+	/* Error filter type */
+	Sum_Ssfm_ErrorFilter error_filter_type;
+	/* Configured X Threshold if filter type X of Y */
+	P2FUNC(uint16, TYPEDEF, FP_SSFM_pCdata_X_Threshold)(void);
+	/* Configured Y Threshold if filter type X of Y */
+	P2FUNC(uint16, TYPEDEF, FP_SSFM_pCdata_Y_Threshold)(void);
+	/*! Pointer callback function of debouncing Moving Window X of Y */
+	void (*FP_SSFM_CbkWindowMoving)(Sum_Ssfm_Debouncer* debouncer_instance);
+	/* Counter for failed event in the window */
+	uint16 X;
+	/* Number of sample or ms in the window */
+	uint16 Y;
+	/* First failed event flag */
+	boolean first_failed_event;
+	/* Last Evaluation status */
+	Sum_Ssfm_EvaluationStatus LastEvalStatus;
+	/* Reference to Debouncer Owner */
+	union {
+		Sum_Ssfm_ECUInfo* 					ECUInfo;
+		Sum_Ssfm_SerialData*				FIM;
+		Sum_Ssfm_Errh_ErrorSUSD*			RunCrank;
+		Sum_Ssfm_Errh_BswErrors*			BSWError;
+		Sum_Ssfm_LNM_SlaveInfoError*		LINRespInfo;		
+«IF Sum_Ssfm_Errh_U198C_49_IsValid(sSFM.sum_Ssfm_ConfigSet)-»				
+		Sum_Ssfm_U198C_49ErrorType* 		U198C_49Info;
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U198C_54_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+		Sum_Ssfm_U198C_54ErrorType*			U198C_54Info;
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U19A6_57_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+		Sum_Ssfm_U19A6_57ErrorType*			U19A6_57Info;
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U198C_8A_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+		Sum_Ssfm_U198C_8AErrorType*			U198C_8AInfo;
+«ENDIF-»
+	} DebouncerOwner;
+	/* Type of the Debouncer Owner*/
+	Sum_Ssfm_DebouncerRefType DebouncerOwnerType;
+	/* Reference to Dem Event */
+	const Sum_Ssfm_DemEvent* DemEvent;
+
+};
+
+
+struct Sum_Ssfm_Errh_ErrorSUSDType
+{
+	/* Function pointer to boolean RTE Calibration */
+	P2FUNC(boolean, TYPEDEF, FP_SSFM_pCdata_DTCProcess)(void);
+	/* Function pointer to Rte_Read function call */
+	Std_ReturnType (*Rte_Read_SSFM_DiagnosticStatus)(uint8* EventStatus);
+	/* Function pointer to Rte_Write_DTCConfirm function call */
+	Std_ReturnType (*Rte_Write_SSFM_SUSD_FA_StatusRequest)(boolean DTCConfirm);
+	/* Deboucing result */
+	Sum_Ssfm_EvaluationStatus debouncing_result;
+
+};
+
+typedef struct
+{
+	/* Function pointer to Rte_Read function call */
+	Std_ReturnType (*Rte_Read_SSC_SSFM_E_KeySlotVerify)(boolean* data);
+	/* Key Slot Status */
+	uint8 keyslot_status;	
+	/* Number of failure */
+	uint16 num_of_failure;
+	/* Failed Authentication Timer */
+	uint32 failed_auth_timer;
+	/* Authentication Window Timer */
+	uint32 authentication_window_timer;
+	/* k_ERRH_FailedAuthenticationTimer */
+	uint32 k_ERRH_FailedAuthenticationTimer;
+	/* k_ERRH_SlowestPDUTimer */
+	uint32 k_ERRH_SlowestPDUTimer;
+	/* The time since receiving the last PDU on the given key slot */
+	uint32 last_received_pdu_timer;
+	/* DTC ID of the provider that exploit this KeySlot for MAC verification */
+	uint16 provider_DTC_Id; 
+}Sum_Ssfm_Errh_KeySlotVerifyStatus;
+
+struct Sum_Ssfm_LINSignalInfoType
+{
+	/* Pointer to a function to set LIN signal status to Invalid for LIN signal */
+	Std_ReturnType (*Rte_Write_SSFM_SWC_Signal_Inv)(boolean SignalInv);
+	/* Pointer to a function to write Signal status to be notified to SWC */
+	FUNC(Std_ReturnType, RTE_CODE) (*FP_RxMonitoredSignal_Av)(uint8 data);
+	/* enum signal supervision status */
+	Sum_Ssfm_SigStatusSupervision SigSts_Supervision;
+	/* enum signal status */
+	Sum_Ssfm_SigStatus SigSts;
+	/* Function pointer to RTE Mode Read for LIN Current Schedule Status */
+	FUNC(uint8, RTE_CODE) (*Read_CurrentSchedule_Status)(void);
+	/* Function pointer to RTE Read for MSCL Status */
+	FUNC(Std_ReturnType, RTE_CODE) (*Read_MSCL_Status)(uint16* data);
+	/* Serial Data MSCL Mask */
+	uint16 MSCL_Mask;
+};
+
+struct Sum_Ssfm_LNM_SlaveInfoErrorType
+{
+	/* Function pointer to Rte_Read BatteryVoltage of IeF function call */
+	Std_ReturnType (*Rte_Read_SUSD_SSFM_BatteryVoltage_IeF)(uint8* data);
+	/* Function pointer to Rte_Write SSFM_LNM_NodeTimeout function call */
+	Std_ReturnType (*Rte_Write_SSM_LNM_NodeTimeout)(uint8 data);
+	/* Function pointer to Rte_Read SSFM_LNM_NodeStatusId function call */
+	Std_ReturnType (*Rte_Read_LNM_SSFM_NodeStatusId)(LNM_ErrorStatus_Type* Id);
+	/* Function pointer to Rte_Read SSFM_LNM_NodeStatusTimer function call */
+	Std_ReturnType (*Rte_Read_LNM_SSFM_NodeStatusTimer)(uint32* Timer);
+	/* Function pointer to Rte_Read function call */
+	Std_ReturnType (*Rte_Read_LNM_SSFM_IntElectFault)(uint8* data);
+	/* Number of LIN Signals for this LIN Slave ECU */
+   	uint8 NoOfLINSignals;
+   	/* Pointer to the list of LIN Signals List */
+	const Sum_Ssfm_LINSignalInfo** pLINSignalInfo;
+	/* Internal state of LIN Responder */
+	Sum_Ssfm_EcuNodeState LinRespState;
+	/* Elapsed time */
+	uint32 TimerElapsed;
+	/* LNM_ErrorStatus */
+	uint8 error_status;
+};
+
+/* Structure for partial networks */
+struct  Sum_Ssfm_PnInformationType
+{
+    /* partial network id */
+    uint8 Partial_Nw_Id;
+	/* partial network DTC_Allowed_Flag */
+	SUM_PNC_DTC_AllowedType PN_DTC_Allowed_Flag;
+	/* timestamp when this PN became available (1ms ticks) */
+	uint32 AvailableSince;
+};
+
+«IF (sum_Ssfm_DtcTriggerMessageSupport_IsTRUE(sSFM.sum_Ssfm_General) == true)-»
+typedef struct
+{
+	uint32					DTC;
+	Dem_UdsStatusByteType 	OldStatus;
+	Dem_UdsStatusByteType 	NewStatus;
+	boolean                 AlreadySent;
+} Sum_Ssfm_DTC_NotificationType;
+
+/*
+ * Sum_Ssfm_DTC_TriggeredType
+ */
+typedef struct
+{
+	uint32					DTC;
+	Dem_UdsStatusByteType 	PrevSentStatus;
+} Sum_Ssfm_DTC_TriggeredType;
+
+
+/* Function pointer to Rte_Read_PNC_ActiveTxPDUEnable */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Sum_Ssfm_PN_ActiveTxPDUEnable)(P2VAR(boolean, AUTOMATIC, RTE_APPL_DATA) data);
+
+«ENDIF»
+
+typedef struct
+{
+    /* Pointer to the RAM block */
+    P2VAR(uint16, TYPEDEF, RTE_APPL_DATA) NvmRamBlock;
+    /* Function pointer to the NvM_SetRamBlockStatus RTE API */
+    P2FUNC(Std_ReturnType, TYPEDEF, ERRH_RteCallNvmSetRamBlockStatus_fp) (VAR(boolean, AUTOMATIC) BlockChanged);
+
+
+} ERRH_GenericNvmAccessType;
+
+typedef struct{
+
+	uint16   *ERRH_Cntr;
+	uint32   *ERRH_TW;
+	boolean  *ERRH_TWStarted;
+	uint16   *ERRH_DIDCntr;
+
+}ERRH_ThresholdType;
+
+typedef struct{
+
+	ERRH_ThresholdType  ERRH_ThresholdItem;
+	ERRH_GenericNvmAccessType NvMDID;
+
+}ERRH_DetectorType;
+
+struct Sum_Ssfm_LNM_Network_BusoffInfoErrorType
+{
+	/* Function pointer to Rte_Read function call */
+	Std_ReturnType (*Rte_Read_LNM_SSFM_LossCommBus)(uint8* data);
+	/* Function pointer to set Bus off Dem Event Status */
+	Std_ReturnType (*Rte_Call_Dem_SSFM_SetBusOffEventStatus)(Dem_EventStatusType EventStatus);
+
+};
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

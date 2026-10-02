@@ -1,0 +1,25 @@
+@startuml Sum_Ssfm_DID_E0B8_SeqDiag
+
+control Scheduler as TE
+
+participant Dcm as DCM
+participant RTE as R
+box SUM_SSFM
+    participant Sum_Ssfm_DID_E0B8_Handler as E0B8
+    participant Sum_Ssfm_SigSts_Av_CANETH_Handler as AV
+    participant Sum_Ssfm_ContOpStatus_Manager as CONT
+    participant Sum_Ssfm_ProtStatus_Manager as PROT
+end box
+
+par
+    DCM -> E0B8: Requests the DID information
+else
+    alt Unavailability indicated
+        AV -> E0B8: Update metric
+    else Continuous Operation Failure indicated
+        CONT -> E0B8: Update metric
+    else Protection Failure indicated
+        PROT -> E0B8: Update metric
+    end
+end
+@enduml 

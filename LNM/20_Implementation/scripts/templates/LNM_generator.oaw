@@ -1,0 +1,85 @@
+<!--
+ ******************************************************************************
+ * BEGIN: Banner
+ ******************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ******************************************************************************
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ******************************************************************************
+ *    Administrative Information (automatically filled in)
+ ******************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_LNM
+ * Date        : Aug 06, 2021
+ * Revision    : 6.0.0_Beta1
+ * Description : LNM Generator workflow file
+ ******************************************************************************
+ * END: Banner
+ ******************************************************************************
+ -->
+
+<workflow>
+  <!-- Property file containing model package and generator version info -->
+	<property file="LNM_workflow.properties" />
+
+    <!-- generate LNM_PBCfg.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'LNM_PBCfg.c'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="LNM_PBCfg_c::LnmPBCfg FOR model" />
+	</component>
+
+    <!-- generate LNM_PBCfg.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'LNM_PBCfg.h'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="LNM_PBCfg_h::LnmPBCfgH FOR model" />
+	</component>
+
+    <!-- generate LNM_Cfg.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'LNM_Cfg.c'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="LNM_Cfg_c::LnmCfg FOR model" />
+	</component>
+    <!-- generate LNM_Cfg.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'LNM_Cfg.h'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="LNM_Cfg_h::LnmCfgH FOR model" />
+	</component>
+
+   <!-- generate Sum_Lnm_Cfg_SWCD.arxml -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'Sum_Lnm_Cfg_SWCD.arxml'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Lnm_Cfg_SWCD_arxml::LnmArxml FOR model" />
+	</component>
+	
+	<!-- generate Sum_Lnm_SWCD.arxml -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<globalVarDef name="FileName" value="'Sum_Lnm_SWCD.arxml'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="Sum_Lnm_SWCD_arxml::LnmArxml FOR model" />
+	</component>
+
+</workflow>

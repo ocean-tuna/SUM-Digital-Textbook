@@ -1,0 +1,9 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};CommunicationControl_Confirmation
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};IR_Normal_msg_transmission \newline IR_Sub_function
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Parameters};uint8 SID \newline uint8 ReqType \newline uint16 SourceAddress \newline Dcm_ConfirmationStatusType ConfirmationStatus
+\cellcolor{ETASlightgray}\textbf{Return};Std_ReturnType (E_OK or E_NOT_OK)
+\cellcolor{ETASlightgray}\textbf{Description};This routine is responsible for: \newline Save Tester_Source_Address \newline Set Normal_msg_transmission flag

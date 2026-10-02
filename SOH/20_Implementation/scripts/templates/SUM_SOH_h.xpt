@@ -1,0 +1,71 @@
+«IMPORT bsw»
+«IMPORT bsw::SOHModule»
+«IMPORT bsw::NvMModule»
+«IMPORT bsw::ComMModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE SohH FOR Autosar»
+	«EXPAND CreateSohStruct FOR this.ecu.sOH»
+«ENDDEFINE»
+
+«DEFINE CreateSohStruct FOR SOH»
+«FILE "SUM_SOH.h"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SOH
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Header for SOH
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/*! @defgroup SUM_SOH_h The SUM_SOH.h file
+ *  This is the SUM_SOH.h file
+ *  @{
+ */
+
+#ifndef SUM_SOH_H
+#define SUM_SOH_H
+
+#include "Std_Types.h"
+/* [$Satisfies $SDD_SOH 001] */
+#define SUM_SOH_START_SEC_CODE
+#include "SUM_SOH_MemMap.h"
+
+«IF sOHGeneral.sohGenerateInitRunnable != true»
+extern  FUNC(void, SUM_SOH_CODE) SOH_Init(void);
+«ENDIF»
+extern FUNC(void, SUM_SOH_CODE) SOH_OS_Protection_ErrorHook_CallBack(StatusType OS_Error);
+
+extern FUNC(void, SUM_SOH_CODE) ShutdownNotificationToSoh(void);
+
+#define SUM_SOH_STOP_SEC_CODE
+#include "SUM_SOH_MemMap.h"
+
+#endif
+/********************************** END OF FILE ******************************************************/
+«ENDFILE»
+«ENDDEFINE»
+
+

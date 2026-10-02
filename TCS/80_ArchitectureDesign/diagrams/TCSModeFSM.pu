@@ -1,0 +1,21 @@
+@startuml TCSModeFSM 
+
+[*] --> SUM_TCS_INIT_MODE
+
+SUM_TCS_SHUTDOWN_MODE: TRUE for shutdown permission
+
+state SUM_TCS_ACTIVE_MODE{
+    SUM_TCS_RUNNING_MODE: Updating time counters
+    SUM_TCS_MEMORY_MODE: Save and recovery of data
+}
+
+SUM_TCS_INIT_MODE -> SUM_TCS_SHUTDOWN_MODE
+SUM_TCS_SHUTDOWN_MODE --> SUM_TCS_RUNNING_MODE: 1. execution requested
+SUM_TCS_MEMORY_MODE -> SUM_TCS_RUNNING_MODE: 1. execution requested
+
+SUM_TCS_RUNNING_MODE --> SUM_TCS_MEMORY_MODE: request for shutdown
+SUM_TCS_MEMORY_MODE --> SUM_TCS_SHUTDOWN_MODE: 3.execution **not** requested\n//&&//\nmemory request satisfied
+SUM_TCS_MEMORY_MODE --> SUM_TCS_MEMORY_MODE: 2. service **not** completed\n//&&//\nretry counter still running
+
+note "memory request satisfied means retry counter is zero or status is E_OK" as N1
+@enduml

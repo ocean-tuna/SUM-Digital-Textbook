@@ -1,0 +1,6 @@
+3;2;4;6
+Name;Multiplicity; Container Father;Scope / Dependency
+SSFMGeneral;1..1; SSFM/ ; Defines configuration parameters that are in scope to all configuration of SSFM.
+SSFMConfigSet;1..1; SSFM/ ; Defines configuration parameters that define a particular configuration set for the module.
+Sum_Ssfm_SsmConfigSet;1..1; SSFMConfigSet/ ; Defines configuration parameters that define a particular configuration set for the module (SSM submodule). 
+Sum_Ssfm_ErrhConfigSet;1..1; SSFMConfigSet/ ; Defines configuration parameters that define a particular configuration set for the module (ERRH submodule).

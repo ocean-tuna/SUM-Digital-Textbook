@@ -1,0 +1,68 @@
+@startuml Spm_ComCdd_rx
+
+participant Spm
+participant RTE
+participant LdCom
+participant PduR
+participant SecOC
+participant SoAd
+participant TcpIp
+
+TcpIp -> SoAd: SoAd_RxIndication()
+activate TcpIp
+activate SoAd
+
+note left
+Reception path
+end note
+
+SoAd -> PduR: PduR_SoAdRxIndication()
+activate PduR
+
+PduR -> SecOC: SecOC_RxIndication()
+activate SecOC
+
+
+
+SecOC -> PduR: PduR_SecOCRxIndication()
+
+
+PduR --> SecOC
+
+SecOC --> PduR
+deactivate SecOC
+
+PduR -> Spm: SpmUp_RxIndication()
+activate Spm
+
+
+Spm -> Spm: extract information\nfrom meta\n(if needed)
+
+
+
+Spm -> PduR: PduR_SpmLoRxIndication()
+activate Spm
+activate PduR
+
+PduR -> LdCom: LdCom_RxIndication()
+activate LdCom
+
+LdCom --> PduR
+deactivate LdCom
+
+Spm <-- PduR
+deactivate PduR
+deactivate Spm
+
+Spm --> PduR
+deactivate Spm
+
+PduR --> SoAd
+deactivate PduR
+
+SoAd --> TcpIp
+
+deactivate SoAd
+deactivate TcpIp
+
+@enduml

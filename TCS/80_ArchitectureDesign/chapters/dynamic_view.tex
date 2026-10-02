@@ -1,0 +1,315 @@
+\chapter{Runtime View (Dynamic View)}
+
+\section{Runnables}
+\textbf{LEGEND}: \code{<Obj>} means that Obj is a configurable object.
+
+\subsection{Runnable_TCS_MasterClockPolling}
+\label{subsec:Runnable_TCS_MasterClockPolling}
+
+\RequirementTag{ADS_TCS}{009}
+\\
+This Runnable takes in charge:
+\begin{enumerate}
+	\item The reception of the TimeSync message that contains synchronization information and
+	\item The signal availability of the message.
+	\item The management of the SumTCSInitValue;
+\end{enumerate}
+
+The TimeSyncMessage reception mode is determined by the configuration parameters \code{TCS\_TimeSyncMessageSignalRef} and \code{TCS\_ServiceBased\_TimeSyncMessage\_Ref}:
+\begin{itemize}
+	\item \textbf{Service-based} (SOME/IP): when \code{TCS\_ServiceBased\_TimeSyncMessage\_Ref} is configured and \code{comSignalType} is \code{UINT8\_N}, the signal is read as a service data element with transformer error handling. The received byte array is converted to \code{uint64} via \code{TCS\_Prv\_byteArray\_to\_uint64}.
+	\item \textbf{ComGroupSignal}: when \code{TCS\_TimeSyncMessageSignalRef} references a ComGroupSignal with \code{comSignalType} \code{UINT64}, the signal is read via a signal group struct.
+	\item \textbf{ComSignal} (default): when \code{TCS\_TimeSyncMessageSignalRef} references a ComSignal with \code{comSignalType} \code{UINT64}, the signal is read directly as a \code{uint64} value.
+\end{itemize}
+{\Satisfies{SRS_TCS 003} \Satisfies{SRS_TCS 015} \Satisfies{SRS_TCS 027} \Satisfies{SRS_TCS 030}}
+
+\RequirementTag{ADS_TCS}{010}
+\\
+The Runnable shall execute its functionalities only when they are requested by checking the permit execution; permit execution shall be provided by SUM\_SUSD.
+\\
+{\Satisfies{SRS_TCS 009}}
+
+\input{generated/runnables/Runnable\_\_TCS_MasterClockPolling}
+
+Runnable executes the IRVs operations in an Exclusive Area.
+
+\RequirementTag{ADS_TCS}{011}
+\\
+The runnable shall set the \code{TCS_LocalTime_Value} with the value that is contained in time synchronization message, \textbf{if and only if} the signal availability
+that is associated to message and that is provided by interface \code{RxMonitoredSignal_Av} is \textbf{available}; if signal is available, Synchronization always happens without checking
+on current computed local value and actual master value.
+\\
+{\Satisfies{SRS_TCS 007} \Satisfies{SRS_TCS 016} \Satisfies{SRS_TCS 015} \Satisfies{SRS_TCS 027}}
+\\
+\\
+If the \code{TCS_LocalTime_Value} is updated as previous, the runnable shall reset to \code{0} the IRV \code{TCS_TimeManagementCounter};
+\\
+\\
+\RequirementTag{ADS_TCS}{041}
+\\
+If the message is reported as availble, then runnable shall increment by one unit the value \code{TCS_TotalVehicleTimeValue}.
+\\
+{\textbf{RATIONALE;} if message is checked AVAILABLE, runnable considers at least one PN as active until the next poll cycle; runnable update the counter only when PN is considered as active from its side.}.
+\\
+{\Satisfies{SRS_TCS 001} \Satisfies{SRS_TCS 015} \Satisfies{SRS_TCS 016} \Satisfies{SRS_TCS 027} \Satisfies{SRS_TCS 022} \Satisfies{SRS_TCS 028}}
+
+\subsection{Runnable_TCS_TimeManagement}
+\label{subsec:Runnable_TCS_TimeManagement}
+
+This runnable manages the counter and timer that are local to SUM\_TCS and then update the current local time value in Per-Instance memory.
+
+\input{generated/runnables/Runnable\_\_TCS_TimeManagement}
+
+\RequirementTag{ADS_TCS}{012}
+\\
+The runnable will execute its functionalities only if the permit execution value allows it.
+\\
+{\Satisfies{SRS_TCS 009}}
+\\
+\\
+If runnable functionalities are enabled and object specific conditions are met, the runnable will:
+\begin{itemize}
+	\item get the Localtime_Clock
+	\item check if a new Time Sync message has been received; if not, will increment the Localtime_Clock (using the configured relationship between SumTCSGlobalTimePrecision / TCS_t_TimeManagement_Periodicity)
+	\item increment the Subcounter.
+\end{itemize}
+
+\RequirementTag{ADS_TCS}{040}
+\\
+No Counter shall be updated if the TCS_TimeLocal_Value is equal to SumTCSInitValue. This means no synchronization has happened yet. 
+\\
+{\Satisfies{SRS_TCS 005} \Satisfies{SRS_TCS 007}}
+
+The runnable is the only one that can update the module counter and timer (less the number of attempts of memory services execution).
+Counter and timer are updated according to SUM\_TCS actual operating mode that is managed by \hyperref[subsec:Runnable_TCS_PermitExecutionShutdown]{Runnable_TCS_PermitExecutionShutdown}.
+The current power mode can be shared with the current runnable through a static global variable.
+\subsection{Runnable_TCS_Dem_Clock}
+\label{subsec:Runnable_TCS_Dem_Clock}
+
+\RequirementTag{ADS_TCS}{013}
+\\
+Runnable takes in charge the interfacing with the Dem. It shall provide the actual Time Stamp to Dem for implementing the extended data record for DTCs.
+\\
+{\Satisfies{SRS_TCS 014}}
+
+
+\input{generated/runnables/Runnable\_\_TCS_Dem_Clock.tex}
+
+The Runnable shall just provide the value of TCS_LocalTime_Value to Dem.
+
+\RequirementTag{ADS_TCS}{014}
+\\
+The runnable shall execute its functionalities only if the permit execution value allows that. Runnable gets the value of permit execution reading IRV.
+\\
+{\Satisfies{SRS_TCS 009}}
+\\
+\\
+The permit execution flag is available reading the associated IRV.
+\\
+\\
+Runnable entity associated function shall implement each data conversions that is required by managed interfaces.
+
+\subsection{Runnable_TCS_PermitExecutionShutdown}
+\label{subsec:Runnable_TCS_PermitExecutionShutdown}
+
+The runnable is responsible to manage the interfacing with SUM\_SUSD in order to elaborate the requests to SUM\_TCS, and manage the SUM\_TCS operating modes as a Finite State Machine.
+
+\input{generated/runnables/Runnable\_\_TCS_PermitExecutionShutdown.tex}
+
+The interfacing with shutdown permission shall not be in scope of this runnable but TimeManagement one. This runnable just check the permit execution
+
+\RequirementTag{ADS_TCS}{015}
+\\
+Runnable shall be able to extract information from data that is received on interface \code{SUSD_PermitExecution} from the usage of a configurable \hyperref[conf:PermitExecutionMask]{mask}.
+\\
+{\Satisfies{SRS_TCS 009}}
+\\
+\RequirementTag{ADS_TCS}{016}
+\\
+The mask has the tasks to check if specific bits that allow the module execution are set to 1s. The mask is configurable to avoid changes in implementation logics and strucuture in case of changes in
+execution value.
+\\
+\\
+If the ECU reset bit in SUSD message to SUM\_TCS is FALSE then SUM\_TCS shall set the permit execution to FALSE.
+\\
+{\Satisfies{SRS_TCS 010}}
+\\
+The runnable shall manage the coordination of the SUM\_TCS functionalities according to specific run-time conditions. 
+\\
+\RequirementTag{ADS_TCS}{037}
+\\
+No shutdown permission can be forwarded to SUM\_SUSD if any activity has not been completed on NvM yet. The SUM\_TCS is modelled as the following Finite State Machine:
+\\
+\Satisfies{SRS_TCS 013}
+
+
+\UMLDiagram{generated/diagrams/TCSModeFSM}{Main TCS Machine}
+
+\RequirementTag{ADS_TCS}{038}
+\\
+Each time that SUM\_TCS shall move from inactive state(\code{SUM_TCS_SHUTDOWN_MODE}) to active state(\code{SUM_TCS_RUNNING_MODE}), without master clock synchronization, the module shall pass through
+\code{SUM_TCS_MEMORY_MODE} to recover values from persistent memory. Otherwise the direct transition from inactive state to active state can happen if and only if the SUM\_TCS has been synchronized itslef with Master Clock\\
+{\Satisfies{SRS_TCS 007}}
+\\
+\RequirementTag{ADS_TCS}{039}
+\\
+Each time that SUM\_TCS shall move from active state(\code{SUM_TCS_RUNNING_MODE}) to inactive state(\code{SUM_TCS_SHUTDOWN_MODE}), it shall pass through \code{SUM_TCS_MEMORY_MODE} to save 
+run-time just computed values to persistent memory.
+\\
+{\Satisfies{SRS_TCS 023}}
+
+When SUM\_TCS is in SUM_TCS_MEMORY_MODE and it leaves for SUM_TCS_RUNNING_MODE due to a synchronization with master clock \textbf{before} ending of NvM services,
+the mode shall reset the NvM retry counter as mode operation.
+\\
+This runnable is the only one has knowledge and responsibility to manage the retry counter for NvM services. When retry counter for NvM execution services will expire, no check on the real satisfactions of NvM services is done and it is assumed as rightly executed.
+
+\subsection{Runnable_RE_TCS_Init}
+\label{subsec:RunnableTCSInit}
+
+\RequirementTag{ADS_TCS}{042}
+\\
+When the configuration parameter \code{TcsGenerateInitRunnable} is set to TRUE, the initialization is done by the  \RunnableRef{Runnable_RE_TCS_Init} that calls the static \code{TCS_Init}.
+\\
+{\Satisfies{SRS_TCS 020}}
+
+\input{generated/runnables/Runnable\_RE_TCS_Init.tex}
+
+\subsection{Runnable_TotalVehicleTimeRead}
+\label{subsec:RunTotVehicleTimeRead}
+
+Runnable is in charge of interfacing with the Dcm. Runnable entity associated function must implement the callout for reading the DID 0xF129 when UDS service 0x22 is requested.
+\\
+\\
+This service is not optional, therefore its implementation is mandatory. 
+
+\input{generated/runnables/Runnable\_\_TotalVehicleTimeRead}
+\\
+\\
+\RequirementTag{ADS_TCS}{018}
+\\
+This runnabe should execute its functionalities on demand and also reads the computation value provided by \hyperref[subsec:Runnable_TCS_TimeManagement]{Runnable\_TCS_TimeManagement}. 
+\\
+Both runnables have no knowledge about the Partial Network status. The only indirect information about the Partial Network status is through the reception of the Master clock value.
+\\{\Satisfies{SRS_TCS 016}}
+
+\subsection{Runnable_TotalVehicleTimeCheckRead}
+\label{subsec:RunTotVehicleTimeCheckRead}
+
+\RequirementTag{ADS_TCS}{019}
+\\
+This runnable implementes the \textit{CheckRead} operation for the operations on DID 0xF129 as response to UDS service 0x22.
+\\
+{\Satisfies{SRS_TCS 024}}
+\\
+
+\input{generated/runnables/Runnable\_\_TotalVehicleTimeCheckRead}
+
+
+\section{Exclusive-Areas}
+SUM\_TCS shall model the runnable execution with exclusive-areas, so that the inter-runables variables consistency and availability are granted. Exclsive-areas shall work as critical section to arbitrate
+the concurrent access to shared resources among runnables. SUM\_TCS exclusive areas are the following: 
+
+\input{generated/tables/exclusiveareas}
+
+\section{Run-Time Scenarios}
+
+\subsection{Initialization}
+\label{subsec:tcsInit}
+\RequirementTag{ADS_TCS}{021}
+\\
+SUM\_TCS initialization consists in a software routine that initializes all variables, resources, states, and modes of SUM\_TCS. This routine is necessary as a part of start-up sequence of system in which SUM\_TCS
+is deployed. 
+\\
+\\
+The module initialization is in scope to BSW modules and it shall be configured either as a part of BswM or EcuM. From the perspective of SUM\_TCS, it must just implement the callout function that will be executed by BswM, EcuM or runnable \code{Runnable\_TCS\_Init}.
+\\
+\\
+Initialization of SUM\_TCS shall be done after the initialization fo all Bsw modules that provides information to it. In particular, It is strongly necessary that SUM\_TCS is initialized
+\textbf{after}:
+\begin{enumerate}
+	\item the NvM module due to the strong dependencies between Nv block and SUM\_TCS's.
+	\item SUM\_SSM due to the dependencies to signal status information;
+\end{enumerate}
+
+This function shall be named \code{TCS_Init()}.
+\\
+{\Satisfies{SRS_TCS 020} \Satisfies{SRS_TCS 021} \Satisfies{SRS_TCS 029}}
+\\
+\\
+\RequirementTag{ADS_TCS}{022}
+\\
+The main scope of the function is to set the SUM\_TCS counter to their initial values (as safety mechanism in case they did not during RTE initialization):
+\begin{enumerate}
+	\item \code{0} for TCS_TimeManagementCounter;
+	\item \code{FALSE} for TCS_Permit_execution;
+\end{enumerate}
+
+The Initialization sequence can be summarized as in the following diagram:
+\UMLDiagram{generated/diagrams/sd_TCSInitialization}{Initializaition sequence for SUM\_TCS}
+{\Satisfies{SRS_TCS 005} \Satisfies{SRS_TCS 006} \Satisfies{SRS_TCS 007}}
+
+\subsection{Synchronization}
+
+\paragraph{Global Pre-condition}
+\begin{enumerate}
+	\item Com Module has been correctly initialized, and it is currently running;
+	\item SUM\_SUSD has been correctly initialized, and it is currently running;
+	\item SUM\_SSM has been correctly initialized, and it is currently running;
+	\item SUM\_TCS has been correctly initialized as in scenario \ref{subsec:tcsInit};
+\end{enumerate}
+
+\paragraph{Use case}
+\input{generated/tables/uc_synchronization}
+
+\UMLDiagram{generated/diagrams/sd_TimeSyncMsgSync}{SUM\_TCS Matser clock global time Synchronization scenario}
+{\Satisfies{SRS_TCS 003} \Satisfies{SRS_TCS 009} \Satisfies{SRS_TCS 010}}
+
+\subsection{Activation and Running}
+\paragraph{Global Pre-condition}
+\begin{enumerate}
+	\item Com Module has been correctly initialized, and it is currently running;
+	\item SUM\_SUSD has been correctly initialized, and it is currently running;
+	\item SUM\_SSM has been correctly initialized, and it is currently running;
+	\item SUM\_TCS has been correctly initialized as in scenario \ref{subsec:tcsInit};
+	\item NvM is initialized and \textit{NvM_ReadAll} is called at startup;
+\end{enumerate}
+
+\paragraph{Use case}
+\input{generated/tables/uc_activationAndrunning}
+\UMLDiagram{generated/diagrams/sd_TCSActivationAndRunning}{Activation and Running of SUM\_TCS}
+\todo{Probably SRS_TCS 028 can be removed because it does not add nothing to previous requirement}
+
+\subsection{Shutdown Sequence}
+\label{subsec:ShutdownSequence}
+\paragraph{Global Pre-condition}
+\begin{enumerate}
+	\item BSW has been sucessfully initialized and it is running;
+	\item SUM\_SUSD is runnning;
+	\item SUM\_SSM is running
+	\item No previous pending request on NvM;
+\end{enumerate}
+
+\paragraph{Use case}
+\input{generated/tables/uc_shutdown}
+\UMLDiagram{generated/diagrams/sd_TCSShutdown}{Shutdown sequence}
+
+\subsection{Provide TotalVehicleTimeValue to Dcm}
+\paragraph{Global Pre-condition}
+\begin{enumerate}
+	\item BSW has been sucessfully initialized and it is running;
+	\item No previous pending request on NvM;
+\end{enumerate}
+
+\paragraph{Use case}
+\input{generated/tables/uc_TotalVehicleTimeValue}
+\UMLDiagram{generated/diagrams/sd_TCSProvideDcmInfo}{Provide DID services to Dcm}
+
+\subsection{Provide Timestamp Dem}
+\begin{enumerate}
+	\item BSW has been sucessfully initialized and it is running;
+	\item No previous pending request on NvM;
+\end{enumerate}
+
+\paragraph{Use case}
+\input{generated/tables/uc_timestamp}
+\UMLDiagram{generated/diagrams/sd_TCSProvideDemInfo}{Provide Timestamp has extended data record to Dem}

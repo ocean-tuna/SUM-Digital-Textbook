@@ -1,0 +1,136 @@
+\chapter{Testing}
+
+\section{Interface Testing}
+\label{sec:Interface_Testing}
+
+This section shall describe all ports connected to other RTA-SUMs in detail.
+
+\subsection{P Port}
+\label{subsec:P_Port}
+\Requirement{084}
+{
+\input{generated/tables/PP_DIAG_DisableNormalComm_Ch3.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{085}
+{
+\input{generated/tables/PP_DIAG_DisableNormalComm_Ch0.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{086}
+{
+\input{generated/tables/PP_DIAG_DisableNormalComm_Ch2.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{087}
+{
+\input{generated/tables/DIAG_GetEcuAddress.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{088}
+{
+\input{generated/tables/DIAG_SetInitialReflashFlag.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{089}
+{
+\input{generated/tables/DIAG_ECUResetRequest.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{090}
+{
+\input{generated/tables/SSC_DIAG_GETMEC.tex}
+}
+{\Satisfies{SRS_DIAG 108} \Satisfies{SRS_DIAG 124}}
+
+\Requirement{091}
+{
+\input{generated/tables/DIAG_SOH_DiagSessionRequest.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{092}
+{
+\input{generated/tables/DIAG_SOH_GetMEC.tex}
+}
+{\Satisfies{SRS_DIAG 108} \Satisfies{SRS_DIAG 124}}
+
+\Requirement{093}
+{
+\input{generated/tables/DIAG_ShutdownPermission.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{106}
+{
+\input{generated/tables/DIAG_SSFM_GetMEC.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{107}
+{
+\input{generated/tables/DIAG_RmtPrgmOtaPsf.tex}
+}
+{\Satisfies{SRS_DIAG 112}}
+
+
+\subsection{R Port}
+
+\Requirement{094}
+{
+\input{generated/tables/RP_DIAG_SSC_InitialReflashFlag_WrtStatus.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{095}
+{
+\input{generated/tables/SUSD_DIAG_PermitExecution.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{096}
+{
+\input{generated/tables/SSC_DIAG_ReadMemorySecurityVerification.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{097}
+{
+\input{generated/tables/DIAG_BswM_controlDTCsetting.tex}
+}
+{\Satisfies{SRS_DIAG 111} \Satisfies{SRS_DIAG 020}}
+
+\Requirement{098}
+{
+\input{generated/tables/SUSD_Vehicle_Power_Mode.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{099}
+{
+\input{generated/tables/RP_BSPMP_RmtProgmActvAuth.tex}
+}
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{100}
+{
+\input{generated/tables/RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_Av.tex}
+}
+
+{
+\input{generated/tables/RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_FsFA.tex}
+}
+
+{\Satisfies{SRS_DIAG 108}}
+
+\Requirement{101}
+{
+\input{generated/tables/OTA_PSF_Precondition.tex}
+}
+{\Satisfies{SRS_DIAG 108}}

@@ -1,0 +1,1062 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::Spm_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Diagnostic.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for Spm Diagnostic
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#include "Sum_Spm_Diagnostic.h"
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_PBCfg.h"
+#include "Sum_Spm_PowerProfileStateMachine.h"
+#include "Sum_Spm_ErrorHandler.h"
+
+/* PRQA S 3469 EOF # macroes used in this translation unit are used for sake of clarity. */
+/* PRQA S 3219 EOF # Static functions will be used in future tickets. */
+/* PRQA S 1503 EOF # Function are services. Other modules (that acts as client) call the functions as part of Client-Server interaction. */
+/* PRQA S 3432 EOF # Macro definition is part of AUTOSAR definition. Violation does not depend from Spm code. */
+
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+static Sum_Algo_Deque Sum_Spm_DID_E0DE_Queue;
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+static Sum_Algo_Deque Sum_Spm_DID_E0DF_Queue;
+«ENDIF-»
+/* PRQA S 3218 2 # These 2 buffers are used as allocation space. */
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+static SpmDiagActivatedProfileStruct Sum_Spm_DID_E0DE_Memory[SPM_DID_E0DE_E0DF_QUEUE_SIZE_U];
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+static SpmDiagActivatedProfileStruct Sum_Spm_DID_E0DF_Memory[SPM_DID_E0DE_E0DF_QUEUE_SIZE_U];
+«ENDIF-»
+
+/* PRQA S 1514 2 # RAM mirror to NvM block for DID 0xE0DE and DID 0xE0DF */
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+uint8 «spm.spmGeneral.spmDiagnostic.spmDID0xE0DENvmRef.nvMRamBlockDataAddress-»[«spm.spmGeneral.spmDiagnostic.spmDID0xE0DENvmRef.nvMNvBlockLength-»] = {0u};
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+uint8 «spm.spmGeneral.spmDiagnostic.spmDID0xE0DFNvmRef.nvMRamBlockDataAddress-»[«spm.spmGeneral.spmDiagnostic.spmDID0xE0DFNvmRef.nvMNvBlockLength-»] = {0u};
+«ENDIF-»
+
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+static Std_ReturnType Spm_FindItemByServiceIdAndProfNumber(const Sum_Algo_Deque* deque, uint16 serviceId, uint8 profNumber, uint8* position);
+static Std_ReturnType Spm_AddItemToFifoQueue(Sum_Algo_Deque* deque, const SpmDiagActivatedProfileStruct* element);
+static Std_ReturnType Spm_IncrementActivityTimerAtPositionIfProfileIsActive(Sum_Algo_Deque* deque, uint8 position);
+static boolean Spm_IsQueueUpdateAllowed(void);
+static boolean Spm_GetItemNeedActivityTimerUpdate(const uint16 ServiceID, const uint8 ProfileNumber);
+static boolean Spm_GetItemIsInactive(const uint16 ServiceID, const uint8 ProfileNumber);
+static Std_ReturnType Spm_CheckAndUpdateProfileAtPosition(Sum_Algo_Deque* deque, const uint16 serviceId, const uint8 profNumber, const uint8 position, const boolean isLocalQueue, const uint8 lastByteIP);
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+static void Spm_InitializeRequest(SpmDiagActivatedProfileStruct* item, const uint16 serviceId, const uint8 profNumber, const uint8 lastByteIP);
+static Std_ReturnType Spm_HandleNewLocalRequest(const uint16 serviceId, const uint8 profNumber);
+static Std_ReturnType Spm_CheckAndUpdateLocallyActivatedProfile(const uint16 serviceId, const uint8 profNumber, const uint8 localPosition);
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+static Std_ReturnType Spm_HandleNewRemoteRequest(const uint16 serviceId, const uint8 profNumber, const uint8 lastByteIP);
+static Std_ReturnType Spm_UpdateRemotelyActivatedLastByteIPRequester(const uint8 position, const uint8 lastByteIP);
+static Std_ReturnType Spm_CheckAndUpdateRemotelyActivatedProfile(const uint16 serviceId, const uint8 profNumber, const uint8 remotePosition, const uint8 lastByteIP);
+«ENDIF-»
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral) && GetDIDE0DEIsConfigured(spm.spmGeneral) -»
+static Std_ReturnType Spm_TransferFromRemoteToLocal(const uint16 serviceId, const uint8 profNumber, const uint8 remotePosition);
+«ENDIF-»
+«IF GetDIDE0DDIsConfigured(spm.spmGeneral)-»
+static void Spm_DID_E0DD_SetBitToOne(uint8* Data, const uint16 position);
+«ENDIF-»
+
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Regulates activity on SPM DIDs 0xE0DE/0xE0DF based on the processing status of DID 0xE0D7 (SUSD side)
+ *
+ * Receives a command notification from the SUSD indicating whether:
+ * - DIDs should be saved to NvM ("NvMStore" command);
+ * - DIDs should be cleared ("Reset" command);
+ * - DIDs can be updated ("UpdateRecord" command);
+ * - DIDs update should be aborted ("StopUpdate" command).
+ *
+ * @param[in] Cmd The selected command
+ * @return RTE_E_SPM_SUSD_ActivityRecordCmd_E_OK.
+ */
+/* [$Satisfies $DDS_SPM 0627] [$Satisfies $DDS_SPM 0628] [$Satisfies $DDS_SPM 0629]
+   [$Satisfies $DDS_SPM 0609] [$Satisfies $DDS_SPM 0637] [$Satisfies $DDS_SPM 0638] */
+/* PRQA S 1503 1 # Usage of function in a complete integrated project due to project specific conditions */
+FUNC(Std_ReturnType, SPM_CODE) SPM_ActivityRecordCmd(VAR(SPM_SUSD_ActivityRecordCmdType, AUTOMATIC) Cmd)
+{
+
+	switch(Cmd)
+	{
+		case SUM_ARC_Reset: {
+			/* Call function to clear DIDs 0xE0DE/0xE0DF */
+			Spm_ClearQueueDID_E0DE_E0DF();
+		}
+		/* PRQA S 2003 1 # 'Break' is not used in SUM_ARC_Reset state to fall through to SUM_ARC_NvMStore state  to save data. */
+		case SUM_ARC_NvMStore: {
+«IF (Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef) ||  Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef))-»
+			Dcm_OpStatusType opStatus_u8 = DCM_INITIAL;
+«ENDIF-»
+			/* Call function to store DIDs 0xE0DE/0xE0DF to NvM */
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+			(void)Runnable_Spm_DID0xE0DE(«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef)»opStatus_u8,«ENDIF» &(«spm.spmGeneral.spmDiagnostic.spmDID0xE0DENvmRef.nvMRamBlockDataAddress-»[0U]));
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+			(void)Runnable_Spm_DID0xE0DF(«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef)»opStatus_u8,«ENDIF» &(«spm.spmGeneral.spmDiagnostic.spmDID0xE0DFNvmRef.nvMRamBlockDataAddress-»[0U]));
+«ENDIF-»
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+			(void)Rte_Call_RP_SPM_Dcm_E0DE_Write_WriteBlock(&(«spm.spmGeneral.spmDiagnostic.spmDID0xE0DENvmRef.nvMRamBlockDataAddress-»[0U]));
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+			(void)Rte_Call_RP_SPM_Dcm_E0DF_Write_WriteBlock(&(«spm.spmGeneral.spmDiagnostic.spmDID0xE0DFNvmRef.nvMRamBlockDataAddress-»[0U]));
+«ENDIF-»
+			break;
+		}
+		case SUM_ARC_UpdateRecord: {
+			/* Set E0D7ActiveStatus IRV to "Active" */
+			Rte_IrvWrite_RE_SPM_SUSD_ActivityRecordCmd_Spm_E0D7ActiveStatus((E0D7_ACTIVE));
+			break;
+		}
+		case SUM_ARC_StopUpdate: {
+			/* Set E0D7ActiveStatus IRV to "Not Active" */
+			Rte_IrvWrite_RE_SPM_SUSD_ActivityRecordCmd_Spm_E0D7ActiveStatus((E0D7_NOT_ACTIVE));
+			break;
+		}
+		default: {
+			/* Do nothing */
+			break;
+		}
+	}
+	/* For now, always exit with a good status */
+	return RTE_E_SPM_SUSD_ActivityRecordCmd_E_OK;
+}
+«ENDIF-»
+
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Function that initialize the DID E0DE and DID E0DF queue.
+ *
+ */
+/* PRQA S 1532 1 # Defined here for modular reason. */
+void Spm_InitializeQueueDID_E0DE_E0DF(void){
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+	(void)Sum_Algo_UnsortedDeque_Init(&Sum_Spm_DID_E0DE_Queue, sizeof(SpmDiagActivatedProfileStruct), 5u, Sum_Spm_DID_E0DE_Memory);
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+	(void)Sum_Algo_UnsortedDeque_Init(&Sum_Spm_DID_E0DF_Queue, sizeof(SpmDiagActivatedProfileStruct), 5u, Sum_Spm_DID_E0DF_Memory);
+«ENDIF-»
+}
+«ENDIF-»
+
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Function that clear the content the DID E0DE and DID E0DF queue.
+ *
+ */
+void Spm_ClearQueueDID_E0DE_E0DF(void){
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+	(void)Sum_Algo_Deque_Clear(&Sum_Spm_DID_E0DE_Queue);
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+	(void)Sum_Algo_Deque_Clear(&Sum_Spm_DID_E0DF_Queue);
+«ENDIF-»
+}
+«ENDIF-»
+
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Function that checks if an item with specific ServiceId and ProfNumber is present in a deque.
+ *
+ * @param  deque: Pointer to the deque to search in.
+ * @param  serviceId: Service ID to search for.
+ * @param  profNumber: Profile Number to search for.
+ * @param  position: Pointer to store the position if item is found.
+ *
+ * @return E_OK: Item found, position stored in *position parameter.
+ * @return E_NOT_OK: Item not found or invalid parameters.
+ */
+static Std_ReturnType Spm_FindItemByServiceIdAndProfNumber(const Sum_Algo_Deque* deque, uint16 serviceId, uint8 profNumber, uint8* position)
+{
+    Std_ReturnType returnValue = E_NOT_OK;
+    uint8 i;
+    uint8 queueSize;
+    boolean itemFound = FALSE;
+
+    if ((deque != NULL_PTR) && (position != NULL_PTR)) {
+        queueSize = (uint8)Sum_Algo_Deque_Size(deque);
+
+        /* Search through all items in the deque until item is found */
+        for (i = 0u; (i < queueSize) && (itemFound == FALSE); i++) {
+            SpmDiagActivatedProfileStruct tempItem;
+            if (Sum_Algo_Deque_GetAt(deque, i, &tempItem) == E_OK) {
+                if ((tempItem.ServiceId == serviceId) && (tempItem.ProfNumber == profNumber)) {
+                    *position = i;
+                    returnValue = E_OK;
+                    itemFound = TRUE;
+                }
+            }
+        }
+    }
+
+    return returnValue;
+}
+«ENDIF-»
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Function that adds an item to a deque using FIFO behavior. If the deque is full,
+ *        it overwrites the oldest item (removes from front and adds to back).
+ *
+ * @param  deque: Pointer to the deque to add the item to.
+ * @param  element: Pointer to the element to add.
+ *
+ * @return E_OK: Item added successfully (either to empty space or overwriting oldest).
+ * @return E_NOT_OK: Invalid parameters.
+ */
+static Std_ReturnType Spm_AddItemToFifoQueue(Sum_Algo_Deque* deque, const SpmDiagActivatedProfileStruct* element)
+{
+    Std_ReturnType returnValue = E_NOT_OK;
+
+    if ((deque != NULL_PTR) && (element != NULL_PTR)) {
+        /* Check if queue is full */
+        if (Sum_Algo_Deque_IsFull(deque) == TRUE) {
+            /* Queue is full - remove oldest item (from front) to make space */
+            SpmDiagActivatedProfileStruct tempBuffer;
+            (void)Sum_Algo_Deque_PopFront(deque, &tempBuffer); /* Discard oldest item */
+        }
+
+        /* Add new item to back of queue (FIFO) */
+        returnValue = Sum_Algo_Deque_PushBack(deque, element);
+    }
+
+    return returnValue;
+}
+«ENDIF-»
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Core function that checks if a profile is inactive and updates its position in the queue if needed.
+ *
+ * This function checks if a profile identified by serviceId and profNumber is currently inactive.
+ * If the profile is inactive, it removes the item from its current position in the queue,
+ * increments the ActivationCount, and pushes it back to the end of the queue (FIFO behavior).
+ * If the profile is active, no update is performed (or only IP update for remote profiles).
+ *
+ * @param  deque: Pointer to the deque (E0DE or E0DF).
+ * @param  serviceId: Service ID of the profile to check.
+ * @param  profNumber: Profile number to check.
+ * @param  position: Current position of the item in the queue.
+ * @param  isLocalQueue: TRUE for E0DE queue (locally activated), FALSE for E0DF queue (remotely activated).
+ * @param  lastByteIP: Last byte IP of the requester (only used for remote profiles).
+ *
+ * @return E_OK: Item successfully updated or no update needed (profile is active).
+ * @return E_NOT_OK: Failed to update the item in the queue.
+ */
+static Std_ReturnType Spm_CheckAndUpdateProfileAtPosition(Sum_Algo_Deque* deque, const uint16 serviceId, const uint8 profNumber, const uint8 position, const boolean isLocalQueue, const uint8 lastByteIP)
+{
+    Std_ReturnType returnValue = E_NOT_OK;
+    
+    if (deque != NULL_PTR) {
+        if (Spm_GetItemIsInactive(serviceId, profNumber) == TRUE) {
+            SpmDiagActivatedProfileStruct tempItem;
+            
+            /* Remove item from the queue */
+            if (Sum_Algo_Deque_PopAtPosition(deque, position, &tempItem) == E_OK) {
+                /* [$Satisfies $DDS_SPM 0632] */
+                /* PRQA S 2983 2 # tempItem will be used to update the queue by Sum_Algo_Deque_SetAt. */
+                /* Increment activation count */
+                tempItem.ActualPowerOffRecords.ActivationCount++;
+                /* PRQA S 2983 2 # tempItem will be used to update the queue by Sum_Algo_Deque_SetAt. */
+                /* Update last byte IP (will be 0 for local profiles) */
+                tempItem.LastByteIPRequester = lastByteIP;
+                /* Push back to end of queue */
+                returnValue = Sum_Algo_Deque_PushBack(deque, &tempItem);
+            }
+        } else {
+            /* Profile is active */
+            if (isLocalQueue == TRUE) {
+                /* For local request, no update needed */
+                returnValue = E_OK;
+            } else {
+                «IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+                /* For remote request, update the IP */
+                returnValue = Spm_UpdateRemotelyActivatedLastByteIPRequester(position, lastByteIP);
+                «ENDIF-»
+            }
+        }
+    }
+    
+    return returnValue;
+}
+«ENDIF-»
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Checks if a locally activated profile is inactive and updates its position in the queue if needed.
+ *
+ * @param  serviceId: Service ID of the profile to check.
+ * @param  profNumber: Profile number to check.
+ * @param  localPosition: Current position of the item in the E0DE queue.
+ *
+ * @return E_OK: Item successfully updated or no update needed (profile is active).
+ * @return E_NOT_OK: Failed to update the item in the queue.
+ */
+static Std_ReturnType Spm_CheckAndUpdateLocallyActivatedProfile(const uint16 serviceId, const uint8 profNumber, const uint8 localPosition)
+{
+    return Spm_CheckAndUpdateProfileAtPosition(&Sum_Spm_DID_E0DE_Queue, serviceId, profNumber, localPosition, TRUE, 0u);
+}
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Checks if a remotely activated profile is inactive and updates its position in the queue if needed.
+ *
+ * @param  serviceId: Service ID of the profile to check.
+ * @param  profNumber: Profile number to check.
+ * @param  remotePosition: Current position of the item in the E0DF queue.
+ * @param  lastByteIP: Last byte IP of the requester to update.
+ *
+ * @return E_OK: Item successfully updated or IP updated (if profile is active).
+ * @return E_NOT_OK: Failed to update the item in the queue.
+ */
+static Std_ReturnType Spm_CheckAndUpdateRemotelyActivatedProfile(const uint16 serviceId, const uint8 profNumber, const uint8 remotePosition, const uint8 lastByteIP)
+{
+    return Spm_CheckAndUpdateProfileAtPosition(&Sum_Spm_DID_E0DF_Queue, serviceId, profNumber, remotePosition, FALSE, lastByteIP);
+}
+«ENDIF-»
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Function the Power Profile Status.
+ *
+ * @param  ServiceID: Service ID of the profile to look for.
+ * @param  ProfileNumber: Profile number of the profile to look for.
+ *
+ * @return TRUE: the profile is active.
+ *         FALSE: otherwise
+ */
+/* [$Satisfies $DDS_SPM 0627] [$Satisfies $DDS_SPM 0628] [$Satisfies $DDS_SPM 0629] [$Satisfies $DDS_SPM 0637] [$Satisfies $DDS_SPM 0638] */
+static boolean Spm_GetItemIsInactive(const uint16 ServiceID, const uint8 ProfileNumber){
+
+    uint16 index;
+    boolean checkRet = Spm_GetPowProfIndexFromProfIDProfNumber(ServiceID, ProfileNumber, &index);
+    boolean ret = FALSE;
+
+    if((checkRet == TRUE) && (SPM_PrfStsMgr_RAM[index].sm == SPM_Inactive)){
+        ret = TRUE;
+    }
+
+    return ret;
+}
+«ENDIF-»
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Function the Power Profile Status.
+ *
+ * @param  ServiceID: Service ID of the profile to look for.
+ * @param  ProfileNumber: Profile number of the profile to look for.
+ *
+ * @return TRUE: the profile is active.
+ *         FALSE: otherwise
+ */
+/* [$Satisfies $DDS_SPM 0627] [$Satisfies $DDS_SPM 0628] [$Satisfies $DDS_SPM 0629] [$Satisfies $DDS_SPM 0637] [$Satisfies $DDS_SPM 0638] */
+static boolean Spm_GetItemNeedActivityTimerUpdate(const uint16 ServiceID, const uint8 ProfileNumber){
+
+    uint16 index;
+    boolean checkRet = Spm_GetPowProfIndexFromProfIDProfNumber(ServiceID, ProfileNumber, &index);
+    boolean ret = FALSE;
+
+    if((checkRet == TRUE) && (SPM_PrfStsMgr_RAM[index].sm == SPM_Activated)){
+        ret = TRUE;
+    }
+
+    return ret;
+}
+«ENDIF-»
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Function that increments the ActivityTimerInTick of ActualPowerOffRecords for an item at a specific position in the queue.
+ *
+ * @param  deque: Pointer to the deque containing the item.
+ * @param  position: Position of the item in the queue.
+ *
+ * @return E_OK: ActivityTimerInTick incremented successfully.
+ * @return E_NOT_OK: Invalid parameters or position out of bounds.
+ */
+static Std_ReturnType Spm_IncrementActivityTimerAtPositionIfProfileIsActive(Sum_Algo_Deque* deque, uint8 position)
+{
+    Std_ReturnType returnValue = E_NOT_OK;
+
+    if (deque != NULL_PTR) {
+        SpmDiagActivatedProfileStruct tempItem;
+
+        /* Get the item from the queue */
+        if (Sum_Algo_Deque_GetAt(deque, position, &tempItem) == E_OK) {
+
+
+            if(TRUE == Spm_GetItemNeedActivityTimerUpdate(tempItem.ServiceId, tempItem.ProfNumber)){
+                /* Increment the ActivityTimerInTick */
+                /* PRQA S 2983 1 # tempItem will be used to update the queue by Sum_Algo_Deque_SetAt. */
+                tempItem.ActualPowerOffRecords.ActivityTimerInTick++;
+
+                /* Set the modified item back to the queue */
+                returnValue = Sum_Algo_Deque_SetAt(deque, position, &tempItem);
+            }
+
+        }
+    }
+
+    return returnValue;
+}
+«ENDIF-»
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Checks if SUSD allows data updates and we're in PowerOff session
+ *
+ * @return TRUE if updates are allowed, FALSE otherwise
+ */
+/* [$Satisfies $DDS_SPM 0627] [$Satisfies $DDS_SPM 0628] [$Satisfies $DDS_SPM 0629]
+   [$Satisfies $DDS_SPM 0631] [$Satisfies $DDS_SPM 0637] [$Satisfies $DDS_SPM 0638] */
+static boolean Spm_IsQueueUpdateAllowed(void)
+{
+    /* Check if the actual VehiclePowerMode is different from Propulsion. */
+    boolean VehPowModeConditionSatisfied = Spm_GetVehPowModeConditionSatisfiedForDID();
+
+    /* Check if SUSD informed we can update data */
+    Spm_E0D7ActiveStatusType e0d7Status = Rte_IrvRead_RE_SPM_SoftMgr_MainFunction_Spm_E0D7ActiveStatus();
+
+    return ((e0d7Status == E0D7_ACTIVE) && (VehPowModeConditionSatisfied == TRUE));
+}
+
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Creates a new profile request with default values
+ *
+ * @param[out] item Pointer to store the initialized profile
+ * @param[in] serviceId Service ID for the profile
+ * @param[in] profNumber Profile number for the profile
+ * @param[in] lastByteIP Last byte IP of the requester (0 for local profiles)
+ *
+ */
+static void Spm_InitializeRequest(SpmDiagActivatedProfileStruct* item, const uint16 serviceId, const uint8 profNumber, const uint8 lastByteIP)
+{
+
+    /* Initialize with provided ServiceId and ProfNumber */
+    item->ServiceId = serviceId;
+    item->ProfNumber = profNumber;
+    item->LastByteIPRequester = lastByteIP;
+
+    /* Initialize records */
+    item->ActualPowerOffRecords.ActivationCount = 1u;  /* Start with 1 activation */
+    item->ActualPowerOffRecords.ActivityTimerInTick = 0u;
+
+    return;
+}
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral) && GetDIDE0DEIsConfigured(spm.spmGeneral) -»
+/**
+ * @brief Transfers a profile from the remote queue to the local queue
+ *
+ * @param[in] serviceId Service ID of the profile
+ * @param[in] profNumber Profile number of the profile
+ * @param[in] remotePosition Position in the remote queue
+ *
+ * @return E_OK: Transfer completed successfully
+ * @return E_NOT_OK: Transfer failed
+ */
+static Std_ReturnType Spm_TransferFromRemoteToLocal(const uint16 serviceId, const uint8 profNumber, const uint8 remotePosition)
+{
+    Std_ReturnType returnValue = E_NOT_OK;
+    SpmDiagActivatedProfileStruct remoteItem;
+    SpmDiagActivatedProfileStruct localItem;
+
+    /* Get the remotely activated profile */
+    if (Sum_Algo_Deque_GetAt(&Sum_Spm_DID_E0DF_Queue, remotePosition, &remoteItem) == E_OK) {
+        /* Initialize the local profile */
+        Spm_InitializeRequest(&localItem, serviceId, profNumber, 0u);
+
+        /* PRQA S 2983 3 # tempItem will be used to update the queue by Sum_Algo_Deque_SetAt. */
+        /* Copy ActivityTimerInTick and ActivationCount from remote profile */
+        localItem.ActualPowerOffRecords.ActivityTimerInTick = remoteItem.ActualPowerOffRecords.ActivityTimerInTick;
+        localItem.ActualPowerOffRecords.ActivationCount = remoteItem.ActualPowerOffRecords.ActivationCount;
+        
+        /* Add item to E0DE queue */
+        if (Spm_AddItemToFifoQueue(&Sum_Spm_DID_E0DE_Queue, &localItem) == E_OK) {
+            /* Remove item from E0DF queue. The remoteItem is passed for coherence with function prototype. */
+            returnValue = Sum_Algo_Deque_PopAtPosition(&Sum_Spm_DID_E0DF_Queue, remotePosition, &remoteItem);
+        }
+
+    }
+
+    return returnValue;
+}
+«ENDIF-»
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Handles case when profile is not found in either queue
+ *
+ * @param[in] serviceId Service ID of the profile
+ * @param[in] profNumber Profile number of the profile
+ *
+ * @return E_OK: Operation completed successfully
+ * @return E_NOT_OK: Operation failed
+ */
+static Std_ReturnType Spm_HandleNewLocalRequest(const uint16 serviceId, const uint8 profNumber)
+{
+    Std_ReturnType returnValue;
+    SpmDiagActivatedProfileStruct newItem;
+
+    /* Initialize the new local request */
+    Spm_InitializeRequest(&newItem, serviceId, profNumber, 0u);
+
+    /* Add to E0DE queue */
+    returnValue = Spm_AddItemToFifoQueue(&Sum_Spm_DID_E0DE_Queue, &newItem);
+
+    return returnValue;
+}
+«ENDIF-»
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Handles local activation request and updates the diagnostic queues accordingly.
+ *
+ * @param[in] serviceId Service ID of the profile to activate
+ * @param[in] profNumber Profile number to activate
+ *
+ * @return E_OK: Request processed successfully
+ * @return E_NOT_OK: Request processing failed
+ */
+/* PRQA S 1532 3 # Defined here for modular reason. */
+ /* [$Satisfies $DDS_SPM 0627] [$Satisfies $DDS_SPM 0628] [$Satisfies $DDS_SPM 0629]
+    [$Satisfies $DDS_SPM 0630] [$Satisfies $DDS_SPM 0637] [$Satisfies $DDS_SPM 0638] */
+Std_ReturnType Spm_HandleLocalActivationRequest(const uint16 serviceId, const uint8 profNumber)
+{
+    Std_ReturnType returnValue = E_NOT_OK;
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+    uint8 remotePosition;
+«ENDIF-»
+    uint8 localPosition;
+
+    /* Check if SUSD allows updates and we're in PowerOff session */
+    if (Spm_IsQueueUpdateAllowed() == TRUE) {
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+        /* Check if profile already present in E0DF queue (remotely activated) */
+        if (Spm_FindItemByServiceIdAndProfNumber(&Sum_Spm_DID_E0DF_Queue, serviceId, profNumber, &remotePosition) == E_OK) {
+            /* Transfer profile from remote to local queue */
+            returnValue = Spm_TransferFromRemoteToLocal(serviceId, profNumber, remotePosition);
+        }
+«ENDIF»
+        /* If not in remote queue or transfer failed, check if in local queue */
+       «IF GetDIDE0DFIsConfigured(spm.spmGeneral)»
+            else «ENDIF» if (Spm_FindItemByServiceIdAndProfNumber(&Sum_Spm_DID_E0DE_Queue, serviceId, profNumber, &localPosition) == E_OK) {
+            /* Profile already in E0DE queue - check if it needs an update */
+            returnValue = Spm_CheckAndUpdateLocallyActivatedProfile(serviceId, profNumber, localPosition);
+        }
+        /* Profile not found in either queue - add new entry */
+        else {
+            returnValue = Spm_HandleNewLocalRequest(serviceId, profNumber);
+        }
+    }
+
+    return returnValue;
+}
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Create a new item and enqueue in the E0DF queue.
+ *
+ * @param[in] serviceId Service ID of the profile
+ * @param[in] profNumber Profile number of the profile
+ * @param[in] lastByteIP Last byte IP of the requester
+ *
+ * @return E_OK: Operation completed successfully
+ * @return E_NOT_OK: Operation failed
+ */
+static Std_ReturnType Spm_HandleNewRemoteRequest(const uint16 serviceId, const uint8 profNumber, const uint8 lastByteIP)
+{
+    Std_ReturnType returnValue;
+    SpmDiagActivatedProfileStruct newItem;
+
+    /* Initialize the new remote request */
+    Spm_InitializeRequest(&newItem, serviceId, profNumber, lastByteIP);
+
+    /* Add to E0DF queue */
+    returnValue = Spm_AddItemToFifoQueue(&Sum_Spm_DID_E0DF_Queue, &newItem);
+
+    return returnValue;
+}
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Update the value of the lastByteIP of the requester
+ *
+ * @param[in] position in the E0DF list of the item to udpate the LastByteIp
+ * @param[in] lastByteIP Last byte IP of the requester
+ *
+ * @return E_OK: Operation completed successfully
+ * @return E_NOT_OK: Operation failed
+ */
+static Std_ReturnType Spm_UpdateRemotelyActivatedLastByteIPRequester(const uint8 position, const uint8 lastByteIP){
+
+    Std_ReturnType returnValue = E_NOT_OK;
+    SpmDiagActivatedProfileStruct tempItem;
+
+    /* Get the item from the queue */
+    if (Sum_Algo_Deque_GetAt(&Sum_Spm_DID_E0DF_Queue, position, &tempItem) == E_OK) {
+
+        /* Update LastByteIPRequester. */
+		/* PRQA S 2983 1 # tempItem will be used to update the queue by Sum_Algo_Deque_SetAt. */
+        tempItem.LastByteIPRequester = lastByteIP;
+
+        /* Set the modified item back to the queue */
+        returnValue = Sum_Algo_Deque_SetAt(&Sum_Spm_DID_E0DF_Queue, position, &tempItem);
+
+    }
+
+    return returnValue;
+}
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Handles remote activation request and updates the diagnostic queues accordingly.
+ *
+ * @param[in] serviceId Service ID of the profile to activate
+ * @param[in] profNumber Profile number to activate
+ * @param[in] lastByteIP Last byte IP of the requester
+ *
+ * @return E_OK: Request processed successfully
+ * @return E_NOT_OK: Request processing failed
+ */
+/* PRQA S 1532 3 # Defined here for modularity reason. */
+ /* [$Satisfies $DDS_SPM 0627] [$Satisfies $DDS_SPM 0628] [$Satisfies $DDS_SPM 0629]
+    [$Satisfies $DDS_SPM 0631] [$Satisfies $DDS_SPM 0637] [$Satisfies $DDS_SPM 0638] */
+Std_ReturnType Spm_HandleRemoteActivationRequest(const uint16 serviceId, const uint8 profNumber, const uint8 lastByteIP)
+{
+    Std_ReturnType returnValue = E_NOT_OK;
+    uint8 remotePosition;
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+    uint8 localPosition;
+«ENDIF-»
+    /* Check if SUSD allows updates and we're in PowerOff session */
+    if (Spm_IsQueueUpdateAllowed() == TRUE) {
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+        /* If the item is already present in the local queue, NO operation is needed since
+           by definition an item that has both locally and remotely activation criteria is
+           defined as locally activated. */
+        if( Spm_FindItemByServiceIdAndProfNumber(&Sum_Spm_DID_E0DE_Queue, serviceId, profNumber, &localPosition) == E_OK ){
+
+            returnValue = E_NOT_OK;
+
+        }
+«ENDIF-»
+       «IF GetDIDE0DEIsConfigured(spm.spmGeneral)»
+            else «ENDIF» if (Spm_FindItemByServiceIdAndProfNumber(&Sum_Spm_DID_E0DF_Queue, serviceId, profNumber, &remotePosition) == E_OK) {
+
+			/* Update the requester's last byte IP */
+            returnValue = Spm_CheckAndUpdateRemotelyActivatedProfile(serviceId, profNumber, remotePosition, lastByteIP);
+
+        } else {
+            /* Create a new item and enqueue in E0DF queue. */
+            returnValue = Spm_HandleNewRemoteRequest(serviceId, profNumber, lastByteIP);
+        }
+
+    }
+
+    return returnValue;
+}
+«ENDIF-»
+/**
+ * @brief Updates the ActivityTimerInTick for all items in both E0DE and E0DF queues.
+ *
+ * This function iterates through all items in the E0DE (locally activated) and E0DF (remotely activated)
+ * queues and increments their ActivityTimerInTick counters by calling the appropriate increment functions.
+ *
+ * @return E_OK: All activity timers updated successfully
+ * @return E_NOT_OK: Failed to update at least one activity timer
+ */
+/* PRQA S 1532 2 # Defined here for modular reason. */
+ /* [$Satisfies $DDS_SPM 0633] */
+Std_ReturnType Sum_Spm_UpdateActivityTimerDID_E0DE_E0DF(void)
+{
+    Std_ReturnType returnValue = E_OK;
+    uint8 i;
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+    uint8 localQueueSize;
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+    uint8 remoteQueueSize;
+«ENDIF-»
+    /* Check if SUSD allows updates and we're in PowerOff session */
+    if (Spm_IsQueueUpdateAllowed() == TRUE) {
+        /* Get the size of both queues */
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+        localQueueSize = (uint8)Sum_Algo_Deque_Size(&Sum_Spm_DID_E0DE_Queue);
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+        remoteQueueSize = (uint8)Sum_Algo_Deque_Size(&Sum_Spm_DID_E0DF_Queue);
+«ENDIF-»
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+        /* Update all items in the E0DE queue (locally activated profiles) */
+        for (i = 0u; i < localQueueSize; i++) {
+            if (Spm_IncrementActivityTimerAtPositionIfProfileIsActive(&Sum_Spm_DID_E0DE_Queue, i) != E_OK) {
+                returnValue = E_NOT_OK;
+            }
+        }
+«ENDIF-»
+«IF GetDIDE0DFIsConfigured(spm.spmGeneral)-»
+        /* Update all items in the E0DF queue (remotely activated profiles) */
+        for (i = 0u; i < remoteQueueSize; i++) {
+            if (Spm_IncrementActivityTimerAtPositionIfProfileIsActive(&Sum_Spm_DID_E0DF_Queue, i) != E_OK) {
+                returnValue = E_NOT_OK;
+            }
+        }
+«ENDIF-»
+    }
+
+    return returnValue;
+}
+«ENDIF-»
+«IF GetDIDE0DDIsConfigured(spm.spmGeneral)-»
+/**
+ * @brief Function that set to 1 a particular bit.
+ *
+ * @param  Data: Buffer to populate. Pointer to an array of 64 bytes.
+ * @param  position: Position of bit to set to 1. In range [0, 511].
+ *
+ */
+static void Spm_DID_E0DD_SetBitToOne(uint8* Data, const uint16 position){
+
+	uint8 bytePosition;
+	uint8 bitPosition;
+
+	/* Check if the position is smaller than the max position available.
+	   Anyway the position (i.e. BitMapIndex) is already checked at generation time. */
+	if(position <  512u){
+
+		bytePosition = (uint8)(position / 8u);
+		bitPosition = (uint8)(7u - (position % 8u));
+		Data[bytePosition] |= 1u << bitPosition;
+
+	}
+}
+
+
+«ENDIF-»
+
+«IF spm.spmGeneral.spmDiagnostic != null -»
+«IF spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref != null -»
+/**
+ * @brief Function that handle the DID E0DD Activation Profile Activaiton Status.
+ * «IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref)-»
+ * @param  OpStatus: Status
+ * «ENDIF-»
+ * @param  Data: Buffer to populate. Pointer to an array of 64 bytes.
+ *
+ * @return E_OK: Standard return value since this operation can not fail.
+ */
+/* PRQA S 1503 2 # This function will be called by the RTE. */
+/* [$Satisfies $DDS_SPM 0626] */
+Std_ReturnType Runnable_SPM_DID_E0DD_ActivationProfileActivationStatus(
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref)-»
+																		Dcm_OpStatusType OpStatus,
+«ENDIF-»
+	                                                                    uint8* Data)
+{
+
+	uint8 i;
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref)-»
+	SUM_SPM_UNUSED(OpStatus);
+«ENDIF-»
+	/* Initialization of the buffer received. */
+	for(i = 0u; i < SUM_SPM_DID_E0DD_SIZE_BYTES; i++){
+		Data[i] = 0u;
+	}
+
+	for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++){
+		/* The particular bit SHALL be set to 1 if the state is NOT Inactive and the SpmProfBitMapIndex is configured. */
+		if((SPM_PrfStsMgr_RAM[i].sm != SPM_Inactive) && (SPM_GET_BITMAPINDEX_FROM_CONF(i) != NULL_PTR)){
+			Spm_DID_E0DD_SetBitToOne(&Data[0u], *(SPM_GET_BITMAPINDEX_FROM_CONF(i)));
+		}
+	}
+
+	return E_OK;
+}
+	«IF Get_DID_HasCheckRead(spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref)-»
+/**
+*  @brief Runnable_SPM_DID_E0DD_ActivationProfileActivationStatus_CheckRead
+*
+*  Function for Condition Check Read of ECU Operating State through DID
+* «IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref)-»
+* @param  OpStatus: Status
+* «ENDIF-»
+*  @param  Data: Buffer to populate. Pointer to an array of 64 bytes.
+*
+*  @return E_OK: Standard return value since this operation can not fail.
+**/
+/* PRQA S 1503 1 # This function will be called by the RTE. */
+Std_ReturnType Runnable_SPM_DID_E0DD_ActivationProfileActivationStatus_CheckRead(
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref)-»
+																				 Dcm_OpStatusType OpStatus,
+«ENDIF-»
+	                                                                             Dcm_NegativeResponseCodeType*  ErrorCode){
+
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref)-»
+	SUM_SPM_UNUSED(OpStatus);
+«ENDIF-»
+
+	/* Macro generated by RTE as part of Dcm_NegativeResponseCodeType. */
+	*ErrorCode = DCM_POS_RESP;
+
+	return E_OK;
+}
+	«ENDIF-»
+«ENDIF -»
+«IF spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef != null -»
+/**
+ * @brief 		The Function fills the DID 0xE0DE Data as per specification in serialized way
+ *
+ * DID 0xE0DE:  Locally Activated Activation Profile Off Power Mode Activity Records
+ *
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef)-»
+ * @param[in]	OpStatus	Status code of the Dcm (Optional - Valid only for ASYN C/S Ports)
+«ENDIF-»
+ * @param[out]	Data		buffer to store the filled data from SPM to Dcm
+ *
+ * @return		Std_ReturnType
+ * @retVal		E_OK		Success
+ */
+/* [$Satisfies $DDS_SPM 0627] [$Satisfies $DDS_SPM 0628] [$Satisfies $DDS_SPM 0629] [$Satisfies $DDS_SPM 0637] [$Satisfies $DDS_SPM 0638] */
+/* PRQA S 1505 1 # This runnable will be called by RTE */
+FUNC(Std_ReturnType, SPM_CODE) Runnable_Spm_DID0xE0DE(
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef)-»
+	Dcm_OpStatusType OpStatus,
+«ENDIF-»
+    P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data
+) {
+	Std_ReturnType rtn_u8 = E_NOT_OK;
+
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef)-»
+	SUM_SPM_UNUSED(OpStatus);
+«ENDIF-»
+
+	/*
+	 * Data : Size is asssumed as proper form Dcm configuration
+	 * CHECK: the pointer SHALL be valid.
+	 */
+
+	if (Data != NULL_PTR) {
+		uint32 								 queueItmPos_u32;
+		uint8								 serialOpId_pos_u8;
+		SpmDiagActivatedProfileStruct 	     currExtrItm_st;
+		Sum_Algo_Deque const *const 		 self = &(Sum_Spm_DID_E0DE_Queue);
+		uint8								 actvTimer_1ByteSplit_u8;
+		uint32 								 actvTimer_tcompute_u32;
+
+		/* Clear all the buffer size of DID E0DE before filling the data*/
+		(void)Sum_Common_MemSet(Data, 0x00, sizeof(uint8[35U]));
+		serialOpId_pos_u8 = 0U;
+
+		/* Fill with real current data */
+		for (queueItmPos_u32 = 0U; queueItmPos_u32 < SPM_DID_E0DE_E0DF_QUEUE_SIZE_L; queueItmPos_u32++) {
+			/*
+			 * Run FOR-LOOP for the maximum queue size, but check if the queue is
+			 * correctly filled for the current position */
+			if (Sum_Algo_Deque_GetAt(self, queueItmPos_u32, &(currExtrItm_st)) == E_OK) {
+				/* Start the serialization */
+				«Spm_SerializeData("Data", "currExtrItm_st.ServiceId", "serialOpId_pos_u8", 2, "\t\t\t\t\t\t")»
+				«Spm_SerializeData("Data", "currExtrItm_st.ProfNumber", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+				/* Compute the amount of time */
+				actvTimer_tcompute_u32 = (currExtrItm_st.ActualPowerOffRecords.ActivityTimerInTick * SPM_SM_PERIODICITY_MS) / 1000U;
+				/* Store the 2ND MSBs for the total amount of activity time */
+				actvTimer_1ByteSplit_u8 = (uint8)(actvTimer_tcompute_u32 >> 16U);
+				«Spm_SerializeData("Data", "actvTimer_1ByteSplit_u8", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+				/* Store the 3RD MSBs for the total amount of activity time */
+				actvTimer_1ByteSplit_u8 = (uint8)(actvTimer_tcompute_u32 >> 8U);
+				«Spm_SerializeData("Data", "actvTimer_1ByteSplit_u8", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+				/* Store the LSBs for the total amount of activity time */
+				actvTimer_1ByteSplit_u8 = (uint8)(actvTimer_tcompute_u32 & 0x000000FFU);
+				«Spm_SerializeData("Data", "actvTimer_1ByteSplit_u8", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+				«Spm_SerializeData("Data", "currExtrItm_st.ActualPowerOffRecords.ActivationCount", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+			} /* endif */
+		} /* endfor */
+
+		rtn_u8 = E_OK;
+
+	} /* endif */
+
+	return rtn_u8;
+}
+
+«IF Get_DID_HasCheckRead(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef) -»
+/**
+ * @brief 		The Function fills the DID 0xE0DE Error codes If condition checkRead is enabled
+ *
+ * DID 0xE0DE:  Locally Activated Activation Profile Off Power Mode Activity Records
+ *
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef)-»
+ * @param[in]	OpStatus	Status code of the Dcm (Optional - Valid only for ASYN C/S Ports)
+«ENDIF-»
+ * @param[out]	Data		buffer to store the filled data from SPM to Dcm
+ *
+ * @return		Std_ReturnType
+ * @retVal		E_OK		Success
+ *
+ * @note the function is generated only when parameter DcmDspDataConditionCheckReadFncUsed is TRUE in Dcm configuration
+ */
+/* [$Satisfies $DDS_SPM 0627] [$Satisfies $DDS_SPM 0628] [$Satisfies $DDS_SPM 0629] [$Satisfies $DDS_SPM 0637] [$Satisfies $DDS_SPM 0638] */
+FUNC(Std_ReturnType, SPM_CODE) Runnable_Spm_DID0xE0DE_CheckRead(
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef)-»
+	Dcm_OpStatusType OpStatus,
+«ENDIF-»
+    P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode
+) {
+
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DEDcmRef)-»
+	SUM_SPM_UNUSED(OpStatus);
+«ENDIF-»
+
+	*(ErrorCode) = DCM_POS_RESP;
+
+	return E_OK;
+}
+	«ENDIF -»
+«ENDIF -»
+«IF spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef != null -»
+/**
+ * @brief 		The Function fills the DID 0xE0DF Data as per specification in serialized way
+ *
+ * DID 0xE0DF:  Remotely Activated Activation Profile Off Power Mode Activity Records
+ *
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef)-»
+ * @param[in]	OpStatus	Status code of the Dcm (Optional - Valid only for ASYN C/S Ports)
+«ENDIF-»
+ * @param[out]	Data		buffer to store the filled data from SPM to Dcm
+ *
+ * @return		Std_ReturnType
+ * @retVal		E_OK		Success
+ */
+/* [$Satisfies $DDS_SPM 0627] [$Satisfies $DDS_SPM 0628] [$Satisfies $DDS_SPM 0629] [$Satisfies $DDS_SPM 0637] [$Satisfies $DDS_SPM 0638] */
+/* PRQA S 1505 1 # This runnable will be called by RTE */
+FUNC(Std_ReturnType, SPM_CODE) Runnable_Spm_DID0xE0DF(
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef)-»
+	Dcm_OpStatusType OpStatus,
+«ENDIF-»
+    P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data
+) {
+	Std_ReturnType rtn_u8 = E_NOT_OK;
+
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef)-»
+	SUM_SPM_UNUSED(OpStatus);
+«ENDIF-»
+	/*
+	 * Data : Size is asssumed as proper form Dcm configuration
+	 * CHECK: the pointer SHALL be valid.
+	 */
+
+	if (Data != NULL_PTR) {
+		uint32 								 	queueItmPos_u32;
+		uint8								 	serialOpId_pos_u8;
+		SpmDiagActivatedProfileStruct 	        currExtrItm_st;
+		uint8								 	actvTimer_1ByteSplit_u8;
+		uint32 								 	actvTimer_tcompute_u32;
+
+		Sum_Algo_Deque const *const 		 	self = &(Sum_Spm_DID_E0DF_Queue);
+
+		/* Clear all the buffer size of DID E0DF before filling the data*/
+		(void)Sum_Common_MemSet(Data, 0x00, sizeof(uint8[40U]));
+		serialOpId_pos_u8 = 0U;
+
+		/* Fill with real current data */
+		for (queueItmPos_u32 = 0U; queueItmPos_u32 < SPM_DID_E0DE_E0DF_QUEUE_SIZE_L; queueItmPos_u32++) {
+			/*
+			 * Run FOR-LOOP for the maximum queue size, but check if the queue is
+			 * correctly filled for the current position */
+			if (Sum_Algo_Deque_GetAt(self, queueItmPos_u32, &(currExtrItm_st)) == E_OK) {
+				/* Start the serialization */
+				«Spm_SerializeData("Data", "currExtrItm_st.ServiceId", "serialOpId_pos_u8", 2, "\t\t\t\t\t\t")»
+				«Spm_SerializeData("Data", "currExtrItm_st.ProfNumber", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+				«Spm_SerializeData("Data", "currExtrItm_st.LastByteIPRequester", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+				/* Compute the amount of time */
+				actvTimer_tcompute_u32 = (currExtrItm_st.ActualPowerOffRecords.ActivityTimerInTick * SPM_SM_PERIODICITY_MS) / 1000U;
+				/* Store the 2ND MSBs for the total amount of activity time */
+				actvTimer_1ByteSplit_u8 = (uint8)(actvTimer_tcompute_u32 >> 16U);
+				«Spm_SerializeData("Data", "actvTimer_1ByteSplit_u8", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+				/* Store the 3RD MSBs for the total amount of activity time */
+				actvTimer_1ByteSplit_u8 = (uint8)(actvTimer_tcompute_u32 >> 8U);
+				«Spm_SerializeData("Data", "actvTimer_1ByteSplit_u8", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+				/* Store the LSBs for the total amount of activity time */
+				actvTimer_1ByteSplit_u8 = (uint8)(actvTimer_tcompute_u32 & 0x000000FFU);
+				«Spm_SerializeData("Data", "actvTimer_1ByteSplit_u8", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+				«Spm_SerializeData("Data", "currExtrItm_st.ActualPowerOffRecords.ActivationCount", "serialOpId_pos_u8", 1, "\t\t\t\t\t\t")»
+			} /* endif */
+		} /* endfor */
+
+		rtn_u8 = E_OK;
+
+	} /* endif */
+
+	return rtn_u8;
+}
+	«IF Get_DID_HasCheckRead(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef) -»
+/**
+ * @brief 		The Function fills the DID 0xE0DF Error codes If condition checkRead is enabled
+ *
+ * DID 0xE0DF: Remotely Activated Activation Profile Off Power Mode Activity Records
+ *
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef)-»
+ * @param[in]	OpStatus	Status code of the Dcm (Optional - Valid only for ASYN C/S Ports)
+«ENDIF-»
+ * @param[out]	Data		buffer to store the filled data from SPM to Dcm
+ *
+ * @return		Std_ReturnType
+ * @retVal		E_OK		Success
+ *
+ * @note the function is generated only when parameter DcmDspDataConditionCheckReadFncUsed is TRUE in Dcm configuration
+ */
+/* [$Satisfies $DDS_SPM 0627] [$Satisfies $DDS_SPM 0628] [$Satisfies $DDS_SPM 0629] [$Satisfies $DDS_SPM 0637] [$Satisfies $DDS_SPM 0638] */
+FUNC(Std_ReturnType, SPM_CODE) Runnable_Spm_DID0xE0DF_CheckRead(
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef)-»
+	Dcm_OpStatusType OpStatus,
+«ENDIF-»
+    P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode
+) {
+
+«IF Get_DID_UsePortAsync(spm.spmGeneral.spmDiagnostic.spmDID0xE0DFDcmRef)-»
+	SUM_SPM_UNUSED(OpStatus);
+«ENDIF-»
+
+	*(ErrorCode) = DCM_POS_RESP;
+
+	return E_OK;
+}
+	«ENDIF -»
+«ENDIF»
+«ENDIF -» «REM»SpmDiagnostic is configured«ENDREM»
+
+/* EOF */
+
+«ENDFILE -»
+«ENDDEFINE -»

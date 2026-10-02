@@ -1,0 +1,51 @@
+@startuml Sum_Ssfm_DTCU1960_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DTCU1960_Handler"
+
+**Interfaces Legend**
+   //II152 //: ERRH_ExecutionStatus
+   //ri118 //: SSC_ERRH_DTC_1960_Status
+   //II161 //: Debounced Error
+   //II150 //: BatteryVoltage 
+   //II156 //: isTransportMode
+   //II157 //: DisableDTCs
+   //II162 //: Undebounced Error
+   //pi132 //: ERRH_Secp_KeyEmpty_SetEventStatus
+   
+endlegend
+
+note top of EC
+It receives notification about the Key Table Not Provisioned error from the SSC. 
+It checks for some conditions. Indeed, the current implementation involves checks about the time the PNs have been active for, and the time elapsed since last reset or undervoltage event etc. 
+However, the new version of the spec only involves checks about the Battery Voltage and the Transport Mode. We can ask GM about this. 
+In any case, after reading the notification from the SSC, it asks the DEM to set/clear the DTC accordingly.
+end note
+
+component [SSFM::Sum_Ssfm_DTCU1960_Handler] as EC{
+	portin ri118
+	portout pi132
+
+	[Sum_Ssfm_DTCU1960_Handler]  as E
+}
+   interface II150
+   interface II152
+   interface II156
+   interface II157
+   interface II161
+   interface II162
+
+
+  II152 -> E
+  ri118 -> E
+  II150 -> E
+  II156 -> E
+  II157 -> E
+  II161 -> E
+  E -> II162 
+  E -> pi132  
+
+
+@enduml

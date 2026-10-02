@@ -1,0 +1,134 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_LIN_Av_Manager.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM LIN Availability Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/* PRQA S 1532 EOF # Here for modularity */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+«IF SSFM_AnyLINSerialData(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+static boolean Sum_Ssfm_CheckDisableCondition_LIN(const Sum_Ssfm_SerialData* serialData);
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+ /**
+ * @brief           SSFM/SSM function to check the condition for signal status disabled state machine
+ *
+ * @param[in]       serialData      - const Sum_Ssfm_SerialData*: Sum_Ssfm_SerialData structure to access the SerialData info and RTE functions
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          status - boolean: TRUE: condition to change to signal status disabled is fulfilled - FALSE: condition to change to signal status disabled is not fullfilled
+ */
+static boolean Sum_Ssfm_CheckDisableCondition_LIN(const Sum_Ssfm_SerialData* serialData)
+{
+	/*[$Satisfies $DDS_SSFM 154]*/
+	uint8 lin_sch_status = serialData->LINInfo->Read_CurrentSchedule_Status();
+	uint16 MSCL;
+	(void)serialData->LINInfo->Read_MSCL_Status(&MSCL);
+
+	return
+		(lin_sch_status == RTE_MODE_LinSM_Schedule_Status_SUM_LINSCH_OFF) ||
+		((MSCL & serialData->LINInfo->MSCL_Mask) == 0u)
+	;
+}
+
+ /**
+ * @brief           SSFM/SSM function to check the signal status availability for a LIN SerialData and notify the signal status to SWCs associated with the signal
+ *
+ * @param[in]       serialData      - const Sum_Ssfm_SerialData*: Sum_Ssfm_SerialData structure to access the SerialData info and RTE functions
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+void Sum_Ssfm_SigStsAvailability_Manager_LIN(const Sum_Ssfm_SerialData* serialData)
+{
+	/*[$Satisfies $DDS_SSFM 155]*/
+	/* Signal Status Availability state machine */
+	boolean disable_condition = Sum_Ssfm_CheckDisableCondition_LIN(serialData);
+	// At any moment if the disable condition is met, the serial data is disabled
+	if(disable_condition){
+		serialData->LINInfo->SigSts = SUM_SSFM_SigSts_Disabled;
+	} else {
+		if(serialData->LINInfo->SigSts == SUM_SSFM_SigSts_Disabled){
+			// if disable condition is not met, and the previous state is "disabled" the next state will be uninitialized
+			serialData->LINInfo->SigSts = SUM_SSFM_SigSts_Uninitialized;
+		} else if(serialData->LINInfo->SigSts_Supervision == SUM_SSFM_SigSts_Supervision_Received){
+			// if disable condition is not met, and the supervision status is received the serial data is available
+			serialData->LINInfo->SigSts = SUM_SSFM_SigSts_Available;
+		} else {
+			// if(serialData->LINInfo->SigSts_Supervision == SUM_SSFM_SigSts_Supervision_Timeout) -> Always True with the current implementation
+			// if disable condition is not met, and the supervision status is timeout the serial data is unavailable
+			serialData->LINInfo->SigSts = SUM_SSFM_SigSts_Unavailable;
+		}
+	}
+	/* Notify the signal status to SWCs associated with the signal */
+    (void) serialData->LINInfo->FP_RxMonitoredSignal_Av((uint8) serialData->LINInfo->SigSts);
+}
+
+«ENDIF-»
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

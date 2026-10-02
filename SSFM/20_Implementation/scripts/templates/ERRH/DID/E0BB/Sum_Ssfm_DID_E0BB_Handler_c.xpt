@@ -1,0 +1,370 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DID_E0BB_Handler.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM DID E0B8 Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+ /* PRQA S 1503 EOF # Runnables API are called by RTE. */
+
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+#include "Sum_Ssfm_DID_E0BB_Handler.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+
+ *********************************************************************************************************************************************************
+ */
+ «IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))»
+static uint8 Sum_Ssfm_Compute_KeySlotState(const uint8 KeySlotIndex);
+static void Sum_Ssfm_Fill_DID_E0BB_Unused_Entry(uint8* Data); 
+static void Sum_Ssfm_Fill_DID_E0BB_Entry(uint8* Data,
+										 const uint8 KeySlotIndex);
+static void Sum_Ssfm_ReadData_DID_E0BB(uint8* Data);
+static boolean Restore_E0BB_flag = FALSE;
+static Sum_Ssfm_Errh_KeySlotVerifyStatus Sum_Ssfm_Errh_KeySlot_E0BB[SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER];
+«ENDIF»
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+ «IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))»
+ /**
+ * @brief           Helper function to compute Key Slot State
+ * 
+ * @param[in]       KeySlotIndex - index of the Key Slot in the configuration array 
+ * 
+ * @return         	uint8 - Key Slot State (0-3)
+ */
+ static uint8 Sum_Ssfm_Compute_KeySlotState(const uint8 KeySlotIndex){
+	/* Update the KeySlot state in the filter structure */
+	Sum_Ssfm_Update_KeySlotState(&Sum_Ssfm_Errh_KeySlotVerifyFilter[KeySlotIndex]);
+	
+	/* Return the computed KeySlotState */
+	return Sum_Ssfm_Errh_KeySlotVerifyFilter[KeySlotIndex].keyslot_status;
+ }
+
+  /**
+ * @brief           Helper function to fill unused entry DID E0BB
+ *
+ * @param[inout]    Data - pointer to the buffer to fill in the data
+ * @param[in]       KeySlotIndex - index of the Key Slot in the configuration array 
+ * @param[out]      -
+ * @return          void
+ */
+static void Sum_Ssfm_Fill_DID_E0BB_Unused_Entry(uint8* Data){
+		
+
+		Data[0u] = 0u; 
+		Data[1u] = 0u;
+		/* Label as Unused the corresponding bits */ 
+		Data[2u] = 3u << 6u;
+
+}
+
+ /**
+ * @brief           Helper function to fill in one entry of DID E0BB
+ *
+ * @param[inout]    Data - pointer to the buffer to fill in the data
+ * @param[in]       KeySlotIndex - index of the Key Slot in the configuration array 
+ * @param[out]      -
+ * @return          void
+ */
+static void Sum_Ssfm_Fill_DID_E0BB_Entry(uint8* Data,
+										 const uint8 KeySlotIndex){
+		
+		if (Restore_E0BB_flag == TRUE)
+		{
+			/* failed_auth_timer is in microseconds -> convert the data in second */
+			uint8 failed_auth_timer_s = (uint8)(Sum_Ssfm_Errh_KeySlot_E0BB[KeySlotIndex].failed_auth_timer / 1000000u);
+
+			Data[0u] = (uint8)(Sum_Ssfm_Errh_KeySlot_E0BB[KeySlotIndex].provider_DTC_Id >> 8u);
+			Data[1u] = (uint8)(Sum_Ssfm_Errh_KeySlot_E0BB[KeySlotIndex].provider_DTC_Id);
+			
+			/* saturate the value failed_auth_timer_s to 63u (for 6 bits) */
+			Data[2u] = (failed_auth_timer_s > 63u) ? 63u : failed_auth_timer_s;
+			Data[2u] |=  (uint8)Sum_Ssfm_Errh_KeySlot_E0BB[KeySlotIndex].keyslot_status << 6u;
+
+			/* Disable Restore flag after retrieving data from the last keyslot.*/
+			if (KeySlotIndex >= (SUM_SSFM_NUMBER_KEY_SLOTS_CONFIGURED - 1u))
+			{
+				Restore_E0BB_flag = FALSE;
+			}
+		}
+		else
+		{
+			/* failed_auth_timer is in microseconds -> convert the data in second */
+			uint8 failed_auth_timer_s = (uint8)(Sum_Ssfm_Errh_KeySlotVerifyFilter[KeySlotIndex].failed_auth_timer / 1000000u);
+
+			Data[0u] = (uint8)(Sum_Ssfm_Errh_KeySlotVerifyFilter[KeySlotIndex].provider_DTC_Id >> 8u);
+			Data[1u] = (uint8)(Sum_Ssfm_Errh_KeySlotVerifyFilter[KeySlotIndex].provider_DTC_Id);
+			
+			/* saturate the value failed_auth_timer_s to 63u (for 6 bits) */
+			Data[2u] = (failed_auth_timer_s > 63u) ? 63u : failed_auth_timer_s;
+			Data[2u] |= Sum_Ssfm_Compute_KeySlotState(KeySlotIndex) << 6u;
+		}	
+}
+
+/**
+ * @brief           This function will be run at the time of DTC U19A3_8A is set or DCM is execured for the DID E0BB.
+ * 					It to populate the buffer with the E0DB info.
+ *
+ * @param[inout]    Data - uint8 *: The buffer to fill in the data
+ * @param[in]       
+ * @param[out]      -
+ * @return          void
+ */
+static void Sum_Ssfm_ReadData_DID_E0BB(uint8* Data)
+{
+	uint8 i;
+
+	Data[0u] = SUM_SSFM_NUMBER_KEY_SLOTS_SUPPORTED;
+	
+	for(i = 0u; i < SUM_SSFM_NUMBER_KEY_SLOTS_CONFIGURED; i++){
+		Sum_Ssfm_Fill_DID_E0BB_Entry(&Data[1u + (i * SUM_SSFM_DID_E0BB_ENTRY_SIZE)], i);
+	}
+	/* Fill the remaining unused entries with unused state */
+	for(i = SUM_SSFM_NUMBER_KEY_SLOTS_CONFIGURED; i < SUM_SSFM_DID_E0BB_ENTRY_NUMBER; i++){
+		Sum_Ssfm_Fill_DID_E0BB_Unused_Entry(&Data[1u + (i * SUM_SSFM_DID_E0BB_ENTRY_SIZE)]);
+	}
+}
+«ENDIF»
+ /**
+ * @brief           This Runnable will be run at the time of DID E0BB read request.
+ *
+ * @param[in]       OpStatus - Dcm_OpStatusType: No usage
+ * @param[inout]    Data - uint8 *: The buffer to fill in the data
+ * @param[out]      -
+ * @return          void
+ */
+/*[$Satisfies $DDS_SSFM 210]*/
+/* PRQA S 1505 1 # The Runnable declaration is provided by RTE */
+Std_ReturnType Runnable_SSFM_DID_E0BB(Dcm_OpStatusType OpStatus,
+                                      uint8 *Data){
+
+	Std_ReturnType ret = E_NOT_OK;
+
+«IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))»
+	if((OpStatus == DCM_INITIAL) || (OpStatus == DCM_PENDING)){
+		Sum_Ssfm_ReadData_DID_E0BB(Data);
+		ret = E_OK;
+	}
+«ELSE»
+	if((OpStatus == DCM_INITIAL) || (OpStatus == DCM_PENDING)){
+		Data[0u] = 0u;
+
+		ret = E_OK;
+	}
+«ENDIF»
+	return ret;
+}
+«IF IsDemFF_U19A3_8A_Required(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorFilter)-»
+/**
+ * @brief           This Runnable will be run at the time of DTC U19A3_8A is set.
+ * 					Dem will use it to retrieve the info related to DID E0BB as Freeze Frame for DTC U19A3_8A.
+ *                  Always returns current runtime data (KeySlotVerifyFilter), not restored data.
+ *
+ * @param[in]       -
+ * @param[inout]    Data - uint8 *: The buffer to fill in the data
+ * @param[out]      -
+ * @return          Std_ReturnType
+ */
+FUNC(Std_ReturnType, SUM_SSFM_CODE) Runnable_SSFM_E0BB_FreezeFrame(uint8* Data)
+{
+	/*[$Satisfies $DDS_SSFM 217]*/
+
+	/* Save current flag state */
+	boolean saved_flag = Restore_E0BB_flag;
+	
+	/* Temporarily disable Restore_E0BB_flag to ensure runtime KeySlotVerifyFilter data is returned instead of stale restored data */
+	Restore_E0BB_flag = FALSE;
+
+	Sum_Ssfm_ReadData_DID_E0BB(Data);
+	
+	/* Restore original flag state */
+	Restore_E0BB_flag = saved_flag;
+
+	return E_OK;
+}
+«ENDIF»
+/**
+ * @brief           This Runnable will be run at the time of DID E0BB read data length request.
+ *
+ *
+ * @param[in]       OpStatus - Dcm_OpStatusType:
+ * @param[inout]    DataLength - uint16 *: The pointer to the data length to update.
+ * @param[out]      -
+ * @return          void
+ */
+/*[$Satisfies $DDS_SSFM 211]*/
+Std_ReturnType Runnable_SSFM_DID_E0BB_ReadDataLength(Dcm_OpStatusType OpStatus,
+                                                     uint16 * DataLength){
+
+	Std_ReturnType ret = E_NOT_OK;
+«IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))»
+	if((OpStatus == DCM_INITIAL) || (OpStatus == DCM_PENDING)){
+		*DataLength = ((uint16)SUM_SSFM_DID_E0BB_ENTRY_NUMBER * (uint16)SUM_SSFM_DID_E0BB_ENTRY_SIZE) + 1u;
+		ret = E_OK;
+	}
+«ELSE»
+	if((OpStatus == DCM_INITIAL) || (OpStatus == DCM_PENDING)){
+		*DataLength = 0u;
+		ret = E_OK;
+	}
+«ENDIF»
+	return ret;
+}
+
+/**
+ * @brief           This Runnable will be run at the time of DID E0BB check read
+ * 					Condition check read
+ *
+ * @param[in]       OpStatus - Dcm_OpStatusType: No usage
+ * @param[inout]    ErrorCode - Error code
+ * @param[out]      -
+ * @return          E_OK
+ */
+/*[$Satisfies $DDS_SSFM 212]*/
+Std_ReturnType Runnable_SSFM_DID_E0BB_CheckRead(Dcm_OpStatusType OpStatus,
+                                                Dcm_NegativeResponseCodeType* ErrorCode)
+{
+	Std_ReturnType ret = E_NOT_OK;
+
+	if((OpStatus == DCM_INITIAL) || (OpStatus == DCM_PENDING)){
+		*ErrorCode = E_OK; 
+		ret = E_OK;
+	}
+
+	return ret;
+}
+
+«IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))-»
+/**
+ * @brief           Restore DID E0BB data from RAM block after NvM initialization.
+ *                  Called during ECU startup after NvM restores the RAM block.
+ *                  Parses the NvM buffer and restores authentication timers to KeySlotVerifyFilter array
+ *                  to enable accumulation of key slot authentication data across ignition cycles.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 1532 2 # Defined here for modularity reason */
+/*[$Satisfies $DDS_SSFM 213]*/
+FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_DID_E0BB_RestoreData(void){
+	uint8 i;
+	uint8 entryOffset;
+	uint8 failed_auth_timer_s;
+	uint8 keySlotState;
+	uint16 provider_DTC_Id;
+
+	/* Enable the Restore flag for 0xE0BB */
+	Restore_E0BB_flag = TRUE;
+	
+	/* Restore data from NvM buffer to KeySlotVerifyFilter array */
+	for(i = 0u; i < SUM_SSFM_NUMBER_KEY_SLOTS_CONFIGURED; i++)
+	{
+		/* Calculate offset for this entry in the NvM buffer (skip first byte which is upperLimit) */
+		entryOffset = 1u + (i * SUM_SSFM_DID_E0BB_ENTRY_SIZE);
+		
+		/* Extract DTC ID from bytes 0-1 of entry */
+		provider_DTC_Id = (uint16)(((uint16)«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMRamBlockDataAddress-»[entryOffset] << 8u) | 
+		                           (uint16)«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMRamBlockDataAddress-»[entryOffset + 1u]);
+		
+		/* Extract failed_auth_timer (6 bits) and keySlotState (2 bits) from byte 2 of entry */
+		failed_auth_timer_s = «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMRamBlockDataAddress-»[entryOffset + 2u] & 0x3Fu; /* Mask lower 6 bits */
+		keySlotState = (uint8)(«sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMRamBlockDataAddress-»[entryOffset + 2u] >> 6u); /* Extract upper 2 bits */
+		
+		/* Restore values to KeySlotVerifyFilter array */
+		Sum_Ssfm_Errh_KeySlot_E0BB[i].provider_DTC_Id = provider_DTC_Id;
+		
+		Sum_Ssfm_Errh_KeySlot_E0BB[i].keyslot_status = keySlotState;
+
+		/* Failed state: restore failed_auth_timer */
+		Sum_Ssfm_Errh_KeySlot_E0BB[i].failed_auth_timer = (uint32)failed_auth_timer_s * 1000000u;
+
+	}
+}
+
+/**
+ * @brief           This function is called during ERRH shutdown transition.
+ *                  It saves the current key slot verification status to NvM RAM buffer
+ *                  and marks it for persistence to non-volatile memory.
+ *
+ * @param[in]       -
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 1532 2 # Defined here for modularity reason */
+/*[$Satisfies $DDS_SSFM 214]*/
+FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_DID_E0BB_SaveData(void){
+
+	/* Disable Restore_E0BB_flag to ensure runtime KeySlotVerifyFilter data is saved instead of stale restored data */
+	Restore_E0BB_flag = FALSE;
+
+	/* Call the runnable to fill the NvM buffer with latest key slot status */
+	(void)Runnable_SSFM_DID_E0BB(DCM_INITIAL, «sSFM.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_MACVerPerKSNvmRef.nvMRamBlockDataAddress-»);
+
+	/* Inform NvM that RAM buffer has been updated and shall be saved to non-volatile memory */
+	(void)Rte_Call_RP_SSFM_NvMService_DidE0BB_MACVerPerKeySlot_SetRamBlockStatus(TRUE);
+}
+«ENDIF»
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

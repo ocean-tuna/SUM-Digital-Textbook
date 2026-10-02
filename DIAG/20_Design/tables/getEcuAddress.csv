@@ -1,0 +1,5 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};getEcuAddress
+\cellcolor{ETASlightgray}\textbf{Parameters};void 
+\cellcolor{ETASlightgray}\textbf{Return};uint8 EcuAddress
+\cellcolor{ETASlightgray}\textbf{Description};Returns configured ECU Address

@@ -1,0 +1,298 @@
+«IMPORT bsw»
+«IMPORT bsw::PNCModule»
+«EXTENSION templates::mathlib»
+«EXTENSION templates::Sum_Pnc_General»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+
+«REM»Start Define«ENDREM»
+«DEFINE Root FOR Autosar»
+    «EXPAND Expand FOR ecu»
+«ENDDEFINE»
+«REM»End Define«ENDREM»
+
+«DEFINE Expand FOR Ecu»
+«FILE "Sum_Pnc_Cfg.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_PNC
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : PNC_Cfc.c source file
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/*
+\defgroup PNC_CFG_C    PNC - APPLICATION LAYER MODULE
+*/
+
+#include "Sum_Pnc.h"
+#include "Rte_SUM_PNC.h"
+#include "Sum_Pnc_PBCfg.h"
+
+/* Configuration source file for Precompile parameters */
+
+/* Function pointers to RTE call API with Activation Sensors for SWC_<n>_PNC_Activation_sensor criteria Interface */
+/* PRQA S 1504 EOF */ /* This object might be used by another files */
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+«IF (PartialNWPara.number_of_PNC_Activation_Sensors != 0 )»
+static Activation_sensor_Rte_Call_Interface «PartialNWPara.comM_PNC_Ref.shortName -»_GaaSUM_Activation_sensor_Rte_Call_Interface[«PartialNWPara.number_of_PNC_Activation_Sensors-»] =
+{
+«FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Sensors - 1) AS k ITERATOR j SEPARATOR ","-»
+    /* Index «i.counter0-» for SUM_PNC Activation_sensor Interface */
+    &Rte_Call_RP_Act_Sensor_CS«(j.counter0)-»_«PartialNWPara.comM_PNC_Ref.shortName -»_Activationsensor«(j.counter0)-»_op
+«ENDFOREACH-»
+};
+«ENDIF»
+«ENDFOREACH-»
+
+/* Function pointers to RTE Read API with Activation Signals for SWC_<n>_PNC_Activation Signals criteria Interface */
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+«IF (PartialNWPara.number_of_PNC_Activation_Signals != 0)»
+Activation_Signal_Interface «PartialNWPara.comM_PNC_Ref.shortName -»_GaaSUM_Activation_Signals_Interface[«PartialNWPara.number_of_PNC_Activation_Signals-»] =
+{
+«FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Signals - 1) AS k ITERATOR j SEPARATOR ","-»
+    /* Index «i.counter0-» for SUM_PNC Activation_signals_status Interface */
+    &Rte_Read_RP_Act_Signal_«(j.counter0)-»_«PartialNWPara.comM_PNC_Ref.shortName -»_Act_Sig_«(j.counter0)-»
+«ENDFOREACH-»
+
+};
+«ENDIF»
+«ENDFOREACH-»
+
+/* Function pointers to RTE Read API with Activation Signals Status for SWC_<n>_PNC_Activation Signals status criteria Interface */
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+«IF (PartialNWPara.number_of_PNC_Activation_Signals != 0)»
+Activation_Signal_Status_Interface «PartialNWPara.comM_PNC_Ref.shortName -»_GaaSUM_Activation_Signals_Status_Interface[«PartialNWPara.number_of_PNC_Activation_Signals-»] =
+{
+«FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Signals - 1) AS k ITERATOR j SEPARATOR ","»
+    /* Index «i.counter0-» for SUM_PNC Activation_signals_status Interface */
+    &Rte_Read_RP_Act_Signals_Status_«(j.counter0)-»_«PartialNWPara.comM_PNC_Ref.shortName -»_Act_Sig_Stat_«(j.counter0)-»
+«ENDFOREACH-»
+
+};
+«ENDIF»
+«ENDFOREACH-»
+
+/* Function pointers to RTE Write API with Active_RxPDU_Enable_Interface for SWC_<n>_PNC_Active_RxPDU_Enable_Interface */
+/* PRQA S 1533 EOF */ /* This object is kept here to have a better modularity */
+Rte_Write_PNC_Active_RxPDU_Enable_Interface PNC_GaaSUM_PNC_Active_RxPDU_Enable[NUMBER_OF_PNC_PARTIAL_NETWORKS] =
+{«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i SEPARATOR ","-»
+    /* Index for «PartialNWPara.comM_PNC_Ref.shortName -» for SUM_PNC Active_RxPDU_Enable_Interface */
+    &Rte_Write_PP_Active_RxPDU_Enable_«PartialNWPara.comM_PNC_Ref.shortName -»_RxPDUGroups
+«ENDFOREACH-»};
+
+
+/* Function pointers to Rte_Write API with Active_TxPDU_Enable_Interface for SWC_<n>_PNC_Active_TxPDU_Enable_Interface */
+Rte_Write_PNC_Active_TxPDU_Enable_Interface PNC_GaaSUM_PNC_Active_TxPDU_Enable[NUMBER_OF_PNC_PARTIAL_NETWORKS] =
+{«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i SEPARATOR ","-»
+    /* Index for «PartialNWPara.comM_PNC_Ref.shortName -» for SUM_PNC Activation_signals_status Interface */
+    &Rte_Write_PP_Active_TxPDU_Enable_«PartialNWPara.comM_PNC_Ref.shortName -»_TxPDUGroups
+«ENDFOREACH-»
+};
+
+/* Function pointers to Rte_read API with PNC_DisableNormalComm_DIAG_Interface */
+/* PRQA S 3408 EOF */
+Rte_Read_PNC_DisableNormalComm_DIAG_Interface PNC_GaaSUM_PNC_DisableNormalComm_Interface[NUMBER_OF_PNC_TOTAL_CHANNELS]=
+{
+«FOREACH pNC.pNCGeneral.comM_PNC_Channel.comM_Channel_Ref AS network ITERATOR k SEPARATOR ","-»
+    /* Index for SUM_PNC Activation_signals_status Interface */
+    &Rte_Read_RP_DIAG_DisableNormalComm_Ch«network.comMChannelId»_NormalComMode
+«ENDFOREACH-»
+
+};
+
+
+/* Function pointers to RTE fetch current PNC mode user from Rte_mode_RP_Bswm_ComM_Current_PNC_ModeUser_PNC_State API  */
+/*  [$Satisfies $SDD_PNC 043] */
+Rte_mode_Bswm_ComM_Current_PNC_ModeUser_MDG_PNC_State_Interface PNC_GaaSUM_Bswm_ComM_Current_PNC_ModeUser_Interface[NUMBER_OF_PNC_PARTIAL_NETWORKS] =
+{
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PN_Parameter SEPARATOR ","-»
+  /* Index for Rte_mode_RP_Bswm_ComM_Current_PNC_ModeUser_PNC_State Interface */
+  &Rte_Mode_RP_Bswm_ComM_Current_PNC_ModeUser_«PN_Parameter.comM_PNC_Ref.shortName -»_MDGP_PNCState
+«ENDFOREACH»
+};
+
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PN_Parameter -»
+/* Function pointers to RTE fetch current comm state mode user from Rte_mode_RP_Bswm_ComM_Current_ModeUser_MDG_ComMChannel_State API  */
+/* [$Satisfies $SDD_PNC 043] */
+Rte_mode_Bswm_ComM_Current_ModeUser_MDG_ComMChannel_State_Interface «PN_Parameter.comM_PNC_Ref.shortName »_GaaSUM_Bswm_ComM_Current_ModeUser[«PN_Parameter.comM_PNC_Ref.comMChannelPerPnc.size-»] =
+{
+«FOREACH PN_Parameter.comM_PNC_Ref.comMChannelPerPnc AS network ITERATOR k SEPARATOR ","-»
+  /* Index «network.shortName» for Rte_mode_RP_Bswm_ComM_Current_ModeUser_ComMChannel_State Interface */
+  &Rte_Mode_RP_ComM_Current_ModeUser_Ch«network.comMChannelId»_ComMChannel_State
+ «ENDFOREACH-»
+};
+«ENDFOREACH-»
+
+/* Function pointers to RTE fetch PNC state mode req from Rte_write_PP_PNC_BswM_ComM_CurrentPNCMode_Req_PNC_State  API  */
+/* [$Satisfies $SDD_PNC 043] */
+Rte_Switch_Bswm_ComM_Current_ModeReq_PNC_State_Interface PNC_GaaSUM_Bswm_ComM_Current_ModeReq_Interface[NUMBER_OF_PNC_PARTIAL_NETWORKS] =
+{
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PN_Parameter SEPARATOR ","-»
+/* Index fpr «PN_Parameter.comM_PNC_Ref.shortName -» for Rte_Write_PP_Bswm_ComM_Current_ModeReq_PNC_State Interface */
+ &Rte_Switch_PP_PNC_BswM_ComM_CurrentPNCMode_Req_«PN_Parameter.comM_PNC_Ref.shortName -»_MDG_REQ_PNC_State
+«ENDFOREACH-»
+};
+
+
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PN_Parameter -»
+/* Function pointers to switch RTE PNC state mode GroupReq Rx from Rte_Switch_PP_Pdugroupswitch_RxReq_BswM_PduGroup_State_Rx API  */
+/* [$Satisfies $SDD_PNC 043] */
+Rte_Switch_PNC_BswMPduGroupSwitchRxReq_Interface «PN_Parameter.comM_PNC_Ref.shortName »_GaaSUM_BswM_ComM_Pdugroupswitch_RxReq[«PN_Parameter.comM_PNC_Ref.comMChannelPerPnc.size-»] =
+{
+«FOREACH PN_Parameter.comM_PNC_Ref.comMChannelPerPnc AS ChannelSize ITERATOR i SEPARATOR ","-»
+  /* Index for Rte_Switch_PP_Pdugroupswitch_RxReq_BswM_MDG_PduGroup_State_Tx Interface */
+«IF PN_Parameter.isRxEnabled == true-»
+&Rte_Switch_PP_Pdugroupswitch_RxReq_BswM_«PN_Parameter.comM_PNC_Ref.shortName »_Ch«ChannelSize.comMChannelId »_MDG_PduGroup_State_Rx
+«ELSE» NULL_PTR«ENDIF»
+«ENDFOREACH-»
+};
+«ENDFOREACH-»
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PN_Parameter -»
+/* Function pointers to switch RTE PNC state mode Groupreq Tx from Rte_Switch_PP_Pdugroupswitch_RxReq_BswM_PduGroup_State_Rx API  */
+/* [$Satisfies $SDD_PNC 043] */
+Rte_Switch_PNC_BswMPduGroupSwitchTxReq_Interface «PN_Parameter.comM_PNC_Ref.shortName »_GaaSUM_BswM_ComM_Pdugroupswitch_TxReq[«PN_Parameter.comM_PNC_Ref.comMChannelPerPnc.size-»] =
+{
+«FOREACH PN_Parameter.comM_PNC_Ref.comMChannelPerPnc AS ChannelSize ITERATOR i SEPARATOR ","-»
+  /* Index for Rte_Switch_PP_Pdugroupswitch_TxReq_BswM_MDG_PduGroup_State_Tx Interface */
+  «IF PN_Parameter.isTxEnabled == true-»
+    &Rte_Switch_PP_Pdugroupswitch_TxReq_BswM_«PN_Parameter.comM_PNC_Ref.shortName »_Ch«ChannelSize.comMChannelId »_MDG_PduGroup_State_Tx
+«ELSE» NULL_PTR«ENDIF»
+«ENDFOREACH-»
+};
+«ENDFOREACH-»
+
+/* Array to hold Channel information */
+/* [$Satisfies $SDD_PNC 055] */
+PNC_ChannelInfo PNC_GaaSUM_ComM_Channel_Index[NUMBER_OF_PNC_TOTAL_CHANNELS]=
+{
+ «FOREACH pNC.pNCGeneral.comM_PNC_Channel AS CanNumber ITERATOR i SEPARATOR ","-»
+ /*Structure for Comm Channel «CanNumber.comM_Channel_Ref.comMChannelId» */
+ {
+   &Rte_Mode_RP_ComM_Current_ModeUser_Ch«CanNumber.comM_Channel_Ref.comMChannelId»_ComMChannel_State,
+   «CanNumber.cAN_Channel_Number»
+ }
+ «ENDFOREACH-»
+};
+
+/* PRQA S 1531 EOF # This object can be used in other translation unit */
+PNC_Struct_Const SUM_PNC_Cfg[NUMBER_OF_PNC_PARTIAL_NETWORKS]=
+{
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PNC_PN_CFG ITERATOR i SEPARATOR ","-»
+    /*Structure for Partial network Number «PNC_PN_CFG.comM_PNC_Ref.shortName » - «PNC_PN_CFG.shortName» */
+    {
+         «IF pNC.pNCGeneral.aR_GMSUM_4_2_X_SUPPORT == false-»
+         /*DID bit position info*/
+         «PNC_PN_CFG.comM_PNC_Ref.comMPncComSignal.get(0).comMPncComSignalRef.comBitPosition-»,
+         «ELSE -»
+         «IF pNC.pNCGeneral.comMPncIdLongRangeSupport == true»
+         /*DID bit position info*/
+         «PNC_PN_CFG.comM_PNC_Ref.comMPncId - 8-»u,
+         «ELSE»
+         /*DID bit position info*/
+         «PNC_PN_CFG.comM_PNC_Ref.comMPncId - 16-»u,
+         «ENDIF»
+         «ENDIF -»
+
+        /*Number of Sensors*/
+        «PNC_PN_CFG.number_of_PNC_Activation_Sensors-»,
+
+        /*Number of Signals*/
+         «PNC_PN_CFG.number_of_PNC_Activation_Signals-»,
+
+         /*Number of ComM channels for current PNC*/
+         «PNC_PN_CFG.comM_PNC_Ref.comMChannelPerPnc.size-»,
+
+         «REM»[$Satisfies $SDD_PNC 075]«ENDREM-»
+         «IF isUsingUDP(pNC.pNCConfigSet) -»
+         /*Repeat message time timer reference from UdpNm */
+         «extractMantissaFrmFloatValue((PNC_PN_CFG.repeat_Message_Time_Ref.udpNmRepeatMessageTime)*1000*1000).toInteger()»u,
+         «ELSE-»
+         /*Repeat message time timer reference from CanNm*/
+         «extractMantissaFrmFloatValue((PNC_PN_CFG.repeat_Message_Time_Ref.canNmRepeatMessageTime)*1000*1000).toInteger()»u,
+         «ENDIF -»
+
+         /* Is Transmission Enabled for the PN */
+        «IF PNC_PN_CFG.isTxEnabled == true-»        TRUE«ELSE»        FALSE«ENDIF»,
+
+        /* Is Reception Enabled for the PN */
+        «IF PNC_PN_CFG.isRxEnabled == true-»        TRUE«ELSE»        FALSE«ENDIF»,
+         /*Pointer to function for Rte_Call in Sensors*/
+         «IF (PNC_PN_CFG.number_of_PNC_Activation_Sensors != 0)»
+        «PNC_PN_CFG.comM_PNC_Ref.shortName -»_GaaSUM_Activation_sensor_Rte_Call_Interface,
+        «ELSE»NULL_PTR,«ENDIF»
+
+        /*Pointer to function for Signals*/
+        «IF (PNC_PN_CFG.number_of_PNC_Activation_Signals != 0)»
+        «PNC_PN_CFG.comM_PNC_Ref.shortName -»_GaaSUM_Activation_Signals_Interface,
+        «ELSE»NULL_PTR,«ENDIF»
+
+        /*Pointer to function for Signals status*/
+        «IF (PNC_PN_CFG.number_of_PNC_Activation_Signals != 0)»
+        «PNC_PN_CFG.comM_PNC_Ref.shortName -»_GaaSUM_Activation_Signals_Status_Interface,
+        «ELSE»NULL_PTR,«ENDIF»
+
+        /*Rte API's for BSWMPduGroupSwitch Rx Requests */
+        «PNC_PN_CFG.comM_PNC_Ref.shortName »_GaaSUM_BswM_ComM_Pdugroupswitch_RxReq,
+
+         /*Rte API's for BSWMPduGroupSwitch Tx Requests */
+        «PNC_PN_CFG.comM_PNC_Ref.shortName »_GaaSUM_BswM_ComM_Pdugroupswitch_TxReq,
+
+         /*Rte API's for ComM Current mode for channels associated with this PN */
+        «PNC_PN_CFG.comM_PNC_Ref.shortName »_GaaSUM_Bswm_ComM_Current_ModeUser,
+«REM»[$Satisfies $SDD_PNC 080]«ENDREM»
+        /* Deadline Monitoring timer */
+        «PNC_PN_CFG.sUM_PN_DM_Timer  * 1000 -»u,
+
+        /* Deadline Monitoring BswM notification */
+		&Rte_Switch_PP_PNC_BswM_PDUGroup_DM_Switch_«PNC_PN_CFG.comM_PNC_Ref.shortName »_PNC_DM,
+«REM»[$Satisfies $SDD_PNC 086]«ENDREM»
+        /*Rte API's for SUM_PN_DTC_TIMER related to this PN*/
+        &PNC_Rte_CData_SUM_PN_DTC_TIMER_«PNC_PN_CFG.comM_PNC_Ref.shortName »,
+«REM»[$Satisfies $SDD_PNC 090]«ENDREM»
+        /*Rte API's for SUM_PN_DTC_TIMER related to this PN*/
+        &Rte_Write_PP_PNC_PN_DTC_Allowed_«PNC_PN_CFG.comM_PNC_Ref.shortName »_DTC_Allowed,
+
+        /*PartialNetworkName this PN*/
+        «GetPartialNetworkID(PNC_PN_CFG) -»u,
+
+    }
+«ENDFOREACH»
+/*end of Configuration structure for SUM_PNC module*/
+};
+«IF IsPDUDisableFeatureEnabled(pNC)»
+/* PRQA S 1533 EOF */ /* For modularity reasons, this object cannot be defined in the only function where it is referenced */
+const Pnc_TxMessagePduConfig_Type Pnc_TxMessagePdu_Configuration[PNC_SSFM_NO_OF_DISABLEPDUS] =
+{
+	«FOREACH pNC.pNCGeneral.sSFMConfigSet_Ref.sum_Ssfm_C_SsmDisable_Tx_PDU AS txMessage-»
+    /* Structure for Tx Message «txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName» */
+	{
+		/* Function Pointer to the RTE Read API of the port providing SSM_C_Disable_<MessageIPDU> */
+        &Rte_Read_RP_PNC_C_Disable_Tx_«txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName»_C_Disable,
+		/* Pointer to indicate BswM to disable the PDU */
+        &Rte_Switch_PP_PNC_BswM_DisablePdu_«txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName-»_DisablePDUState,
+	},
+	«ENDFOREACH»
+};
+«ENDIF»
+ «REM»************************ Function calls ***************************«ENDREM»
+«ENDFILE»
+«ENDDEFINE»

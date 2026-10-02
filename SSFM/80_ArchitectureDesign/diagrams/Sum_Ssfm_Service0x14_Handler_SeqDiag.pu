@@ -1,0 +1,29 @@
+@startuml Sum_Ssfm_Service0x14_Handler_SeqDiag
+
+participant Dcm as Dcm
+box SUM_SSFM
+    participant Sum_Ssfm_Service0x14_Handler as Service0x14
+end box
+
+participant Sum_SUSD as SUSD
+participant Sum_SOH as SOH
+
+activate Service0x14
+
+group ClearDiagnosticInfomration request confirmation
+Dcm -> Service0x14: Runnable_SSFM_ServiceRequest_Confirmation is invoked \n by operation Confirmation of diagnostic request
+alt SID is 0x14
+    alt (ConfirmationStatus is DCM_RES_POS_OK)
+		Service0x14 -> Service0x14: clear application related DTC flags
+		Service0x14 -> Service0x14: clear application data related DID E0B9.
+		Service0x14 -> Service0x14: clear the AuthenticationWindowTimer and \nFailedAuthenticationTimer flags for each KeySlot configured.
+        Service0x14 -> SUSD: provide a notification as FALSE back to SUSD
+        Service0x14 -> SOH: send notification to SUM_SOH regarding the approval of a clear diagnostic request.
+	else other status
+		Service0x14 -> SOH: send notification to SUM_SOH regarding the rejection of a clear diagnostic request.
+	end		
+end
+end
+deactivate Service0x14
+
+@enduml 

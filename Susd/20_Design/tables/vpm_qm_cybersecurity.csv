@@ -1,0 +1,17 @@
+3;3;2;2;5;2
+\textbf{System Power Mode};\textbf{System Backup Power Mode};\textbf{Run / Crank Active};\textbf{Run / Crank Active Invalid};\textbf{Vehicle Power Mode (Local ECU Determination)};\textbf{Vehicle Power Mode Invalid}
+AVAILABLE AND NOT FcFA;;;;"System Power Mode
+
+If FcI: last valid received System Power Mode.
+
+If never received: \ConfigurationParameterRef{SUSD_VPM_SPM_Initial}.";Valid
+UNAVAILABLE OR FcFA;AVAILABLE AND NOT FcFA;;;"System Backup Power Mode
+
+If FcI: last valid received System Backup Power Mode.
+
+If never received: \ConfigurationParameterRef{SUSD_VPM_SBPM_Initial}.";Valid
+UNAVAILABLE OR FcFA;UNAVAILABLE OR FcFA;TRUE;VALID;PROPULSION;Valid
+UNAVAILABLE OR FcFA;UNAVAILABLE OR FcFA;FALSE;VALID;OFF;Valid
+UNAVAILABLE OR FcFA;UNAVAILABLE OR FcFA;TRUE;INVALID;Last Known Power Mode;Invalid
+UNAVAILABLE OR FcFA;UNAVAILABLE OR FcFA;FALSE;INVALID;Last Known Power Mode;Invalid
+UNAVAILABLE OR FcFA;UNAVAILABLE OR FcFA;N/A;N/A;Last Known Power Mode;Invalid

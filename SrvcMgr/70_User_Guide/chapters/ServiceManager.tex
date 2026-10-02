@@ -1,0 +1,31 @@
+\chapter{ServiceManager}
+\label{SrvcMgr}
+
+This chapter provides a guidelines about the usage of the API configured in the Service Manager.
+
+\section{API SrvcMgr\_ActivateServices}
+This API is used to set a specific state for a list of Service ID. The result of these operations are retrieved to the caller of the API in the commandStatusList.
+The number of Service ID (length of serviceIdList) must be specified in the listLength by the caller of the API and must match with the length of the 
+activationCommandList and commandStatusList. 
+The same index for each of these three arrays correspond a Service ID on which we want to set a specific state and the result in retrieved in the same index
+of the commandStatusList.
+
+Each member of the array activationCommandList can assume just two value (TRUE or FALSE):
+\begin{itemize}
+\item TRUE: to set a Server Service to SD\_SERVER\_SERVICE\_AVAILABLE or a Client Service SD\_CLIENT\_ SERVICE\_REQUESTED (unformally to enable a Service);
+\item FALSE: to set a Server Service to SD\_SERVER\_SERVICE\_DOWN or a Client Service SD\_CLIENT\_ SERVICE\_RELEASED (unformally to disable a Service); 
+\end{itemize}
+Please note that this API selects the Sd API based on the Service Group configuration. If the service belongs to a Service Group, SrvcMgr uses Sd\_ServiceGroupStart()/Sd\_ServiceGroupStop() and does not call Sd\_ServerServiceSetState() or Sd\_ClientServiceSetState(). If the service does not belong to a Service Group, SrvcMgr uses Sd\_ServerServiceSetState() for server services and Sd\_ClientServiceSetState() for client services.
+For non-group services, the helper distinguishes client vs server instances, maps the activation flag to Sd\_ClientServiceSetState() or Sd\_ServerServiceSetState(), and updates commandStatusList with E\_OK\_REMOTE\_ENABLED or E\_OK\_LOCAL\_ENABLED on E\_OK. When a client service is requested and owns consumed event groups, Sd\_ConsumedEventGroupSetState() is called for each configured group; any E\_NOT\_OK moves the related status to E\_GENERAL\_ERROR. The same helper is reused by Sum\_Srvcmgr\_SetClientSrvcRequestedRemoteSrvcAvailable() so that service groups and non-group services share consistent activation behaviour.
+Refer to the Sd module specification to understand more deeply the meaning of SD\_SERVER\_SERVICE\_AVAILABLE, SD\_CLIENT\_SERVICE\_REQUESTED, SD\_SERVER\_ SERVICE\_DOWN and SD\_CLIENT\_SERVICE\_RELEASED.
+
+
+Each member of the array commandStatusList can assume the following value:
+\begin{itemize}
+\item E\_OK\_LOCAL\_ENABLED (0x00): Service is calibrated On and is a local service (Sd Server Service); 
+\item E\_OK\_REMOTE\_ENABLED (0x01): Service is calibrated On and is a remote service (Sd Client Service);
+\item E\_DISABLED (0x02): Service is calibrated Off and is local or remote Service (Sd Server or Sd Client Service);
+\item E\_GENERAL\_ERROR (0x03): Service not configured or the SD APIs used returns E\_NOT\_OK for that particular Server or Client Service; 
+\end{itemize}
+
+Moreover, this API is triggered by the C/S interface SrvcMgr\_SPM\_ActivateServices. 

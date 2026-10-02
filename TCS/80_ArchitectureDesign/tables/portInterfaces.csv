@@ -1,0 +1,10 @@
+9;2;3;3;8
+\cellcolor{ETASlightgray} Name;\cellcolor{ETASlightgray} Type;\cellcolor{ETASlightgray} Src;\cellcolor{ETASlightgray} Dst;\cellcolor{ETASlightgray} Description
+\footnotesize{BatteryVoltage_DisableNVMWrite};\footnotesize{S/R};\footnotesize{SUSD};\footnotesize{TCS};\footnotesize{Add Description...}
+\footnotesize{DataServices_\textit{Configurable}};\footnotesize{C/S};\footnotesize{SUM_TCS};\footnotesize{Dcm,\\Dem};\footnotesize{\begin{itemize}\item Interface to manage request from Dcm for DID.\item Interface to manage request from DTC for obtaining timestamp\end{itemize}}
+\footnotesize{NvMService};\footnotesize{C/S};\footnotesize{NvM};\footnotesize{SUM_TCS};\footnotesize{Interface to manage the NvM services}
+\footnotesize{RxMonitoredSignal_Av};\footnotesize{S/R};\footnotesize{SUM_SSM};\footnotesize{SUM_TCS};\footnotesize{Interface to manage the availability of the Master Cock Signal}
+\footnotesize{SUSD_PermitExecution};\footnotesize{S/R};\footnotesize{SUM_SUSD};\footnotesize{SUM_TCS};\footnotesize{Interface to manage permission to SUM\_TCS pfor executing its functionality}
+\footnotesize{TCS_SUSD_ShutdownPermission};\footnotesize{S/R};\footnotesize{SUM_TCS};\footnotesize{SUM_SUSD};\footnotesize{Interface to manage status of SUM\_TCS for going to shutdown.}
+\footnotesize{TCS_SWC_Clock};\footnotesize{S/R};\footnotesize{SUM_TCS};\footnotesize{SWC};\footnotesize{Interfaces to provide the timestamp to generic SWC}
+\footnotesize{TimeSyncMessage};\footnotesize{S/R};\footnotesize{Com};\footnotesize{SUM_TCS};\footnotesize{Interface to manage the Master Clock signal receiving from TCS Master}

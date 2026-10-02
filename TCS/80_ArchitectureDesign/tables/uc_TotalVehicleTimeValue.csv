@@ -1,0 +1,4 @@
+3;6;8;8
+\cellcolor{ETASlightgray}\textbf{Scenario No.};\cellcolor{ETASlightgray}\textbf{Arch. Requirement};\cellcolor{ETASlightgray}\textbf{Description};\cellcolor{ETASlightgray}\textbf{System Requirement}
+Pre-condition; \RequirementTag{ADS_TCS}{034}; Receive the permit execution; \Satisfies{SRS_TCS 009} \\ \Satisfies{SRS_TCS 010}
+Sequence Fulfill; \RequirementTag{ADS_TCS}{035}; Provide value of DID 0xF129; \Satisfies{SRS_TCS 015} \\ \Satisfies{SRS_TCS 024} \\ \Satisfies{SRS_TCS 028}

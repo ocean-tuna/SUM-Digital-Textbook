@@ -1,0 +1,60 @@
+@startuml Sum_Ssfm_ProtStatusManager_SeqDiag
+
+participant RTE as R
+participant DEM as DEM
+box SUM_SSFM
+    participant Sum_Ssfm_ReceivedSerialData_Handler as RecSigHdlr
+    participant Sum_Ssfm_SecurityStatus_Manager as SecStatMgr
+	participant Sum_Ssfm_ProtStatusManager as ProtStatMgr
+    participant Sum_Ssfm_FaultIndications_DataManager as FIM
+    participant Sum_Ssfm_EventDebouncer_Manager as Debouncer
+    participant Sum_Ssfm_DID_E0B8_Handler as E0B8
+    participant Sum_Ssfm_Service_Manager as SM
+end box
+participant SWC as S
+
+
+activate S
+activate ProtStatMgr
+
+
+alt Successful or No MAC verification  
+    alt Safety Protected SerialData
+        activate RecSigHdlr
+            RecSigHdlr -> ProtStatMgr: Ask to set the FpI interface given the transformer error
+        deactivate RecSigHdlr
+
+        opt single port FxI disabled
+            ProtStatMgr -> S: Set the SerialData FpI interface according to the transformer error
+        end
+    else Authenticated SerialData
+        activate RecSigHdlr
+            RecSigHdlr -> ProtStatMgr: Ask to reset the FpI interface 
+        deactivate RecSigHdlr
+
+        opt single port FxI disabled
+            ProtStatMgr -> S: Reset the SerialData FpI interface
+        end
+    end
+else Unsuccessful MAC verification
+    SecStatMgr -> ProtStatMgr: Set the SerialData FpI interface
+end
+
+ProtStatMgr -> Debouncer: Debounce the error
+Debouncer --> ProtStatMgr: Debouncing Status
+
+alt debouncer failed
+    ProtStatMgr -> SM: Resolve Service DTC
+    ProtStatMgr -> DEM: Set DTC
+else
+    ProtStatMgr -> FIM: Ask for multiplexing
+end
+
+alt Protection Status is failed
+    ProtStatMgr -> E0B8: Update Metric
+end
+
+deactivate ProtStatMgr
+deactivate S
+
+@enduml 

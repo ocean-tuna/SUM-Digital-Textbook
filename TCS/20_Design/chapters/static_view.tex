@@ -1,0 +1,105 @@
+\chapter{Building Block View (Static View)}
+
+The SUM_TCS module is a SWC within the context of AUTOSAR.
+It consists of static files and generated files.
+
+\section{Configuration}
+
+SUM_TCS configuration is done the same way as for standard BSW modules.
+A parameter definition file is included with the module which allows the users to configure the available parameters.
+The generated files change based on the configuration.
+The configuration parameters for TCS are provided in the paramdef file \file{SUM_TCS_EcuParamDef.arxml}.
+The user shall configure values to the various parameters provided in the paramdef: based on the inputs configured, TCS shall use OAW scripts to generate the source and header files along with the SWCD.
+
+\subsection{Included Containers:}
+
+\input{generated/tables/containers.tex}
+
+\subsection{TcsGeneral}
+\label{sec:TcsGeneral}
+
+
+\Requirement{031}
+
+
+{
+\ConfigurationParameter{MasterClockPollingPeriodicity}
+{Time in msec for the periodicity of MasterClockPolling}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{1..1000}
+{100}
+
+\ConfigurationParameter{PermitExecutionMask}
+{Bitmask used to identify the Wakeup bit in the \code{SUSD_TCS_PermitExecution} interface.}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{0..255}
+{254}
+
+\ConfigurationParameter{SumTCSGlobalTimePrecision}
+{Local time source accuracy in msec. Must be a positive multiple of 100 ms and be greater than or equal to TimeManagementPeriodicity.}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{1..1000}
+{100}
+
+\ConfigurationParameter{TimeManagementPeriodicity}
+{Time in msec for the periodicity of TimeManagement}
+{1..1}
+{ECUC-INTEGER-PARAM-DEF}
+{1..1000}
+{100}
+
+\ConfigurationParameter{TcsGenerateInitRunnable}
+{Enable or Disable the Runnable Init feature.}
+{1..1}
+{ECUC-BOOLEAN-PARAM-DEF}
+{NA}
+{false}
+
+\ConfigurationParameter{TcsInitFuncPeriodicity}
+{Specifies time in ms for the periodicity of the runnable Runnable_TCS_Init.}
+{0..1}
+{ECUC-FLOAT-PARAM-DEF}
+{1.0..5000.0}
+{1000.0}
+
+\ConfigurationParameter{TCS\_TimeSyncMessageSignalRef}
+{Reference to the ComSignal or ComGroupSignal used for the TimeSyncMessage reception. Determines the signal type used for master clock polling.}
+{1..1}
+{ECUC-CHOICE-REFERENCE-DEF}
+{-..-}
+{-}
+
+\ConfigurationParameter{TCS\_ServiceBased\_TimeSyncMessage\_Ref}
+{Reference to the implementation data type element for service-based TimeSyncMessage communication. When configured, TCS uses SOME/IP service-based reception instead of signal-based.}
+{0..1}
+{ECUC-FOREIGN-REFERENCE-DEF}
+{-..-}
+{-}
+
+\ConfigurationParameter{TCS\_ServiceBased\_TimeSyncMessage\_DataTypeMappingSet}
+{Reference to the data type mapping set required for service-based TimeSyncMessage communication. Must be configured when \code{TCS\_ServiceBased\_TimeSyncMessage\_Ref} is set.}
+{0..1}
+{ECUC-FOREIGN-REFERENCE-DEF}
+{-..-}
+{-}
+
+\ConfigurationParameter{DID_F129_TotalVehicleTimeValue_Reference}
+{Reference to DCM DID 0xF129 Total Vehicle Time Value}
+{1..1}
+{ECUC-REFERENCE-DEF}
+{-..-}
+{-}
+
+\ConfigurationParameter{TcsDemTimestampRef}
+{Reference to Dem Timestamp}
+{1..1}
+{ECUC-REFERENCE-DEF}
+{-..-}
+{-}
+}
+{\Satisfies{SRS_TCS 019}}
+\section{Calibration Parameters}
+N/A

@@ -1,0 +1,32 @@
+@startuml Sum_Ssfm_MessageInfo_Handler_DisablePDU_SeqDiag
+
+
+participant BswM as B
+
+box SUM_SSFM
+    participant Sum_Ssfm_Initialization as I
+    participant Sum_Ssfm_MessageInfo_Handler as IH
+end box
+
+participant SUM_PNC as P
+participant SUM_SSC as SC
+B -> I: Runnable_SSFM_Init()
+alt Sum_Ssfm_SsmInitialization == FALSE
+I -> IH: Sum_Ssfm_SsmDisablePdu_Tx()
+
+loop for each configured PduID 
+    alt SSM_C_Disable_(PduID) == true
+        B <- IH: SUM_BswM_DisablePdu
+        B --> IH
+    end
+    IH -> P: SUM_C_Disable_Tx_<Pdu_name>
+    IH -> SC: SUM_C_Disable_Tx_<Pdu_name>
+end
+
+end
+
+deactivate B
+deactivate I
+deactivate IH
+
+@enduml 

@@ -1,0 +1,32 @@
+@startuml filters
+
+start
+
+split
+   :Time Window }
+     if(Cntr == 1) then (Y)
+     : TW = 0 ]
+    elseif(TW > TWThreshold) then (Y)
+            : TW = 0 ; Cntr = 0 ]
+    endif   
+
+split again
+   :Threshold }
+end split
+
+
+if (Cntr > CntrThreshold) then (Y)
+    : Cntr = 0 ]
+    if (DID < 0xFFFE) then (Y)
+        :DID++ ]
+
+    else (N)
+
+    endif
+else (N)
+stop
+endif
+stop
+
+
+@enduml

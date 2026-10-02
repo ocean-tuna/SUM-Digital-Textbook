@@ -1,0 +1,101 @@
+«IMPORT bsw»
+«IMPORT bsw::DiagModule»
+«EXTENSION templates::mathlib»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND DIAG FOR ecu»
+«ENDDEFINE»
+
+«DEFINE DIAG FOR Ecu»
+
+«FILE "SUM_Diag_Cfg.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Banner
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+  *--------------------------------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *--------------------------------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *--------------------------------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_DIAG
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr24
+ * Description : SUM_DIAG Configuration header
+ ***************************************************************************************************
+ * END:Banner
+ ***************************************************************************************************
+*/
+
+#ifndef SUM_DIAG_CFG_H
+#define SUM_DIAG_CFG_H
+
+«IF (diag.diagGeneral.diagGenerateInitRunnable == true)-»
+#include "SUM_Common_Types.h"
+«ENDIF»
+#include "SUM_DIAG_Types.h"
+
+«REM»[$Satisfies $SDD_DIAG 071]«ENDREM-»
+«IF (diag.diagGeneral.permitExecutionMask != null)-»
+#define DIAG_PERMITEXECUTION_MASK  «diag.diagGeneral.permitExecutionMask-»u     /* bit 0 is the WAKEUP bit */
+«ENDIF»
+«IF (diag.diagGeneral.ecuAddress != null)-»
+#define DIAG_ECUADDRESS «diag.diagGeneral.ecuAddress»u
+«ENDIF»
+«IF (diag.diagGeneral.rMBA_Support == true)-»
+#define RMBA_SERVICE_SUPPORT STD_ON
+«ELSE»
+#define RMBA_SERVICE_SUPPORT STD_OFF
+«ENDIF»
+
+«IF (diag.diagGeneral.dDDI_Support == true)-»
+#define DDDI_SERVICE_SUPPORT STD_ON
+«ELSE»
+#define DDDI_SERVICE_SUPPORT STD_OFF
+«ENDIF»
+
+#define DIAG_NUMBER_OF_CHANNELS	«diag.diagConfigSet.commChannels.commChannel.commChannelRef.size»u
+
+«REM»[$Satisfies $SDD_DIAG 081] [$Satisfies $SDD_DIAG 082]«ENDREM-»
+/* Enable the usage of a dedicated periodic runnable to run SOH init functions */
+«IF (diag.diagGeneral.diagGenerateInitRunnable == true)-»
+#define DIAG_GENERATE_INIT_RUNNABLE_STATUS STD_ON
+«ELSE»
+#define DIAG_GENERATE_INIT_RUNNABLE_STATUS STD_OFF
+«ENDIF»
+#define MEC_INITIAL_VALUE ((uint8) «diag.diagGeneral.mecInitialValue»u)
+
+«REM»[$Satisfies $SDD_DIAG 136] MEC Storage variant: NvM or HSM«ENDREM-»
+«IF (diag.diagGeneral.mecStorageInHsm == true)-»
+#define MEC_STORAGE_IN_HSM STD_ON
+#define HSM_MEC_WRITE_TIMEOUT_MS  ((uint16)«diag.diagGeneral.hsmMecWriteTimeout.intValue»u)
+#define DIAG_MEC_HANDLER_PERIOD_MS ((uint16)«diag.diagGeneral.dIAG_TE_MEC_Handler_Period.intValue»u)
+«ELSE»
+#define MEC_STORAGE_IN_HSM STD_OFF
+«ENDIF»
+
+extern VAR(Diag_NormalCommStatus_Channel_Type, RTE_DATA) Diag_NormalCommStatus_Channel[DIAG_NUMBER_OF_CHANNELS];
+
+«IF (diag.diagGeneral.mecStorageInHsm != true)-»
+«LET diag.diagGeneral.dIAG_MEC_NvMRef AS mec_NvMBlockDescRef-»
+extern uint8 * const MEC_RamBlockPtr;
+«ENDLET-»
+«ENDIF-»
+
+«LET diag.diagGeneral.dIAG_OTA_PSF_NvMRef AS ota_psf_NvMBlockDescRef-»
+extern boolean * const OTA_PSF_RamBlockPtr;
+«ENDLET-»
+
+#endif
+«ENDFILE-»
+«ENDDEFINE»
+

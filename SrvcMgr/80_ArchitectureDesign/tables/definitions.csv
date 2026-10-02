@@ -1,0 +1,34 @@
+1;2
+\cellcolor{eTASPurple}\textcolor{white}{\textbf{Term/Abbreviation}};\cellcolor{eTASPurple}\textcolor{white}{\textbf{Definition}}
+\cellcolor{eTASGray30}API;\cellcolor{eTASGray30}Application Program Interface
+\cellcolor{eTASGray30}BSW;\cellcolor{eTASGray30}Basic Software
+\cellcolor{eTASGray30}BswM;\cellcolor{eTASGray30}Basic Software Mode Manager
+\cellcolor{eTASGray30}CAN;\cellcolor{eTASGray30}Controller Area Network
+\cellcolor{eTASGray30}Dcm;\cellcolor{eTASGray30}Diagnostic Communication Module
+\cellcolor{eTASGray30}DID;\cellcolor{eTASGray30}Data IDentifier
+\cellcolor{eTASGray30}DTC;\cellcolor{eTASGray30}Diagnostic Trouble Code
+\cellcolor{eTASGray30}DIAG;\cellcolor{eTASGray30}Diagnostic Application Services
+\cellcolor{eTASGray30}ECU;\cellcolor{eTASGray30}Electronic Control Unit
+\cellcolor{eTASGray30}EcuM;\cellcolor{eTASGray30}ECU State Manager
+\cellcolor{eTASGray30}ERRH;\cellcolor{eTASGray30}Error Handler
+\cellcolor{eTASGray30}LIN;\cellcolor{eTASGray30}Local Interconnect Network
+\cellcolor{eTASGray30}LNM;\cellcolor{eTASGray30}LIN Network Manager
+\cellcolor{eTASGray30}NVRAM;\cellcolor{eTASGray30}Non Volatile Random Access Memory
+\cellcolor{eTASGray30}NvM;\cellcolor{eTASGray30}NVRAM Manager
+\cellcolor{eTASGray30}OS;\cellcolor{eTASGray30}Operating System
+\cellcolor{eTASGray30}OAW;\cellcolor{eTASGray30}Open Architecture Ware
+\cellcolor{eTASGray30}PMS;\cellcolor{eTASGray30}Power Mode Slave
+\cellcolor{eTASGray30}PNC;\cellcolor{eTASGray30}Partial Network Coordinator
+\cellcolor{eTASGray30}RTE;\cellcolor{eTASGray30}Run Time Environment
+\cellcolor{eTASGray30}SD;\cellcolor{eTASGray30}Service Discovery
+\cellcolor{eTASGray30}SOH;\cellcolor{eTASGray30}State Of Health Manager
+\cellcolor{eTASGray30}SrvMgr;\cellcolor{eTASGray30}Service Manager
+\cellcolor{eTASGray30}SSM;\cellcolor{eTASGray30}Signal Status Monitor
+\cellcolor{eTASGray30}SSFM;\cellcolor{eTASGray30}Signal Status and Fault Monitor
+\cellcolor{eTASGray30}SSC;\cellcolor{eTASGray30}Security Service Coordinator
+\cellcolor{eTASGray30}SPM;\cellcolor{eTASGray30}Software/Power manager
+\cellcolor{eTASGray30}SUM;\cellcolor{eTASGray30}Standard Utility Module
+\cellcolor{eTASGray30}SUSD;\cellcolor{eTASGray30}Startup Shut down Coordinator
+\cellcolor{eTASGray30}SW;\cellcolor{eTASGray30}Software
+\cellcolor{eTASGray30}SW-C;\cellcolor{eTASGray30}Software Component
+\cellcolor{eTASGray30}TCS;\cellcolor{eTASGray30}Timing Client Service

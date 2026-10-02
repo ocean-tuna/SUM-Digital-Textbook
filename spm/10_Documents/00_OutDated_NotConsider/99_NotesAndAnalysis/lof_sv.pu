@@ -1,0 +1,45 @@
+@startuml lof_sv
+
+circle Sd_Extensions
+
+enum ProfileIndexType {
+
+}
+
+interface PowerProfileArrayList {
+
+}
+
+
+class SpmSwSrvcRegEntry {
+    + swSrvcId: //uint16//
+    + swSrvcDiagSts: //ResrcMonitoringStsType//
+    + swSrvcSpecificPdus: //PduIdType[]//
+}
+
+entity SpmConfPowPrf  {
+    + PowPrfId: //uint32//
+}
+
+
+class SpmHostReachedEntry [[http://www.google.it]] {
+    + HostAddr: //uint32//
+    + hostDiagSts: //ResrcMonitoringStsType//
+}
+
+enum ResrcMonitoringStsType {
+    + OFF
+    + MONITORED
+    + LOST
+}
+
+SpmConfPowPrf -l-> Sd_Extensions: <<include>>
+SpmConfPowPrf ..r..> PowerProfileArrayList: : implements
+PowerProfileArrayList <.d. SpmHostReachedEntry: implements
+PowerProfileArrayList <.d. SpmSwSrvcRegEntry: implements
+PowerProfileArrayList -r-> ProfileIndexType: uses
+SpmHostReachedEntry -d-> ResrcMonitoringStsType: uses
+SpmSwSrvcRegEntry -d-> ResrcMonitoringStsType: uses
+
+
+@enduml

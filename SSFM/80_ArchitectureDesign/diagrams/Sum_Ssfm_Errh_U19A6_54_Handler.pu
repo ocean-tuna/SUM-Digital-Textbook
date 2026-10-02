@@ -1,0 +1,39 @@
+@startuml Sum_Ssfm_Errh_U19A6_54_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_Errh_U19A6_54_Handler"
+
+**Interfaces Legend**
+   //ri113 //: DTC_U19A6_54_Status 
+   //ri100 //: Sum_Ssfm_BatteryVoltageRange_Min_To_MaxV
+   //ri114 //: DIAG_GetMEC
+   //pi152 //: DTC_U19A3_54_SetEventStatus
+   //II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)      
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+}
+
+component [SSFM::Sum_Ssfm_Errh_U19A6_54_Handler] as U19A6_54{
+	portin pri113
+	portin pri100
+	portin pri114
+	portout ppi152
+
+}
+   interface II184
+
+   pri113 --up-( ri113
+   pri100 --up-( ri100
+   pri114 --up-( ri114
+   
+   ppi152 --down-0 pi152
+   U19A6_54 --down-( II184
+
+
+@enduml

@@ -1,0 +1,208 @@
+import bsw;
+import bsw::SUSDModule;
+import bsw::ComModule;
+import bsw::ComModule::ComSignalGroup;
+import bsw::SSFM;
+import AUTOSAR_Ssc::EcucModuleDefs;
+extension templates::mathlib;
+extension org::eclipse::xtend::util::stdlib::io;
+extension com::bosch::autosartool::bsw::oaw::coverage::report::CoverageExtensions;
+
+// import your module here to make the types defined there available, e.g. import bsw::CanModule;
+
+// Count the ShutdownPermission Interfaces of SUM modules
+Integer Susd_value_SUMShutdownPermissionInterfaces(Boolean SUMInterface) :
+    if (SUMInterface == true) then
+	  1
+	else
+	  0
+;
+// Get all the SWCs which refer to a specific battery voltage range
+List Susd_SWCToVoltRangeRefList(List[SUSD_C_SWCInfo] SUSD_C_SWCInfos, String VoltRangeName):
+	let SWCs = SUSD_C_SWCInfos.select(e|e.sUSD_BatteryVoltageRangeRef.shortName == VoltRangeName):
+	SWCs
+;
+
+// Get all the SWCs which do not refer to any battery voltage range
+List Susd_SWCNoVoltRangeRefList(List[SUSD_C_SWCInfo] SUSD_C_SWCInfos):
+	let SWCs = SUSD_C_SWCInfos.select(e|e.sUSD_BatteryVoltageRangeRef == null):
+	SWCs
+;
+
+Boolean Susd_Ssfm_IsSinglePortSupported(SSFM cfg):
+	if (cfg != null && cfg.sum_Ssfm_General != null && cfg.sum_Ssfm_General.sum_Ssfm_FxI_FxFA_SinglePortsSupport == true) then
+	  true
+	else
+	  false
+;
+
+Integer Susd_sum(List[Integer] int_list):
+	int_list.size > 1 ? int_list.first() + Susd_sum(int_list.withoutFirst()) : int_list.first()
+;
+
+Integer Susd_GetLINWakeUpSourcesMask(SUSDConfigSet cfg):
+	cfg.sum_SUSD_ActivityRecords.sum_SUSD_LIN_WakeupSource.ecuMWakeupSourceId.collect(id | powerOf(2, id)).add(0).Susd_sum()
+;
+
+Integer Susd_NumOfLINWakeUpSources(SUSDConfigSet cfg):
+	cfg.sum_SUSD_ActivityRecords.sum_SUSD_LIN_WakeupSource.size
+;
+
+Integer Susd_GetECUWakeUpSourcesMask(SUSDConfigSet cfg):
+	cfg.sum_SUSD_ActivityRecords.sum_SUSD_ECU_WakeupSource.ecuMWakeupSourceId.collect(id | powerOf(2, id)).add(0).Susd_sum()
+;
+
+Integer Susd_NumOfECUWakeUpSources(SUSDConfigSet cfg):
+	cfg.sum_SUSD_ActivityRecords.sum_SUSD_ECU_WakeupSource.size
+;
+
+List[String] Susd_NameOfECUWakeUpSourcesSortedByBitID(SUSDConfigSet cfg):
+	cfg.sum_SUSD_ActivityRecords.sum_SUSD_ECU_WakeupSource.sortBy(item | item.ecuMWakeupSourceId).shortName.remove(null)
+;
+
+List[Integer] Susd_GetECUWakeUpSourceIdsSorted(SUSDConfigSet cfg):
+	cfg.sum_SUSD_ActivityRecords.sum_SUSD_ECU_WakeupSource.sortBy(item | item.ecuMWakeupSourceId).ecuMWakeupSourceId
+;
+
+Boolean Susd_IsDIDE0D7SyncCS(SUSDDiagReferences cfg):
+	cfg.did_E0D7_Reference.dcmDspDidSignal.get(0).dcmDspDidDataRef.dcmDspDataUsePort == "USE_DATA_SYNCH_CLIENT_SERVER"
+;
+Boolean Susd_IsDIDE0D7AsyncCS(SUSDDiagReferences cfg):
+	cfg.did_E0D7_Reference.dcmDspDidSignal.get(0).dcmDspDidDataRef.dcmDspDataUsePort == "USE_DATA_ASYNCH_CLIENT_SERVER"
+;
+
+// Check if the Did has Check Read Function parameter configured.
+Boolean isDIDCheckReadFuncConfigured(DcmDspData did):
+	(did.dcmDspDataConditionCheckReadFncUsed == true) ? true : false
+;
+// Return the number of SWC configured
+Integer NumOfSwcConfigured(SUSDConfigSet cfg):
+	cfg.sUSD_C_SWCInfo.size
+;
+
+/* Check if PMM is a ComGroupSignal */
+Boolean SUSD_IsPMMGroupSignal(SUSDGeneral config):
+	config.sum_SUSD_Sig_PrimaryPowerMode_Ref != null &&
+	config.sum_SUSD_Sig_PrimaryPowerMode_Ref.metaType.toString().contains("ComGroupSignal")
+;
+
+/* Check if BPMM is a ComGroupSignal */
+Boolean SUSD_IsBPMMGroupSignal(SUSDGeneral config):
+	config.sum_SUSD_Sig_BackupPowerMode_Ref != null &&
+	config.sum_SUSD_Sig_BackupPowerMode_Ref.metaType.toString().contains("ComGroupSignal")
+;
+
+String SUSD_GetImplementationDataTypeElementName(String path):
+	path.toString().split("/").last()
+;
+
+String SUSD_GetImplementationDataTypePath(String path):
+	path.toString().replaceAll("/"+SUSD_GetImplementationDataTypeElementName(path),"")
+;
+
+String SUSD_GetImplementationDataTypeName(String path):
+	SUSD_GetImplementationDataTypePath(path).split("/").last()
+;
+
+/* Obtain the Signal length for types that are not present as Base Type */
+List[Integer] SUSD_SignalLengthList(List[ComGroupSignal] signals):
+	let SigLenList = signals.select(e|e.comSignalType == "UINT8_N").comSignalLength :
+	SigLenList.toSet()
+;
+
+/* Collect all unique UINT8_N signal lengths from all signal sources (PMM and BPMM) */
+List[Integer] SUSD_CollectAllUint8NLengths(SUSDGeneral config):
+	let allLengths = {}:
+	let pmmLengths = (!SUSD_IsSameSignalReference(config) && 
+	                  SUSD_IsPMMGroupSignal(config) && 
+	                  !SUSD_IsPMMServiceBased(config)) ? 
+	                  SUSD_SignalLengthList(config.sum_SUSD_Sig_PrimaryPowerMode_Ref.parent.comGroupSignal) : 
+	                  {}:
+	let bpmmLengths = (!SUSD_IsSameSignalReference(config) && 
+	                   SUSD_IsBPMMGroupSignal(config) && 
+	                   !SUSD_IsBPMMServiceBased(config)) ? 
+	                   SUSD_SignalLengthList(config.sum_SUSD_Sig_BackupPowerMode_Ref.parent.comGroupSignal) : 
+	                   {}:
+	let combinedLengths = (SUSD_IsSameSignalReference(config) && 
+	                       SUSD_IsPMMGroupSignal(config)) ? 
+	                       SUSD_SignalLengthList(config.sum_SUSD_Sig_PrimaryPowerMode_Ref.parent.comGroupSignal) : 
+	                       {}:
+	allLengths.addAll(pmmLengths).addAll(bpmmLengths).addAll(combinedLengths).toSet()
+;
+
+/* Check E2E configuration for a specific signal type 
+   signalType: "PrimaryPowerMode" or "BackupPowerMode" */
+Boolean SUSD_IsE2EConfigured(SUSDGeneral config, String signalType):
+	let e2exf = config.eRootContainer.xfrm.select(e | e.shortName.toLowerCase() == "e2exf"):
+		if e2exf != null then (
+			let signalRef = (
+				if signalType == "PrimaryPowerMode" then
+					config.sum_SUSD_Sig_PrimaryPowerMode_Ref
+				else
+					config.sum_SUSD_Sig_BackupPowerMode_Ref
+			):
+			let isGroupSignal = (
+				if signalType == "BackupPowerMode" then
+					SUSD_IsBPMMGroupSignal(config)
+				else
+					SUSD_IsPMMGroupSignal(config)
+			):
+			if signalRef != null then (
+				if isGroupSignal then (
+					e2exf.xfrmImplementationMapping.xfrmSignal
+					.xfrmSignalChoice.select(e | e.xfrmISignalGroupRefChoice != null)
+					.xfrmISignalGroupRefChoice.xfrmISignalGroupRef
+					.exists(e | signalRef.eContainer.shortName.contains(e.split("/").last()))
+				)
+				else (
+					e2exf.xfrmImplementationMapping.xfrmSignal
+					.xfrmSignalChoice.select(e | e.xfrmISignalRefChoice != null)
+					.xfrmISignalRefChoice.xfrmISignalRef
+					.exists(e | signalRef.shortName.contains(e.split("/").last()))
+				)
+			)
+			else
+				false
+		)
+		else
+			false
+;
+
+/* Check if PMM and BPMM signals reference the same signal
+   Returns true if:
+   - Both signals are directly the same reference, OR
+   - Both are group signals and belong to the same signal group container */
+Boolean SUSD_IsSameSignalReference(SUSDGeneral config):
+	(config.sum_SUSD_Sig_PrimaryPowerMode_Ref == config.sum_SUSD_Sig_BackupPowerMode_Ref) ||
+	(SUSD_IsBPMMGroupSignal(config) &&
+	SUSD_IsPMMGroupSignal(config) &&
+	config.sum_SUSD_Sig_PrimaryPowerMode_Ref.eContainer.shortName == config.sum_SUSD_Sig_BackupPowerMode_Ref.eContainer.shortName)
+;
+
+
+Boolean SUSD_IsPMMServiceBased(SUSDGeneral config):
+	config.sum_SUSD_Sig_PrimaryPowerMode_Ref != null &&
+	config.sum_SUSD_ServiceBased_PMM_Ref != null &&
+	config.sum_SUSD_Sig_PrimaryPowerMode_Ref.comSignalType == "UINT8_N"
+;
+
+Boolean SUSD_IsBPMMServiceBased(SUSDGeneral config):
+	config.sum_SUSD_Sig_BackupPowerMode_Ref != null &&
+	config.sum_SUSD_ServiceBased_BPMM_Ref != null &&
+	config.sum_SUSD_Sig_BackupPowerMode_Ref.comSignalType == "UINT8_N"
+;
+
+
+// Returns whether PNC is configured or not
+Boolean isPNCShutdownConfigured(SUSDConfigSet cfg):
+    let sumConfig = cfg.sUSD_C_SUMsInfo.selectFirst(s | s.sUSD_SUMsName.toString() == "SUM_PNC"):
+    if (sumConfig != null && sumConfig.sUSD_ShutdownPermission == true) then
+	  true
+    else
+	  false
+;
+
+// Returns True if the SPM module is configured
+Boolean Susd_IsSpmConfigured(SUSDConfigSet cfg):
+	(cfg != null) && (cfg.eRootContainer.spm != null)
+;

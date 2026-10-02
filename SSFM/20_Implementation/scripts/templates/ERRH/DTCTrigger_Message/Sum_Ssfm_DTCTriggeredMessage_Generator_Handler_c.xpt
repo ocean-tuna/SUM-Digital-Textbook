@@ -1,0 +1,427 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_DTCTriggeredMessage_Generator_Handler.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM DTC Trigger Message
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+«IF (sum_Ssfm_DtcTriggerMessageSupport_IsTRUE(sSFM.sum_Ssfm_General) == true)-»
+/*
+ *********************************************************************************************************************************************************
+ * Macro Definition
+ *********************************************************************************************************************************************************
+ */
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+static boolean Sum_Ssfm_IsDTCTriggerMessageAlreadySent(Sum_Ssfm_DTC_NotificationType* DTCTrigger_Item );
+
+static boolean Sum_Ssfm_CheckBitStatus(Dem_UdsStatusByteType DTCStatus, uint8 bit_loc);
+
+static void Sum_Ssfm_Update_Dtc_Ftb_Combination(uint32 dtc_val, Dem_UdsStatusByteType DTCStatus,Sum_Ssfm_DTCTriggerMessage MessageType) ;
+
+static void Sum_Ssfm_HandleDtcDequeueAndUpdate(void);
+
+static void Sum_Ssfm_UpdateDtcMessageFields(Dem_UdsStatusByteType DTCStatus);
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 1533 EOF # Kept here for modularity */
+Sum_Ssfm_DTC_NotificationType DTCNotificationList[«(sSFM.sum_Ssfm_General.sum_Ssfm_DTCNotificationQueueSize)»];
+Sum_Algo_Deque Sum_Ssfm_DtcTriggered_Queue;
+/*PRQA S 1504 ++ # The Sum_Ssfm_DtcTriggeredMessage can be reused in the other modules */
+SSFM_SWC_DTC_TriggeredMessage Sum_Ssfm_DtcTriggeredMessage = {0};
+/*PRQA S 1514 ++ # This is the array contain TxPDU channels, it can reuse in the other module*/
+/* Array of active PN ActiveTxPDUEnable */
+Sum_Ssfm_PN_ActiveTxPDUEnable Sum_Ssfm_ActiveTxPDUEnables[SUM_SSFM_NUMBER_OF_PNS]=
+{
+ «FOREACH sSFM.sum_Ssfm_General.sum_Ssfm_ComMPNCRef AS PrN -»
+    &Rte_Read_RP_PNC_SSFM_PNC_ActiveTxPDUEnable_«PrN.shortName»_TxPDUGroups,
+ «ENDFOREACH-»
+};
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+ /**
+ * @brief Checks if a specific bit is set in an 8-bit variable.
+ * @param[in] DTCStatus.
+ * @param[in] bit_loc The location of the bit to check (0 being the least significant bit).
+ * @return TRUE if the bit at the specified location is set to 1, FALSE otherwise.
+ */
+static boolean Sum_Ssfm_CheckBitStatus(Dem_UdsStatusByteType DTCStatus, uint8 bit_loc) {
+    return ((DTCStatus & (1u << bit_loc)) == (1u << bit_loc));
+}
+
+/**
+ * @brief Updates DTC message fields based on the DTC status.
+ * @param[in] DTCStatus The status of the DTC to use for updating the message fields.
+ */
+
+static void Sum_Ssfm_UpdateDtcMessageFields(Dem_UdsStatusByteType DTCStatus)
+{
+    Sum_Ssfm_DtcTriggeredMessage.DTCI_TstFld = Sum_Ssfm_CheckBitStatus(DTCStatus,SSFM_DEM_TESTFAILED);
+    Sum_Ssfm_DtcTriggeredMessage.DTCI_TstFldOpCyc = Sum_Ssfm_CheckBitStatus(DTCStatus,SSFM_DEM_TESTFAILED_TOC);
+    Sum_Ssfm_DtcTriggeredMessage.DTCI_PndngDTC = Sum_Ssfm_CheckBitStatus(DTCStatus,SSFM_DEM_PENDINGDTC);
+    Sum_Ssfm_DtcTriggeredMessage.DTCI_CnfrmdDTC = Sum_Ssfm_CheckBitStatus(DTCStatus,SSFM_DEM_CONFIRMEDDTC);
+    Sum_Ssfm_DtcTriggeredMessage.DTCI_TstNCmpltdLstClr = Sum_Ssfm_CheckBitStatus(DTCStatus,SSFM_DEM_TESTNOTCOMPLETE_SLC);
+    Sum_Ssfm_DtcTriggeredMessage.DTCI_TstFldLstClr = Sum_Ssfm_CheckBitStatus(DTCStatus,SSFM_DEM_TESTFAILED_SLC);
+    Sum_Ssfm_DtcTriggeredMessage.DTCI_TstNCmpltdOpCyc = Sum_Ssfm_CheckBitStatus(DTCStatus,SSFM_DEM_TESTNOTCOMPLETE_TOC);
+    Sum_Ssfm_DtcTriggeredMessage.DTCI_WrnIndRqd = Sum_Ssfm_CheckBitStatus(DTCStatus,SSFM_DEM_WARNINGINDICATOR);
+}
+
+/**
+ * @brief Updates the DTC and failure type combination for the DTC triggered message.
+ * @param[in] dtc_val The DTC value to set in the message.
+ * @param[in] DTCStatus The DTC status to use for updating the message fields.
+ * @param[in] MessageType The type of message to determine how to update the message fields.
+ */
+static void Sum_Ssfm_Update_Dtc_Ftb_Combination(uint32 dtc_val,
+                                                          Dem_UdsStatusByteType DTCStatus,
+														  Sum_Ssfm_DTCTriggerMessage MessageType)
+{
+    uint8 ecu_diag_id = 0;
+    Dem_UdsStatusByteType DTCStatusRecord = DTCStatus;
+    /* Get ECU address for diagnostic usage */
+    (void) Rte_Read_RP_SSC_SSFM_SSC_DIAG_GetECUAddress_EcuAddress(&ecu_diag_id);
+
+    Sum_Ssfm_DtcTriggeredMessage.DTCI_DTCSource = ecu_diag_id;
+    /* Update DTC Triggered interface based on message type */
+    switch (MessageType)
+    {
+    case SUM_SSFM_Errh_MsgType_Reset:
+    case SUM_SSFM_Errh_MsgType_Normal:
+        /*if MessageType is Reset then DTCI_DTCTriggered = FALSE*/
+        Sum_Ssfm_DtcTriggeredMessage.DTCI_DTCTriggered = (MessageType == SUM_SSFM_Errh_MsgType_Normal);
+        Sum_Ssfm_DtcTriggeredMessage.DTCI_DTCNumber = (uint16)((dtc_val)>>(uint32)(8u));
+        Sum_Ssfm_DtcTriggeredMessage.DTCI_DTCFailType = (uint8)((dtc_val) & (uint32)(0xFFu));
+        break;
+    case SUM_SSFM_Errh_MsgType_Default:
+    default:
+        Sum_Ssfm_DtcTriggeredMessage.DTCI_DTCNumber = 0x0000;
+        Sum_Ssfm_DtcTriggeredMessage.DTCI_DTCFailType = 0x00;
+        Sum_Ssfm_DtcTriggeredMessage.DTCI_DTCTriggered = FALSE;
+        DTCStatusRecord = 0x00;
+        break;
+    }
+
+    /* Update value for other fields of DTC Triggered Message */
+    Sum_Ssfm_UpdateDtcMessageFields(DTCStatusRecord);
+}
+
+/**
+ * @brief Checks if a DTC trigger message has already been sent for a given DTC.
+ * @param[in] DTCTrigger_Item Pointer to the DTC trigger item to check.
+ * @return TRUE if test failed bit not transition 1 to 0, FALSE otherwise.
+ * Beside, if the DTC trigger message has been sent then DTCTrigger_Item->AlreadySent = TRUE, FALSE otherwise.
+ */
+static boolean Sum_Ssfm_IsDTCTriggerMessageAlreadySent(Sum_Ssfm_DTC_NotificationType *DTCTrigger_Item)
+{
+    boolean testFailedBitStatus = TRUE; // Default to TRUE, will be set to FALSE if conditions are met
+    boolean old_dtc_status_failed;
+    boolean new_dtc_status_failed;
+    boolean isService14Requested;
+    boolean isDTCSame = FALSE;
+    uint16 i;
+
+    static uint32 dtcs_sent_index = 0;
+    static Sum_Ssfm_DTC_TriggeredType dtcs_previous_status[SSFM_DTC_NOTIFICATION_QUEUE_SIZE];
+
+    /* Retrieve the status of Service 0x14 request before entering the loop */
+    isService14Requested = Sum_Ssfm_Errh_GetService14RequestStatus();
+    /*Check whether DTC ID sent out or not?*/
+    for (i = 0; i < SSFM_DTC_NOTIFICATION_QUEUE_SIZE; i++)
+    {
+        if (dtcs_previous_status[i].DTC == DTCTrigger_Item->DTC)
+        {
+            isDTCSame = TRUE;
+            /*Check whether the Test fail bit transition from 1 to 0? OR there is Service 0x14 requested*/
+            old_dtc_status_failed = Sum_Ssfm_CheckBitStatus(dtcs_previous_status[i].PrevSentStatus, SSFM_DEM_TESTFAILED);
+            new_dtc_status_failed = Sum_Ssfm_CheckBitStatus(DTCTrigger_Item->NewStatus, SSFM_DEM_TESTFAILED);
+
+            if (((TRUE == old_dtc_status_failed) && (FALSE == new_dtc_status_failed)) || (TRUE == isService14Requested))
+            {
+                testFailedBitStatus = FALSE;
+                /*Store the DTC status in this operation cycle*/
+                dtcs_previous_status[i].PrevSentStatus = DTCTrigger_Item->NewStatus;
+            }
+            else
+            {
+                testFailedBitStatus = TRUE;
+            }
+            /*The DTC Triggered Message sent out*/
+            DTCTrigger_Item->AlreadySent = TRUE;
+            break;
+        }
+        else
+        {
+            /* do nothing */
+        }
+    }
+
+    if (FALSE == isDTCSame)
+    {
+        // If not found, store the DTC status and increment the index if within bounds
+        if (SSFM_DTC_NOTIFICATION_QUEUE_SIZE > dtcs_sent_index)
+        {
+            /*Store the DTC status in this operation cycle*/
+            dtcs_previous_status[dtcs_sent_index].DTC = DTCTrigger_Item->DTC;
+            dtcs_previous_status[dtcs_sent_index].PrevSentStatus = DTCTrigger_Item->NewStatus;
+            dtcs_sent_index++;
+            /*The DTC trigger message is still not sent out*/
+            DTCTrigger_Item->AlreadySent = FALSE;
+        }
+        else
+        {
+            // Handle the situation where dtcs_sent_index is out-of-bounds, if necessary
+        }
+    }
+    return testFailedBitStatus;
+}
+
+/**
+ * @brief Handles dequeuing of DTCs and updates the DTC triggered message accordingly.
+ */
+static void Sum_Ssfm_HandleDtcDequeueAndUpdate(void)
+{
+    static Dem_UdsStatusByteType prev_status = 0;
+    static uint32 prev_dtc = 0;
+
+    Sum_Ssfm_DTC_NotificationType DTCTrigger_Item;
+    Sum_Ssfm_DTCTriggerMessage MessageType;
+
+    if (E_OK == Sum_Algo_Deque_PopFront(&Sum_Ssfm_DtcTriggered_Queue, &DTCTrigger_Item))
+    {
+        boolean testFailedBitStatus = Sum_Ssfm_IsDTCTriggerMessageAlreadySent(&DTCTrigger_Item);
+
+        if ((TRUE == testFailedBitStatus) && (TRUE == DTCTrigger_Item.AlreadySent))
+        {
+            /* The DTC same ID but test failed bit not transition from 1 to 0 */
+            MessageType = SUM_SSFM_Errh_MsgType_Reset;
+            Sum_Ssfm_Update_Dtc_Ftb_Combination(prev_dtc, prev_status, MessageType);
+        }
+        else
+        {
+            /*The DTC not same ID or DTC same ID but => the test failed bit transition from 1 to 0 || SID 0x14 requested*/
+            MessageType = SUM_SSFM_Errh_MsgType_Normal;
+            Sum_Ssfm_Update_Dtc_Ftb_Combination(DTCTrigger_Item.DTC, DTCTrigger_Item.NewStatus, MessageType);
+        }
+        /*Save the data for the last reported DTC*/
+        prev_status = DTCTrigger_Item.NewStatus;
+        prev_dtc = DTCTrigger_Item.DTC;
+    }
+    else
+    {
+        /*Queue is Empty*/
+        MessageType = SUM_SSFM_Errh_MsgType_Reset;
+        Sum_Ssfm_Update_Dtc_Ftb_Combination(prev_dtc, prev_status, MessageType);
+    }
+}
+
+/* PRQA S 1505 ++ # It can be reused from the other modules */
+/**
+ * @brief Checks if at least one PNC (Partial Network Cluster) is active.
+ * @return TRUE if at least one PNC is active, FALSE otherwise.
+ */
+FUNC(boolean,SUM_SSFM_ERRH_CODE) Sum_Ssfm_AtLeastOneTxPN_Active(void)
+{
+    boolean ret_PNC_Status= FALSE;
+    boolean PNC_Channel_Active_Status = FALSE;
+    uint8 ComM_PNC_Channel;
+«IF (sSFM.sum_Ssfm_General.sum_Ssfm_ComMPNCRef.size > 1)-»
+		/* Check if at least one among the ECU relevant PNs is active */
+
+    for (ComM_PNC_Channel = 0; (ComM_PNC_Channel < SUM_SSFM_NUMBER_OF_PNS) && (ret_PNC_Status != TRUE); ComM_PNC_Channel++)
+		{
+			/* check the status of the PN */
+			if(Sum_Ssfm_ActiveTxPDUEnables[ComM_PNC_Channel](&PNC_Channel_Active_Status) == E_OK)
+			{
+				ret_PNC_Status = PNC_Channel_Active_Status;
+			}
+		}
+«ELSE»
+    /* check the status of the PN */
+    ComM_PNC_Channel = 0;
+	if(Sum_Ssfm_ActiveTxPDUEnables[ComM_PNC_Channel](&PNC_Channel_Active_Status) == E_OK)
+	{
+			ret_PNC_Status = PNC_Channel_Active_Status;
+	}
+«ENDIF»
+    return ret_PNC_Status;
+}
+
+/**
+ * @brief Checks DTC status changes and enqueues them if necessary.
+ * @param[in] DTC The DTC code to check.
+ * @param[in] DTCStatusOld The old status of the DTC.
+ * @param[in] DTCStatusNew The new status of the DTC.
+ */
+ /*[$Satisfies $DDS_SSFM 127]*/
+/* PRQA S 1532 2 # It is an utility function. It might be reused. */
+FUNC(void,SUM_SSFM_ERRH_CODE) Sum_Ssfm_Errh_CheckDTCStatus_And_Enqueue (uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew)
+{
+    boolean old_dtc_status_failed;
+    boolean new_dtc_status_failed;
+    old_dtc_status_failed = Sum_Ssfm_CheckBitStatus(DTCStatusOld,SSFM_DEM_TESTFAILED);
+    new_dtc_status_failed = Sum_Ssfm_CheckBitStatus(DTCStatusNew,SSFM_DEM_TESTFAILED);
+    //Check DTC whether it changed status or not
+    /*The test fail bit transition from 0 -> 1*/
+    if ((new_dtc_status_failed== TRUE) && (old_dtc_status_failed == FALSE))
+    {
+        //DTC changed status, DTC shall be added to the queue
+        Sum_Ssfm_DTC_NotificationType item ;
+        /* PRQA S 2983 4 # The stored data will be copied in PushBack function */
+        item.DTC = DTC;
+        item.OldStatus = DTCStatusOld;
+        item.NewStatus = DTCStatusNew;
+        /*Suspend all interupt*/
+        Rte_Enter_EA_DTC_Notification_Queue();
+        //Add to Queue
+        if(Sum_Algo_Deque_PushBack(&Sum_Ssfm_DtcTriggered_Queue, &item) == E_NOT_OK)
+        {
+            // Queue is FULL
+			/*Handle When Queue Full is consider later */
+        }
+        else
+        {
+            //Add to the queue successful
+        }
+        Rte_Exit_EA_DTC_Notification_Queue();
+    }
+    else
+    {
+        //do nothing
+    }
+}
+
+/* PRQA S 1503 EOF # This runnable will be called by RTE */
+/**
+ * @brief Runnable that handles DTC triggered message updates.
+ * @details This function manages the timing and sending of the DTC triggered message.
+ *          It also handles the queue of DTC status changes and updates the message accordingly.
+ */
+/*[$Satisfies $DDS_SSFM 149]*/
+FUNC(void, SUM_SSFM_CODE) Runnable_SSFM_DTCTriggeredMessage_Handler(void)
+{
+    /*Initial Static variable*/
+    static uint32 DTCWait_Timer_1500ms = SSFM_TIMER_1500MS;
+    static uint32 DTCWait_Timer_1000ms = 0u;
+    static boolean PwrUpEcuFlag = TRUE;
+
+    boolean isOperationCycleStarted;
+    boolean isService14Requested;
+
+    /*Get the status of Operation Cycle*/
+    isOperationCycleStarted = Sum_Ssfm_Errh_GetOperationCycleStatus();
+    /*Get the status of SID 0x14*/
+    isService14Requested = Sum_Ssfm_Errh_GetService14RequestStatus();
+    /*Check the Operation Cycle is started OR there is a Service 14 requested*/
+    if((TRUE == isOperationCycleStarted) || (TRUE == isService14Requested))
+    {
+        /*Check communication is active*/
+        if( TRUE == Sum_Ssfm_AtLeastOneTxPN_Active())
+        {
+            /*Update DTC+FTB with default value when the power up */
+            if(TRUE == PwrUpEcuFlag)
+            {
+            	Sum_Ssfm_Update_Dtc_Ftb_Combination(0,0,SUM_SSFM_Errh_MsgType_Default);
+            }
+
+            /*Check whether DTCWait_Timer_1000ms >=1000ms to send out the DTC triggered Message
+             And Make sure send the Default value when power up*/
+            if((SSFM_TIMER_1000MS <= DTCWait_Timer_1000ms) || (TRUE == PwrUpEcuFlag))
+            {
+                (void) Rte_Write_PP_SSFM_SWC_DTC_Triggered_Message_SSFM_DTCTriggered(&(Sum_Ssfm_DtcTriggeredMessage));
+                DTCWait_Timer_1000ms = (uint32)0u;
+                PwrUpEcuFlag = FALSE;
+            }
+            else
+            {
+                /*Increment the DTCWait_Timer_1000ms equal a period of DTCTriggered Runnable */
+                DTCWait_Timer_1000ms +=SSFM_PERIOD_DTCTRIGGERED_RUNNABLE;
+            }
+
+            /* Dequeue DTC and update RTE/COM message buffer for sending */
+            if(SSFM_TIMER_1500MS <= DTCWait_Timer_1500ms)
+            {
+                /*Start Dequeue DTC status and Update the DTC Triggered Message fields*/
+				Sum_Ssfm_HandleDtcDequeueAndUpdate();
+                /*Reset DTCWait_Timer_1500ms = 0ms*/
+                DTCWait_Timer_1500ms = 0u;
+            }
+            else
+            {
+                /*Decrement the DTCWait_Timer_1500ms equal a period of DTCTrigged Runnable */
+                DTCWait_Timer_1500ms += SSFM_PERIOD_DTCTRIGGERED_RUNNABLE;
+            }
+        }
+        else
+        {
+            /*do nothing*/
+        }
+    }
+    else
+    {
+        /*do nothing*/
+    }
+}
+«ENDIF»
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+/* EOF */
+«ENDFILE-»
+«ENDDEFINE»

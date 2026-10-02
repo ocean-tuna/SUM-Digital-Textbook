@@ -1,0 +1,57 @@
+@startuml Sum_Ssfm_ContinuousOperationStatus_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_ContinuousOperationStatus_Manager"
+
+**Interfaces Legend**
+	//II202 //: SerialData<n>_Set_FoI
+    //ri104 //: Dem_CallbackDTCStatusChangedIndication (Failed Continuous Operation)
+	//II152 //: ERRH_ExecutionStatus / SSM_ExecutionStatus
+	//II171 //: Sum_Ssfm_ErrhDebouncerExecution (Error Debouncer)
+	//pi104 //: DiagnosticMonitor (Dem_SetEventStatus)
+	//SerialData_n_FoI //: SerialData<n>_FoI
+	//pi106 //: SerialData<n>_FoFA
+	//II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)  	
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+
+
+	interface ri104
+	interface pi104
+	interface SerialData_n_FoI
+	interface pi106
+	interface II152
+	interface II171
+	interface II202
+    interface II184
+
+component [Sum_Ssfm_ContOpStatus_Manager] as E{
+	portin pri103
+    portin pri104
+	portout ppi104
+	portout ppi106
+	
+}
+
+
+
+	II202 )--- E	
+	II152 )--- E
+	II171 )-down- E
+	ri103 )-down-pri103
+	ri104 )-down- pri104
+	ppi104 -down-0 pi104
+	E -down-0 SerialData_n_FoI	
+	ppi106 -down-0 pi106
+    II184 )--- E	
+
+
+@enduml

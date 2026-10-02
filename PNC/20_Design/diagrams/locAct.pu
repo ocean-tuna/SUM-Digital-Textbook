@@ -1,0 +1,57 @@
+@startuml locAct
+
+left to right direction
+
+state PN_IDLE {
+    state PNC_ENABLE_CHECK:* Local Activation Criteria is TRUE
+    state PNC_ENABLE_CHECK:\t (Sensor_Act == TRUE OR Signal_Act == TRUE)
+    state PNC_ENABLE_CHECK:* No PN state transition to PNC_NO_COMM in progress
+    STATE PNC_ENABLE_CHECK:* Request the activation of PN via BswM mode Request
+    STATE PNC_MONITOR_ACTIVATION:* Request the activation of PN via BswM mode Request
+    STATE PNC_MONITOR_ACTIVATION:* PNC_Activation_req_Timer is ON
+    STATE PNC_ACK_ACTIVATION:* Bus communication is in Full Communication
+    STATE PNC_ACK_ACTIVATION:* PN state transition != PNC_NO_COMM **&&**
+    STATE PNC_ACK_ACTIVATION:\tPN State transition != PNC_PREPARE_SLEEP
+    STATE PNC_ACK_ACTIVATION:* Local Activation Criteria == TRUE
+    STATE PNC_ACK_ACTIVATION:\t (Sensor_Act OR Signal_Act)
+    STATE PNC_ACK_ACTIVATION:* Request Activation of PN Rx Pdu group
+    STATE PNC_ACK_ACTIVATION:* SUM_PNC_ACTIVE_SYNCH_TIME is ON
+    STATE PNC_TX_ENABLE:* SUM_PNC_ACTIVE_SYNCH_TIME == EXPIRED
+    STATE PNC_TX_ENABLE:* Request Tx PDU activation
+    STATE PNC_TX_ENABLE:* Determine local vs remote activation path
+    STATE PNC_TX_ENABLE:* Repeat_Message_Time is enabled
+}
+
+state PN_Active {
+    
+    state Activation {
+        state PNC_LOCALLY_ACTIVE:* Request the activation of the PN via BswM mode request
+        state PNC_LOCALLY_ACTIVE:* PNC_Activation_Req_Timer is ON
+        state PNC_LOCALLY_ACTIVE:* Notify SUSD with SUM_PNC_Local_WR via SUSD_PNC_UpdateRecord
+        state PNC_REMOTELY_ACTIVE
+    }
+    
+    state Deactivation {    
+        state PNC_PREPARE_SLEEP
+        state PNC_READY_SLEEP
+    }
+}
+
+[*] -> PNC_ENABLE_CHECK
+PNC_ENABLE_CHECK -> PNC_MONITOR_ACTIVATION: A
+PNC_MONITOR_ACTIVATION --> PNC_ENABLE_CHECK: F
+note on link
+* Local Activation Criteria is FALSE
+* (Sensor_Act == FALSE AND Signal_Act == FALSE)
+* Request PN No Comm via BswM mode Request
+end note
+PNC_MONITOR_ACTIVATION -> PNC_ACK_ACTIVATION: B 
+PNC_ACK_ACTIVATION -> PNC_TX_ENABLE: C
+PNC_ACK_ACTIVATION --> PNC_MONITOR_ACTIVATION: D
+note on link
+* Re-try PN activation mode request
+* PNC_Activation_Req_Timer is EXPIRED
+end note
+PNC_TX_ENABLE --> PNC_LOCALLY_ACTIVE: E
+
+@enduml

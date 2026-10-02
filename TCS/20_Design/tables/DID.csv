@@ -1,0 +1,3 @@
+2;2;5;2;2;6
+"\textbf{DID Name}";"\textbf{ID}";"\textbf{Range}";"\textbf{Access}";"\textbf{Default Value}";"\textbf{Description}"
+Total Vehicle Time Value;0xF129;0 - 1,099,511,627,775 ms;Read;0 ms;Total Vehicle Time Value is a running time counter that is received by the Time Leader. This counter is locally incremented by Time Followers, when the signal is not available, and is also used for Time Stamping.

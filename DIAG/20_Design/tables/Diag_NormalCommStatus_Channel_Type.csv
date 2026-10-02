@@ -1,0 +1,5 @@
+6;12
+\cellcolor{ETASlightgray}\textbf{Name};Diag_NormalCommStatus_Channel_Type
+\cellcolor{ETASlightgray}\textbf{Type};struct
+\cellcolor{ETASlightgray}\textbf{Members};CurrentMode SUM_DiagNormalCom_ModeType (uint8) \newline  \newline(*Rte_ReadFunc_BswMCommMode)(void) SUM_DiagNormalCom_ModeType (uint8) \newline \newline (*Rte_WriteFunc)(SUM_DiagNormalCom_ModeType CommMode) Std_ReturnType (uint8)
+\cellcolor{ETASlightgray}\textbf{Description};This structure holds communication mode and pointers to functions to read communication mode and disable normal communication of channels

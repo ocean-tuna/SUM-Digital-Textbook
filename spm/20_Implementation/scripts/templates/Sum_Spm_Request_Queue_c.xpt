@@ -1,0 +1,143 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Request_Queue.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for defining the interfaces between CanIf and Spm
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+
+#include "Sum_Spm_Request_Queue.h"
+
+/* PRQA S 1532 EOF # Functions are defined here for modularity reason. */
+
+static boolean SPM_IsQueueFull(const struct SPM_ProfileReqFIFO_Queue * const me_queue);
+static boolean SPM_IsQueueEmpty(const struct SPM_ProfileReqFIFO_Queue * const me_queue);
+
+/**
+ * @brief Initializes a power profile request FIFO queue.
+ *
+ * This function sets the head and tail indices of the queue to zero and marks the queue status as empty.
+ *
+ * @param[out] me_queue Pointer to the SPM_ProfileReqFIFO_Queue structure that is to be initialized.
+ */
+void SPM_InitQueue(struct SPM_ProfileReqFIFO_Queue * const me_queue) {
+    me_queue->head = 0u;
+    me_queue->tail = 0u;
+    me_queue->status = SPM_RQ_EMPTY;
+}
+/**
+ * @brief Checks if the power profile request FIFO queue is full.
+ *
+ * This inline function determines whether the queue is full by comparing its status
+ * to the predefined full status value.
+ *
+ * @param[in] me_queue Pointer to the SPM_ProfileReqFIFO_Queue structure to be checked.
+ * @return boolean True if the queue is full, False otherwise.
+ */
+static boolean SPM_IsQueueFull(const struct SPM_ProfileReqFIFO_Queue * const me_queue) {
+    return me_queue->status == SPM_RQ_FULL;
+}
+
+/**
+ * @brief Determines if the FIFO queue for power profile requests is empty.
+ *
+ * This inline function checks the status of the queue to see if it is marked as empty,
+ * indicating that there are no requests currently in the queue.
+ *
+ * @param[in] me_queue A constant pointer to the SPM_ProfileReqFIFO_Queue structure to be checked.
+ * @return boolean Returns True if the queue is empty, False otherwise.
+ */
+static boolean SPM_IsQueueEmpty(const struct SPM_ProfileReqFIFO_Queue * const me_queue) {
+    return me_queue->status == SPM_RQ_EMPTY;
+}
+
+/**
+ * @brief Dequeues a request from the FIFO queue and stores it in the provided item structure.
+ *
+ * This function removes the first item from the FIFO queue if the queue is not empty and the input
+ * pointers are not NULL. It then stores the dequeued item in the structure pointed to by new_itm.
+ * The function updates the head index of the queue and modifies the queue status to indicate whether
+ * it is empty after the dequeue operation. The function returns a boolean value indicating the success
+ * of the dequeue operation.
+ *
+ * @param[in] me_queue Pointer to the SPM_ProfileReqFIFO_Queue structure representing the queue.
+ *                         The queue is modified by updating its head index and status.
+ * @param[out] new_itm Pointer to the SPM_ProfileReqItm structure where the dequeued item will be stored.
+ *                     The structure is updated with the dequeued item's data.
+ * @return TRUE if the item was successfully dequeued, FALSE if the queue was empty or if any input
+ *         pointer was NULL.
+ */
+boolean SPM_DequeueRequest(struct SPM_ProfileReqFIFO_Queue * const me_queue, struct SPM_ProfileReqItm * const new_itm) {
+    boolean result = FALSE;
+    if((me_queue != NULL_PTR)&&(new_itm != NULL_PTR))
+    {
+		if (!SPM_IsQueueEmpty(me_queue)) {
+			*new_itm = me_queue->buffer[me_queue->head];
+			me_queue->head = (me_queue->head + 1u) % MAX_SIZE_BUFF;
+			me_queue->status = (me_queue->head == me_queue->tail) ? SPM_RQ_EMPTY : SPM_RQ_NOEMPTY;
+			result = TRUE; // Correctly removed
+		}
+    }
+    return result; // Empty Queue
+}
+
+/**
+ * @brief Adds a new request to the FIFO queue for power profile requests.
+ *
+ * This function inserts a new item into the queue if the queue is not full and if the
+ * provided queue pointer is not null. It then updates the tail index and the status of the queue.
+ *
+ * @param[in] me_queue Pointer to the SPM_ProfileReqFIFO_Queue structure where the new item is to be added.
+ * @param[in]     new_itm  The SPM_ProfileReqItm structure representing the new request to be enqueued.
+ * @return boolean TRUE if the item was successfully enqueued, FALSE if the queue was full or the queue pointer was null.
+ */
+boolean SPM_EnqueueRequest( struct SPM_ProfileReqFIFO_Queue * const me_queue, struct SPM_ProfileReqItm new_itm) {
+
+	boolean result = FALSE;
+	if(me_queue != NULL_PTR)
+	{
+		if (!SPM_IsQueueFull(me_queue))
+		{
+			me_queue->buffer[me_queue->tail] = new_itm;
+			me_queue->tail = (me_queue->tail + 1u) % MAX_SIZE_BUFF;
+			me_queue->status = (me_queue->tail == me_queue->head) ? SPM_RQ_FULL : SPM_RQ_NOEMPTY;
+			result = TRUE; // Enqueued correctly
+		}
+    }
+    return result; // Buffer Full
+}
+
+/* EOF */
+
+«ENDFILE»
+«ENDDEFINE»

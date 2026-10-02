@@ -1,0 +1,2386 @@
+========================================================
+RTA-SUM SPM Software Requirements Specification Document
+========================================================
+
+Document History
+================
+
+=============== ========================= ===============================================================================================
+Release Date      Version                   Description
+=============== ========================= ===============================================================================================
+Jul 10, 2024        8.0.0                    Added satisfies label to cover the Functional Requirements:
+
+                                             * CAR_FNC_REQ_SUM_SPM_001
+                                             * CAR_FNC_REQ_SUM_SPM_002
+=============== ========================= ===============================================================================================
+
+Requirements List
+=================
+
+Power Management Framework
+--------------------------
+
+.. req:: No Title
+    :id: [$SRS_SPM 0001]
+    :status: Accepted 
+    :category: Non-Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4216           
+    :test_technique: Integration Testing
+    :comments: Platform requirements. No direct link to SPM functional requirement.
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+    :satisfies:
+
+    Because power management functionalities must operate before the uPlatform is potentially up and running, the power management communication SHALL 
+    be implemented using a customized communication pattern implemented using the standard SOME/IP-based frame structure
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0002]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4217           
+    :test_technique: Integration Testing
+    :comments: N/A
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    All SMs and PMs SHALL use port 30480 and follow the SMFrame and PMFrame definitions described below and in the following sections.
+
+.. req:: No Title
+    :id: [$SRS_SPM 0003]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4218           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The frame design is given as follows:
+
+    +-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------+
+    | Frame Type  |             Field Name                                                                                                                                      |
+    |             +----------------+-----------------+--------------------------------+------------------------+------------------------------+---------------------------------+     
+    |             |  Cusotm Header |      Length     | 2nd part SOME/IP Header        | SrcPM_ID               | DstPM_ID                     |              Payload            |
+    +=============+================+=================+================================+========================+==============================+=================================+
+    |    PM       |  4 Bytes       |      4 Bytes    |          8 Bytes               |  4 Bytes of IP Address | 4 Bytes of Heartbeat Counter |               N/A               |         
+    +-------------+                |                 |                                |                        +------------------------------+---------------------------------+
+    |    SM       |                |                 |                                |                        | 4 Bytes of IP Address        |       Specific frame Design     |
+    +-------------+----------------+-----------------+--------------------------------+------------------------+------------------------------+---------------------------------+
+
+
+    2nd Part of the SOME/IP header: is added to allow the SOME/IP bridge to consume the PM traffic without a need for special handling for the PM traffic,
+    therefore the values below are dummy and not used by the PM logic. The values SHALL be set as follow:
+
+    * Request ID = 0x00000000 (4 Byte)
+    * Protocol Version = 0x01 (1 Byte)
+    * Interface Version=0x01  (1 Byte)
+    * Message Type=0x02       (1 Byte)
+    * Return Code=0x00        (1 Byte)
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0004]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4219           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    SrcPM_ID SHALL be set to the 4 bytes of the IP address of the Src/Dest PM.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0005]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5003           
+    :test_technique: Integration Testing
+    :comments: No implemented directly by SPM. SOME/IP Header is in scope to SoAd AUTOSAR module
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The Payload of the SMFrame is used to convey activation commands, deactivation commands, and/or Status information. All SMFrame messages SHALL
+    be sent with the ID *0xFFFE 7FFF*.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0006]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5004           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The Payload associated with SMFrame.PROFILE_REQUEST SHALL use the following fields (See Figure 7 for an illustration):
+    
+    #. Msg Type = 00 (1 byte)
+    #. EntryLength (2 byte value counting the number of remaining bytes in this Msg Type)
+    #. Activation Profile IDs (4 bytes each) repeating with Request
+    #. Request enumeration (1 byte each) repeating with Activation Profile IDs
+        * Request enumeration SHALL be given by the table in:
+
+    ============= ===================== ============================================================================
+        Value         Literal                    Description
+    ============= ===================== ============================================================================
+        0x00            Empty            Not used - avoiding putting a real action request as the default value
+        0x01           ACTIVATE          Request to activate a profile
+        0x02           DEACTIVATE        Request to deactivate a profile
+     0x03...0xFF   Reserved for future   Potential future literals can include ENABLE, DISABLE
+    ============= ===================== ============================================================================
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0007]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5006           
+    :test_technique: Integration Testing
+    :comments: Partial description: continue in req SDVA-5009. **NOT ALL CODES ARE CURRENLTY IMPLEMENTED**: only necessary to SPM in Mechatronic System.
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The Payload associated with REQ_STATUS_PROF_STATE responses SHALL use the following fields ( Figure 10 provides an illustration of this message):
+
+    #. Msg Type = 01 (1 byte)
+    #. Entry Length (2 byte value counting the number of remaining bytes in this Msg Type)
+    #. Activation Profile IDs (4 bytes each) Repeating with Request Status and Profile State
+    #. Request Status Value (1 byte) Repeating with Profile IDs and Profile State
+        * The request status field SHALL be populated with the enumerations provided Table
+        * Note that request status can be of two varieties:
+            * An immediate response to a request
+            * Unsolicited response to an earlier accepted request because operating conditions have changed
+
+    ============= =========================================== ========================================================================================================================================================
+        Value           Literal                                                Description
+    ============= =========================================== ========================================================================================================================================================
+        0x00       NOT_APPLICABLE                               Set to this value when the request status field is not used. For example, when the message is used purely for communicating the profile states
+        0x01       OK_ACTIVATION                                Set to this value when an activation request is accepted. The requester is added to the requester list.
+        0x02       OK_DEACTIVATION                              Set to this value when a deactivation request is accepted. The requester is removed from the requester list.
+     0x03...0xFF   Reserved for more OK's                       These enum values are reserved to protect for future acknowledgements to additional request actions
+        0x10       REJECTED_REQUEST_INVALID                     Set to this value when a request is invalid. A request is invalid if the request is missing required information or that the    
+                                                                request contains conflicting information (such as both activation and deactivation for the same profile).
+        0x11       REJECTED_RESET_DETECTED                      Set to this value when a reset of the requester is detected, and the requester is removed from the requester list. This
+                                                                response is given in an unsolicited manner to the requester.
+        0x12       REJECTED_PROFILE_UNKNOWN                     Set to this value when the requested profile is not unknown.
+        0x13       REJECTED_LACK_OF_PERMISSION                  Set to this value when the requester is determined to not have permission to activate the profile being requested. This
+                                                                response may be unsolicited if the permissions can dynamically change.
+        0x14       REJECTED_LACK_OF_COMPUTATION_RESOURCES       Set to this value when the requested profile cannot be activated or needs to be deactivated due to a lack of
+                                                                computational resources. If the profile was already activated and needs to be deactivated, then all requesters are
+                                                                removed from the requester list. This response may be unsolicited in situations where the availability of the computation
+                                                                resources changes.
+        0x15       REJECTED_LACK_OF_POWER                       Set to this value when the requested profile cannot be activated or needs to be deactivated due to lack of power
+                                                                capability within the vehicle. If the profile was already activated and needs to be deactivated, then all requesters are
+                                                                removed from the requester list. This response would be provided as an unsolicited response in that situation.
+     0x16...0xFF   Reserved for more reject reasons             These enum values are reserved for future reject reasons.
+    ============= =========================================== ========================================================================================================================================================
+
+.. req:: No Title
+    :id: [$SRS_SPM 0008]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5009           
+    :test_technique: Integration Testing
+    :comments: Continue of requirement SDVA-5006
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Profile State Value (1 byte) Repeating with Profile IDs and Request Status
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0009]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4222           
+    :test_technique: Integration Testing
+    :comments: Extension o requirement SDVA-5009.
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The Profile State field shall use the enumeration provided:
+
+    ============= ====================== ========================================================================================================================================================
+        Value           Literal                                                Description
+    ============= ====================== ========================================================================================================================================================
+        0x00            INACTIVE            Set to this value when the profile is valid and is currently in an inactive state.
+        0x01            ACTIVATING          Set to this value when the profile is valid and is currently in an activating state.
+        0x02            ACTIVATED           Set to this value when the profile is valid and is currently in an activated state.
+        0x03            DEACTIVATED         Set to this value when the profile is valid and is currently in a deactivating state.
+     0x04...0xFE        Reserved            Reserved for future state expansion.
+        0xFF            UNKNOWN             Set to this value when the profile requested is unknown to the SM or when profile requester does not have permission to request the profile.
+    ============= ====================== ========================================================================================================================================================
+
+.. req:: No Title
+    :id: [$SRS_SPM 0010]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5010           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Every SMFrame message SHALL:
+
+    * have both message types in ascending Msg Type Order (PROFILE_REQUEST, REQ_STATUS_PROF_STATE).
+    * Specify an Entry Length of zero if there is no information to convey for a message type.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0011]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5011           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The PMFrame is used to periodically convey the status of the PM/SM combination. The Custom Header of PM messages SHALL be sent with the ID 0xFFFE 7FFE.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0012]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5012           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The HeartbeatCounter SHALL be implemented as an incremental counter of the type uint32 where it will count from 0 to 2:sup:`32`-1.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0013]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5267           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The sender of the wakeup frame asserts hosts that need to be awaken by setting the bit corresponding to the desired hosts to 1 and all other hosts as 0.
+    
+    The sender can de-assert wakeup for a host that it had previously asserted by setting the bit corresponding to the host as 0
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0014]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4223           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    A swEntity MUST use one or more activation profiles to specify its dependencies (SW or HW)
+
+    RATIONALE: A swEntity MAY be dependent on one or more other swEntities, each of which MAY be further dependent on yet other swEntities.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0015]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4224           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    A swEntity that is referenced as a dependency in an activation profile MUST be uniquely identifiable as a discoverable service:
+
+    NOTE: the scope of this swEntity can be bigger than that one service. But this association to the service allows the swEntity to be discoverable
+    through the service discovery.
+
+
+.. req:: waking device field 
+    :id: [$SRS_SPM 0016]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5385           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The PM SHALL:
+
+    * treat the Waking Device field as a 4 byte value representing the PM IP Address.
+    * only execute wakeup commands from PGTT entries that have its own IP Address represented in the Waking Device field.
+
+
+.. req:: The PM SHALL treat the Target Device Field as a 4 byte value representing either: 
+    :id: [$SRS_SPM 0017]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5387           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The PM SHALL treat the Target Device Field as a 4 byte value representing either:
+
+    #. the IP address of the device to be woken up when that device has a PM OR
+    #. as a value defined elsewhere in this specification that is distinguishable from IP addresses and represents the device to be woken up when that device does not have a PM.
+    #. send the activation/deactivation command(s) from the PGTT row(s) where the Target Device field matches the device communicated in the PowerOnDevice and PowerOff Device requests.
+
+
+.. req:: Wakeup Sequence 
+    :id: [$SRS_SPM 0018]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5388           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The PM SHALL treat the Wakeup Sequence field as a 1 byte value representing the order of wakeup command execution.
+
+
+.. req:: Wakeup Command 
+    :id: [$SRS_SPM 0019]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5389           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The PM SHALL:
+
+    * treat the Wakeup Command as a 1 byte value representing an enumeration of wakeup commands described below.
+    * send/stop sending the command corresponding to the enumerated value found in the Wakeup Command field.
+
+
+.. req:: Step Delay 
+    :id: [$SRS_SPM 0020]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5390           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The PM SHALL treat the Wakeup Step Delay Field as a 2 byte value representing a time delay in milliseconds before proceeding to the next step in the
+    PowerOnDevice Sequence
+
+
+.. req:: Command Enums 
+    :id: [$SRS_SPM 0021]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5391           
+    :test_technique: Integration Testing
+    :comments: Field enum has not a defined range. TC10 case requires more requirements: SPM might does not know the port information, just uses the EtSM to prepare TC10 from EthIf and EthDrv modules.
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The enumerations of the Wakeup Command Field SHALL be defined as follows:
+
+
+    ============================ ==============================================================================================================
+     Wakeup command field enum          Wakeup Command
+    ============================ ==============================================================================================================
+             0x00 to TBD            Transmit Wakeup Frame with the corresponding bit set
+                                    (e.g. Enum = $03 then Wakeup Frame sent with bit position $03 set)
+             TBD to TBD             TC10 Wakeup sent on Port A - F
+                                    (e.g. Enum = $65 then TC10 sent on Port B)
+             TBD+                   TODO: more items to come in this list - Cameras #1-8? connected SoC? MCU3 Cohorts? Ethernet Switch?
+    ============================ ==============================================================================================================
+
+
+.. req:: Loss of Node DTC Field 
+    :id: [$SRS_SPM 0022]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5392           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL treat the Loss of Node DTC Field as a 2 byte value representing the base of the DTC to be set if the corresponding Target Device cannot be
+    reached.
+
+
+.. req:: Loss of Node DTC Timeout 
+    :id: [$SRS_SPM 0023]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5393           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL treat the DTC Timeout as a 2 byte value representing the length of time in milliseconds to delay before the PM sets a Loss of Node DTC as
+    defined in the DevicePowerState Functionality Section
+
+
+.. req:: Power Graph Mechanisms 
+    :id: [$SRS_SPM 0024]
+    :status: Accepted 
+    :category: Non-Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5394           
+    :test_technique: Integration Testing
+    :comments: System requirement, no directly involved in SPM development
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The following devices SHALL support the stated wakeup mechanisms:
+
+    #. MCB: CAN Wakeup Line
+    #. CCU SOCs: Specific MCB-controlled mechanism addressed in MIS001: MCU Farm Startup and Shutdown Requirements
+    #. CHM MCU: CAN Wakeup Line
+    #. CHM SOC: Specific CHM MCU-controlled mechanism addressed in CHM Power Mode Architecture | SDV-2403
+    #. CCU MCU1A/B: CAN Wakeup Line
+    #. CCU MCU3s: Specific MCU1A/B-controlled mechanism addressed in MIS001: MCU Farm Startup and Shutdown Requirements
+    #. 10-Based T1S Devices: TC10
+    #. Devices connected directly to 100M/1GB Ethernet ports (e.g. SADM): TC10
+    #. Aggregrator MCUs: TC10, CAN Wakeup Line
+    #. CAN Gateway: CAN Wakeup Line
+    #. Ethernet Switches and their Host Micros:
+        #. Switches capable of waking with TC10 WUP (Wakeup Pulse) on any external facing port and relaying that WUP to other ports based on configuration
+        #. Host micros capable of waking up on any incoming TC10 WUP from an external port of the switch it hosts (via INH Line or other circuitry)
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0025]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4283           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL only honor PowerOnDevice commands from its corresponding SM. The interface is not used to send PowerOn requests from one power
+    manager to another or from other SMs.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0026]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4282           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL power on Target Devices based on the incoming PowerOnDevice request received. Note that this means the following:
+
+    #. send the commands identified by the proper PGTT Waking and Target Device fields in the order of the Wakeup Sequence field, beginning withthe value of 1.
+    #. wait for the Wakeup Step Delay period of time before processing the next Wakeup Command in the Sequence.
+    #. process all of the Sequence Steps for the given Target Device.
+    #. combine consecutive Wakeup Frame steps into the same transmission when the Wakeup Step Delay Field has a value of zero.
+       e.g. Step 1 is Wakeup Frame with bit 8 set and Step 2 is Wakeup Frame with bit 6 set, result is one transmission with both bits 6 and 8 set
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0027]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4386           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL always assert the wakeup for the requested host even if the host is already awake. This is to ensure that the requested host will stay awake as
+    long as it is still required by the requesting SM
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0028]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4384           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL also be responsible for keeping the Target Device awake as long as the SM is still functional and has not made a PowerOffDevice request for
+    that same Target Device
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0029]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4387           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL provide a PowerOffDevice local interface to allow its local SM to request powering off devices that the PM had previously powered on.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0030]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4388           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL only honor PowerOffDevice commands from its corresponding SM. The interface is not used to send PowerOff requests from one power
+    manager to another or from other SMs.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0031]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4389           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    For each requested device, the PM SHALL keep track of all the requesters and deactivate that device only after all requesters have issued the
+    PowerOffDevice request
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0032]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4390           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL power down the host on which it is running only after receiving the PowerOffDevice method with its own address from its corresponding SM
+
+
+.. req:: Powering down a device requirement 
+    :id: [$SRS_SPM 0033]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5380           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When powering down a device, the PM SHALL:
+
+    #. process the commands identified by the proper Waking and Target Device fields in descending Wakeup Sequence order, each separated by a 
+       calibratable period of time. This is to account for situations where a switch or other mechanisms need to relay the power off signals to the devices
+       further away in the Power Graph.
+    #. perform the following for each of the entry types:
+        #. entries requiring a bit set: send message with zero values where 1's are required for wakeup.
+        #. entries requiring a TC10 command: do nothing.
+        #. entries for local activations: refer to Domain-specific Specifications.
+
+
+.. req:: Monitor Device 
+    :id: [$SRS_SPM 0034]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5395           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL provide a MonitorDevice interface to allow a local SM to request the monitoring of a remote hosts' status for reporting back in the
+    DevicePowerState interface
+    NOTE: The remote host can act as requester of local profiles or/and it can be requested by the local SM.
+
+
+.. req:: Stop Monitoring Device 
+    :id: [$SRS_SPM 0035]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5396           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    This interface SHALL also allow the SM to request stop monitoring of a host it has requested to be monitored previously
+    NOTE: The remote host can act as requester of local profiles or/and it can be requested by the local SM.
+
+.. req:: No Title
+    :id: [$SRS_SPM 0036]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4393           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL publish the DevicePowerState interface to reflect the status of any of the following: (Note that all of these triggers need to be individually tracked. e.g. a MonitorDevice Off request should not
+    affect a PowerOnDevice monitoring and viceversa).
+
+    #. all remote or local Targets that its SM has requested to be powered on using the PowerOnDevice interface.
+    #. all devices that its SM has requested to monitor using the MonitorDevice interface.
+    #. devices in its list of monitored devices described in SDVA-4400.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0037]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4394           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Faulted when any of the following are true:
+
+    #. the local device has been activated but is still Off (timeouts and hysteresis to be specified in the Domain-specific Specs).
+    #. the PM Heartbeat of a remote device is not received within the DTC Timeout length of time (defined in the PGTT) after sending the initial wakeup request
+    #. the PM Heartbeat of a remote device is not received within the DTC Timeout length of time (defined in the PGTT) after an initial Heartbeat reception.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0038]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4395           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Reboot when any of the following are true:
+
+    #. the local device has just been restarted and is not yet fully functional.
+    #. the PM has determined that a remote device has reset based on receiving a HeartbeatCounter value that is less than a calibratable number of counts (default 1) 
+       below the last value received during the current wake cycle. Calibration protects for situations where message drops are found to occur.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0039]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4396           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Pending_Shutdown when any of the following are true:
+
+    #. the local device is On but is in the process of shutting down.
+    #. the PM Heartbeat of a remote device is received with a powering down indication as described in the Heartbeat Functionality Section
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0040]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4397           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Off when any of the following are true:
+
+    #. the local device is Off.
+    #. the PM Heartbeat of a remote device that is no longer being sent a wakeup request from the PM is not received within the 'Ongoing'
+       calibratable period of time.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0041]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4398           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    On when any of the following are true:
+
+    #. the local device is operating normally and is not in any of the other states.
+    #. the PM Heartbeat of a remote device has been received within the DTC Timeout length of time (defined in the PGTT) and none of the other states are valid.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0042]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4399           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Initializing from the time that the first wakeup request in the sequence has been sent with the Target in the Off State and the time that it reaches
+    any of the other states
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0043]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4400           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Each PM SHALL cache the state of a calibratable list of remote hosts that it works with to avoid incurring latency related to waiting for the heartbeat when
+    the remote PM is known to be running already
+
+
+.. req:: For setting a Loss of Node DTC 
+    :id: [$SRS_SPM 0044]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5382           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    For setting a Loss of Node DTC, the PM SHALL:
+
+    #. set the DTC against a device when it has reached the Faulted State described above.
+    #. determine the DTC parameters using the DTC Base ID provided in the PGTT and appending a Failure Type Byte of $8C. 
+       e.g. DTC Base ID in the Power Graph Traversale Table of $D613 results in full DTC of D613 8C.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0045]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5013           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Once the PM starts transmitting the wakeup command to activate a Target Device, it SHALL send it at a calibratable periodic rate (default 1 second) as
+    well as within 5ms of any change in value
+
+
+.. req:: WUF Aggregation 
+    :id: [$SRS_SPM 0046]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5397           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When sending the Wakeup Frame, the PM SHALL keep track of all the bits that it has set and OR them together with each transmission (e.g. never send
+    the Wakeup Frame with a bit set to zero for a device the PM intends to keep awake).
+
+
+.. req:: Eth WUF 
+    :id: [$SRS_SPM 0047]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5398           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    A PM on a device that has an Ethernet connection but not CAN, SHALL:
+
+    #. process the information received in the Ethernet Wakeup Frame messages if needed for its own dependendecies.
+    #. transmit its own Ethernet Wakeup Frame using only the values generated within, not any information from incoming Wakeup Frames
+
+
+.. req:: Intermediate WUF Handling 
+    :id: [$SRS_SPM 0048]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5399           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    A PM that has both an Ethernet and Wakeup CAN connection, SHALL:
+
+    #. perform the following for Wakeup Frame messages received on Ethernet:
+
+        #. process the information if needed for its direct dependencies
+        #. OR the information together from each incoming Ethernet frame as well as its own values and transmit the resulting message in its CAN
+           Wakeup Frame.
+    #. perform the following for Wakeup Frame messages received on CAN:
+    
+        #. process the information if needed for its own dependencies
+        #. OR the information together from each incoming CAN frame as well as its own values and transmit the resulting message in its Ethernet
+           Wakeup Frame.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0049]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4391           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL publish a periodic heartbeat per the PM Heartbeat Frame Design Section to inform remote hosts that the host where the PM resides is
+    available for communication.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0050]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5014           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL send the Heartbeat Frame with a HeartbeatCounter value of zero when any of the following are true:
+
+    #. the PM initializes and receives communication from its corresponding SM that it is ready for communication.
+       The details of this interface are left to the Domain-Specific Requirements which must account for any ongoing dynamics that would influence the
+       capability for the SM/PM pair to fully complete their duties.
+    #. the PM and SM are fully functioning after returning from a reset or restart of any kind that would interrupt their functionality. This provides the
+       information needed for the DevicePowerState calculation.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0051]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4392           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    After the initial transmission of a zero HeartbeatCounter value, the PM SHALL increment the HeartbeatCounter by one with each subsequent transmission
+    of the message.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0052]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5015           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL broadcast the Heartbeat message at a calibratable periodic rate for the first 3 counts (default 5ms) and a separate calibratable periodic rate for
+    all subsequent counts (default 1 second). The periodic rate for the first three transmissions is calibrated to be faster to make sure that recipients can
+    receive the heartbeat as quickly as possible even if the initial heartbeat is dropped. The periodic rate for the subsequent counts and the value of the
+    counter should also provide a rough idea of the time a device has been awake.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0053]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4221           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    PM SHALL transmit the Heartbeat message with a HeartbeatCounter value of 2^32-1 whenever it begins its power down sequence such that the periodic
+    transmission never ceases without a shutdown indication. This will allow the PM monitoring DevicePowerState to keep up-to-date information on the
+    remote host and avoiding its SM trying to communicate prior to verification that the remote SM is ready.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0054]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4401           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Upon a restart, the PM SHALL:
+
+    #. start in its default state without remembering any PowerOnDevice requests made to it before its restart.
+    #. clear all previously made wakeup assertions to local or remote devices except those that are required by its default startup setting. Requesters
+       are expected to re-request any needed resources from the PM again.
+    #. clear all previous records of received HeartbeatCounter values.
+
+    Note: All error handling related to the activation profiles are the responsibilities of the SM.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0055]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4873           
+    :test_technique: Integration Testing
+    :comments: Seems to be a configuration requirement. Implementation can involve in the possible configuration validation only
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Each swEntity MUST have one and only one SM that is responsible for the final determination of whether that swEntity is to be started or stopped
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0056]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4874           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    SM's activating a software entity hosted on a remote host SHALL identify the location of the responsible remote SM as the IP address of the swEntity
+    itself.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0057]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4875           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+    
+    Each host MUST have only one SM that is responsible for all of the swEntities on that host
+
+
+.. req:: The SM of each hostSHALLinform its local PM that it has the need for the localhost by sending the PowerOnDevice request 
+         specifying the IP address of the localhost. 
+    :id: [$SRS_SPM 0058]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5379           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The SM of each host SHALL inform its local PM that it needs the localhost to be running by sending the PowerOnDevice request specifying the IP address
+    of the localhost.
+
+.. req:: No Title
+    :id: [$SRS_SPM 0059]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4876           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The SM of each host SHALL inform its local PM that its need for the localhost has ended by sending the PowerOffDevice request specifying the IP
+    address of the localhost.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0060]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4877           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    SM SHALL activate a swEntity it manages based on the following information
+
+    * internal state of the SM (e.g. the default state may require a set of default swEntities)
+    * requests (local or remote) made to the SM for that swEntity
+
+    Note that the request for the swEntity may be an indirect request due to the swEntity being a dependency within another swEntity's
+    activation profile
+
+.. req:: No Title
+    :id: [$SRS_SPM 0061]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4878           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    SM SHALL deactivate a swEntity it manages when all of the following are true:
+
+    * there are no active requests for profiles of this swEntity
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0062]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4879           
+    :test_technique: Integration Testing
+    :comments: Framework requirement. It is about the integrator that needs to know how to activate/deactivate a profile to the SPM
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The request for activation of a swEntity to the SM SHALL be made in the form of an activation request of an activation profile of that swEntity.
+
+
+.. req:: ProfileID 
+    :id: [$SRS_SPM 0063]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5426           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    An activation profile for a particular swEntity has required and optional contents to maximize flexibility for dependency specification.
+    Required content:
+
+    * An ID that can be used to uniquely identified this activation profile within the vehicle
+
+        * The ID MUST uniquely identify the swEntity that owns the profile
+        * The ID MUST further uniquely identify this activation profile from all the other activation profiles that belong to this swEntity
+
+.. req:: profile for swEntity 
+    :id: [$SRS_SPM 0064]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5427           
+    :test_technique: Integration Testing
+    :comments: Integration/Configuration requirement. We can write the configuration script on this requirement 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Each selectively activatable swEntity MUST have at least one activation profile, with profile 0 being the default profile
+
+
+.. req:: Manage Profiles 
+    :id: [$SRS_SPM 0065]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5416           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    For each profile managed, the SM SHALL track all of the requesters who requested activation of this profile by doing the following:
+
+    * when a new valid activation request for a profile is received, add the requester to the list of requesters.
+    * when a deactivation is received from the same requester, remove this requester from its list of requesters.
+
+
+.. req:: Inactive 
+    :id: [$SRS_SPM 0066]
+    :status: Implemeneted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5417           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When a new valid ActivateProfile request is received:
+
+    * Add requester IP address to the requester list
+    * Transition state to Activating
+
+
+.. req:: Deactivate in Inactive 
+    :id: [$SRS_SPM 0067]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5418           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    There should be no action when a DeactivateProfile
+    request is received
+
+
+.. req:: Deactivate in Activating State 
+    :id: [$SRS_SPM 0068]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5419           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When a valid DeactivateProfile request is received:
+
+    * Remove requester IP address from requester list
+    * If there are no more requesters, transition to Deactivating
+
+
+.. req:: Activate in Activating State 
+    :id: [$SRS_SPM 0069]
+    :status: Implemeneted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5420           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When a new valid ActivateProfile request is received:
+
+    * Add requester IP address to the requester list
+    * Continue activating process
+
+
+.. req:: Activating to Activated 
+    :id: [$SRS_SPM 0070]
+    :status: Implemeneted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5421           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When the profile-owning software entity itself is activated
+    transition to Activated
+
+
+.. req:: Deactivate in Activated State 
+    :id: [$SRS_SPM 0071]
+    :status: Implemeneted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5422           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When a valid DeactivateProfile request is received:
+
+    * Remove requester IP address from requester list
+    * If there are no more requesters, transition to Deactivating
+
+    When a new valid ActivateProfile request is received:
+    
+    * Add requester IP address to the requester list
+
+.. req:: Deactivating to Inactive State 
+    :id: [$SRS_SPM 0072]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5423           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When the software entity owning the profile has been
+    deactivated AND all the dependencies in the profile have
+    been successfully requested to be deactivated, transition
+    to Inactive
+
+.. req:: Deactivating to Activating State
+    :id: [$SRS_SPM 0073]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5424           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When a valid ActivateProfile request is received:
+
+    * Add requester IP address to the requester list
+    * Transition to Activating
+
+        * Note that the SM implementation can
+          determine how quickly to transition back to
+          activating. In some cases, the profile may
+          need to stay in deactivating until some
+          deactivation process is fully completed before
+          they can be reactivated again.
+
+.. req:: Profile Status Update 
+    :id: [$SRS_SPM 0074]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5425           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When the state of a profile changes, the SM SHALL notify all the activation requesters of the updated profile state via the REQ_STATUS_PROF_STATE
+    message of the SM communication frame    
+
+
+.. req:: Profile request 
+    :id: [$SRS_SPM 0075]
+    :status: In Review 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5428           
+    :test_technique: Integration Testing
+    :comments: NO ALIGNED: IF USE THE C/S only one profile per-time can be activated 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Profile activation request to a SM SHALL be made using the ActivateProfile method by passing the IDs of the requested profiles. Multiple profiles MAY be
+    requested in one request
+
+
+.. req:: SM provide response and profile status 
+    :id: [$SRS_SPM 0076]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5429           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Each SM SHALL also provide a RequestStatusProfileState interface to allow the SM to communicate the request status as well as the updated profile
+    state to local and remote activation requesters
+
+
+.. req:: SM determine validity of the profile (de)activation requests 
+    :id: [$SRS_SPM 0077]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5430           
+    :test_technique: Integration Testing
+    :comments: How to provide this? Port? Callout? we just have service information by port from SPM
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Upon receiving an activation request, the SM SHALL first determine if the request is valid and permitted.
+
+    * This determination SHALL be performed separately for each profile requested.
+    * If the request is determined to be valid and permitted, then the SM SHALL add the requester to the list of requesters for the requested profiles. If
+      the requester was already on the requester list for that profile, then it does not need to be added again. The SM SHALL also use MonitorDevice
+      method to its local PM to request monitoring of a remote requester. The profile state SHALL be updated appropriately based on the request. The
+      SM SHALL provide feedback to the requester using the RequestStatusProfileState interface.
+    * If the request is determined to be invalid or not permitted, then the SM SHALL provide feedback to the requester using the
+      RequestStatusProfileState interface, specifying the appropriate reject reason in the Request Status field and the appropriate profile state in the
+      Profile State field.
+
+        * The reject reasons SHALL be those defined in the table Figure 8.
+        * If the reject reason is REJECTED_PROFILE_UNKNOWN or REJECTED_LACK_OF_PERMISSION, then the Profile State provided
+        * SHALL be UNKNOWN.
+        * If the reject reason is otherwise, then the Profile State provided SHALL be the actual state of the profile.
+
+.. req:: Retry activation 
+    :id: [$SRS_SPM 0078]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5431           
+    :test_technique: Integration Testing
+    :comments: TO_BE VERIFIED
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The requesting SM SHALL retry sending the same ActivationProfile requests at a calibratable interval when no response is received, or the request is
+    rejected. The calibration value MAY be dependent on the reject reason. But this is to be determined by the domain specific requirements. When retry is
+    permitted, the SM can continue retry for as long as the activation criterion for the profile is still met.
+
+
+.. req:: What is activated when profile is activated? 
+    :id: [$SRS_SPM 0079]
+    :status: Implemeneted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5432           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    SM SHALL activate a profile by:
+
+    * Activating the swEntity associated with the profile
+    * Activating the network communication for the swEntity associated with the profile
+    * Activating local swEntities specified as dependencies in the profile
+    * Activating hardware specified as dependencies in the profile
+    * Requesting activation of any remote swEntities specified as dependencies in the profile to the remote SM responsible for these remote swEntities
+
+
+.. req:: Transition to activated 
+    :id: [$SRS_SPM 0080]
+    :status: implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5433           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    A profile SHALL transition into the Activated state as soon as the swEntity associated with the profile and its network communication are both activated.
+    The activation of dependencies can continue in this activated state. Note that it is possible that a dependency cannot be activated for some reason. The
+    SM is not responsible for setting any error codes related to this condition
+
+
+.. req:: Activate HW devices 
+    :id: [$SRS_SPM 0081]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5434           
+    :test_technique: Integration Testing
+    :comments: NO releated to SPM in mechatronic system (SUM-SPM)
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    To activate HW dependencies, the SM SHALL make PowerOnDevice requests to its local PM, specifying the IDs of the hardware devices in the request.
+    The PM would then activate the device and provide updated device state via the DevicePowerState message to the SM.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0082]
+    :status: Implemeneted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4254           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    SM requests wakeup of this IP address through its local PM using the PowerOnDevice request, specifying the IP address in the request. It also
+    subscribes to the state of the remote host through the DevicePowerState topic published by the PM
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0083]
+    :status: Implemeneted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-4385           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    SM SHALL make the PowerOnDevice request to the PM even if the requested host is already awake
+
+
+.. req:: Deactivate Request 
+    :id: [$SRS_SPM 0084]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5435           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Profile deactivation requests to a SM SHALL be made using the DeactivateProfile method
+
+
+.. req:: Providing Deactivate Request Status 
+    :id: [$SRS_SPM 0085]
+    :status: Implemeneted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5436           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The network communication implementation for RequestStatusProfileState is implemented using the REQ_STATUS_PROFILE_STATE message
+    where the request status is captured by the Request Status field and the profile state is capture by the Profile State field.
+
+
+.. req:: Deactivation Flow 
+    :id: [$SRS_SPM 0086]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5437           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    The DeactivateProfile method SHALL only be used by an ActivateProfile requester to remove its previous activation request. In other words, one requester
+    cannot deactivate an active profile that was made active by another requester. A request to deactivate profile from a requester that is not an activation
+    requester SHALL result in no action performed by the SM on the profile state. If the request is received from an existing activation requester, then SM
+    SHALL then remove the requester from the list of activation requesters for the profile requested. The SM SHALL further make a MonitorDevice request to
+    its local PM to stop monitoring the requesting host. In both of these cases, the requester SHALL receive a REQ_STATUS_PROFILE_STATE message
+    with the Request Status indicating OK.
+
+
+.. req:: What to deactivate when deactivating a profile 
+    :id: [$SRS_SPM 0087]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5438           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    SM SHALL deactivate a profile by
+
+    * deactivating the swEntity owning the profile
+    * deactivating the communication of the swEntity owning the profile
+    * requesting DeactivateProfile to remote SM to remove its activation requests for remote software dependencies.
+    * deactivating local software dependencies if there are no other requesters requesting the same software dependencies.
+    * requesting PowerDownDevice to its local PM to deactivate all HW dependencies, including remote hosts if there are no other active profiles from
+      this SM that still requires this HW dependency
+
+
+.. req:: SM Restart Fresh 
+    :id: [$SRS_SPM 0088]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5439           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Upon a SM restart, the SM SHALL not remember any profile requests made to the SM prior to the restart except those required by default. All profile
+    requesters are responsible for re-requesting profiles from the SM
+
+.. req:: Resend request when no response is received 
+    :id: [$SRS_SPM 0089]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5440           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Below is a list of such scenarios:
+
+    * SM makes an activate/deactivate request to a remote SM. The request is NOT received by the remote SM.
+    * SM makes an activate/deactivate request to a remote SM. The request is received and processed by the remote SM. A response was sent by the
+      remote SM. But the response was not received by the requesting SM.
+    * SM makes an activate request to a remote SM. It subsequently receives a response indicating that the request was accepted, and the profile is in
+      an activating state. When the profile state changes to Activated, this profile state was sent by the requested SM but not received by the
+      requesting SM.
+
+    In each of these cases, the requesting SM SHALL resend the request periodically for as long as the profile is still required to be activated until a response
+    is received
+
+.. req:: Receiving the same request multiple times 
+    :id: [$SRS_SPM 0090]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5443           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    Because a SM can resend a request multiple times for various reasons, a receiving SM can receive the same request from the same requester multiple
+    times. Each requester SHALL only be allowed one activation request per profile. The receiving SM SHALL always consider the latest received request
+    from the requester as the desired action from the requester
+
+
+.. req:: Conflicting Requests 
+    :id: [$SRS_SPM 0091]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5441           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    SM SHALL not send conflicting requests for the same profile in the same request. For example, a SM should not send Activate and Deactivate for the
+    same profile in the same request.
+
+    However, if a SM receives a request that contains conflicting requests for the same profile, the SM SHALL take no action and provide REJECT_REQUEST_INVALID as the reject reason 
+    for the profile with conflicting actions.
+
+
+.. req:: Loss of node or reset with requesting SM 
+    :id: [$SRS_SPM 0092]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5442           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    When a SM activates a profile due to an ActivateProfile request from a remote host, there is the possibility that the remote host can either die or reset
+    without requesting deactivation. In these conditions, the remote host will not be able to request deactivation even after it restarts because all of the
+    previous requests would be lost. This is a highly undesirable condition since the SM may never be able to deactivate the profile and thus keeping part of
+    the vehicle awake indefinitely.
+    To manage this condition, the SM MUST use MonitorDevice method to request its local PM to monitor the status of the remote host that made the
+    activation request and then subscribe to the DevicePowerState from its local PM get the state of that remote host. As described previously, the PM
+    analyzes the heartbeat from the remote host to determine if the host has gone offline or that a restart has occurred within that host for either the PM or SM
+    functions. When either of these conditions occur, the SM SHALL remove this host as an activation requester from every profile that it has requested
+    previously. This allows the SM the ability to deactivate the profile without receiving an explicit deactivation request from that host. The requesting SM is
+    responsible for re-requesting the activations of profiles upon its restart as it needs. The SM SHALL communicate this action to the requester via the
+    REQ_STATUS_PROFILE_STATE message by setting the Request Status field to REJECT_RESET_DETECTED.
+
+
+.. req:: Requested SM reset or loss of node 
+    :id: [$SRS_SPM 0093]
+    :status: Accepted 
+    :category: Functional
+    :sub_category: TO-DO                 
+    :source_id: SDVA-5444           
+    :test_technique: Integration Testing
+    :comments: 
+    :source_doc: SDV-2017 174 0p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Dec 13, 2023
+
+    There is also the converse situation where a SM makes a request to a remote SM and the remote SM goes offline or experiences a reset in its power
+    management components. In these conditions, the requesting SM may incorrectly assume that the swEntities it has requested are active when they are
+    not.
+    To manage this condition, the SM MUST also subscribe to the status of the host of the requested SM via the DevicePowerState topic via its local PM. Note
+    that in this case, because the SM made a PowerOnDevice request to its local PM for the remote SM host, there's no need to do a MonitorDevice request.
+
+    * If the state of the remote host becomes Off, then this SM MUST request deactivation of all profiles that it has requested previously from that host.
+    * If a restart condition has been detected, then the SM SHALL re-request all profiles that it previously requested to that host.
+
+
+Mechatronic Power Manager Infrastructure Specification
+------------------------------------------------------ 
+
+.. req:: No Title 
+    :id: [$SRS_SPM 0094]
+    :status: Implemented 
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0001
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    Mechatronic devices SHALL have a single software entity for both Software Manager and Power Manager.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0095]
+    :status: Implemeneted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0002
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    SPM SHALL directly use the standard AUTOSAR BSW stack to accomplish the following standard 
+    wakeup and shutdown requests:
+
+    * SPM SHALL directly use the standard AUTOSAR BSW stack to accomplish the following standard wakeup and shutdown requests:
+
+        *  SDV2 Wakeup Frame (frame definition details covered in SDV-2017)
+        *  TC10 Wakeups sent directly from MCU to its Ethernet port
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0096]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0003
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    SPM SHALL utilize the DeviceCustomWakeup interface to the Hardware Power Function (?Helper App?) to accomplish the required wakeup and shutdown requests not handled through the BSW Stack.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0097]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0004
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    The DeviceCustomWakeup interface SHALL consist of a bitfield 64 bits long between the Power Manager and the Wakeup Helper Function to represent requests for hardware activation
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0098]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0005
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    The bitfield SHALL follow the bit definitions specific for the Wakeup Frame in SDV-2017
+
+.. req:: No Title
+    :id: [$SRS_SPM 0099]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0006
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    TEXT
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0100]
+    :status: Rejected
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0007
+    :test_technique: Integration Testing
+    :comments: Integration Requirement
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    The Hardware Power Function SHALL deactivate its output functions if the DeviceCustomInterface interface has not been registered with ControlRequest = Hardware Activation Requested within a calibratable period of time
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0101]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0008
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    Hardware Power Function code is expected to vary across the different mechatronic deployments. Each deployment SHALL specify which of the HardwareEntity enumerations it supports activating
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0102]
+    :status: Rejected
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0009
+    :test_technique: Integration Testing
+    :comments: Integration Requirement
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    The Hardware Power Function deployments in builds connected to the SDV2 CAN Wakeup Line SHALL support reception of the SDV2 Wakeup Frame and perform the wakeup functions corresponding to the pertinent bits as described in SDV-2017
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0103]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0010
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    SUM SPM SHALL provide a sender receiver interface SPM_LossOfNodeIndication_Ifc as described below to provide Loss of Node Indication on-change to SUM SSFM that in turn sets/clears a Loss Of Node DTC.
+    The on-change behavior means that the interface publishes only the node dtc/status that has changed since
+    the last time the interface was published.
+
+    dataElement associated to the SPM_LossOfNodeIndication_Ifc interface:
+
+    .. code:: 
+
+        enum nodeStatus {
+            LOST = 0x00,
+            RECOVERED = 0x01
+        }
+
+        SPM_LossOfNodeIndication_Ifc.DataElement{
+            uint16* nodeDtcCodeValue, // 2 bytes DTC Code Value
+            uint8* nodeStatus, // LOST: Node is lost, RECOVERED: Node is not lost
+            uint16 nodeListLength // Node List length 
+        }
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0104]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0011
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    SUM SPM SHALL provide a client server operation SPM_GetDTCIdentifier as described below to enable SUM SSFM to obtain the DTC identifier (2-bytes DTC code value) associated with an IP address in the 
+    Power Graph. This value will be used to facilitate the proper Loss Of Node, Loss of Function, and Invalid Data DTC setting. 
+    SPM_GetDTCIdentifier operation signature: 
+
+    +------------------------+--------------------------------------+
+    |      API Name          | SPM_GetDTCIdentifier                 |               
+    +========================+======================================+
+    |   **Syntax**           |  .. code:: c                         |
+    |                        |                                      |
+    |                        |      void SPM_GetDTCIdentifier (     |
+    |                        |           uint32 * ipAddress         |
+    |                        |           uint16 * dtcCodeValue      |
+    |                        |      )                               |
+    +------------------------+--------------------------------------+
+    |  **Parameters(IN)**    | ipAddress: 4 bytes IP address        |
+    +------------------------+--------------------------------------+
+    | **Parameters(INOUT)**  | None                                 |
+    +------------------------+--------------------------------------+
+    | **Parameters(OUT)**    | dtcCodeValue: 2 bytes DTC Code Value |
+    +------------------------+--------------------------------------+
+    | **Return Value**       | None                                 |
+    +------------------------+--------------------------------------+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0105]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0012
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    The SPM SHALL ignore any Compute Resource information conveyed in an Activation Profile 
+    request
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0112]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0019
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    SUM_SSM SHALL implement a port, PermitExecution, which can receive notification from 
+    SUM_SUSD to execute its functions or prepare for shutdown. RATIONALE: SUM_SPM should only execute 
+    when the ECU infrastructure services are ready. SUM_SUSD determines this for all applications
+
+    SUM_SPM may use the configuration SPM_PermitExection_Mask in its logic to allow configuration of which 
+    PermitExectution bits are considered to trigger a start of its functions.
+
+    RATIONALE: Allow changes to the required bits in the SUSD_SPM_PermitExecution interface to be configured 
+    without requiring further SW logic changes.
+
+.. req:: No Title
+    :id: [$SRS_SPM 0113]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0020
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    If SUM_SPM has no project specific dependency on HW, then SUM_SPM SHALL start execution of its functions when the Wakeup(s) Active bit in the SUSD_SPM_PermitExecution interface is TRUE.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0114]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0021
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    When the ECU Reset bit in the PermitExecution bit is FALSE, then SUM_SPM SHALL set its ShutdownPermission to Enable to support ECU reprogramming.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0115]
+    :status: Implemented
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0022
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    The SPM SHALL use the PDU meta-data to store/retrieve the remote address of the PDU before the PDU transmission / after the PDU reception respectively instead of using the Set/GetRemoteAddress APIs 
+    from SoAd module. 
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0116]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0023
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    Heartbeat deadline monitoring Shall be managed within the SPM.
+
+    **RATIONALE**: The heartbeat is a single PDU that is used to receive heartbeats from multiple remote nodes with 
+    different source ID. Therefore, the SPM would need to keep track of each remote node?s heartbeat separately.
+
+.. req:: No Title
+    :id: [$SRS_SPM 0117]
+    :status: Partially Implemented
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0024
+    :test_technique: Integration Testing
+    :comments: The Req_Ack is not present in the implementation because removed from SDV-2017. The requirement has huge dependencies from SDV-2017
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    The SPM communication through the RTE SHALL be conveyed through 4 different PDUs as described below:
+
+    * One Rx PDU assigned to local multicast group referred to as *SPM_HB_Rx*:
+  
+      * Used to receive the Heartbeat
+      * Remote address is retrieved at runtime after the PDU reception
+      * Fixed Local port number for the PM traffic as defined in SDV-2017
+  
+    * One unicast Rx PDU assigned to local unicast address referred to as *SPM_Rx*:
+
+      * Used to receive the Activate/De-activate/PP_Status messages
+      * Remote address is retrieved at runtime after the PDU reception
+      * Fixed Local port number for the PM traffic as defined in SDV-2017
+  
+    * One Tx PDU assigned to local unicast address referred to as: *SPM_Tx*: 
+
+      * Used to transmit the Activate/De-activate/PP_Status/Req_Ack
+      * Remote address is set at runtime before the PDU transmission
+      * Fixed remote port number for the PM traffic as defined in SDV-2017
+
+    * One Tx PDU assigned to local unicast address referred to as: *SPM_HB_Tx*:
+
+      * Used to transmit the Heartbeat messages
+      * Remote address is set as the multicast address
+      * Fixed remote port number for the PM traffic as defined in SDV-2017
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0118]
+    :status: Implemeneted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0025
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    SPM SHALL transmit and receive the Wakeup Frames using the AUOTSAR stack on:
+
+    #. Ethernet.
+    #. CAN if the device is connected to the Wakeup CAN Network.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0119]
+    :status: Implemented
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0026
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    SPM SHALL transmit the Wakeup Frame setting the appropriate bits every 10ms
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0120]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0027
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    When transmitting the Wakeup Frame, SPM SHALL set the bits by applying **OR** logic to the following:
+
+    #. the bits required based on internal requests from the Power Graph Traversal Table
+    #. the bits received from any incoming Wakeup Frame (either CAN or Ethernet) that has been received since the last time SPM transmitted the Wakeup Frame.
+
+    Example if the Wakeup Frame was 4 bits in length:
+
+    * internal requests (0100) OR 
+    * Rx Wakeup Frame 1 (0001) OR
+    * RX Wakeup Frame 2 (1000) = Tx Wakeup Frame (1101)
+  
+    since the last time SPM transmitted the Wakeup Frame.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0121]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0028
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    SPM SHALL send the same bitfield to the Wakeup Helper Function as sent to the Wakeup Frame (in the same software execution cycle)
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0124]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0031
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+    :satisfies: CAR_FNC_REQ_SUM_SPM_001
+
+    SUM SPM SHALL do the following when attempting to activate an activation profile:
+
+    #. Find if the profile dependencies are remotely provided services by using the Sd_GetNodeAddress API defined in SDV-8201. If the IP Address is found for these dependencies, the SPM sends a remote 
+       ACTIVATE command as defined in SDV-2017. 
+    #. For the profile dependencies that are local AND the profile dependencies that are remote with the activation status received as ?ACTIVATED?, SPM uses the SUM SrvcMgr client server operation 
+       SrvcMgr_ActivateServices defined in SDV-8201 to activate the profile dependencies.
+    #. For every profile dependency in Step 2:
+
+        a. If the return value of the service activation operation SrvcMgr_ActivateServices is 
+           E_OK_LOCAL_ENABLED or E_OK_REMOTE_ENABLED, SPM enables the corresponding PDU-Group for that service.
+        b. If the service is unknown or calibrated off (return value is E_DISABLED or E_NOT_OK) the SPM 
+           skips activating PDUs for this dependency.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0125]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0032
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+    :satisfies: CAR_FNC_REQ_SUM_SPM_002
+
+    SUM SPM SHALL do the following when attempting to de-activate an activation profile:
+
+    #. Find if the profile dependencies are remotely provided services by using the Sd_GetNodeAddress API
+       defined in SDV-8201. If the IP Address is found for these dependencies, the SPM sends a remote DE-ACTIVATE command as defined in SDV-2017. 
+    #. For the profile dependencies that are local AND the profile dependencies that are remote with the 
+       de-activation status received as ?DEACTIVATED?, SPM uses the SUM SrvcMgr client server operation  SrvcMgr_ActivateServices defined in SDV_8201 to de-activate the profile dependencies.
+    #. For every profile dependency in Step 2: 
+        a. If the profile service is used by other profiles, SPM shall not deactivte the service for this dependency.
+        b. If the profile PDU groups are used by other profiles, SPM shall not disable the PDUs for this dependency.
+        c. If no other profile uses the service, SPM shall deactivate the service for this dependency using SrvcMgr_ActivateServices.
+        d. If no other profile uses the PDU Groups, SPM shall disable PDUs for thie dependency.
+        e. If the service is unknown or calibrated off (return value is E_DISABLED or E_NOT_OK) the SPM 
+           skips deactivating PDUs for this dependency.
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0126]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0033
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+    :satisfies: CAR_FNC_REQ_SUM_SPM_001, CAR_FNC_REQ_SUM_SPM_002
+
+    SUM SPM SHALL provide a sender receiver interface SPM_ServiceActivationStatusNotification_Ifc
+    as described below to provide Indication to other SUMs (SSFM, SSC ..etc.) about the activated service list and 
+    if setting a DTC is allowed based on DTC suppression Timer as defined in SDV-8002. SUM SSFM uses that to 
+    determine services to start monitoring and when to inhibit setting of DTCs (Loss of Function, invalid data?etc).
+    SPM_ServiceActivationStatusNotification_Ifc interface dataElement definition:
+
+    .. code:: 
+
+        SPM_ServiceActivationStatusNotification_Ifc.DataElement {
+            Uint16* serviceIdList, // List of Services Activated
+            bool* dtcAllowedList, // List of DTC Allowed Boolean 
+            uint16 listLength // Length of the 2 output lists
+        }
+
+    **NOTE**: The dtcAllowed flag will be set to true by default and will never change. There is no plan to use this flag  in the initial usage of the SPM because the SPM waits for the status of the activated 
+              activation profile to be ?ACTIVATED? before activating the services and the PDU groups as specified in SPM_0031 and SPM_0032
+    **NOTE**: The list will maintain the up to date active services list at any point in time and should not change in the case of losing the Heartbeat of a remote device with a profile that the local SPM has 
+              activated (i.e. Loss of Node DTC should not affect this interface so that the Loss of Function can occur)
+
+.. req:: No Title
+    :id: [$SRS_SPM 0127]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0034
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    SUM SPM SHALL interact with the Ethernet StateManager (EthSM) to trigger the transmission of a TC10 wakeup pulse
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0128]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0035
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    The SPM SHALL provide an API SPM_ActivateProfile to allow local SWCs to activate profiles. The  return value SHALL be E_NOT_OK if the profile is unknown for the SPM. 
+    SPM_ActivateProfile operation signature:
+
+    +------------------------+------------------------------------------------+
+    |      API Name          | SPM_ActivateProfile                            |               
+    +========================+================================================+
+    |   **Syntax**           |  .. code:: c                                   |
+    |                        |                                                |
+    |                        |      Std_ReturnType SPM_ActivateProfile (      |
+    |                        |           uint32 profileId                     |
+    |                        |      )                                         |
+    +------------------------+------------------------------------------------+
+    |  **Parameters(IN)**    | profileId: 4 bytes profile Id                  |
+    +------------------------+------------------------------------------------+
+    | **Parameters(INOUT)**  | None                                           |
+    +------------------------+------------------------------------------------+
+    | **Parameters(OUT)**    | None                                           |
+    +------------------------+------------------------------------------------+
+    | **Return Value**       | Std_ReturnType (E_OK, E_NOT_OK)                |
+    +------------------------+------------------------------------------------+
+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0129]
+    :status: Accepted
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0036
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    The SPM SHALL provide an API SPM_DeactivateProfile to allow local SWCs to deactivate profiles. 
+    The return value SHALL be E_NOT_OK if the profile is unknown for the SPM. SPM_DeactivateProfile operation 
+    signature:
+
+    +------------------------+------------------------------------------------+
+    |      API Name          | SPM_DeactivateProfile                          |               
+    +========================+================================================+
+    |   **Syntax**           |  .. code:: c                                   |
+    |                        |                                                |
+    |                        |      Std_ReturnType SPM_DeactivateProfile (    |
+    |                        |           uint32 profileId                     |
+    |                        |      )                                         |
+    +------------------------+------------------------------------------------+
+    |  **Parameters(IN)**    | profileId: 4 bytes profile Id                  |
+    +------------------------+------------------------------------------------+
+    | **Parameters(INOUT)**  | None                                           |
+    +------------------------+------------------------------------------------+
+    | **Parameters(OUT)**    | None                                           |
+    +------------------------+------------------------------------------------+
+    | **Return Value**       | Std_ReturnType (E_OK, E_NOT_OK)                |
+    +------------------------+------------------------------------------------+
+
+.. req:: No Title
+    :id: [$SRS_SPM 0130]
+    :status: Implemented
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SPM_0037
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-8217 27.27.174.3p0
+    :doc_version: TODO_DOC_VERSION
+    :last_update: Mar 15, 2024
+
+    The SPM module SHALL maintain for different links (physical or virtual links) a separate configuration instance within the SPM configuration.
+
+.. req:: No Title
+    :id: [$SRS_SPM 0251]
+    :status: Implemented
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SDVA-5442
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-2017
+    :doc_version: 27.27.182.2p1
+    :last_update: Jan 15, 2025
+    
+    The SM SHALL send to the requester, in Fault or Restart state, a REQ_STATUS_PROFILE_STATE message by setting the Request Status field to :
+    
+    * REJECT_RESET_DETECTED in the case of a reset being detected
+    * REJECTED_LOSS_OF_HEARTBEAT in the case of heartbeat being lost.
+.. req:: No Title
+    :id: [$SRS_SPM 0252]
+    :status: Implemented
+    :category: Functional
+    :sub_category: TO-DO
+    :source_id: SDVA-7552
+    :test_technique: Integration Testing
+    :comments:
+    :source_doc: SDV-2017 
+    :doc_version: 27.27.182.2p1
+    :last_update: Jan 15, 2025
+
+    In this fault scenario, the SM SHALL stay awake for a period of 2 seconds, to prevent latency in the event the SM no longer requests the device toremain awake for a short period of time

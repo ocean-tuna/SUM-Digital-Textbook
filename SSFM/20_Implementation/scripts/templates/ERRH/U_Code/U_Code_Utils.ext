@@ -1,0 +1,107 @@
+import bsw;
+import bsw::SSFMModule;
+import bsw::ComModule;
+import bsw::DemModule;
+
+extension templates::mathlib;
+extension org::eclipse::xtend::util::stdlib::elementprops;
+extension org::eclipse::xtend::util::stdlib::io;
+extension org::eclipse::xtend::util::stdlib::counter;
+
+/*							U19A3 8A						*/
+Boolean Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(Sum_Ssfm_ConfigSet cfg):
+	((cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError != null) && (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U19A3_8A_CntrlModSecPer_AuthFailure != null) && (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U19A3_8A_CntrlModSecPer_AuthFailure.sum_Ssfm_Errh_CodeGen_Enabled == true) ? true : false)
+;
+
+/*Allows to get the DTC value configured for the KeySlotVerifyError */
+Integer Sum_Ssfm_Errh_U19A3_8A_GetDTCValue(Sum_Ssfm_ConfigSet cfg):
+	cfg.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_GetDTCStatus_DemEvent_Ref.demDTCRef.demDtcValue
+;
+
+
+/*							U19A3 54						*/
+Boolean Sum_Ssfm_Errh_U19A3_54_SecPer_MissSetup_IsValid(Sum_Ssfm_ConfigSet cfg):
+    ((cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError != null ) && (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U19A3_54_SecPer_MissSetup != null) && (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U19A3_54_SecPer_MissSetup.sum_Ssfm_Errh_C_DTC_U19A3_54_SecPer_MissSetup == true)) ? true : false
+;
+
+/*							U19A3 57						*/
+// TODO: add ERRH_BATTERYVOLTAGE_USED (Ref: ERRH VIP24)
+Boolean Sum_Ssfm_Errh_U19A3_57_PreCondition_IsValid(Sum_Ssfm_ConfigSet cfg):
+	((cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError != null ) && (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U19A3_57_InvIncCfg != null ) && (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U19A3_57_InvIncCfg.sum_Ssfm_Errh_CodeGen_Enabled == true)) ? true : false
+;
+
+
+/*							U19A3 92						*/
+// TODO: add ERRH_BATTERYVOLTAGE_USED (Ref: ERRH VIP24)
+Boolean Sum_Ssfm_Errh_U19A3_92_PreCondition_IsValid(Sum_Ssfm_ConfigSet cfg):
+	((cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError != null) && (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U19A3_92_SecPer_PerIncOp != null) && (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U19A3_92_SecPer_PerIncOp.sum_Ssfm_Errh_CodeGen_Enabled  == true) ? true : false)
+;
+
+/*							U19A6 54						*/
+Boolean Sum_Ssfm_Errh_U19A6_54_IsValid(Sum_Ssfm_ConfigSet cfg):
+    ((cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors != null ) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors.sum_Ssfm_Errh_U19A6_54_MissSetup != null) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors.sum_Ssfm_Errh_U19A6_54_MissSetup.sum_Ssfm_Errh_C_DTC_U19A6_54_MissSetup == true)) ? true : false
+;
+
+/*							U19A6 57						*/
+Boolean Sum_Ssfm_Errh_U19A6_57_IsValid(Sum_Ssfm_ConfigSet cfg):
+    ((cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors != null ) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors.sum_Ssfm_Errh_U19A6_57_PhyECUInvIncComp != null) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors.sum_Ssfm_Errh_U19A6_57_PhyECUInvIncComp.sum_Ssfm_Errh_U19A6_57_DTCProcess == true)) ? true : false
+;
+
+/*							U19A6 87						*/
+Boolean Sum_Ssfm_Errh_U19A6_87_IsValid(Sum_Ssfm_ConfigSet cfg):
+    ((cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors != null ) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors.sum_Ssfm_Errh_U19A6_87_MissingMessage != null) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors.sum_Ssfm_Errh_U19A6_87_MissingMessage.sum_Ssfm_Errh_C_DTC_U19A6_87_MissingMessage == true)) ? true : false
+;
+
+/*							U198C 8A						*/
+Boolean Sum_Ssfm_Errh_U198C_8A_IsValid(Sum_Ssfm_ConfigSet cfg) :
+    if ((cfg.eRootContainer.ssc != null) && (cfg.eRootContainer.ssc.sscGeneral.sscAPSRKP_Support == false)) then (
+        false
+    ) else (
+            (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError != null) &&
+            (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U198C_8A_FailedAuth != null) &&
+            (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U198C_8A_FailedAuth.sum_Ssfm_Errh_CodeGen_Enabled == true)
+        ) ? true : false
+
+;
+
+/*							U198C 54						*/
+Boolean Sum_Ssfm_Errh_U198C_54_IsValid(Sum_Ssfm_ConfigSet cfg):
+    if ((cfg.eRootContainer.ssc != null) && (cfg.eRootContainer.ssc.sscGeneral.sscAPSRKP_Support == false)) then (
+        false
+    ) else (
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError != null ) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U198C_54_MissSetup != null) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U198C_54_MissSetup.sum_Ssfm_Errh_CodeGen_Enabled == true)
+	) ? true : false
+;
+
+/*							U198C 49						*/
+Boolean Sum_Ssfm_Errh_U198C_49_IsValid(Sum_Ssfm_ConfigSet cfg):
+    if ((cfg.eRootContainer.ssc != null) && (cfg.eRootContainer.ssc.sscGeneral.sscAPSRKP_Support == false)) then (
+        false
+    ) else (
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError != null ) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U198C_49_PrimSec_IntElecFail != null) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SSCError.sum_Ssfm_Errh_U198C_49_PrimSec_IntElecFail.sum_Ssfm_Errh_U198C_49_DTCProcess == true)
+	) ? true : false
+;
+
+/*							UXXXX 83						*/
+Boolean Sum_Ssfm_Errh_UXXXX_83_IsValid(Sum_Ssfm_ConfigSet cfg):
+    (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors != null ) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors.sum_Ssfm_Errh_UXXXX_83_SignalProtectionIncorrect != null) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors.sum_Ssfm_Errh_UXXXX_83_SignalProtectionIncorrect.sum_Ssfm_Errh_C_DTC_UXXXX_83_SignalProtectionIncorrect == true)
+;
+
+/*							UXXXX 87						*/
+Boolean Sum_Ssfm_Errh_UXXXX_87_IsValid(Sum_Ssfm_ConfigSet cfg):
+    (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors != null ) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors.sum_Ssfm_Errh_UXXXX_87_MissingMessage != null) &&
+	(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SafetySecurityErrors.sum_Ssfm_Errh_UXXXX_87_MissingMessage.sum_Ssfm_Errh_C_DTC_UXXXX_87_MissingMessage == true)
+;

@@ -1,0 +1,59 @@
+@startuml Sum_Ssfm_LinResponder_MissingMsg_SeqDiag
+
+control Scheduler as Sche 
+participant Dem as Dem
+participant SUSD as SUSD
+participant Com as Com
+participant RTE as RTE
+box SUM_SSFM
+    participant Sum_Ssfm_FIM_ReceivedSerialData_Handler as Rec
+    participant Sum_Ssfm_MessageInfo_Handler as MessageInfo
+    participant Sum_Ssfm_Errh_EventDebouncer_Manager as Deb
+    participant Sum_Ssfm_LinResponder_Error_Manager as MMsg
+end box
+participant LNM as LNM
+
+group Callback handling of each associated serial data of configured <Lin_Responder>
+activate RTE
+alt receive serial data
+    Com-> RTE: Rte_ComCbk
+    activate Rec
+    Rec -> RTE: Read the SerialData data from the RTE
+    RTE-->Rec
+    activate MMsg
+    Rec->MMsg:Sum_Ssfm_LINResponder_CbkRxRec_Handler()
+        alt All LIN signals related to <Lin_Responder> which status are SUM_SSFM_SigSts_Supervision_Received
+            MMsg->LNM: Set interface NodeTimeout to LNM as DTC INACTIVE
+        end    
+    deactivate Rec
+else timeout    
+    Com-> RTE: Rte_ComCbkTOut
+    activate MessageInfo
+    RTE->MessageInfo: Com_CbkRxTOut
+    MessageInfo->MMsg:Sum_Ssfm_LINResponder_CbkRxTOut_Handler()
+    MMsg->LNM: Set interface NodeTimeout to LNM as DTC ACTIVE
+    deactivate MessageInfo
+end    
+deactivate RTE
+end
+
+group Runnable_SSFM_LNM_<Lin_Responder>_MissingMsg_Changed
+LNM -> MMsg: Data event LNM_ERRH_NodeStatusIdx changed
+MMsg -> SUSD: Ask for battery voltage range
+SUSD --> MMsg
+alt (No OBD Support and voltage in range) or (OBD Support and not under voltage)
+    MMsg -> MMsg: Set Sum_Ssfm_LNMError_MissingMsg_TestEnableFlag <Lin_Responder>
+end
+end
+Sche->MMsg: Scheduling Event
+group Periodicity runnable monitor for the test enable criteria flag and debouncing time.
+MMsg->MMsg: Runnable_SSFM_Execution_LNMError_MissingMessage()
+activate Deb
+MMsg->Deb: Perform debouncing, calling Sum_Ssfm_ErrhDebouncerExecution()
+Deb-->MMsg:
+deactivate Deb
+MMsg -> Dem: Set/Reset related Dem events based on debouncing result
+end 
+deactivate MMsg
+
+@enduml 

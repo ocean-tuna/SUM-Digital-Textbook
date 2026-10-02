@@ -1,0 +1,7 @@
+[INFO] Namespace search...Done
+[INFO] Init container dependencies map...Done
+[ERR] In container <DOM Element: ECUC-PARAM-CONF-CONTAINER-DEF at 0x2992d6dd810>. No name found for container
+[INFO] Container relationship extraction...Done
+[INFO] Creating Container objects lists...Done
+[INFO] Write containers in json files...Done
+[INFO] Creation of containers table...Done

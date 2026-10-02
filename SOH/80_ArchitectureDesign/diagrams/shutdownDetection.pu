@@ -1,0 +1,26 @@
+@startuml
+'autonumber
+hide footbox
+skinparam ParticipantPadding 20
+
+title Shutdown detection sequence diagram
+
+participant PNC #lightblue
+participant SUSD #lightblue
+box "SOH"
+ participant "Time Manager Runnable" as TimeRunnable
+ participant "Shutdown Delay Detector" as ShutdownDetector
+end box
+
+
+SUSD -> ShutdownDetector : SUSD_SOH_PermitExecution port value
+alt WakeupBit in SUSD_SOH_PermitExecution is ACTIVE
+ hnote over ShutdownDetector : SUM_SOH_ShutDown_Timer = 0
+ TimeRunnable <- ShutdownDetector : Reset SUM_SOH_ShutDown_Timer's flag
+else ShutdownTargetBit in SUSD_SOH_PermitExecution is OFF
+ PNC -> ShutdownDetector : PNC_SUSD_ShutdownPermission port value
+ alt PNC_SUSD_ShutdownPermission==0xFF
+  TimeRunnable <- ShutdownDetector : Set SUM_SOH_ShutDown_Timer's flag
+ end
+end
+@enduml

@@ -1,0 +1,8 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};Runnable_OTA_PSF
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};N\/A
+\cellcolor{ETASlightgray}\textbf{Periodicity};configured by user via DIAG_TE_OTA_PSF_Period parameter
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};OTA_PSF_Preconditions, SignalGroup_FsFA/FxFA, RxMonitoredSignal_Av, BSPMP_RmtProgmActvAuth_Signal, DIAG_RmtPrgmOtaPsf, BatteryVoltage_\\DisableNVMWrite and NvMService
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};EnableCondition and NvMService
+\cellcolor{ETASlightgray}\textbf{Description};This runnable is responsible: \newline To SET or RESET the OTA_PSF flag \newline Store the OTA PSF value in the OTA PSF RAM mirror block \newline To forward the OTA_PSF value to the other Swcs.

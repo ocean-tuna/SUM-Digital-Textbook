@@ -1,0 +1,71 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_RunCrankFault_Manager.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM ERRH Run Crank Fault Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_ERRH_RUN_CRANK_FAULT_MANAGER_H
+#define SUM_SSFM_ERRH_RUN_CRANK_FAULT_MANAGER_H
+
+«IF (Ssfm_IsSUSDErrors_Configured(sSFM.sum_Ssfm_ConfigSet))-»
+/* SUSD Run Crank error report interface */
+#define SSFM_SUSD_NO_STATUS_TO_REPORT        0u
+#define SSFM_SUSD_DIAGNOSTIC_PASSED          1u
+#define SSFM_SUSD_DIAGNOSTIC_FAILED          2u
+
+«IF (Ssfm_NumOfRunCrankDebouncers(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) != 0)-»
+#define SSFM_ERRH_NUM_OF_CFG_ERROR_SUSD      «Ssfm_NumOfRunCrankDebouncers(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors)»u
+«ENDIF»
+
+extern Sum_Ssfm_Errh_ErrorSUSD Sum_Ssfm_Errh_RunCrankInputStuckFault[SSFM_ERRH_NUM_OF_CFG_ERROR_SUSD];
+extern Sum_Ssfm_Debouncer Sum_Ssfm_RunCrank_Debouncers[SSFM_ERRH_NUM_OF_CFG_ERROR_SUSD];
+
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+
+extern void Sum_Ssfm_RunCrank_DTCStatusChanged(uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew);
+
+«ENDIF-»
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

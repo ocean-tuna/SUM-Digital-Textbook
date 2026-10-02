@@ -1,0 +1,40 @@
+@startuml Sum_Ssfm_CANETH_SigStat_Av_Manager_SeqDiag
+
+participant SWC
+box SUM_SSFM
+    participant Sum_Ssfm_SigStat_Av_Manager as SIG_AV
+    participant Sum_Ssfm_CANETH_Av_Manager as CANETH_AV
+    participant Sum_Ssfm_ReceivedSerialDataHandler as RecSigHdlr
+    participant Sum_Ssfm_SecurityStatus_Manager as SecStatMgr
+    participant Sum_Ssfm_MessageInfo_Handler as IH
+    participant Sum_Ssfm_DID_0xE0B9_Handler as DID0xE0B9
+    participant Sum_Ssfm_DID_E0B8_Handler as E0B8
+    participant Sum_Ssfm_NodeSts_Manager as NodeSts
+end box
+
+activate SIG_AV
+
+par
+    SIG_AV -> CANETH_AV: Ask for updating the signal status availability
+else
+    RecSigHdlr -> CANETH_AV: Ask for updating the signal status availability
+else
+    SecStatMgr -> CANETH_AV: Ask for updating the signal status availability
+else
+    IH -> CANETH_AV: Ask for updating the signal status availability
+end
+
+IH <- CANETH_AV: Check if SecOC verification status is failed by getting Authenticated FcI from Sum_Ssfm_Authenticated
+IH --> CANETH_AV
+
+CANETH_AV -> CANETH_AV: Check Disable Conditions
+CANETH_AV -> NodeSts: Check Lost Comm and NodeSts
+CANETH_AV -> SWC: Update the RxMonitoredSignal_Av
+
+alt transition to Unavailable status
+    CANETH_AV -> DID0xE0B9: Update the DID 0xE0B9
+    CANETH_AV -> E0B8: Update the DID 0xE0B8
+end
+
+deactivate SIG_AV
+@enduml 

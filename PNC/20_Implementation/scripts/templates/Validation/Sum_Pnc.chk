@@ -1,0 +1,80 @@
+import bsw;
+import bsw::PNCModule;
+extension org::eclipse::xtend::util::stdlib::io;
+extension templates::mathlib;
+extension templates::Sum_Pnc_General;
+extension templates::Sum_Pnc_DID_Utils;
+
+context SUM_PNC_PARTIAL_NETWORK_PARAMETER
+ERROR "SUM_PNC: SUM_PNC_DM_Timer is a mandatory parameter!" :
+    (this.sUM_PN_DM_Timer != null)
+;
+
+context PNCConfigSet
+ERROR "SUM_PNC: Repeat_Message_Time_Ref across all SUM_PNC_PARTIAL_NETWORK_PARAMETER shall be of the same NM type, CanNm or UdpNm, fould : "+ this.sUM_PNC_PARTIAL_NETWORK_PARAMETER.repeat_Message_Time_Ref.collect(e|e.metaType).toSet() :
+    (validateNMConfigured(this))
+;
+
+context PNCGeneral if (this.pncGenerateInitRunnable == true) ERROR "PNC: if PncGenerateInitRunnable is true, then PncInitFuncPeriodicity shall be configured." :
+    (this.pncInitFuncPeriodicity != null)
+;
+
+/* Check if the Sum_PNC_Local_RecordID_Type is configured*/
+context PNCGeneral
+		ERROR "SUM_PNC: The Sum_PNC_Local_RecordID_Type parameter must be configured, since it is mandatory!" :
+		(this.sum_PNC_Local_RecordID_Type != null)
+;
+
+context PNCConfigSet
+if (this.parent.pNCGeneral.sum_PNC_Local_RecordID_Type == "BitMapped")
+ERROR "SUM_PNC: Invalid configuration for BitMapped! If Sum_PNC_Local_RecordID_Type is 'BitMapped', the sum of Number_of_PNC_Activation_Sensors and Number_of_PNC_Activation_Signals should be less than or equal to 8." :
+(
+    this.sUM_PNC_PARTIAL_NETWORK_PARAMETER != null &&
+    this.sUM_PNC_PARTIAL_NETWORK_PARAMETER.forAll(e |
+        e.number_of_PNC_Activation_Sensors != null &&
+        e.number_of_PNC_Activation_Signals != null &&
+        (e.number_of_PNC_Activation_Sensors + e.number_of_PNC_Activation_Signals) <= 8
+    )
+)
+;
+
+context PNCConfigSet
+if (this.parent.pNCGeneral.sum_PNC_Local_RecordID_Type == "Enumerated")
+ERROR "SUM_PNC: Invalid configuration for Enumerated! If Sum_PNC_Local_RecordID_Type is 'Enumerated', the sum of Number_of_PNC_Activation_Sensors and Number_of_PNC_Activation_Signals should be less than or equal to 255." :
+(
+    this.sUM_PNC_PARTIAL_NETWORK_PARAMETER != null &&
+    this.sUM_PNC_PARTIAL_NETWORK_PARAMETER.forAll(e |
+        e.number_of_PNC_Activation_Sensors != null &&
+        e.number_of_PNC_Activation_Signals != null &&
+        (e.number_of_PNC_Activation_Sensors + e.number_of_PNC_Activation_Signals) <= 255
+    )
+)
+;
+
+
+/* Check that DID_F08B is configured in Dcm for Activating ECUs (Number_of_PNC_Activation_Sensors > 0 or Number_of_PNC_Activation_Signals > 0) */
+context PNCConfigSet
+ERROR "SUM_PNC: DID_F08B shall be supported in Dcm for Activating ECUs (when Number_of_PNC_Activation_Sensors or Number_of_PNC_Activation_Signals > 0)." :
+(
+    (!this.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Sensors.exists(e| e > 0) &&
+     !this.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Signals.exists(e| e > 0)) ||
+    Pnc_DID_F08B_IsConfigured(this.parent)
+)
+;
+
+context PNCConfigSet
+ERROR "SUM_PNC: PartialNetworkName must be unique across all SUM_PNC_PARTIAL_NETWORK_PARAMETER instances (except for 0x25 - Any Diag CAN)!" :
+(
+    this.sUM_PNC_PARTIAL_NETWORK_PARAMETER != null &&
+    this.sUM_PNC_PARTIAL_NETWORK_PARAMETER.forAll(e1 |
+        this.sUM_PNC_PARTIAL_NETWORK_PARAMETER.forAll(e2 |
+            e1 == e2 || 
+            e1.partialNetworkName == null ||
+            e2.partialNetworkName == null ||
+            e1.partialNetworkName != e2.partialNetworkName ||
+            (e1.partialNetworkName == "Any Diagnose CAN PN" && e2.partialNetworkName == "Any Diagnose CAN PN")
+        )
+    )
+)
+;
+

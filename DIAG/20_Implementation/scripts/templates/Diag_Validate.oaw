@@ -1,0 +1,33 @@
+<!--
+/**********************************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ **********************************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as the communication of its contents to
+ * others without explicit authorization is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or design.
+ *********************************************************************************************************************/
+
+/* Administrative Information (automatically filled in)
+* $Domain____:$
+* $Namespace_:$
+* $Class_____:$
+* $Name______:$
+* $Variant___:
+* $Revision__:0$
+* $Author____:$
+**********************************************************************************************************************
+*/
+ -->
+
+<workflow>	
+	<!-- Property file containing model package and generator version info -->
+	<property file="Diag_Workflow.properties"/>
+	<component class="com.bosch.oawtypesystem.actions.BCTCheckComponent">
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<checkFile value="Diag" />
+		<emfAllChildrenSlot value="model"/>
+		<warnIfNothingChecked value="false"/>
+	</component>
+</workflow>

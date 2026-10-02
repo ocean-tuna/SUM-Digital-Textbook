@@ -1,0 +1,5 @@
+4; 8; @@V
+Name; \textbf{ComMChannel_State}
+Type; Definition
+Range; SUM_COMM_NO_COMMUNICATION 0x00\\SUM_COMM_FULL_COM_READY_SLEEP 0x01\\SUM_COMM_FULL_COM_NETWORK_REQUESTED 0x02\\SUM_COMM_FULL_COMMUNICATION 0x03\\SUM_COMM_SILENT_COMMUNICATION 0x04
+Description; Used for Mode Switch Interface PNC_ComM_CurrentModeUser <n> to indicate current state of ComM for the desired communication channel. Initial value is set to SUM_COMM_NO_COMMUNICATION

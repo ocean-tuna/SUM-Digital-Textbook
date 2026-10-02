@@ -1,0 +1,580 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_RunCrankFault_Manager.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM ERRH Run Crank Fault Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/* PRQA S 1503 EOF # Functions are public and can be used in other TU and by OS */
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+«IF (Ssfm_IsSUSDErrors_Configured(sSFM.sum_Ssfm_ConfigSet))-»
+static void Sum_Ssfm_Errh_Process_RunCrankInputStuckDiagnosticStatus(Sum_Ssfm_Errh_ErrorSUSD*  error_susd, Sum_Ssfm_Debouncer*  err_debouncer);
+
+static void Sum_Ssfm_Errh_Process_DTC_Confirmation(const Sum_Ssfm_Errh_ErrorSUSD*  error_susd, Dem_UdsStatusByteType DTCStatusNew);
+
+static void Sum_Ssfm_Errh_Process_DTC_RunCrankInputStuckFault(Sum_Ssfm_Errh_ErrorSUSD*  error_susd, Sum_Ssfm_Debouncer*  err_debouncer);
+
+«IF (Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+static boolean Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_DTC_Process_RunCrankHighDiagSts(void);
+«ENDIF»
+«IF (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+static boolean Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_DTC_Process_RunCrankLowDiagSts(void);
+«ENDIF»
+
+«IF (Ssfm_IsSUSDErrors_Configured(sSFM.sum_Ssfm_ConfigSet))-»
+«IF (Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet))-»
+«IF (Ssfm_isXofYFilterType(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref))-»
+static uint16 Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCHigh_X(void);
+static uint16 Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCHigh_Y(void);
+«ENDIF-»
+«ENDIF-»
+
+«IF (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+«IF (Ssfm_isXofYFilterType(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref))-»
+static uint16 Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCLow_X(void);
+static uint16 Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCLow_Y(void);
+«ENDIF-»
+«ENDIF-»
+«ENDIF-»
+
+«IF ((Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) || (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet))) -»
+«IF (Ssfm_IsTimeBasedFilterInSUSDError(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) > 0)-»
+static void Sum_Ssfm_Errh_FP_SSFM_RunCrankFault_CbkWindowMoving(Sum_Ssfm_Debouncer* debouncer_instance);
+«ENDIF-»
+«ENDIF-»
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+Sum_Ssfm_Errh_ErrorSUSD Sum_Ssfm_Errh_RunCrankInputStuckFault[SSFM_ERRH_NUM_OF_CFG_ERROR_SUSD] =
+{
+«IF (Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+	/* SUSD_«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.shortName» */
+	{
+		/* Calibration parameter ERRH_C_DTC of RunCrankHigh */
+		&Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_DTC_Process_RunCrankHighDiagSts,
+		/* Read run crank input stuck high errors from SUSD */
+		&Rte_Read_RP_SUSD_SSFM_RunCrankInputStuckHighDiagnosticStatus_HighStatus,
+		/* Write notification FA_StatusRequest RunCrankInputStuckHigh to SUSD */
+		&Rte_Write_PP_SSFM_SUSD_RunCrankInputStuckHigh_FA_StatusRequest_FA_HighStatus_DTC_Confirm,
+		/* Debouncing result */
+		SUM_SSFM_EvaluationSts_Unknown,
+
+	},
+«ENDIF-»
+«IF (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+	/* SUSD_«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.shortName» */
+	{
+		/* Calibration parameter ERRH_C_DTC of RunCrankLow */
+		&Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_DTC_Process_RunCrankLowDiagSts,
+		/* Read run crank input stuck low errors from SUSD */
+		&Rte_Read_RP_SUSD_SSFM_RunCrankInputStuckLowDiagnosticStatus_LowStatus,
+		/* Write notification FA_StatusRequest RunCrankInputStuckLow to SUSD */
+		&Rte_Write_PP_SSFM_SUSD_RunCrankInputStuckLow_FA_StatusRequest_FA_LowStatus_DTC_Confirm,
+		/* Debouncing result */
+		SUM_SSFM_EvaluationSts_Unknown,
+
+	},
+«ENDIF-»
+};
+
+static const Sum_Ssfm_DemEvent Sum_Ssfm_RunCrank_DemEvents[SSFM_ERRH_NUM_OF_CFG_ERROR_SUSD] ={
+«IF (Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+	{
+		/* Call Dem to SetEventStatus RunCrankInputStuckHigh */
+		&Rte_Call_RP_Dem_SSFM_DiagnosticMonitor_RunCrankInputStuckHigh_SetEventStatus,
+		/*DTC value*/
+		«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_GetDTCStatus_DemEvent_Ref.demDTCRef.demDtcValue»u,
+
+	},
+«ENDIF-»
+«IF (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+	{
+		/* Call Dem to SetEventStatus RunCrankInputStuckLow */
+		&Rte_Call_RP_Dem_SSFM_DiagnosticMonitor_RunCrankInputStuckLow_SetEventStatus,
+		/* DTC value */
+		«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_GetDTCStatus_DemEvent_Ref .demDTCRef.demDtcValue»u,
+
+	},
+«ENDIF-»
+
+};
+
+Sum_Ssfm_Debouncer Sum_Ssfm_RunCrank_Debouncers[SSFM_ERRH_NUM_OF_CFG_ERROR_SUSD] = {
+«IF (Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet))-»
+«LET sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref AS DEB_INSTANCE-»
+	{
+		/* Error filter type */
+		SUM_SSFM_ErrorFilter_«Ssfm_GetFilterType(DEB_INSTANCE)-»,
+	«IF (Ssfm_isXofYFilterType(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref))-»
+		/* Number of configured X threshold */
+		&Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCHigh_X,
+		/* Number of configured Y threshold */
+		&Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCHigh_Y,
+	«ELSE-»
+		/* No threshold X configured*/
+		NULL_PTR,
+		/* No threshold Y configured*/
+		NULL_PTR,
+	«ENDIF-»
+		/* Callback function */
+	«IF (Ssfm_GetFilterType(DEB_INSTANCE) == "MovingWindow_TimeBased")-»
+		&Sum_Ssfm_Errh_FP_SSFM_RunCrankFault_CbkWindowMoving,
+	«ELSE-»
+		NULL_PTR,
+	«ENDIF-»
+		/* Counter failed event */
+		0u,
+		/* Number of sample or ms*/
+		0u,
+		/* First failed flag */
+		FALSE,
+		/* Last Evaluation Status */
+		SUM_SSFM_EvaluationSts_Unknown,
+		/* Reference to Owner */
+		{.RunCrank = &Sum_Ssfm_Errh_RunCrankInputStuckFault[0]}, /* PRQA S 1053 # To use the union type. */
+		/* Owner Type*/
+		SUM_SSFM_DebouncerRefType_RunCrank,
+		/* Reference to DemEvent */
+		&Sum_Ssfm_RunCrank_DemEvents[«Ssfm_GetSUSDErrorIndex(sSFM.sum_Ssfm_ConfigSet,"HIGH")»],
+	},
+«ENDLET-»
+«ENDIF-»
+«IF (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet))-»
+«LET sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref AS DEB_INSTANCE-»
+	{
+		/* Error filter type */
+		SUM_SSFM_ErrorFilter_«Ssfm_GetFilterType(DEB_INSTANCE)-»,
+		«IF (Ssfm_isXofYFilterType(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref))-»
+		/* Number of configured X threshold */
+		&Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCLow_X,
+		/* Number of configured Y threshold */
+		&Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCLow_Y,
+		«ELSE-»
+		/* No threshold X configured*/
+		NULL_PTR,
+		/* No threshold Y configured*/
+		NULL_PTR,
+		«ENDIF-»
+		/* Callback function */
+		«IF (Ssfm_GetFilterType(DEB_INSTANCE) == "MovingWindow_TimeBased")-»
+		&Sum_Ssfm_Errh_FP_SSFM_RunCrankFault_CbkWindowMoving,
+		«ELSE-»
+		NULL_PTR,
+		«ENDIF-»
+		/* Counter failed event */
+		0u,
+		/* Number of sample or ms*/
+		0u,
+		/* First failed flag */
+		FALSE,
+		/* Last Evaluation Status */
+		SUM_SSFM_EvaluationSts_Unknown,
+		/* Reference to Owner */
+		{.RunCrank = &Sum_Ssfm_Errh_RunCrankInputStuckFault[«Ssfm_GetSUSDErrorIndex(sSFM.sum_Ssfm_ConfigSet,"LOW")»]}, /* PRQA S 1053 # To use the union type. */
+		/* Owner Type*/
+		SUM_SSFM_DebouncerRefType_RunCrank,
+		/* Reference to DemEvent */
+		&Sum_Ssfm_RunCrank_DemEvents[«Ssfm_GetSUSDErrorIndex(sSFM.sum_Ssfm_ConfigSet,"LOW")»],
+	},
+«ENDLET-»
+«ENDIF-»
+};
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+ /* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+«IF (Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+/**
+ * @brief           SSFM/ERRH getter function to access calibration parameter DTC Process RunCrankHighDiagStatus
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          boolean
+ */
+/*Boolean flag for controlling whether to process DTC RunCrankHigh */
+static boolean Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_DTC_Process_RunCrankHighDiagSts(void)
+{
+  return Rte_CData_Sum_Ssfm_Errh_C_DTC_Process_RunCrankHighDiagSts();
+}
+«ENDIF»
+«IF (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+/**
+ * @brief           SSFM/ERRH getter function to access calibration parameter DTC Process RunCrankLowDiagStatus
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          boolean
+ */
+/*Boolean flag for controlling whether to process DTC RunCrankLow */
+static boolean Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_DTC_Process_RunCrankLowDiagSts(void)
+{
+   return Rte_CData_Sum_Ssfm_Errh_C_DTC_Process_RunCrankLowDiagSts();
+}
+«ENDIF»
+/* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+«IF (Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+«IF (Ssfm_isXofYFilterType(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref))-»
+/**
+ * @brief           SSFM/ERRH getter function to access calibration parameter Error RunCrankHighDiagStatus X threshold
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          uint16
+ */
+/* Get error RunCrankHighDiagSts X threshold */
+static uint16 Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCHigh_X(void)
+{
+  return Rte_CData_«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref.shortName»_X();
+}
+
+/*
+ * @brief           SSFM/ERRH getter function to access calibration parameter Error RunCrankHighDiagStatus Y threshold
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          uint16
+ */
+/* Get error RunCrankHighDiagSts Y threshold */
+static uint16 Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCHigh_Y(void)
+{
+  return Rte_CData_«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref.shortName»_Y();
+}
+«ENDIF»
+«ENDIF»
+«IF (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+«IF (Ssfm_isXofYFilterType(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref))-»
+/*
+ * @brief           SSFM/ERRH getter function to access calibration parameter Error RunCrankLowDiagStatus X threshold
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          uint16
+ */
+/* Get error RunCrankLowDiagSts X threshold */
+static uint16 Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCLow_X(void)
+{
+  return Rte_CData_«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref.shortName»_X();
+}
+
+/*
+ * @brief           SSFM/ERRH getter function to access calibration parameter Error RunCrankLowDiagStatus Y threshold
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          uint16
+ */
+/* Get error RunCrankLowDiagSts Y threshold */
+static uint16 Sum_Ssfm_Get_CalibPar_Sum_Ssfm_Errh_C_Error_RCLow_Y(void)
+{
+  return Rte_CData_«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref.shortName»_Y();
+}
+«ENDIF»
+«ENDIF»
+
+/**
+ * @brief           SSFM/ERRH function to process RunCrank Input Stuck Diagnostic Status
+ *
+ * @param[in]       error_susd      - Sum_Ssfm_Errh_ErrorSUSD*: Sum_Ssfm_Errh_ErrorSUSD structure to access the SUSD errors and RTE functions
+ * @param[in]       err_debouncer   - Sum_Ssfm_Debouncer*: Sum_Ssfm_Errh_ErrorSUSD structure to access the error debouncer event
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_Process_RunCrankInputStuckDiagnosticStatus(Sum_Ssfm_Errh_ErrorSUSD* error_susd, Sum_Ssfm_Debouncer*  err_debouncer)
+{
+
+	/*[$Satisfies $DDS_SSFM 065]*/
+	/* Check if the RTE function pointers are valid*/
+	if (error_susd->Rte_Read_SSFM_DiagnosticStatus != NULL_PTR)
+	{
+		/* Flag for controlling whether to process the DTC for SUM_SUSD errors */
+		if (error_susd->FP_SSFM_pCdata_DTCProcess() == TRUE)
+		{
+			Sum_Ssfm_Errh_Process_DTC_RunCrankInputStuckFault(error_susd, err_debouncer);
+		}
+		else
+		{
+			/* Do nothing*/
+		}
+	}
+	else
+	{
+		/* Do nothing */
+	}
+}
+
+
+/**
+ * @brief           SSFM/ERRH function to process DTC for RunCrank Input Stuck Fault Indication
+ *
+ * @param[in]       error_susd      - Sum_Ssfm_Errh_ErrorSUSD*: Sum_Ssfm_Errh_ErrorSUSD structure to access the SUSD errors and RTE functions
+ * @param[in]       err_debouncer   - Sum_Ssfm_Debouncer*: Sum_Ssfm_Errh_ErrorSUSD structure to access the error debouncer event
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_Process_DTC_RunCrankInputStuckFault(Sum_Ssfm_Errh_ErrorSUSD*  error_susd, Sum_Ssfm_Debouncer*  err_debouncer)
+{
+	/*[$Satisfies $DDS_SSFM 066]*/
+	uint8 diag_sts;
+	Sum_Ssfm_EventStatus new_event_status;
+	Dem_EventStatusType event_status;
+	Std_ReturnType ret_val;
+
+	/* Get the diagnostic status from SUSD */
+	ret_val = error_susd->Rte_Read_SSFM_DiagnosticStatus(&diag_sts);
+	if (ret_val == RTE_E_OK)
+	{
+		/* Check if there is something to report or filtering is ongoing */
+		if ((diag_sts != SSFM_SUSD_NO_STATUS_TO_REPORT) || (error_susd->debouncing_result == SUM_SSFM_EvaluationSts_InDebouncing))
+		{
+			/* If debouncing is ongoing or SUSD diagnostic is passed, setting to event passed */
+			if ((diag_sts == SSFM_SUSD_NO_STATUS_TO_REPORT) || (diag_sts == SSFM_SUSD_DIAGNOSTIC_PASSED))
+			{
+				new_event_status = SUM_SSFM_EventSts_Passed;
+			}
+			else
+			{
+				/* SUSD diagnostic is failed */
+				new_event_status = SUM_SSFM_EventSts_Failed;
+			}
+
+			/* Check debouncing result if filter is X of Y, otherwise receive the event status */
+			error_susd->debouncing_result = Sum_Ssfm_ErrhDebouncerExecution(err_debouncer, new_event_status);
+
+			/* Report the error when the debouncing finished */
+			if ((error_susd->debouncing_result != SUM_SSFM_EvaluationSts_InDebouncing) && (error_susd->debouncing_result != SUM_SSFM_EvaluationSts_Unknown))
+			{
+				/* Convert the event status result after performing debouncing */
+				event_status = ((error_susd->debouncing_result) == SUM_SSFM_EvaluationSts_Passed) ? DEM_EVENT_STATUS_PASSED : DEM_EVENT_STATUS_FAILED;
+				/* Set the event status from Dem_SetEventStatus */
+				(void) err_debouncer->DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(event_status);
+
+			}
+			else
+			{
+				/* Do nothing */
+			}
+
+		}
+		else
+		{
+			/* Do nothing */
+		}
+	}
+	else
+	{
+		/* Do nothing */
+	}
+
+}
+
+«IF (Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+/**
+ * @brief           SSFM/ERRH runnable function to be called upon any change in the status of RunCrankHighInputStuckDiagnosticStatus
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE */
+FUNC (void, SUM_SSFM_CODE) Runnable_SSFM_RunCrankHighInputStuckDiagnosticStatus_Changed(void)
+{
+
+	/*[$Satisfies $DDS_SSFM 189]*/
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	if (dtcs_are_disabled == FALSE)
+	{
+		/* [$Satisfies $DDS_SSFM 068] */
+		/* Check Run Crank Input Stuck High Fault Indication */
+		Sum_Ssfm_Errh_Process_RunCrankInputStuckDiagnosticStatus(&Sum_Ssfm_Errh_RunCrankInputStuckFault[«Ssfm_GetSUSDErrorIndex(sSFM.sum_Ssfm_ConfigSet,"HIGH")-»], &Sum_Ssfm_RunCrank_Debouncers[«Ssfm_GetSUSDErrorIndex(sSFM.sum_Ssfm_ConfigSet,"HIGH")-»]);
+	}
+}
+«ENDIF-»
+«IF (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+/**
+ * @brief           SSFM/ERRH runnable function to be called upon any change in the status of RunCrankLowInputStuckDiagnosticStatus
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE */
+FUNC (void, SUM_SSFM_CODE) Runnable_SSFM_RunCrankLowInputStuckDiagnosticStatus_Changed(void)
+{
+
+	/*[$Satisfies $DDS_SSFM 189]*/
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	/* Check control DTC status */
+	if (dtcs_are_disabled == FALSE)
+	{
+		/* [$Satisfies $DDS_SSFM 069] */
+		/* Check Run Crank Input Stuck Low Fault Indication */
+		Sum_Ssfm_Errh_Process_RunCrankInputStuckDiagnosticStatus(&Sum_Ssfm_Errh_RunCrankInputStuckFault[«Ssfm_GetSUSDErrorIndex(sSFM.sum_Ssfm_ConfigSet,"LOW")-»], &Sum_Ssfm_RunCrank_Debouncers[«Ssfm_GetSUSDErrorIndex(sSFM.sum_Ssfm_ConfigSet,"LOW")-»]);
+	}
+}
+«ENDIF-»
+
+«IF (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet) || Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+/**
+ * @brief   		Callback function executed when the DEM notifies a DTC status changed for RunCrankInputStuckFaultDiagnostic.
+ *
+ * @param[in]       DTC           ID of the DTC whose status has been updated
+ * @param[in]       DTCStatusOld  Old status of the updated DTC
+ * @param[in]       DTCStatusNew  New status of the updated DTC
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+ /* PRQA S 1532 1 # Will be called in dtc status changed callback*/
+void Sum_Ssfm_RunCrank_DTCStatusChanged(uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew)
+{
+	/*[$Satisfies $DDS_SSFM 070]*/
+«IF (Ssfm_NumOfRunCrankDebouncers(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) > 1)-»
+    uint8 i;
+«ENDIF-»
+    /* Unused parameter */
+	(void)DTCStatusOld;
+«IF (Ssfm_NumOfRunCrankDebouncers(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) > 1)-»
+    for (i = 0; i < SSFM_ERRH_NUM_OF_CFG_ERROR_SUSD; i++)
+    {
+    	if ((Sum_Ssfm_RunCrank_Debouncers[i].DemEvent->DTCValue) == DTC)
+    	{
+    		Sum_Ssfm_Errh_Process_DTC_Confirmation(&Sum_Ssfm_Errh_RunCrankInputStuckFault[i], DTCStatusNew);
+    	}
+    }
+«ELSE-»
+	if ((Sum_Ssfm_RunCrank_Debouncers[0].DemEvent->DTCValue) == DTC)
+	{
+		Sum_Ssfm_Errh_Process_DTC_Confirmation(&Sum_Ssfm_Errh_RunCrankInputStuckFault[0], DTCStatusNew);
+	}
+«ENDIF-»
+}
+
+/**
+ * @brief           SSFM/ERRH function to process DTC confirmation for RunCrankInputStuckFaultDiagnostic
+ *
+ * @param[in]       error_susd      - const Sum_Ssfm_Errh_ErrorSUSD*: Sum_Ssfm_Errh_ErrorSUSD structure to access the SUSD errors and RTE functions
+ * @param[in]		DTCStatusNew   New status of the updated DTC
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_Process_DTC_Confirmation(const Sum_Ssfm_Errh_ErrorSUSD*  error_susd, Dem_UdsStatusByteType DTCStatusNew)
+{
+	/*[$Satisfies $DDS_SSFM 067]*/
+
+	/* Check the test failed DTC bitmask and debouncing result */
+    if (((DTCStatusNew & SSFM_DEM_DTC_TEST_FAILED_MASK) == SSFM_DEM_DTC_TEST_FAILED_MASK))
+    {
+		/* Set the Fault Active Status Request DTC to Active */
+        (void) error_susd->Rte_Write_SSFM_SUSD_FA_StatusRequest(TRUE);
+    }
+    else
+    {
+    	/* Set the Fault Active Status Request DTC to Inactive */
+        (void) error_susd->Rte_Write_SSFM_SUSD_FA_StatusRequest(FALSE);
+	}
+}
+«ENDIF-»
+
+«IF ((Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) || (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet))) -»
+«IF (Ssfm_IsTimeBasedFilterInSUSDError(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) > 0)-»
+/**
+ * @brief           SSFM/ERRH callback function to update SUSD error's debouncing result and notify DEM in case of timebased moving window expired
+ *
+ * @param[in]       debouncer_instance      - Sum_Ssfm_Debouncer*: Sum_Ssfm_Debouncer structure to access the type of the debouncer owner
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 3673 2 # The struct type where this signature is defined doesn't assume the function parameter always point to a constant object */
+static void Sum_Ssfm_Errh_FP_SSFM_RunCrankFault_CbkWindowMoving(Sum_Ssfm_Debouncer* debouncer_instance)
+{
+	/*[$Satisfies $DDS_SSFM 056]*/
+	Dem_EventStatusType event_status;
+
+	/* Update Sum_Ssfm_Errh_ErrorSUSD object's debouncing result, as when this function is called it's not due to an explicit
+	* event debouncing request from the RunCrankFaultManager (through Sum_Ssfm_ErrhDebouncerExecution, whose return value should update said debouncing result)
+	* but to the EventDebouncerManager runnable that only resets expired time windows, resulting in an implicit debouncer successful evaluation.
+	*/
+	debouncer_instance->DebouncerOwner.RunCrank->debouncing_result = SUM_SSFM_EvaluationSts_Passed;
+
+	/* Set the event status from Dem_SetEventStatus */
+	event_status = DEM_EVENT_STATUS_PASSED;
+	(void) debouncer_instance->DemEvent->Rte_Call_Dem_SSFM_SetEventStatus(event_status);
+}
+«ENDIF-»
+«ENDIF-»
+
+«ENDIF-»
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

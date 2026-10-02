@@ -1,0 +1,6 @@
+3;3;14
+"\textbf{Tool Name}";"\textbf{Version}";"\textbf{Description}"
+ISOLAR-AB;12.3.3BETA1;"AUTOSAR Authoring and BSW Configuration tools."
+"RTA-BSW";"12.3.3pr1";"BSW automatic configuration and code generation."
+"RTA-RTE";"12.4.0";"RTE generator used for testing."
+"CANTATA";"9.5";"Used for functional testing."

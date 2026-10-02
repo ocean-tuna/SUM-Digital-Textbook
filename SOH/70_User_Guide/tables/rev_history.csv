@@ -1,0 +1,22 @@
+16;40;44
+\textbf{Version};\textbf{Description of Changes};\textbf{Author}
+8.0.0_Proto1;First prototype release of RTA-SUM SOH for SDV 2.0 \newline \\ Migration to AUTOSAR 20.11 (RTA-CAR 12.0).;SUM Development Team
+8.0.0_Proto2;Second prototype release of RTA-SUM SOH for SDV 2.0;SUM Development Team
+8.0.0_Proto3;Third prototype release of RTA-SUM SOH for SDV 2.0;SUM Development Team
+8.0.0_Proto4;Fourth prototype release of RTA-SUM SOH for SDV 2.0;SUM Development Team
+8.0.0_Proto5;Fifth prototype release of RTA-SUM SOH for SDV 2.0;SUM Development Team
+8.0.0_Proto5_1;Incremental prototype release of RTA-SUM SOH for SDV 2.0;SUM Development Team
+8.0.0_Proto6;Sixth prototype release of RTA-SUM SOH for SDV 2.0;SUM Development Team
+8.0.1_Pr1;First prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Document version updated.;SUM Development Team
+8.0.1_Pr2;Second prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Added Section ~\ref{subsec:configOSCounter};SUM Development Team
+8.0.1_Pr3;Third prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Document version updated.;SUM Development Team
+8.0.1_Pr4;Fourth prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Document version updated.;SUM Development Team
+8.0.1_Pr5;Fifth prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\Updated section \ref{subsection:sohGeneral} and \ref{subsec:SohInit} \\ Updated section ~\ref{sec:portinterfaces} to align GetMec port interface.;SUM Development Team
+8.0.1_Pr6;Sixth prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Updated section \ref{subsec:memory}.;SUM Development Team
+8.0.1_Pr7;Seventh prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Document version updated.;SUM Development Team
+8.0.1_Pr8;Eighth prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Document version updated.;SUM Development Team
+8.0.1_Pr9;Ninth prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Document version updated.;SUM Development Team
+8.0.1_Pr10;Tenth prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Document version updated.;SUM Development Team
+8.0.1_Pr11;Eleventh prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Updated S/R interface name from ERRH_SOH_ClearDiagReq to SSFM_ClearDiagReq.;SUM Development Team
+8.0.1_Pr12;Twelfth prototype release of RTA-SUM SOH 8.0.1 for SDV 2.0 \\ Update section ~\ref{sec:portinterfaces} remove TCS_SWC_Clock interface, section ~\ref{sec:Definitions} remove TCS.;SUM Development Team
+8.0.1_rc;Release Candidate of RTA-SUM SOH 8.0.1 (RTA-SUM 3.1.0) for SDV 2.0.;SUM Development Team

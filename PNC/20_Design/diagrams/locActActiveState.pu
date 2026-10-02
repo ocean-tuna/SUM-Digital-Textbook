@@ -1,0 +1,12 @@
+@startuml locActActiveState
+
+state PN_ACTIVE {
+    state PNC_LOCALLY_ACTIVE:* (Local Activation Criteria is FALSE) **&&**
+    state PNC_LOCALLY_ACTIVE:\t (Repeat_message_timer is EXPIRED)
+
+    state PNC_REMOTELY_ACTIVE:* NM Deadline Monitoring Timer active
+}
+
+PNC_LOCALLY_ACTIVE -> PNC_REMOTELY_ACTIVE: Local Criteria FALSE && Repeat_message_timer EXPIRED
+
+@enduml

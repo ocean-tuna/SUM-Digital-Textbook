@@ -1,0 +1,324 @@
+= Possible Object-Based SPM Design
+:toc: left
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 4
+:icons: font
+:source-highlighter: coderay
+:imagesdir: .
+
+== Main Use-Cases
+
+* SPM can receive a request for activating a LOCAL profile from a Local SWC
+** Request come from `SPM_Activate()` API.
+** Response is directly provided to the requester by return of the API.
+** The response takes only care about the existence of the profile ID and run-time conditions
+*** The response is negative in case the profile does not exist.
+*** The response can be negative if the profile cannot be activated due to run-time conditions.
+** Upon the reception of a request for a local profile, SPM computes all the dependent requests that it needs to do.
+
+* SPM can receive a request for activating a LOCAL profile from a remote Target Device
+** Request comes reading the messages in the RTE queue.
+** The messages are received over Ethernet network.
+** The request from a remote target requires a response.
+** The response contains the response status code to the request and the profile status.
+** The response is provided at any change of the profile status keeping the same value for the response status code.
+** If error happens, then the profile status is reported as "unknown" and the request status code reports the error code.
+** When the profile status reaches the wished state according to the request, the request is considered as satisfied and no further operations are done on it.
+
+* SPM can send the remote request to a remote target device
+** SPM sends out one only request to the target device for a specific profile, less the the request code value has changed
+** Once the request has been sent, the SPM waits a specific amount of time for the response from the target node
+** In case the response will be late on time, SPM will re-send the previous request (without times boundaries)
+** Once the response is received the SPM analyzes it
+** If the received response reports an error in the activation of the profile, then the SPM will send again the response
+** In case the response will be considered as Valid. the the SPM will consider the request as satisfied. The response is valid and finished in case:
+*** The request status code is not reporting an Error
+*** the profile status matches the scope fo the request
+**** INACTIVE When request was deactivation
+**** ACTIVATED When request was activation
+
+* SPM takes care to reply to each requester when the request is valid, also in case the requester is performing the same request multiple times
+** Response shall be granted also in case the inner SPM operations involve in nothing to do
+** Response just replies the positive code in the request status code.
+
+== Main Dependencies
+
+* SPM cannot send any request before performing remote target wake-up procedure
+* SPM shall monitor the status of the remote target before sending a new request
+* SPM shall monitor the status of the remote target before sending a response
+** If the target status reported an outdated liveness status, then the response will report an error code
+
+== Valid Request
+
+* SPM analyzes the request before taking care about them
+* When request comes from local SW, SPM can accept only one request code for profile at MainFunction instance
+** If at the same instance the local Software is requesting both for activating and deactivating the same profile, the SPM discards the request and replies with an error return
+* When request comes from remote, SPM cannot accept both activation and deactivation request in the same request message
+** Each request message is related to a specific target device
+** If the case occurs, the SPM replies with an error code
+
+== Design Considerations
+
+The SPM structure considers two sub-modules:
+
+* The Software Manager (SoftMgr) which is responsible for power profile handling and activation/deactivation requests
+* The Power Manager (PowerMgr) which is responsible for managing the power states and transitions of the local node and the remote target devices
+
+=== Profiles
+
+The Power Profiles are the main objects of the SPM SoftMgr.
+
+The Power Profiles identification happens through unique identifiers (PowerProfileID) that are the following:
+
+* _profile_ID_: 4 bytes-length number that is The combination of profile associated service ID and the profile number:
+** The 2 highest Bytes are the Service ID
+** The 2 lowest Bytes are the Service Instance ID
+* _profile_number_: 1 Byte-length number that is the profile number
+
+The Power Profile contains also a flag that indicates IF the profile is hosted by the same node or by a remote target device. This flag is called _is_remote_ and can be either TRUE or FALSE.
+
+WHEN a profile can be activated by a local Software Component (SWC) by a Client Server operation, then the Power Profile sets its own flag _local_request_allowed_ to TRUE. Otherwise it is FALSE.
+
+Due to Security reason, the Power Profile that has _local_request_allowed_ set to TRUE, cannot be activated by its Power Profile ID, but using another identifier called _application_intf_id_. If the _local_request_allowed_ is set to FALSE, then the _application_intf_id_ is not present.
+
+Each Power Profile can contain a list of profile dependencies that are the following:
+
+* reference or ID to the Power Profile instance that represents the dependency
+* _dependency_type_ that is the type of dependency in the list of:
+** _ONLY_ACTIVATED_
+** _ACTIVATED_AND_CONSUMED_
+** _ONLY_CONSUMED_
+* Optionally, when _depedency_type_ is not _ONLY_ACTIVATED_, the dependency can contain a list of messages names that it needs to handle in reception that comes from the remote target which host the dependency.
+
+==== Profile Status Manager
+
+SPM defines and maintains a profile status manager for each profile.
+
+The profile status manager changes in case the profile is local or remote.
+
+WHEN profile is local, then the SPM maintains only the state of the profile as an enumeration with the following values:
+
+* INACTIVE
+* DEACTIVATING
+* ACTIVATING
+* ACTIVATED
+
+WHEN profile is remote, the SPM sends out the request to the remote node that hosts the wished porfile.
+
+AFTER that SPM sends out the request, the SPM waits the status of the profile from the remote node as part of the SM messages. The SPM SHALL monitor the status of the request for a remote profile as follows:
+
+* In case the remote node does not reply in a specific time window to the request, the SPM sends again the request
+* In case the remote node replies with an error code to the request, the SPM starts the error handling
+* Once that remote replies with no error code as response status and the profile status is received with the wished status, the SPM considers the request as satisfied and no further operations are done on the profile till new requests.
+
+SPM repeats the SENDING-WAITING-EVALUATION of response procedure at any new request for the remote profile that SPM computes.
+
+=== Target Devices
+
+The Target devices are the second main objects of the SPM PowerMgr.
+
+The Target devices are identified with their IP address.
+
+SPM monitors the status of a Target Device by the following records:
+
+* _monitors_status_enabled_: boolean
+* _device_status_: enumeration in fields:
+** OFF
+** ON
+** FAULTED
+** REBOOT
+** INITIALIZED
+* _last_heartbeat_counter_rcv_: a 4 bytes counter that informs about the last liveness value of the remote node
+
+The target device can receive a specific power command that requires time to be satisfied. In order to monitor this information, the SPM maintains the following flags for each target device:
+
+* _power_command_: enumeration value in range of:
+** NONE
+** ON
+** OFF
+* _power_command_satisfied_: boolean
+** TRUE in case the sequence of operations have been completed to satisfy the power_command
+** FALSE otherwise
+
+=== Request Cards
+
+Considering the N-to-N multiplicity between target devices and power profiles AND the fact that any request could survive to more running instances of the main function of the SPM, the SPM handles all the requests (incoming and out-coming) with a card system.
+
+Each card contains the information to handle properly the requests for power profiles.
+
+SPM puts the cards in a deck
+
+A specific request is not removed from the deck till SPM does not mark it as satisfied.
+
+At the same time, the advantages is that the card can change its value in the deck with a "Jolly" operation: if the card reports an activation request (for instance), and a deactivation request is done for the same profile, then SPM can change the value of the card without using additional spaces and without losing "priority" in the deck.
+
+The deck is a normal list that insert and remove items using indexed and not based on the position of the card within.
+
+Anyway, each operation on the deck starts always from the index 0 till the end, less than SPM knows exactly the index of the item in the deck.
+
+The single card SHALL contain the following information:
+
+.Request Card Structure
+[cols="1,1,3",options="header"]
+|===
+|Record |Type |Description
+
+|trg_ip
+|uint32
+|IP of the target device which requests OR that host the Power Profile
+
+|profile_id
+|struct::PowerProfileID
+|the Power Profile that is requested
+
+|local_requester
+|bool
+|flag address if the requester of the profile is a local software component.
+
+|request_code
+|enum{ACTIVATION, DEACTIVATION}
+|Request code states which kind of operation to do on the profile.
+
+|request_role
+|enum{IN_BOUND, OUT_BOUND }
+|states if the request card is from local SPM to remote profile OR remote SPM to a local profile. This record can be empty in case the local_requester is TRUE.
+
+|card_timestamp
+|uint32
+|mark the request insertion in the deck to avoid multiple request in the same instances.
+|===
+
+For the remote profile, the SPM removes the card from the deck, anytime that the response status from the requested node has replied well as per the previous section <<Profile Status Manager>>.
+
+=== General Conditions
+
+==== Local Profile Requests
+
+The profile state starts with value INACTIVE.
+
+.Local Profile State Machine
+[cols="1,2,1,2,2",options="header"]
+|===
+|Profile State |Event and guards |Transition |Operation on remote |Operation on Deck
+
+|INACTIVE
+|A card in the deck contains the profile ID with request_code == ACTIVATE
+|ACTIVATING
+|Send a response with response code equal to OK_ACTIVATION and profile status to ACTIVATING
+|None
+
+|ACTIVATING
+|the extern function SrvcMgr_ActivateService() replies with E_OK to the ProfileID.profile_id >> 8 input
+|ACTIVATED
+|Send a response with response code equal to OK_ACTIVATION and profile status to ACTIVATED. If the profile handles some messages, then activate the reception of the messages too.
+|Card is removed
+
+|ACTIVATING
+|No more card with ProfileID AND request_code == ACTIVATE is present in the deck
+|DEACTIVATING
+|Send a response with response code equal to OK_deACTIVATION and profile status to DEACTIVATING
+|None
+
+|ACTIVATED
+|No more card with ProfileID AND request_code == ACTIVATE is present in the deck
+|DEACTIVATING
+|Send a response with response code equal to OK_deACTIVATION and profile status to DEACTIVATING
+|None
+
+|DEACTIVATING
+|the SrvcMgr_ActivateService() replies with E_NOT_OK to the PorfileID.profile_id >> 8 input
+|INACTIVE
+|Send a response with response code equal to OK_DEACTIVATION and profile status to INACTIVE. If the profile handles some messages, then deactivate the reception of the messages too.
+|Card is removed
+
+|DEACTIVATING
+|A card in the deck contains the profile ID with request_code == ACTIVATE
+|ACTIVATING
+|Send a response with response code equal to OK_ACTIVATION and profile status to ACTIVATING
+|None
+|===
+
+=== Remote Communication
+
+==== Profile Communication - Software Manager IN-OUT frame (SM frame)
+
+The SM frame is exchanged between point-to-point SPM on remote nodes to report the requests and the response status for the activation and the deactivation of a power profile.
+
+The SM frame contains meta-information about the communicating nodes and then a list of requests and responses equal to the number of items for each of them that is part of the meta-information. the structure of the SM frame is reported in the next code snippets:
+
+.SPM Profile Request Item Structure
+[source,go]
+----
+type SPM_ProfileRequestItm struct {
+  profile_id      uint32
+  profile_number  uint8
+  request_code    uint8 // code is {0 = ACTIVATION, 1 = DEACTIVATION}
+}
+----
+
+.SPM Profile Response Item Structure
+[source,go]
+----
+type SPM_ProfileResponseItm struct {
+  profile_id      uint32
+  profile_number  uint8
+  response_code   uint8 // code is {0 = OK_ACTIVATION, 1 = OK_DEACTIVATION, 2 = GENERIC_ERROR}
+  profile_status  uint8 // code is {0 = INACTIVE, 1 = ACTIVATING, 2 = ACTIVATED, 3 = DEACTIVATING}
+}
+----
+
+.SPM SM Frame Structure
+[source,go]
+----
+type SPM_SMFrame struct {
+  src_ip            uint32
+  dst_ip            uint32
+  req_msg_type      uint8 // fixed to 0
+  req_entry_length  uint16 // number of requests items
+  requests          []SPM_ProfileRequestItm
+  res_msg_type      uint8 // fixed to 1
+  res_entry_length  uint16 // number of responses items
+  responses         []SPM_ProfileResponseItm
+}
+----
+
+[IMPORTANT]
+====
+SPM SHALL optimize the transmission of the SM Frame in order to reduce as much as possible the number of messages that comes out from it.
+
+This means that for a single periodic running instances, it SHALL embed in a single message per target device all the request and the response items that it shall communicate to that specific node.
+====
+
+Test also the following codesnippets:
+
+[source, lua]
+----
+Person = {}
+Person.__index = Person
+
+function Person:new(name, age)
+  local obj = {
+    name = name,
+    age = age
+  }
+
+  return setmetatable(obj, self)
+end
+
+function Person:greet()
+  print("Hello, my name is " .. self.name .. " and I am " .. self.age .. " years old.")
+end
+
+function Person:setAge(newAge)
+  self.age = newAge
+end
+
+function main()
+  local person1 = Person:new("Alice", 30)
+  person1:greet()
+
+  person1:setAge(31)
+  person1:greet()
+end
+----

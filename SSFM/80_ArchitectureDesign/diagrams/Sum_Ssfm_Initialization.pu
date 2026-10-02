@@ -1,0 +1,19 @@
+@startuml SUM_Ssfm_Initialization
+
+participant BswM
+participant SWC
+participant SSFM
+
+
+group if(SsfmGenerateInitRunnable  == False)
+BswM -> SSFM : Sum_Ssfm_ErrhInit();
+BswM -> SSFM : Sum_Ssfm_SsmInit();
+
+end
+group if(SsfmGenerateInitRunnable == True)
+SSFM -> SSFM : Runnable_SSFM_Init();
+SSFM -> SSFM: Sum_Ssfm_ErrhInit();
+SSFM -> SSFM: Sum_Ssfm_SsmInit();
+end
+
+@enduml

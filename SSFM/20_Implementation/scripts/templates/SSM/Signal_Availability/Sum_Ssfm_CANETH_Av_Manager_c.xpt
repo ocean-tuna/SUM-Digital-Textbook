@@ -1,0 +1,317 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_CANETH_Av_Manager.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM CAN/ETHERNET Availability Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/* PRQA S 1532 EOF # Here for modularity */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+static boolean Sum_Ssfm_CheckDisableCondition(const Sum_Ssfm_SerialData* serialData);
+
+static void Sum_Ssfm_SigSts_Uninitialized_State_Handler(const Sum_Ssfm_SerialData* serialData, boolean SecOCVerification_Status);
+
+static void Sum_Ssfm_SigSts_Available_State_Handler(const Sum_Ssfm_SerialData* serialData, boolean SecOCVerification_Status);
+
+static void Sum_Ssfm_SigSts_Unavailable_State_Handler(const Sum_Ssfm_SerialData* serialData, boolean SecOCVerification_Status);
+
+static void Sum_Ssfm_SigSts_Disabled_State_Handler(const Sum_Ssfm_SerialData* serialData);
+
+static boolean Sum_Ssfm_IsSerialDataNodeStsForAvailability(const Sum_Ssfm_SerialData * serial_data);
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+ /**
+ * @brief           SSFM/SSM function to check the condition for signal status disabled state machine
+ *
+ * @param[in]       serialData      - const Sum_Ssfm_SerialData*: Sum_Ssfm_SerialData structure to access the SerialData info and RTE functions
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          status - boolean: TRUE: condition to change to signal status disabled is fullfilled - FALSE: condition to change to signal status disabled is not fullfilled
+ */
+static boolean Sum_Ssfm_CheckDisableCondition(const Sum_Ssfm_SerialData* serialData)
+{
+	/*[$Satisfies $DDS_SSFM 036]*/
+	boolean DisableCondition_Status;
+	/* Get the active status if there is at least one partial network is active */
+	boolean PNActive_Flag = Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive(serialData);
+	/* Get the disable normal communication status */
+	boolean DisableNormalComm_Status = Sum_Ssfm_Is_DisableNormalComm(serialData);
+	/* Get the disable Rx PDU status */
+	boolean DisableRxPDU_Status = Sum_Ssfm_Is_DisablePdu_Rx(serialData);
+	boolean ServiceAcitve_Status = (serialData->ServiceInfo != NULL_PTR) ? serialData->ServiceInfo->IsActive : TRUE;
+
+	/* Check for Service Status, Disable Rx PDU, the PN_ActiveFlag and DisableNormalComm_Status if they fulfill the disable condition.
+	   The bellow condition does not require any check if the SerialData is service based or not.
+	   Since if it is not service based the "FALSE == ServiceAcitve_Status" will have no effect on the condition */
+	if ((FALSE == ServiceAcitve_Status) || (TRUE == DisableRxPDU_Status) || (FALSE == PNActive_Flag) || (TRUE == DisableNormalComm_Status))
+	{
+		DisableCondition_Status = TRUE;
+	}
+	else
+	{
+		DisableCondition_Status = FALSE;
+	}
+
+	return DisableCondition_Status;
+}
+
+ /**
+ * @brief           SSFM/SSM function to handle DISABLED FSM of SerialData status
+ *
+ * @param[in]       serialData      - const Sum_Ssfm_SerialData*: Sum_Ssfm_SerialData structure to access the SerialData info and RTE functions
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_SigSts_Disabled_State_Handler(const Sum_Ssfm_SerialData* serialData)
+{
+	/*[$Satisfies $DDS_SSFM 037]*/
+	/* Check conditions for signal state transition to UNINITIALIZED */
+	if (FALSE == Sum_Ssfm_CheckDisableCondition(serialData))
+	{
+		serialData->MsgInfoGrp->SigSts = SUM_SSFM_SigSts_Uninitialized;
+	}
+	else
+	{
+		/* do nothing */
+	}
+}
+
+ /**
+ * @brief           SSFM/SSM function to handle UNINITIALIZED FSM of SerialData status
+ *
+ * @param[in]       serialData      - const Sum_Ssfm_SerialData*: Sum_Ssfm_SerialData structure to access the SerialData info and RTE functions
+ * @param[in]       SecOCVerification_Status      - boolean: TRUE - SecOC Verification Status Failure, FALSE - SecOC Verification Status Success
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_SigSts_Uninitialized_State_Handler(const Sum_Ssfm_SerialData* serialData, boolean SecOCVerification_Status)
+{
+	/*[$Satisfies $DDS_SSFM 038]*/
+	boolean ServiceActive_Status = (serialData->ServiceInfo != NULL_PTR) ? serialData->ServiceInfo->IsActive : TRUE;
+	boolean loss_of_comm = Sum_Ssfm_IsSerialDataNodeStsForAvailability(serialData);
+
+	/* Check conditions for signal state transition to DISABLED */
+	if (TRUE == Sum_Ssfm_CheckDisableCondition(serialData))
+	{
+		serialData->MsgInfoGrp->SigSts = SUM_SSFM_SigSts_Disabled;
+	}
+	/* Check conditions for signal state transition to UNAVAILABLE. If the SerialData is not configured as service based, ServiceActive_Status is always TRUE. */
+	else if (((SUM_SSFM_SigSts_Supervision_Timeout == serialData->MsgInfoGrp->SigSts_Supervision) && (TRUE == ServiceActive_Status)) || (TRUE == loss_of_comm))
+	{
+		serialData->MsgInfoGrp->SigSts = SUM_SSFM_SigSts_Unavailable;
+	}
+	/* Check conditions for signal state transition to AVAILABLE and signal SecOC verification status success */
+	else if ((SUM_SSFM_SigSts_Supervision_Received == serialData->MsgInfoGrp->SigSts_Supervision) && (FALSE == SecOCVerification_Status))
+	{
+		serialData->MsgInfoGrp->SigSts = SUM_SSFM_SigSts_Available;
+	}
+	else
+	{
+		/* do nothing */
+	}
+}
+
+ /**
+ * @brief           SSFM/SSM function to handle AVAILABLE FSM of SerialData status
+ *
+ * @param[in]       serialData      - const Sum_Ssfm_SerialData*: Sum_Ssfm_SerialData structure to access the SerialData info and RTE functions
+ * @param[in]       SecOCVerification_Status      - boolean: TRUE - SecOC Verification Status Failure, FALSE - SecOC Verification Status Success
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_SigSts_Available_State_Handler(const Sum_Ssfm_SerialData* serialData, boolean SecOCVerification_Status)
+{
+	/*[$Satisfies $DDS_SSFM 039]*/
+	boolean ServiceActive_Status = (serialData->ServiceInfo != NULL_PTR) ? serialData->ServiceInfo->IsActive : TRUE;
+	boolean loss_of_comm = Sum_Ssfm_IsSerialDataNodeStsForAvailability(serialData);
+
+	/* Check conditions for signal state transition to DISABLED */
+	if (TRUE == Sum_Ssfm_CheckDisableCondition(serialData))
+	{
+		serialData->MsgInfoGrp->SigSts = SUM_SSFM_SigSts_Disabled;
+	}
+	/* Check conditions for signal state transition to UNAVAILABLE and signal SecOC verification status failure. If the SerialData is not configured as service based, ServiceActive_Status is always TRUE. */
+	else if (((SUM_SSFM_SigSts_Supervision_Timeout == serialData->MsgInfoGrp->SigSts_Supervision) && (TRUE == ServiceActive_Status)) || (TRUE == SecOCVerification_Status) || (TRUE == loss_of_comm))
+	{
+		serialData->MsgInfoGrp->SigSts = SUM_SSFM_SigSts_Unavailable;
+	}
+	else
+	{
+		/* do nothing */
+	}
+}
+
+ /**
+ * @brief           SSFM/SSM function to handle UNAVAILABLE FSM of SerialData status
+ *
+ * @param[in]       serialData      - const Sum_Ssfm_SerialData*: Sum_Ssfm_SerialData structure to access the SerialData info and RTE functions
+ * @param[in]       SecOCVerification_Status      - boolean: TRUE - SecOC Verification Status Failure, FALSE - SecOC Verification Status Success
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_SigSts_Unavailable_State_Handler(const Sum_Ssfm_SerialData* serialData, boolean SecOCVerification_Status)
+{
+	/*[$Satisfies $DDS_SSFM 040]*/
+	boolean loss_of_comm = Sum_Ssfm_IsSerialDataNodeStsForAvailability(serialData);
+
+	/* Check conditions for signal state transition to DISABLED */
+	if (TRUE == Sum_Ssfm_CheckDisableCondition(serialData))
+	{
+		serialData->MsgInfoGrp->SigSts = SUM_SSFM_SigSts_Disabled;
+	}
+	/* Check conditions for signal state transition to AVAILABLE and signal SecOC verification status success */
+	else if (((SUM_SSFM_SigSts_Supervision_Received == serialData->MsgInfoGrp->SigSts_Supervision) && (FALSE == SecOCVerification_Status)) && (FALSE == loss_of_comm))
+	{
+		serialData->MsgInfoGrp->SigSts = SUM_SSFM_SigSts_Available;
+	}
+	else
+	{
+		/* do nothing */
+	}
+}
+
+ /**
+ * @brief           SSFM/SSM function to check the signal status availability for a CAN/ETH SerialData and notify the signal status to SWCs associated with the signal
+ *
+ * @param[in]       serialData      - Sum_Ssfm_SerialData*: Sum_Ssfm_SerialData structure to access the SerialData info and RTE functions
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+void Sum_Ssfm_SigStsAvailability_Manager_CANETH(Sum_Ssfm_SerialData* serialData)
+{
+	/*[$Satisfies $DDS_SSFM 042]*/ /*[$Satisfies $DDS_SSFM 365]*/ /*[$Satisfies $ADS_SSFM 209]*/
+	/* Skip state machine for non-discoverable services*/
+	if (serialData->IsNonDiscoverable == TRUE)
+	{
+		/* Non-discoverable: Already set to Available during initialization, skip state machine */
+	}
+	else
+	{
+		/* Get SecOC verification status from FcI */
+		boolean SecOCVerification_Status = Sum_Ssfm_Is_SecOC_VerificationSts_Failure(serialData);
+		Sum_Ssfm_SigStatus pre_assess_status = serialData->MsgInfoGrp->SigSts;
+		/* Signal Status Availability state machine */
+		switch (serialData->MsgInfoGrp->SigSts)
+		{
+			case SUM_SSFM_SigSts_Disabled:
+				Sum_Ssfm_SigSts_Disabled_State_Handler(serialData);
+				break;
+
+			case SUM_SSFM_SigSts_Uninitialized:
+				Sum_Ssfm_SigSts_Uninitialized_State_Handler(serialData, SecOCVerification_Status);
+				break;
+
+			case SUM_SSFM_SigSts_Available:
+				Sum_Ssfm_SigSts_Available_State_Handler(serialData, SecOCVerification_Status);
+				break;
+
+			case SUM_SSFM_SigSts_Unavailable:
+				Sum_Ssfm_SigSts_Unavailable_State_Handler(serialData, SecOCVerification_Status);
+				break;
+
+			default:
+				/*Do Nothing*/
+				break;
+		}
+		/* Notify the signal status to SWCs associated with the signal */
+		(void) serialData->MsgInfoGrp->FP_RxMonitoredSignal_Av((uint8) serialData->MsgInfoGrp->SigSts);
+		/* Update DID E0B9 and E0B8 status*/
+		if(
+			(pre_assess_status != SUM_SSFM_SigSts_Unavailable) &&
+			(serialData->MsgInfoGrp->SigSts == SUM_SSFM_SigSts_Unavailable)
+			)
+		{
+			// Update the timestamp in which the signal went unavailable
+			(void)GetCounterValue(«Ssfm_GetSsfm1msCounterName(sSFM.sum_Ssfm_General)», &serialData->MsgInfoGrp->UnavailableSince);
+			// Update E0B9
+			Sum_Ssfm_DID_E0B9_Update_Message_Av(serialData);
+			// Update E0B8
+			Sum_Ssfm_DID_E0B8_MetricUpdated(serialData, SUM_SSFM_DID_E0B8_Unavailability);
+		}
+	}
+}
+
+/**
+ * @brief   		Check if serial data is unavailable based on NodeSts only (for availability handlers)
+ * @details 		For remote ECUs, returns NodeStsECU; for local ECUs, always returns FALSE
+ * 
+ * @param[in]  		const Sum_Ssfm_SerialData *
+ * @return     		boolean
+ */
+static boolean Sum_Ssfm_IsSerialDataNodeStsForAvailability(const Sum_Ssfm_SerialData * serial_data) {
+    boolean ret_val = FALSE;
+    if ((serial_data->LostCommInfo != NULL_PTR) && (serial_data->LostCommInfo->CurrentProvider != NULL_PTR)) {
+        // Only NodeSts, no LossOfComm
+        ret_val = serial_data->LostCommInfo->CurrentProvider->NodeStsECU;
+    }
+    return ret_val;
+}
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

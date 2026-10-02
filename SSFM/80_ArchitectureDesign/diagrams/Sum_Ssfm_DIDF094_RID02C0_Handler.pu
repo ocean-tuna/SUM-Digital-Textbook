@@ -1,0 +1,46 @@
+@startuml Sum_Ssfm_DIDF094_RID02C0_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DIDF094_RID02C0_Handler"
+	//ri135 //: WdgM_LocalMode
+	//ri136 //: SOH_ERRH_ClearRID0x02C0
+	//ri137 //: GlobalTime
+	//ri138 //: DataServices_xxx
+	//pi142 //: WriteDIDCountertoNvM
+	//pi144 //: WdgM_AliveSupervision
+    //II152 //: ERRH_ExecutionStatus 
+
+   
+endlegend
+
+note top of EC
+It is responsible for handling the DID F094 and for the ERRH part of RID 0x2C0. 
+Hence, it monitors the local supervision failures and status of SUM SOH allowing also the clearing of all the metrics when required by the SOH. 
+It is also responsible for periodically communicating to the WdgM that a checkpoint has been reached
+end note
+
+component [SSFM::Sum_Ssfm_DIDF094_RID02C0_Handler] as EC{
+	portin ri135
+	portin ri136
+	portin ri137
+	portin ri138
+	portout pi142
+	portout pi144
+
+	[Sum_Ssfm_DIDF094_RID02C0_Handler]  as E
+}
+   interface II152
+
+
+  II152 -> E
+  ri135 -> E
+  ri136 -> E
+  ri137 -> E
+  ri138 -> E
+  E -> pi142
+  E -> pi144
+
+
+@enduml

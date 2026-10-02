@@ -1,0 +1,183 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_EM_Ssm_Execution_Manager.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM Execution Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+/**
+ *  @brief Variable for permit execution status of SSFM-SSM
+ *  @private
+ */
+static boolean Sum_Ssfm_SsmFuncPermitExec = FALSE;
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+
+
+/**
+ * @brief			SSFM/SSM getter of permit execution value of Ssm for other TU
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - Sum_Ssfm_SsmFuncPermitExec
+ */
+FUNC(boolean, SUM_SSFM_SSM_CODE) Sum_Ssfm_Ssm_GetFuncPermitExecution(void)
+{
+	return Sum_Ssfm_SsmFuncPermitExec;
+}
+
+
+
+/**
+ * @brief			Private function to determine the status of wakeup and reset through
+ *          		permit execution from SUM_SUSD for the Ssm sub-module
+ *
+ * @private
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			None
+ */
+FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_prv_SsmExecutionManager(void)
+{
+    static Sum_Ssfm_ExecutionStatus Ssm_Execution_State = SUM_SSFM_Shutdown_Mode;	/* Static variable to store the current status of the SSFM_SSM */
+	SUSD_SWC_ExecutionStatusType  ssm_execution_status;										/* Store the permit execution received value */
+	SUSD_UserRequestType		  ssm_shutdown_permission =  SUM_SSFM_ENABLE_SHUTDOWN;	/* Store the value to pass as shutdown permisison command */
+	boolean Ssm_GetInitialization,Errh_GetInitialization ;
+
+	/*[$Satisfies $DDS_SSFM 002]*/
+	/* Check if the module has been initialized AND if the ERRH has been initialized */
+	/*PRQA S 2052 1*/
+    Ssm_GetInitialization = Sum_Ssfm_Ssm_GetInitialization();
+	Errh_GetInitialization = Sum_Ssfm_Errh_GetInitialization();
+    if((Ssm_GetInitialization == TRUE) && (Errh_GetInitialization == TRUE))
+    {
+    	/*
+    	 * @get the permit execution command for SSM
+    	 */
+		if(E_NOT_OK == Rte_Read_RP_SUSD_SSFM_Ssm_SUSD_PermitExecution_SUSD_SWC_ExecutionStatus(&(ssm_execution_status)))
+		{
+		    /*[$Satisfies $DDS_SSFM 005]*/
+			/* Command could not be read: value inconsistent, prevent the evaluation */
+			Ssm_Execution_State = SUM_SSFM_Invalid_Mode;
+		}
+
+	    switch(Ssm_Execution_State)
+	    {
+	           /* SHUTDOWN */
+	           case SUM_SSFM_Shutdown_Mode:
+
+					/*[$Satisfies $DDS_SSFM 003]*/
+	            	if((ssm_execution_status | SUM_SSFM_SSM_PERMITEXECUTION_MASK) == SUM_SSFM_EXEC_MASKING_PASSED)
+	            	{
+	                    /* SSM functionality can be executed */
+	                    Ssm_Execution_State        = SUM_SSFM_Run_Mode;
+	                    Sum_Ssfm_SsmFuncPermitExec = TRUE;
+	                }
+
+		       break;
+
+			   /* RUNNING */
+	           case SUM_SSFM_Run_Mode:
+
+	                /*
+	                 * Check if shutdown has been requested
+	                 * The only supported shutdown is ECU_RESET.  For normal reset, the SSM has no indication.
+	                 */
+	                /*[$Satisfies $DDS_SSFM 004]*/
+	                if ( ((ssm_execution_status | SUM_SSFM_SSM_PERMITEXECUTION_MASK) != SUM_SSFM_EXEC_MASKING_PASSED) ||
+	                     ((ssm_execution_status | SUM_SSFM_RESETBIT_MASK)        != SUM_SSFM_EXEC_MASKING_PASSED) )
+	                {
+	                    /* Begin Shutdown phase */
+	                    Ssm_Execution_State        = SUM_SSFM_Shutdown_Mode;
+	                    Sum_Ssfm_SsmFuncPermitExec = FALSE;
+	                }
+
+	           break;
+
+               /*[$Satisfies $DDS_SSFM 006]*/
+	           default:
+		            Ssm_Execution_State        = SUM_SSFM_Shutdown_Mode;
+		    		Sum_Ssfm_SsmFuncPermitExec = FALSE;
+	           break;
+	       }
+    }
+    else
+    {
+    	Ssm_Execution_State        = SUM_SSFM_Shutdown_Mode;
+    	Sum_Ssfm_SsmFuncPermitExec = FALSE;
+    }
+
+    /* @set the shutdown command for SSM */
+    (void)Rte_Write_SUM_SSFM_PP_SSFM_SUSD_SSM_ShutdownPermission_SUSD_UserRequest(ssm_shutdown_permission);
+
+}
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

@@ -1,0 +1,3 @@
+2;3;6
+\textbf{Issue Tracking No.};\textbf{Issue Name};\textbf{Description}
+GMSUM-3766;SUM_LNM DCM Service: RID/DID;Responder part numbers, with related DID/RID are not supported as well the Load Calibration RID

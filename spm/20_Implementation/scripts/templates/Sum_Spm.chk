@@ -1,0 +1,520 @@
+import bsw;
+import AUTOSAR::SPM;
+import AUTOSAR::Dcm;
+extension org::eclipse::xtend::util::stdlib::io;
+extension templates::mathlib;
+extension Spm_Utils;
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : RTA SUM
+ * Component   : SUM Spm
+ * Date        : Sep 12, 2024
+ * Revision    : 8.1.0_Pr1
+ * Description : Validation script for Spm
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/*
+ * Define the context :
+ *		Define the Error Log :
+ *			Define the condition since the error does NOT occur
+ * ;
+ */
+
+context SpmConfigSet
+	ERROR " You SHOULD configure at least one PowerProfile." :
+	(this.spmPowPrf.size != 0)
+;
+
+/* There SHALL be at least one variant configured to have at least the basic configuration */
+context SpmPgttEntries
+		ERROR "The number of SpmVariantCfg configured is greater than zero." :
+		( this.spmVariantCfg.size > 0 )
+;
+
+context SpmConfigSet
+	WARNING "You SHALL NOT configure Pdu Groups for the PDU handling in Profile, If the profile is targeted just for activation" :
+	(this.spmPowPrf.spmProfileSwDep.select(e|e.spmProfDepType == "SPM_PRF_ACTIVATED").select(e|e.parent.spmComIPduGroupEvnt_Tx != null || e.parent.spmComIPduGroupEvnt_Rx != null).size == 0)
+;
+
+context SpmConfigSet
+	ERROR "You SHALL configure Pdu Groups for the PDU handling in Profile, If the profile is targeted at least once as consumed" :
+	(this.spmPowPrf.spmProfileSwDep.select(e|e.spmProfDepType != "SPM_PRF_ACTIVATED").select(e|e.parent.spmComIPduGroupEvnt_Tx == null && e.parent.spmComIPduGroupEvnt_Rx == null).size == 0)
+;
+
+context SpmConfigSet
+	ERROR "You shall configure unique SpmApplIntfID for each Power Profile" :
+	(this.spmPowPrf.select(e|e.spmApplIntfID != null).collect(e|e.spmApplIntfID).toSet().size == this.spmPowPrf.select(e|e.spmApplIntfID != null).collect(e|e.spmApplIntfID).toList().size)
+;
+
+context SpmConfigSet
+	ERROR "You shall configure unique SpmTrgDvcDtcBaseID for each Target Device":
+	(this.spmPgttEntries.spmTrgDvc.spmTrgDvcDtcBaseID.size == this.spmPgttEntries.spmTrgDvc.spmTrgDvcDtcBaseID.toSet().size)
+;
+
+context SpmConfigSet
+	ERROR "You shall configure unique SpmTrgDvcID for each Target Device":
+	(this.spmPgttEntries.spmTrgDvc.spmTrgDvcID.size == this.spmPgttEntries.spmTrgDvc.spmTrgDvcID.toSet().size)
+;
+
+
+context SpmConfigSet
+	ERROR "Step Delay path has not been set" :
+		(this.spmPgttEntries.spmWkUpSeq.spmWkUpStep.select(e|e.spmSeqStepDly == null).size == 0)
+;
+
+context SpmGeneral
+	ERROR "Power Manager Main function executing rate shall be higher than Software Manager main function" :
+		(this.spmPMMainFuncPeriodicity < this.spmSMMainFuncPeriodicity)
+;
+
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_INTERMEDIATE")
+	ERROR "ECU configured as SPM_NODE_INTERMEDIATE. So, /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmSpmGeneral/SpmCANWkUpFrmRef container SHALL be configured" :
+		(this.spmGeneral.spmCANWkUpFrmRef != null)
+;
+
+/* Heartbeat TX: all three params or none */
+context SpmVLANComPwrMgrHeartbeat
+	ERROR "Heartbeat TX: If any TX parameter is configured, all two must be configured (SpmPwrMgrHeartbeatTxImpDataTypeRef, SpmPwrMgrHeartbeatTxSendRecvIntRef)." :
+		((this.spmPwrMgrHeartbeatTxImpDataTypeRef == null && this.spmPwrMgrHeartbeatTxSendRecvIntRef == null)
+		|| (this.spmPwrMgrHeartbeatTxImpDataTypeRef != null && this.spmPwrMgrHeartbeatTxSendRecvIntRef != null))
+;
+
+/* Heartbeat RX: all three params or none */
+context SpmVLANComPwrMgrHeartbeat
+	ERROR "Heartbeat RX: If any RX parameter is configured, all two must be configured (SpmPwrMgrHeartbeatRxImpDataTypeRef, SpmPwrMgrHeartbeatRxSendRecvIntRef)." :
+		((this.spmPwrMgrHeartbeatRxImpDataTypeRef == null && this.spmPwrMgrHeartbeatRxSendRecvIntRef == null)
+		|| (this.spmPwrMgrHeartbeatRxImpDataTypeRef != null && this.spmPwrMgrHeartbeatRxSendRecvIntRef != null))
+;
+
+/* Wakeup TX: all three params or none */
+context SpmVLANComPwrMgrWakeupFrames
+	ERROR "Wakeup TX: If any TX parameter is configured, all two must be configured (SpmPwrMgrWakeupTxImpDataTypeRef, SpmPwrMgrWakeupTxSendRecvIntRef)." :
+		((this.spmPwrMgrWakeupTxImpDataTypeRef == null && this.spmPwrMgrWakeupTxSendRecvIntRef == null)
+		|| (this.spmPwrMgrWakeupTxImpDataTypeRef != null && this.spmPwrMgrWakeupTxSendRecvIntRef != null))
+;
+
+/* Wakeup RX: all three params or none */
+context SpmVLANComPwrMgrWakeupFrames
+	ERROR "Wakeup RX: If any RX parameter is configured, all two must be configured (SpmPwrMgrWakeupRxImpDataTypeRef, SpmPwrMgrWakeupRxSendRecvIntRef)." :
+		((this.spmPwrMgrWakeupRxImpDataTypeRef == null && this.spmPwrMgrWakeupRxSendRecvIntRef == null)
+		|| (this.spmPwrMgrWakeupRxImpDataTypeRef != null && this.spmPwrMgrWakeupRxSendRecvIntRef != null))
+;
+
+/* Multicast Wakeup RX: all three params or none */
+context SpmVLANComPwrMgrWakeupFramesMulticast
+	ERROR "Multicast Wakeup RX: If any parameter is configured, all two must be configured (SpmPwrMgrWakeupRxImpDataTypeMulticastRef, SpmPwrMgrWakeupRxSendRecvIntMulticastRef)." :
+		((this.spmPwrMgrWakeupRxImpDataTypeMulticastRef == null && this.spmPwrMgrWakeupRxSendRecvIntMulticastRef == null)
+		|| (this.spmPwrMgrWakeupRxImpDataTypeMulticastRef != null && this.spmPwrMgrWakeupRxSendRecvIntMulticastRef != null))
+;
+
+/* SwMgrInfo TX: all three params or none */
+context SpmVLANComSwrMgrInfo
+	ERROR "SwMgrInfo TX: If any TX parameter is configured, all two must be configured (SpmSwMgrInfoTxImpDataTypeRef, SpmSwMgrInfoTxSendRecvIntRef)." :
+		((this.spmSwMgrInfoTxImpDataTypeRef == null && this.spmSwMgrInfoTxSendRecvIntRef == null)
+		|| (this.spmSwMgrInfoTxImpDataTypeRef != null && this.spmSwMgrInfoTxSendRecvIntRef != null))
+;
+
+/* SwMgrInfo RX: all three params or none */
+context SpmVLANComSwrMgrInfo
+	ERROR "SwMgrInfo RX: If any RX parameter is configured, all two must be configured (SpmSwMgrInfoRxImpDataTypeRef, SpmSwMgrInfoRxSendRecvIntRef)." :
+		((this.spmSwMgrInfoRxImpDataTypeRef == null && this.spmSwMgrInfoRxSendRecvIntRef == null)
+		|| (this.spmSwMgrInfoRxImpDataTypeRef != null && this.spmSwMgrInfoRxSendRecvIntRef != null))
+;
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_INTERMEDIATE")
+	ERROR "ECU configured as SPM_NODE_INTERMEDIATE. So, three /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmSpmGeneral/SpmCANWkUpFrmRef/SpmCANWkUpFrmTxRef SHALL be configured" :
+		(this.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmTxRef.size == 3)
+;
+
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_INTERMEDIATE")
+	ERROR "ECU configured as SPM_NODE_INTERMEDIATE. There is no /AUTOSAR_Spm/EcucModuleDefs/SpmSpmGeneral/SpmCANWkUpFrmRef/SpmCANWkUpFrmTxRef with CAN ID 355 (decimal) for Wake Up Frame B." :
+		( this.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmTxRef.exists(e | e.canIfTxPduCanId == 355) )
+;
+
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_INTERMEDIATE")
+	ERROR "ECU configured as SPM_NODE_INTERMEDIATE. There is no /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmGeneral/SpmCANWkUpFrmRef/SpmCANWkUpFrmTxRef with CAN ID 339 (decimal) for Wake Up Frame A." :
+		( this.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmTxRef.exists(e | e.canIfTxPduCanId == 339) )
+;
+
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_INTERMEDIATE")
+	ERROR "ECU configured as SPM_NODE_INTERMEDIATE. There is no /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmGeneral/SpmCANWkUpFrmRef/SpmCANWkUpFrmTxRef with CAN ID 371 (decimal) for Wake Up Frame C." :
+		( this.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmTxRef.exists(e | e.canIfTxPduCanId == 371) )
+;
+
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_INTERMEDIATE")
+	ERROR "ECU configured as SPM_NODE_INTERMEDIATE. There SHALL be no /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmGeneral/SpmCANWkUpFrmRef/SpmCANWkUpFrmRxRef with CAN ID greater than 351 (decimal)." :
+		(this.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmRxRef.select(e | e.canIfRxPduCanId > 351).size == 0)
+;
+
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_INTERMEDIATE")
+	ERROR "ECU configured as SPM_NODE_INTERMEDIATE. There SHALL be no /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmGeneral/SpmCANWkUpFrmRef/SpmCANWkUpFrmRxRef with CAN ID smaller than 336 (decimal)." :
+		(this.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmRxRef.select(e | e.canIfRxPduCanId < 336).size == 0)
+;
+
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_EDGE")
+	ERROR "ECU configured as SPM_NODE_EDGE. So, NO /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmGeneral/SpmCANWkUpFrmRef container SHALL be configured":
+		(this.spmGeneral.spmCANWkUpFrmRef == null)
+;
+
+context SpmConfigSet
+	if (Spm_IsETHCommandPresent(this.eContainer))
+	ERROR "\nERROR: If SEND_ETH_WKUP_FRM_A/SEND_ETH_WKUP_FRM_B/SEND_ETH_WKUP_FRM_C command present, then you need to configure /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmVariantCfg/SpmVariantIntermediateDstAddr." :
+		(this.spmPgttEntries.spmVariantCfg.spmVariantIntermediateDstAddr.size != 0)
+;
+
+context Spm
+	if ( Spm_IsETHCommandPresent(this))
+	ERROR "\nERROR: If SEND_ETH_WKUP_FRM_A/SEND_ETH_WKUP_FRM_B/SEND_ETH_WKUP_FRM_C command present, then you need to configure /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmVariantCfg/SpmVariantIntermediateDstAddr that belongs to a /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmGeneral/SpmVLANCom/SpmVLANId." :
+		(this.spmGeneral.spmVLANCom.spmVLANId.containsAll(Spm_ReturnSetOfSecondOctetTrgDvc(this.spmConfigSet.spmPgttEntries.spmVariantCfg.spmVariantIntermediateDstAddr)) == true)
+;
+
+context Spm
+	ERROR "There are configured TrgDvcID whose VlanId isn't present in /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmGeneral/SpmVLANCom/SpmVLANId":
+	(this.spmGeneral.spmVLANCom.spmVLANId.containsAll(Spm_ReturnSetOfSecondOctetTrgDvc(this.spmConfigSet.spmPgttEntries.spmTrgDvc.spmTrgDvcID) ) == true)
+;
+
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_EDGE")
+	ERROR "ECU configured as SPM_NODE_EDGE. So, the /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmWkUpSeq/spmWkUpStep/SpmCommandType can not be SEND_CAN_WKUP_FRM_A.":
+		(this.spmConfigSet.spmPgttEntries.spmWkUpSeq.spmWkUpStep.select(e|e.spmCommandType == "SEND_CAN_WKUP_FRM_A").size == 0)
+;
+
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_EDGE")
+	ERROR "ECU configured as SPM_NODE_EDGE. So, the /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmWkUpSeq/spmWkUpStep/SpmCommandType can not be SEND_CAN_WKUP_FRM_B.":
+		(this.spmConfigSet.spmPgttEntries.spmWkUpSeq.spmWkUpStep.select(e|e.spmCommandType == "SEND_CAN_WKUP_FRM_B").size == 0)
+;
+
+context Spm
+	if(this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_EDGE")
+	ERROR "ECU configured as SPM_NODE_EDGE. So, the /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmWkUpSeq/spmWkUpStep/SpmCommandType can not be SEND_CAN_WKUP_FRM_C.":
+		(this.spmConfigSet.spmPgttEntries.spmWkUpSeq.spmWkUpStep.select(e|e.spmCommandType == "SEND_CAN_WKUP_FRM_C").size == 0)
+;
+
+
+context SpmGeneral
+	ERROR "You shall configure the mandatory parameter SpmGenerateInitRunnable so as to generate init runnable" :
+		(this.spmGenerateInitRunnable != null)
+;
+
+context SpmGeneral
+	if(this.spmGenerateInitRunnable == true)
+	ERROR "You shall configure the parameter SpmInitFuncPeriodicity when SpmGenerateInitRunnable is true" :
+		(this.spmInitFuncPeriodicity != null)
+;
+
+context Spm
+	if (this.spmConfigSet.spmPgttEntries.spmWkUpSeq.spmWkUpStep.select(e|e.spmCommandType == "SEND_BOARD_LV_WKUP_GPIO").size > 0)
+	ERROR "Presence of /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmWkUpSeq/spmWkUpStep/SpmCommandType of type SEND_BOARD_LV_WKUP_GPIO but the parameter /AUTOSAR_Spm/EcucModuleDefs/Spm/SpmGeneral/SpmWkUpHelperFunction is not set.":
+		(this.spmGeneral.spmWkUpHelperFunction != null)
+;
+
+context Spm
+	if (Spm_GetDvcVlanIdByCmdType(this, "SEND_TC10_SWTCH_1").size == 1)
+		ERROR "No ethernet network found for the VLAN ID(" + Spm_GetUniqueVlanIdByCmdType(this, "SEND_TC10_SWTCH_1") + ") corresponding to TC10_Switch_1":
+			(Spm_ExistsNetworkHndForVlanId(this, Spm_GetUniqueVlanIdByCmdType(this, "SEND_TC10_SWTCH_1")) == true)
+;
+
+context Spm
+	if (Spm_GetDvcVlanIdByCmdType(this, "SEND_TC10_SWTCH_2").size == 1)
+		ERROR "No ethernet network found for the VLAN ID(" + Spm_GetUniqueVlanIdByCmdType(this, "SEND_TC10_SWTCH_2") + ") corresponding to TC10_Switch_2":
+			(Spm_ExistsNetworkHndForVlanId(this, Spm_GetUniqueVlanIdByCmdType(this, "SEND_TC10_SWTCH_2")) == true)
+;
+
+context Spm
+	if (this.spmConfigSet.spmPgttEntries.spmWkngDvc.spmNodeType == "SPM_NODE_EDGE")
+		ERROR "ERR: You cannot configure any SpmTrgAssocWkUpFrm and SpmTrgAssocWkupBit IF the ECU node type is EDGE.":
+			(Spm_IsThereAnyManagedDevice(this) == false)
+;
+
+context SpmTrgDvcVariantHndlng
+	ERROR "ERROR: SpmTrgAssocWkUpFrm and SpmTrgAssocWkupBit shall both be configured or both be absent within a SpmTrgDvcVariantHndlng entry." :
+	((this.spmTrgAssocWkupBit == null && this.spmTrgAssocWkUpFrm == null) || (this.spmTrgAssocWkupBit != null && this.spmTrgAssocWkUpFrm != null))
+;
+
+context SpmConfigSet
+	ERROR "ERROR: All Local Profiles need to have an associated SpmProfBitMapIndex. Erroneous profiles are: " + this.spmPowPrf.select(e|e.spmProfBitMapIndex == null && e.spmProfileIsLocal == true).collect(e|e.shortName):
+		(this.spmPowPrf.select(e|e.spmProfBitMapIndex == null && e.spmProfileIsLocal == true).toList().size == 0)
+;
+
+context SpmConfigSet
+	ERROR "ERROR: Each spmPowPrf that has the spmProfBitMapIndex configured should be unique. Number of configured SpmProfBitMapIndex is " + this.spmPowPrf.select(e|e.spmProfBitMapIndex != null).collect(e|e.spmProfBitMapIndex).toList().size + ", Number of unique SpmProfBitMapIndex is " + this.spmPowPrf.select(e|e.spmProfBitMapIndex != null).collect(e|e.spmProfBitMapIndex).toSet().size:
+		(this.spmPowPrf.select(e|e.spmProfBitMapIndex != null).collect(e|e.spmProfBitMapIndex).toSet().size == this.spmPowPrf.select(e|e.spmProfBitMapIndex != null).collect(e|e.spmProfBitMapIndex).toList().size)
+;
+
+context SpmConfigSet
+	WARNING "WARNING: The following profiles are remote but SpmProfActivationTimeOutVehOff has been configured. The value will be ignored for profiles: " + this.spmPowPrf.select(e|e.spmProfileIsLocal == false && e.spmProfActivationTimeOutVehOff != null).collect(e|e.shortName):
+		(this.spmPowPrf.select(e|e.spmProfileIsLocal == false && e.spmProfActivationTimeOutVehOff != null).toList().size == 0)
+;
+
+context SpmGeneral
+	WARNING "WARNING: You have configured SpmSMMainFuncPeriodicity with " + this.spmSMMainFuncPeriodicity + " ms. The fast retry periodicity default is 10 ms. The effective fast retry periodicity will be clamped to " + this.spmSMMainFuncPeriodicity + " ms." :
+		(10 >= this.spmSMMainFuncPeriodicity)
+;
+
+context SpmGeneral
+	WARNING "WARNING: You have configured SpmSMMainFuncPeriodicity with " + this.spmSMMainFuncPeriodicity + " ms. The slow retry periodicity default is 100 ms. The effective slow retry periodicity will be clamped to " + this.spmSMMainFuncPeriodicity + " ms." :
+		(100 >= this.spmSMMainFuncPeriodicity)
+;
+
+context SpmVariantCfg
+	ERROR "ERROR: SpmVariantWkupFrame is a mandatory parameter. " :
+		(this.spmVariantWkupFrame != null)
+;
+
+context SpmVariantCfg
+	ERROR "ERROR: SpmVariantWkupBit is a mandatory parameter. " :
+		(this.spmVariantWkupBit != null)
+;
+
+context SpmVariantCfg
+	ERROR "ERROR: SpmVLANId shall be unique within each SpmVariantCfg. Duplicate SpmVLANId found in SpmVariantHBVLANCfg entries." :
+		(this.spmVariantHBVLANCfg.collect(v | v.spmVLANId).toSet().size == this.spmVariantHBVLANCfg.collect(v | v.spmVLANId).toList().size)
+;
+
+context Spm
+	ERROR "ERROR: At least one SpmVLANCom SHALL be configured to let SPM use the needed interfaces." :
+		(this.spmGeneral.spmVLANCom.size > 0)
+;
+
+context Spm
+	ERROR "ERROR: SpmVariantCfg/SpmVLANId configured is not present within the SpmVLANCom/SpmVLANId. Please, update the SpmVariantCfg/SpmVLANId value":
+		(this.spmGeneral.spmVLANCom.spmVLANId.containsAll(this.spmConfigSet.spmPgttEntries.spmVariantCfg.spmVariantHBVLANCfg.spmVLANId) == true)
+;
+
+/* If there are NO variants configured, the SPM shall be able to retrieve from TcpIp module */
+/* the Ip that needs to be used for the VLAN not configured in the SpmVariantHBVLANCfg. */
+/* If there are variants configured, each SpmVariantCfg/SpmVLANId should be present within SpmVLANCom/SpmVLANId and vice versa. */
+context Spm
+	if (Spm_ExistMultipleVariantConfigured(this) == true)
+	ERROR "ERROR: SpmVLANCom/SpmVLANId configured in is not present within the SpmVariantCfg/SpmVLANId. Please, update the SpmVLANCom/SpmVLANId value":
+	(this.spmConfigSet.spmPgttEntries.spmVariantCfg.spmVariantHBVLANCfg.spmVLANId.containsAll(this.spmGeneral.spmVLANCom.spmVLANId) == true)
+;
+
+/* Every SpmVariantCfg shall have the same set of SpmVLANId configured in SpmVariantHBVLANCfg. */
+context Spm
+	if (Spm_ExistMultipleVariantConfigured(this) == true)
+	ERROR "ERROR: Not all SpmVariantCfg entries have the same set of SpmVLANId configured in SpmVariantHBVLANCfg. Please align the SpmVariantHBVLANCfg/SpmVLANId across all variants." :
+		(this.spmConfigSet.spmPgttEntries.spmVariantCfg.forAll(v |
+			v.spmVariantHBVLANCfg.spmVLANId.toSet() == this.spmConfigSet.spmPgttEntries.spmVariantCfg.first().spmVariantHBVLANCfg.spmVLANId.toSet()))
+;
+
+/* If there are NO TcpIpIpstaticIpAddress configured for a particular VLAN, the SrcIp will be set to zero. */
+context Spm
+	if (Spm_ExistMultipleVariantConfigured(this) == false)
+	WARNING "WARNING: There is no TcpIpStaticIpAddress whose second octet matches the SpmVLANId for one or more SpmVLANCom not configured in SpmVariantHBVLANCfg. So, the SourceIp will be set to zero for the unmatched VLANs." :
+		(this.spmGeneral.spmVLANCom.select(v | !this.spmConfigSet.spmPgttEntries.spmVariantCfg.spmVariantHBVLANCfg.spmVLANId.toSet().contains(v.spmVLANId)).forAll(v | this.eRootContainer.tcpIp.tcpIpConfig.tcpIpLocalAddr.tcpIpStaticIpAddressConfig.tcpIpStaticIpAddress.exists(ip | Spm_ReturnSecondOctetIp(ip) == v.spmVLANId)))
+;
+
+/* If multiple TcpIpStaticIpAddress share the same second octet, the mapping to a VLAN is ambiguous. */
+context Spm
+	if (Spm_ExistMultipleVariantConfigured(this) == false)
+	WARNING "WARNING: Multiple TcpIpStaticIpAddress entries share the same second octet. The mapping to a VLAN is ambiguous; only the first match will be used." :
+		(this.eRootContainer.tcpIp.tcpIpConfig.tcpIpLocalAddr.tcpIpStaticIpAddressConfig.tcpIpStaticIpAddress.collect(ip | Spm_ReturnSecondOctetIp(ip)).size ==
+		 this.eRootContainer.tcpIp.tcpIpConfig.tcpIpLocalAddr.tcpIpStaticIpAddressConfig.tcpIpStaticIpAddress.collect(ip | Spm_ReturnSecondOctetIp(ip)).toSet().size)
+;
+
+context SpmVLANCom
+	ERROR "ERROR: Mandatory parameter SpmVLANCom/SpmVLANId shall be configured for each SpspmVLANComm":
+		(this.spmVLANId != null)
+;
+
+/*
+context SpmGeneral
+	ERROR "\nERROR: SpmDID0xE0DEDcmRef SHALL be configured if DID with identifer 0xE0DE is configured in Dcm" :
+		(this.spmDiagnostic.spmDID0xE0DEDcmRef != null) && (Spm_CheckDID_xE0DE_ConfiguredInDcm(dcm))
+;
+
+context SpmGeneral
+	ERROR "\nERROR: SpmDID0xE0DFDcmRef SHALL be configured if DID with identifer 0xE0DF is configured in Dcm" :
+		(this.spmDiagnostic.spmDID0xE0DFDcmRef != null) && (Spm_CheckDID_xE0DF_ConfiguredInDcm(dcm))
+;
+
+context SpmGeneral
+	ERROR "You shall configure the mandatory parameter SpmHBShutdownDelayMs" :
+		(this.spmHBShutdownDelayMs != null)
+;
+*/
+
+context SpmDiagnostic
+	if (this.spmDID0xE0DEDcmRef != null)
+		ERROR "\nERROR: SpmDID0xE0DENvmRef is mandatory when SpmDID0xE0DEDcmRef is configured. Reference to NvM Block Descriptor for DID 0xE0DE must be configured." :
+		(this.spmDID0xE0DENvmRef != null)
+;
+
+context SpmDiagnostic
+	if (this.spmDID0xE0DFDcmRef != null)
+		ERROR "\nERROR: SpmDID0xE0DFNvmRef is mandatory when SpmDID0xE0DFDcmRef is configured. Reference to NvM Block Descriptor for DID 0xE0DF must be configured." :
+		(this.spmDID0xE0DFNvmRef != null)
+;
+
+context SpmDiagnostic
+ if (this.spmDID0xE0DENvmRef != null)
+	 ERROR "\nERROR: The parameter NvMNvBlockLength must be configured and equal to 35 bytes for spmDID0xE0DENvmRef to support DID 0xE0DE as requirement!" :
+		(this.spmDID0xE0DENvmRef.nvMNvBlockLength != null && this.spmDID0xE0DENvmRef.nvMNvBlockLength == 35)
+;
+
+context SpmDiagnostic
+ if (this.spmDID0xE0DFNvmRef != null)
+	ERROR "\nERROR: The parameter NvMNvBlockLength must be configured and equal to 40 bytes for spmDID0xE0DFNvmRef to support DID 0xE0DF as requirement!" :
+		(this.spmDID0xE0DFNvmRef.nvMNvBlockLength != null && this.spmDID0xE0DFNvmRef.nvMNvBlockLength == 40)
+;
+
+context SpmDiagnostic
+ if (this.spmDID0xE0DENvmRef != null)
+	 ERROR "\nERROR: The parameter nvMRamBlockDataAddress must be configured for spmDID0xE0DENvmRef to support DID 0xE0DE!" :
+		(this.spmDID0xE0DENvmRef.nvMRamBlockDataAddress != null)
+;
+
+context SpmDiagnostic
+ if (this.spmDID0xE0DFNvmRef != null)
+	ERROR "\nERROR: The parameter nvMRamBlockDataAddress must be configured for spmDID0xE0DFNvmRef to support DID 0xE0DF!" :
+		(this.spmDID0xE0DFNvmRef.nvMRamBlockDataAddress != null)
+;
+
+context SpmGeneral
+	ERROR " The parameter SpmSMStayAwakeTimeMs must be configured!" :
+		(this.spmSMStayAwakeTimeMs != null)
+;
+
+context SpmGeneral
+	WARNING " SM frame queue length isn't configured. Default value of number of target devices * number of local profiles will be used":
+		(this.spm_SmFrame_QueueLength != 0)
+;
+context SpmGeneral
+	WARNING " PM heartbeat queue length isn't configured. Default value of number of target devices will be used":
+		(this.spm_PmHeartbeat_QueueLength != 0)
+;
+context SpmGeneral
+	WARNING " PM eth wakeup-frame unicast queue length isn't configured. Default value of number of target devices will be used":
+		(this.spm_PmETHwakeUpUNIC_QueueLength != 0)
+;
+context SpmGeneral
+	WARNING " PM eth wakeup-frame multicast queue length isn't configured. Default value of ((SM main function periodicity / 5) + 1) will be used":
+		(this.spm_PmETHwakeUpMULTIC_QueueLength != 0)
+;
+
+context SpmGeneral
+	WARNING " SM local requests queue length isn't configured. Default value of number of profiles * 2 will be used":
+		(this.spm_LocalRequests_QueueLength != 0)
+;
+
+/*=== Service-based communication ===*/
+
+/* Check that the signal is a ComSignal (not ComGroupSignal) with UINT8_N type */
+context SpmLowVoltagePowerInfo
+	if ( this.spmLowVoltSwActPrioReqSignal != null &&
+		(this.spmLowVoltSwActPrioReqSignal.metaType.toString().contains("ComGroupSignal") ||
+		(this.spmLowVoltSwActPrioReqSignal.comSignalType != "UINT8_N"))
+		)
+		ERROR "For service-based communication, the SpmLowVoltSwActPrioReqSignal shall be configueed as a ComSignal with type UINT8_N." :
+		(this.spmLowVoltSwActPrioReqSignal.metaType.toString().contains("ComSignal") &&
+		(this.spmLowVoltSwActPrioReqSignal.comSignalType == "UINT8_N"))
+;
+
+/* Based on the SpmLowVoltSwActPrioReqSignal parameter, check if the references for service-based communication are configured. */
+context SpmLowVoltagePowerInfo
+	if (this.spmLowVoltSwActPrioReqSignal != null)
+		ERROR "SpmLowVoltSwActPrioReqSignal: In order to receive the LowVoltageSoftwareActivationPriorityRequest service, the following reference(s) shall be configured [" + Spm_MissingRefsForLowVoltPrio(this) + "].
+		Otherwise, remove SpmLowVoltSwActPrioReqSignal reference!" :
+		Spm_IsLowVoltPrioServiceConfigured(this) == true
+;
+
+/* Check that when the SpmLowVoltSwActPrioReqDataServiceBased is configured, the other references are configured accordingly */
+context SpmLowVoltagePowerInfo
+	if (this.spmLowVoltSwActPrioReqSignal == null && this.spmLowVoltSwActPrioReqDataServiceBased != null)
+		ERROR "SpmLowVoltSwActPrioReqDataServiceBased: In order to receive the LowVoltageSoftwareActivationPriorityRequest service, the following reference(s) shall be configured [" + Spm_MissingRefsForLowVoltPrio(this) + "].
+		Otherwise, remove SpmLowVoltSwActPrioReqDataServiceBased reference!" :
+		(this.spmLowVoltSwActPrioReqSignal != null)
+;
+
+/* Check for the Nvm reference */
+context SpmLowVoltagePowerInfo
+	if (Spm_IsLowVoltPrioServiceConfigured(this) == true)
+		ERROR "The SpmLowVoltSwActPrioNvmRef parameter shall be configured, since the LowVoltageSoftwareActivationPriorityRequest service is configured!" :
+		(this.spmLowVoltSwActPrioNvmRef != null)
+;
+
+/* Check for the spmLowVoltLVOptmzerChkApplicationInterfaceID configuration */
+context SpmLowVoltagePowerInfo
+	if (Spm_IsLowVoltPrioServiceConfigured(this) == true)
+		ERROR "The spmLowVoltLVOptmzerChkApplicationInterfaceID parameter shall be configured, since the LowVoltageSoftwareActivationPriorityRequest service is configured!" :
+		(this.spmLowVoltLVOptmzerChkApplicationInterfaceID != null)
+;
+
+/* Check for the spmLowVoltLVOptmzerChkApplicationInterfaceID is configured correctly. */
+context SpmLowVoltagePowerInfo
+	if (Spm_IsLowVoltPrioServiceConfigured(this) == true && this.spmLowVoltLVOptmzerChkApplicationInterfaceID != null)
+		ERROR "The spmLowVoltLVOptmzerChkApplicationInterfaceID parameter shall be configured with a SpmApplIntfID present in the SpmPowPrf!" :
+		(this.eContainer.spmPowPrf.collect(e|e.spmApplIntfID).contains(this.spmLowVoltLVOptmzerChkApplicationInterfaceID))
+;
+
+/* SpmTrgDvc shall have unique SpmTrgDvcVariantRef */
+context SpmTrgDvc
+	if (this.spmTrgDvcVariantHndlng.size > 1)
+		ERROR "Each SpmTrgDvcVariantRef must be unique per SpmTrgDvc - the same variant cannot be referenced by more than one SpmTrgDvcVariantHndlng":
+		(this.spmTrgDvcVariantHndlng.forAll(h | this.spmTrgDvcVariantHndlng.select(h2 | h2.spmTrgDvcVariantRef == h.spmTrgDvcVariantRef).size == 1))
+;
+
+/* Each SpmTrgDvc should have each spmVariantCfg configured */
+context SpmPgttEntries
+		ERROR "The number of SpmTrgDvcVariantHndlng entries per SpmTrgDvc SHALL be equal to the number of SpmVariantCfg configured":
+		(this.spmTrgDvc.select(d | d.spmTrgDvcVariantHndlng.size != this.spmVariantCfg.size).toList().size == 0)
+;
+
+/* All SpmVariantCfg entries shall have the same number of SpmVariantIntermediateDstAddr configured */
+context SpmPgttEntries
+		ERROR "The number of SpmVariantIntermediateDstAddr configured SHALL be the same across all SpmVariantCfg entries." :
+		(this.spmVariantCfg.collect(v | v.spmVariantIntermediateDstAddr.size).toSet().size <= 1)
+;
+
+/* All SpmVariantCfg entries shall have the same number of SpmVariantHBVLANCfg configured */
+context SpmPgttEntries
+		ERROR "The number of SpmVariantHBVLANCfg configured SHALL be the same across all SpmVariantCfg entries." :
+		(this.spmVariantCfg.collect(v | v.spmVariantHBVLANCfg.size).toSet().size <= 1)
+;
+
+/* Check if for the configured interface the VlanId is configured */
+context SpmVLANCom
+	if (this != null)
+		ERROR "If " + this.shortName + " container is configured, the SpmVLANId parameter shall be configured!" :
+		(this.spmVLANId != null)
+;
+
+/* Check whether a similar VLAN ID has been configured for each SpmVLANCom*/
+context SpmGeneral
+	ERROR "ERROR: SpmVLACom is configured, but with a similar VlanId. Please, remove similar Vlanid configured!" : 
+		(this.spmVLANCom.select(e|e.spmVLANId != null).size == this.spmVLANCom.select(e|e.spmVLANId != null).collect(e|e.spmVLANId).toSet().size ) 
+;
+
+/* Check that the number of the port(s) and the Imp data type for the Hb Rx Pdu are the same */
+context SpmVLANComPwrMgrHeartbeat
+	ERROR "ERROR: In the " + this.shortName +" container the size of the SpmPwrMgrHeartbeatRxImpDataTypeRef and SpmPwrMgrHeartbeatRxSendRecvIntRef shall be the same!" : 
+		(this.spmPwrMgrHeartbeatRxImpDataTypeRef.size ==  this.spmPwrMgrHeartbeatRxSendRecvIntRef.size) 
+;

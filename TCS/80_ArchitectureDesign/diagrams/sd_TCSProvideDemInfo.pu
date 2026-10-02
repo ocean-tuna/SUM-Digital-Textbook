@@ -1,0 +1,32 @@
+@startuml sd_TCSProvideDemInfo
+skinparam ParticipantPadding 10
+
+mainframe SUM_TCS Timestamp to Dem
+
+participant NvM
+participant Dem
+participant SUM_SUSD as susd
+
+box SUM_TCS
+    participant IRVs as rte
+    participant Runnable_TCS_PermitExecutionShutdown as shutter
+    participant Runnable_TCS_Dem_Clock as clockGetter
+end box
+
+== Pre-condition ==
+
+susd -> shutter: request TCS functionalities from interface //SUSD_PermitExecution//
+activate shutter
+shutter -> rte: set TCS_permit_execution = TRUE
+deactivate shutter
+
+== Sequence fulfill ==
+
+Dem -> clockGetter: ask for timestamp value by interface //DataServices_<Configurable>//
+activate clockGetter
+rte -> clockGetter: read TCS_permit_execution
+NvM -> clockGetter: read value of TCS_TotalVehicleTimeValue
+clockGetter --> Dem: return value of timestamp
+deactivate clockGetter
+
+@enduml

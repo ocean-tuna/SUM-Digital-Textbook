@@ -1,0 +1,24 @@
+@startuml Sum_Ssfm_MessageInfo_Handler_COMCbkTOut_SeqDiag
+
+
+participant BswM as B
+
+box SUM_SSFM
+    participant Sum_Ssfm_SignalStatusAV_Manager as AV
+    participant Sum_Ssfm_MessageInfo_Handler as MIH
+    participant Sum_Ssfm_NodeStatus_Manager as NM    
+    participant Sum_Ssfm_Service_Manager as SM
+end box
+
+B -> MIH: Com timeout
+MIH -> AV: Update availability status
+
+alt LcFA enabled
+    alt service based
+        MIH -> SM: Resolve Loss of Function DTC
+    end
+    
+    MIH -> NM: Update node status at signal level
+end
+
+@enduml 

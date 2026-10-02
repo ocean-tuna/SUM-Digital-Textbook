@@ -1,0 +1,946 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::EthSM»
+«IMPORT bsw::EthIf»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::Spm_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_WakeUp.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for SPM WakeUp functionality
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+/*-----------------------------------------------------------------------------
+ *    Include files
+ *----------------------------------------------------------------------------*/
+#include "Sum_Spm_WakeUp.h"
+#include "Sum_Spm_PwrMgr.h"
+#include "Sum_Spm_PBCfg.h"
+#include "Sum_Spm_MetaData.h"
+#include "Rte_SPM.h"						/* Needed for Rte_CData_Spm_Wakeup_Frame_Info function. */
+#include "Sum_Spm_Services.h"
+«IF Spm_ECU_INTERMEDIATE(spm) == true -»
+#include "CanIf.h"
+«ENDIF -»
+#include "ComM_Types.h" 					/* Needed to use COMM_FULL_COMMUNICATION_WITH_WAKEUP_REQUEST macro. */
+«IF Spm_IsTC10CommandPresent(spm)== true -»
+#include "EthSM.h"							/* Needed to call the EthSM_RequestComMode function. */
+«ENDIF -»
+
+#include "Sum_Common_Utils.h"
+«IF spm.spmGeneral.spmWkUpHelperFunction != null-»
+#include "Sum_Spm_WakeUpHelper.h"
+«ENDIF -»
+#include "Sum_Spm_WufRollingBuffer.h"
+
+«IF Spm_IsTC10CommandPresent(spm)== true -»
+#define SEND_TC10_SWTCH_1          0u
+#define SEND_TC10_SWTCH_2          1u
+«ENDIF-»
+
+«IF (Spm_IsETHCommandPresent(spm) == true)-»
+#define SEND_ETH_WKUP_FRM_A        2u
+#define SEND_ETH_WKUP_FRM_B        3u
+#define SEND_ETH_WKUP_FRM_C        4u
+«ENDIF -»
+
+«IF Spm_ECU_INTERMEDIATE(spm) == true -»
+#define SEND_CAN_WKUP_FRM_A        5u
+#define SEND_CAN_WKUP_FRM_B        6u
+#define SEND_CAN_WKUP_FRM_C        7u
+«ENDIF-»
+#define SEND_BOARD_LV_WKUP_GPIO	   8u
+
+/* PRQA S 3469 EOF # Following macro are used to access data structure */
+static boolean Spm_OwnWakeUpBit = FALSE;
+/* [$Satisfies $DDS_SPM 0401] *//* [$Satisfies $DDS_SPM 0109] */
+«IF Spm_ECU_INTERMEDIATE(spm) == true-»
+/* CAN Protocol Buffers */
+/* PRQA S 3218 2 # Defined here for modularity reason. */
+static uint8 Spm_Local_WkUpFrame_A_CAN_TxPersistent[WAKEUP_FRAME_LEN] = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+static uint8 Spm_Local_WkUpFrame_B_CAN_TxPersistent[WAKEUP_FRAME_LEN] = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+static uint8 Spm_Local_WkUpFrame_C_CAN_TxPersistent[WAKEUP_FRAME_LEN] = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+«ENDIF-»
+«IF (Spm_IsETHCommandPresent(spm) == true)-»
+/* ETH Protocol Buffers */
+/* PRQA S 3218 2 # Defined here for modularity reason. */
+static uint8 Spm_Local_WkUpFrame_A_ETH_TxPersistent[WAKEUP_FRAME_LEN] = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+static uint8 Spm_Local_WkUpFrame_B_ETH_TxPersistent[WAKEUP_FRAME_LEN] = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+static uint8 Spm_Local_WkUpFrame_C_ETH_TxPersistent[WAKEUP_FRAME_LEN] = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+«ENDIF-»
+«IF spm.spmGeneral.spmWkUpHelperFunction != null-»
+/* PRQA S 3218 1 # Defined here for modularity reason. */
+static uint8 Spm_Local_BufferPassedToHelperFunction[8u] = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+«ENDIF-»
+
+static void Sum_Spm_LocalWakeUpFrameTx_Handler(const uint8 ComandEnum, const boolean cmd, uint8* buffer, uint16* tickTracker);
+«IF Spm_IsTC10CommandPresent(spm)== true -»
+static void Sum_Spm_EthSM_RequestComMode(const uint8 numberIPAssociated, const uint32 *ListIP);
+static boolean Sum_Spm_GetNetworkHndFromIPList(const uint8 numberIPAssociated, const uint32 *ListIP, NetworkHandleType *networkHndId);
+
+/* PRQA S 3218 1 # Variable is public due to future usages. */
+static const SpmTc10DstMapType SpmTc10DstMap[SPM_NETWORK_HANDLE_CNT] = {
+	«FOREACH ethSM.ethSMNetwork AS ethsm_network -»
+	{
+		«IF ethsm_network.ethSMEthIfControllerRef.ethIfVlanId != null -»
+		« ethsm_network.ethSMEthIfControllerRef.ethIfVlanId -»u,
+		«ELSE-»
+		SPM_VLAN_ID_INVALID,
+		«ENDIF-»
+		ComMConf_ComMChannel_« ethsm_network.ethSMComMNetworkHandleRef.shortName -»,
+	},
+	«ENDFOREACH-»
+};
+«ENDIF-»
+
+static boolean Spm_ETHWkUpFrameSrcIPisValid(const uint32 SrcIP);
+static void Sum_Spm_StoreWkUpFrameBuffer(const Sum_Spm_WkUpFrameConfig* config);
+static boolean Sum_Spm_IsNoDevicesActivated(boolean init_changed_flag, const Sum_Spm_WkUpFrameConfig* config);
+static void Sum_Spm_HandlerBurstPhasePeriodicity(boolean bufferChanged, Sum_Spm_WkUpFrameConfig* config);
+static void Sum_Spm_UpdateFrameBuffers(const Sum_Spm_WkUpFrameConfig* config, uint8 index);
+static boolean Sum_Spm_CheckBufferChanges(const Sum_Spm_WkUpFrameConfig* config, uint8 index);
+static boolean Sum_Spm_TransmitProtocolFrames(const Sum_Spm_WkUpFrameConfig* config);
+static void Sum_Spm_HandleSteadyState(const Sum_Spm_WkUpFrameConfig* config);
+static void Sum_Spm_ProcessFrameTransmission(Sum_Spm_WkUpFrameConfig* config);
+
+static void Sum_Spm_ProtocolSpecificHandler(Sum_Spm_WkUpFrameConfig* config);
+
+/* PRQA S 3218 1 # Defined here for modularity reason. */
+static SPM_WkUp_dt_Prv Spm_EthWkUpFrame = {0U} ;
+
+/* PRQA S 3218 5 # Defined here for modularity reason. */
+/* Static protocol states - organized and initialized once */
+«IF Spm_ECU_INTERMEDIATE(spm) == true-»
+static Sum_Spm_WkUpFrameState Spm_CANState = {
+    FALSE, FALSE, 0u,
+    {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u},
+    {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u},
+    {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}
+};
+«ENDIF-»
+/* PRQA S 3218 5 # Defined here for modularity reason. */
+«IF Spm_IsETHCommandPresent(spm) == true-»
+static Sum_Spm_WkUpFrameState Spm_ETHState = {
+    FALSE, FALSE, 0u,
+    {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u},
+    {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u},
+    {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}
+};
+«ENDIF-»
+
+/* Configuration instances for wake-up frame handling */
+«IF Spm_ECU_INTERMEDIATE(spm) == true-»
+static Sum_Spm_WkUpFrameConfig Spm_WkUpFrameConfig_CAN = {
+    SPM_PROTOCOL_CAN,
+    0u,
+    0u,
+    0u,
+    /* The following buffers are the ones sent over the bus (are the bus referenced in Spm_CanIf_Tx_WakeUpFrame_A.pduInfo.SduDataPtr)
+       Them store the ETH WUF Unicast received ORing togheter the WkUp bit derived by parsing the WkUp sequence. */
+    &spm_sdu_Can_WuFPduData_Tx_Frame_A[0u],
+    &spm_sdu_Can_WuFPduData_Tx_Frame_B[0u],
+    &spm_sdu_Can_WuFPduData_Tx_Frame_C[0u],
+    /* The following three buffer are needed to store the WkUp bit appended by parsing the WkUp sequence. */
+    &Spm_Local_WkUpFrame_A_CAN_TxPersistent[0u],
+    &Spm_Local_WkUpFrame_B_CAN_TxPersistent[0u],
+    &Spm_Local_WkUpFrame_C_CAN_TxPersistent[0u],
+    &Spm_CANState /* Pointer to CAN protocol state */
+};
+«ENDIF-»
+
+«IF Spm_IsETHCommandPresent(spm) == true-»
+static Sum_Spm_WkUpFrameConfig Spm_WkUpFrameConfig_ETH = {
+    SPM_PROTOCOL_ETH,
+    0u,
+    0u,
+	0u,
+    /* The following buffers are the ones sent over the bus.
+       Them will be equal to the one that store the WkUp bit derived by parsing the WkUp sequence. */
+    &Spm_EthWkUpFrame.WakeupFrameA[0u],
+    &Spm_EthWkUpFrame.WakeupFrameB[0u],
+    &Spm_EthWkUpFrame.WakeupFrameC[0u],
+    /* The following three buffer are needed to store the WkUp bit appended by parsing the WkUp sequence. */
+    &Spm_Local_WkUpFrame_A_ETH_TxPersistent[0u],
+    &Spm_Local_WkUpFrame_B_ETH_TxPersistent[0u],
+    &Spm_Local_WkUpFrame_C_ETH_TxPersistent[0u],
+    &Spm_ETHState /* Pointer to ETH protocol state */
+};
+«ENDIF-»
+
+/* ****************************************************************************
+ * BEGIN: FUNCTIONS OF COMPONENT
+ ******************************************************************************/
+
+
+/**
+ * @brief This function check if the SrcIP of the WakeUp frame is a configured TrgDvc.
+ *
+ * @param[in] SrcIP IP address of the WkUp Frame received.
+ */
+static boolean Spm_ETHWkUpFrameSrcIPisValid(const uint32 SrcIP){
+
+	sint32 indexTrgDvc;
+	boolean ret = FALSE;
+
+/* PRQA S 1291 1 # Cast is necessary for API signature */
+	indexTrgDvc = Spm_GetIndexTrgDvcFromIP(SrcIP);
+
+	if(indexTrgDvc != SPM_INVALID){
+		ret = TRUE;
+	}
+
+	return ret;
+}
+
+«IF Spm_ECU_INTERMEDIATE(spm) == true-»
+/**
+ * @brief This function dequeues all received ETH Wake-Up Frames and processes each one by calling the corresponding wake-up handler
+ *
+ */
+/* PRQA S 1532 1 # Following macro are used to access data structure */
+void Spm_ETHWkUpFrame_Rx_Polling_Handler(void){
+
+	SPM_WkUp_dt_Prv Spm_EthWkUpRxFrame;
+	uint8 idx;
+	uint8 idx_net;
+	uint8 metaData_loc[SPM_METADAT_SIZE]; /* PRQA S 3678 # the value cannot be constant because it is written by API Rte_Receive, also if it is not currently used */
+
+	/* [$Satisfies $DDS_SPM 0111] */
+	/* PRQA S 2877 1 # This loop will never be executed more than once for configuration reason. */
+	for(idx_net = 0u; idx_net < SUM_SPM_NUMBER_OF_NET_CONF; idx_net++){
+        /*Using the first variant's VlanID as VlanID should not differ w.r.t the variants */
+   		while(E_OK == Spm_HandleVLANCommunication(Spm_NetworkInfo_Wrap_PerVariant[0][idx_net].SPM_NetInfo->VlanID,
+					                              SPM_RECV_HNDL,
+											      SPM_WK_COMHNDLING,
+											      NULL_PTR,
+											      &Spm_EthWkUpRxFrame,
+											      NULL_PTR,
+											      (uint8 *)&(metaData_loc[0U]) )){
+
+			SUM_SPM_UNUSED(metaData_loc);
+
+            /* Check if the Source Ip is valid */
+			if(TRUE == Spm_ETHWkUpFrameSrcIPisValid(Spm_EthWkUpRxFrame.SrcPMId)){
+   	   			for(idx = 0u; idx < WAKEUP_FRAME_LEN; idx++){
+   	   			   Spm_CanIf_Tx_WakeUpFrame_A.pduInfo.SduDataPtr[idx] |= Spm_EthWkUpRxFrame.WakeupFrameA[idx];
+				   Spm_CanIf_Tx_WakeUpFrame_B.pduInfo.SduDataPtr[idx] |= Spm_EthWkUpRxFrame.WakeupFrameB[idx];
+                   Spm_CanIf_Tx_WakeUpFrame_C.pduInfo.SduDataPtr[idx] |= Spm_EthWkUpRxFrame.WakeupFrameC[idx];
+   	   			}
+   	   			/* [$Satisfies $DDS_SPM 0660] */
+   	   			/* We insert the newly received WUF within the rolling buffer*/
+   	   			Sum_Spm_WufRollingBuffer_StoreWuf(
+   	   			   Spm_EthWkUpRxFrame.WakeupFrameA,
+   	   			   Spm_EthWkUpRxFrame.WakeupFrameB,
+   	   			   Spm_EthWkUpRxFrame.WakeupFrameC,
+   	   			   (uint8)(Spm_EthWkUpRxFrame.SrcPMId & 0xFFu));
+
+   	   			/* After storing the newly received WUF let's react on possible updates. */
+   	   			/* Here we are not owner of any timer, therefore we pass FALSE as parameter
+   	   			   so that we do not advance the WUF Rolling Buffer internal timer */
+   	   			Spm_ExecuteWakeUpFrameActions(FALSE);
+
+				«IF Spm_IsThereAnyManagedDevice(spm)-»
+				/* [$Satisfies $DDS_SPM 0524] */
+				/* Call wake-up handler for WUF */
+				Sum_Spm_WkupEdgeNodes();
+				«ENDIF-»
+            }
+   		}
+	}
+}
+«ENDIF-»
+
+/**
+ * @brief This function dequeues all received Multicast ETH Wake-Up Frames and processes each one by calling the corresponding wake-up handler
+ *
+ * @param[in]    None
+ * @return       Void
+ */
+/* PRQA S 1532 2 # Defined here for modularity reason */
+/* [$Satisfies $DDS_SPM 0233] [$Satisfies $DDS_SPM 0234] */
+void Spm_ETHWkUpFrame_Multicast_Rx_Polling_Handler(void){
+
+	SPM_WkUp_dt_Prv Spm_EthWkUpMulticastRxFrame;
+	uint8 idx_net;
+	uint8 metaData_loc[SPM_METADAT_SIZE]; /* PRQA S 3678 # the value cannot be constant because it is written by API Rte_Receive, also if it is not currently used */
+
+	/* PRQA S 2877 1 # This loop will never be executed more than once for configuration reason. */
+	for(idx_net = 0u; idx_net < SUM_SPM_NUMBER_OF_NET_CONF; idx_net++){
+        /*Using the first variant's VlanID as VlanID should not differ w.r.t the variants */
+   		while(E_OK == Spm_HandleVLANCommunication(Spm_NetworkInfo_Wrap_PerVariant[0][idx_net].SPM_NetInfo->VlanID,
+					                              SPM_RECV_HNDL,
+											      SPM_WK_MULTICAST_COMHNDLING,
+											      NULL_PTR,
+											      &Spm_EthWkUpMulticastRxFrame,
+											      NULL_PTR,
+											      (uint8 *)&(metaData_loc[0U]) )){
+
+			SUM_SPM_UNUSED(metaData_loc);
+            /* Check if the Source Ip is valid */
+			if(TRUE == Spm_ETHWkUpFrameSrcIPisValid(Spm_EthWkUpMulticastRxFrame.SrcPMId)){
+   	   			/* [$Satisfies $DDS_SPM 0660] */
+   	   			/* We insert the newly received WUF within the rolling buffer*/
+   	   			Sum_Spm_WufRollingBuffer_StoreWuf(
+   	   			   Spm_EthWkUpMulticastRxFrame.WakeupFrameA,
+   	   			   Spm_EthWkUpMulticastRxFrame.WakeupFrameB,
+   	   			   Spm_EthWkUpMulticastRxFrame.WakeupFrameC,
+   	   			   (uint8)(Spm_EthWkUpMulticastRxFrame.SrcPMId & 0xFFu));
+
+   	   			/* After storing the newly received WUF let's react on possible updates. */
+   	   			/* Here we are not owner of any timer, therefore we pass FALSE as parameter
+   	   			   so that we do not advance the WUF Rolling Buffer internal timer */
+   	   			Spm_ExecuteWakeUpFrameActions(FALSE);
+
+   	   			«IF Spm_IsThereAnyManagedDevice(spm) && Spm_ECU_INTERMEDIATE(spm) == true-»										
+   	   			/* Call wake-up handler for WUF */
+   	   			Sum_Spm_WkupEdgeNodes();
+   	   			«ENDIF-»	
+			}
+   		}
+	}
+}
+
+/**
+ * @brief Checks if a specific wakeup bit status in a wakeup frame.
+ *
+ * This utility function calculates the byte index and bit mask for a given bit position
+ * within a wakeup frame buffer and check whether that bit is asserted (set to 1) or not.
+ *
+ * @param[in] wakeUpFrame: Pointer to the wakeup frame buffer to check.
+ * @param[in] wakeUpBitPos: Bit position to check (0-63 for 8 bytes, where 0 is LSB of first byte).
+ * @return boolean: TRUE if the bit is asserted (1), FALSE if not asserted (0).
+ *
+ * @note The function does not perform null pointer validation before accessing the frame data.
+ */
+  /* PRQA S 1532 1 # Defined here for modular reason. */
+boolean Spm_IsWakeUpBitSet(const uint8* wakeUpFrame, const uint8 wakeUpBitPos)
+{
+	boolean ret = FALSE;
+    uint8 byteIdx;
+    uint8 bitMask;
+	if(wakeUpFrame != NULL_PTR )
+	{
+	    /* Calculate byte index and bit mask for the wakeup bit */
+	    byteIdx = wakeUpBitPos / 8u;
+	    bitMask = (uint8)(1u << (wakeUpBitPos % 8u));
+
+	    /* Check if the bit is asserted */
+	    ret = ((wakeUpFrame[byteIdx] & bitMask) != 0u) ? TRUE : FALSE;
+    }
+
+	return ret;
+}
+
+/**
+ * @brief The function :
+ *  - updates the global variable Spm_OwnWakeUpBit based on what has been stored within the WUF Rolling Buffer;
+ *  - retrieves the information, for DID 0xE0D7, to be forwarded to the SUSD module..;
+ *  - advances the WUF Rolling Buffer Timer if requested.
+ *
+ * @param[in] advanceTimer: boolean: TRUE if we need to contextually advance Rolling Buffer timer.
+ * @warning only Power Manager main loop should call this function with advanceTimer == TRUE.
+ * @return None (void)
+ *//* [$Satisfies $DDS_SPM 0610] */
+void Spm_ExecuteWakeUpFrameActions(boolean advanceTimer)
+{
+    uint8 lastRequesterId;
+    «IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+    uint8 i;
+
+	/* [$Satisfies $DDS_SPM 0674] */
+	/* If the SPM is unbranded, as per SDVA-7596 requirements, the SPM needs to check within every Variant configured.
+	   If the SPM is branded, the SPM needs just to check the bit for the actual variant. */
+	if(FALSE == Sum_Spm_GetIsBranded()){
+		
+		/* The following loop iterate on each variant to check if at least one SpmVariantWkupFrame/SpmVariantWkupBit for a variant is set. 
+		   If at least one, the SPM needs to NOT vote for shutdown (Spm_OwnWakeUpBit = TRUE). */
+		for(i = 0u; i < SUM_SPM_NUMBER_OF_VARIANTS; i++)
+        {
+			Spm_OwnWakeUpBit = Sum_Spm_WufRollingBuffer_RetrievesWUFInfoForE0D7(&lastRequesterId, Spm_WkupFrameInfo_PerVariant[i]);
+            Spm_E0D7_LastRequesterIdHandler(lastRequesterId);
+            if(TRUE == Spm_OwnWakeUpBit)
+            {
+                break;
+            }
+		}
+	}
+	else{
+
+		Spm_OwnWakeUpBit = Sum_Spm_WufRollingBuffer_RetrievesWUFInfoForE0D7(&lastRequesterId, Spm_ActiveWkupFrameInfo_p);
+		Spm_E0D7_LastRequesterIdHandler(lastRequesterId);
+	}
+    «ELSE -»
+    Spm_OwnWakeUpBit = Sum_Spm_WufRollingBuffer_RetrievesWUFInfoForE0D7(&lastRequesterId, Spm_ActiveWkupFrameInfo_p);
+	Spm_E0D7_LastRequesterIdHandler(lastRequesterId);
+    «ENDIF-»
+    if(TRUE == advanceTimer)
+    {
+        /* Advance the WUF rolling buffer timer. */
+        Sum_Spm_WufRollingBuffer_CheckAndShiftWufSlot();
+    }
+}
+
+
+
+/*
+ * @brief Returns the current state of the device's own wakeup bit.
+ *
+ * This getter function provides access to the global variable that tracks whether
+ * the device's own bit is asserted in the received wakeup frame. 
+ *
+ * @return boolean: TRUE if the device wakeup bit is asserted (1),
+ * 					FALSE if not asserted (0).
+ */
+/* PRQA S 1532 1 # Defined here for modular reason. */
+boolean Spm_GetOwnwakeUpBit(void)
+{
+    return Spm_OwnWakeUpBit;
+}
+
+
+/**
+ * @brief This function perform the operation requested by parsing the WakeUp Sequence.
+ *
+ *  @param[in] cmdType: Command type retrieved parsing the WakeUp Sequence.
+ *  @param[in] cmdValue: Command value retrieved parsing the WakeUp Sequence.
+ *  @param[in] numberIPAssociated: number of all the IP addresses defined for the target device.
+ *  @param[in] ListIP: pointer to list of all the IP addresses defined for the target device.
+ *  @param[in] IsPoweringOn: boolean that define if this function is called during a PowerOn (TRUE) or PowerOff (FALSE) sequence.
+ */
+/* PRQA S 1532 1 # Defined here for modularity reason. */
+void Sum_Spm_WakeUpCmdDispatcher(const uint8 cmdType, const uint8 cmdValue, const uint8 numberIPAssociated, const uint32 *ListIP, const boolean IsPoweringOn){
+
+	switch(cmdType)
+	{
+
+«IF Spm_ECU_INTERMEDIATE(spm) == true-»
+        /* [$Satisfies $DDS_SPM 0144] */
+		case SEND_CAN_WKUP_FRM_A:
+			Sum_Spm_LocalWakeUpFrameTx_Handler(cmdValue, IsPoweringOn, &Spm_WkUpFrameConfig_CAN.wakeUpCmdBufferA[0U], &Spm_WkUpFrameConfig_CAN.timerTickTracker);
+			break;
+		/* [$Satisfies $DDS_SPM 0145] */
+		case SEND_CAN_WKUP_FRM_B:
+			Sum_Spm_LocalWakeUpFrameTx_Handler(cmdValue, IsPoweringOn, &Spm_WkUpFrameConfig_CAN.wakeUpCmdBufferB[0U], &Spm_WkUpFrameConfig_CAN.timerTickTracker);
+			break;
+        /* [$Satisfies $DDS_SPM 0645] */
+        case SEND_CAN_WKUP_FRM_C:
+			Sum_Spm_LocalWakeUpFrameTx_Handler(cmdValue, IsPoweringOn, &Spm_WkUpFrameConfig_CAN.wakeUpCmdBufferC[0U], &Spm_WkUpFrameConfig_CAN.timerTickTracker);
+			break;
+«ENDIF-»
+«IF (Spm_IsETHCommandPresent(spm) == true)-»
+		/* [$Satisfies $DDS_SPM 0113] */
+		case SEND_ETH_WKUP_FRM_A:
+			Sum_Spm_LocalWakeUpFrameTx_Handler(cmdValue, IsPoweringOn, &Spm_WkUpFrameConfig_ETH.wakeUpCmdBufferA[0U], &Spm_WkUpFrameConfig_ETH.timerTickTracker);
+			break;
+		/* [$Satisfies $DDS_SPM 0148] */
+		case SEND_ETH_WKUP_FRM_B:
+			Sum_Spm_LocalWakeUpFrameTx_Handler(cmdValue, IsPoweringOn, &Spm_WkUpFrameConfig_ETH.wakeUpCmdBufferB[0U], &Spm_WkUpFrameConfig_ETH.timerTickTracker);
+			break;
+        /* [$Satisfies $DDS_SPM 0644] */
+        case SEND_ETH_WKUP_FRM_C:
+			Sum_Spm_LocalWakeUpFrameTx_Handler(cmdValue, IsPoweringOn, &Spm_WkUpFrameConfig_ETH.wakeUpCmdBufferC[0U], &Spm_WkUpFrameConfig_ETH.timerTickTracker);
+			break;
+«ENDIF-»
+«IF Spm_IsTC10CommandPresent(spm)== true -»
+		/* [$Satisfies $DDS_SPM 0147] */
+		case SEND_TC10_SWTCH_1:
+		case SEND_TC10_SWTCH_2:
+			if((TRUE == IsPoweringOn) && (numberIPAssociated > 0U) && (ListIP != NULL_PTR)){
+				Sum_Spm_EthSM_RequestComMode(numberIPAssociated, ListIP);
+			}
+			break;
+«ENDIF-»
+«IF spm.spmGeneral.spmWkUpHelperFunction != null-»
+		/* [$Satisfies $DDS_SPM 0146] */
+		case SEND_BOARD_LV_WKUP_GPIO:
+			Sum_Spm_LocalWakeUpFrameTx_Handler(cmdValue, IsPoweringOn, &Spm_Local_BufferPassedToHelperFunction[0U], NULL_PTR);
+        	/* [$Satisfies $DDS_SPM 0141] *//* [$Satisfies $DDS_SPM 0412] *//* [$Satisfies $DDS_SPM 0114] *//* [$Satisfies $DDS_SPM 0115] */
+        	SPM_WakeUp_HelperFunction((uint8 *)Spm_Local_BufferPassedToHelperFunction);
+			break;
+«ENDIF-»
+		default:
+			/* Default case. */
+			break;
+	}
+
+}
+
+«IF Spm_IsTC10CommandPresent(spm)== true -»
+/**
+ * @brief This function supports the call to the the EthSM_RequestComMode with the corresponding
+ * 		  network handle based on IP addresses of the target device.
+ *
+ *  @param[in] numberIPAssociated: number of all the IP addresses defined for the target device.
+ *  @param[in] ListIP: pointer to list of all the IP addresses defined for the target device.
+ */
+static void Sum_Spm_EthSM_RequestComMode(const uint8 numberIPAssociated, const uint32 *ListIP){
+	NetworkHandleType networkHndId;
+	boolean networkHndFound;
+
+	/* [$Satisfies $DDS_SPM 0149] */
+	networkHndFound = Sum_Spm_GetNetworkHndFromIPList(numberIPAssociated, ListIP, &networkHndId);
+	if(networkHndFound == TRUE) {
+		/* [$Satisfies $DDS_SPM 0101] */
+		(void)EthSM_RequestComMode(networkHndId, COMM_FULL_COMMUNICATION_WITH_WAKEUP_REQUEST);
+	}
+}
+
+/**
+ * @brief This function searches the corresponding network handle ID in SpmTc10DstMap, based on
+ * 		  IP addresses of the target device.
+ *
+ *  @param[in] numberIPAssociated: number of all the IP addresses defined for the target device.
+ *  @param[in] ListIP: pointer to list of all the IP addresses defined for the target device.
+ *  @param[in] networkHndId: Pointer to the variable where the corresponding network handle ID *                           should be copied if it is found in the mapping struct.
+ * 							 This variable is modified by the function.
+ *  @param[out] ret: A boolean value indicating whether to the corresponding network handle ID is
+ * 					found (TRUE) or not (FALSE).
+ */
+static boolean Sum_Spm_GetNetworkHndFromIPList(const uint8 numberIPAssociated, const uint32 *ListIP, NetworkHandleType *networkHndId){
+	uint8 idxNetworkHandle;
+	uint8 idxIPAssociated;
+	uint16 vlanId;
+	boolean ret = FALSE;
+
+	for(idxIPAssociated = 0; ((idxIPAssociated < numberIPAssociated) && (ret == FALSE)); idxIPAssociated++)	{
+		/* Extract the VLAN ID from the target device IP. */
+		vlanId = (uint16)((ListIP[idxIPAssociated] >> 16u) & 0x00FFU);
+
+		/* Search network handle ID corresponding to VLAN ID */
+		for(idxNetworkHandle = 0; idxNetworkHandle < SPM_NETWORK_HANDLE_CNT; idxNetworkHandle++) {
+			if (SpmTc10DstMap[idxNetworkHandle].vlanId == vlanId){
+				*networkHndId = SpmTc10DstMap[idxNetworkHandle].networkHndId;
+				ret = TRUE;
+				break;
+			}
+		}
+	}
+
+	return ret;
+}
+«ENDIF-»
+
+/**
+ * @brief Store wakeup frame buffer
+ *
+ * Handles the store of Wakeup frame buffer before transmit to avoid missing the data
+ *
+ */
+static void Sum_Spm_StoreWkUpFrameBuffer(const Sum_Spm_WkUpFrameConfig* config)
+{
+	uint8 i;
+
+    /* Copy frame data from the configured buffers to storage buffers */
+	for(i = 0u; i < WAKEUP_FRAME_LEN; i++){
+        if ((config->txFrameBufferA != NULL_PTR) && (config->txFrameBufferB != NULL_PTR) && (config->txFrameBufferC != NULL_PTR) && (config->state != NULL_PTR)) {
+            config->state->prevFrameBufferA[i] = config->txFrameBufferA[i];
+            config->state->prevFrameBufferB[i] = config->txFrameBufferB[i];
+            config->state->prevFrameBufferC[i] = config->txFrameBufferC[i];
+        }
+	}
+}
+
+/**
+ * @brief Handler wakeup frame buffer
+ *
+ * Handles the wakeup frame buffer to execute in order to transmit in a burst
+ * periodic fashion for a calibrated amount of time at a calibratable time interval
+ */
+/* [$Satisfies $DDS_SPM 0101] */
+static void Sum_Spm_HandlerBurstPhasePeriodicity(boolean bufferChanged, Sum_Spm_WkUpFrameConfig* config)
+{
+    if((config != NULL_PTR) && (config->state->transmissionActive == TRUE))
+    {
+        /* If the buffer has changed, reset timer and burst phase counter */
+        /* [$Satisfies $DDS_SPM 0311] */
+        if(bufferChanged == TRUE){
+            /* Default value if protocol is not recognized */
+            if (config->protocol == SPM_PROTOCOL_CAN) {
+                config->timerTickTracker = SPM_CAN_PERIOD_BP_VAL;
+                config->burstPhaseCounter = SPM_CAN_BP_INTERVAL;
+            } else {
+                config->timerTickTracker = SPM_ETH_PERIOD_BP_VAL;
+                config->burstPhaseCounter = SPM_ETH_BP_INTERVAL;
+            }
+
+        } else if (config->burstPhaseCounter > 0u) {
+            /* Decrement the interval counter */
+            config->burstPhaseCounter--;
+
+            if (config->burstPhaseCounter == 0u) {
+                config->timerTickTracker = config->steadyStateTickPeriodicity;
+            }
+            else {
+                if (config->protocol == SPM_PROTOCOL_CAN) {
+                    config->timerTickTracker = SPM_CAN_PERIOD_BP_VAL;
+                } else {
+                    config->timerTickTracker = SPM_ETH_PERIOD_BP_VAL;
+                }
+            }
+        } else {
+            /* do nothing */
+        }
+    }
+}
+
+/**
+ * @brief Check if there is no device activated by:
+ *        - checking if the init_changed_flag is changed;
+ *        - checking if all the buffers store NO bit;
+ *
+ * Function to check if there is no device activated before to clear the buffer to transmit all zero wakeup frame
+ */
+static boolean Sum_Spm_IsNoDevicesActivated(boolean init_changed_flag, const Sum_Spm_WkUpFrameConfig* config) {
+    boolean enable_flag = TRUE;
+    uint8 i;
+
+    /* [$Satisfies $DDS_SPM 0311] */
+    if((init_changed_flag == TRUE) && (config != NULL_PTR) && (config->txFrameBufferA != NULL_PTR) && (config->txFrameBufferB != NULL_PTR) && (config->txFrameBufferC != NULL_PTR))
+    {
+        for(i = 0u; i < WAKEUP_FRAME_LEN; i++){
+            if ((config->txFrameBufferA[i] != 0u) || (config->txFrameBufferB[i] != 0u) || (config->txFrameBufferC[i] != 0u))
+            {
+                enable_flag = FALSE;
+                break;
+            }
+        }
+    }
+    return enable_flag;
+}
+
+/**
+ * @brief Updates frame buffers with persistent data based on protocol
+ *
+ * @param[in] config Pointer to protocol-specific configuration
+ * @param[in] index Current buffer index being processed
+ */
+static void Sum_Spm_UpdateFrameBuffers(const Sum_Spm_WkUpFrameConfig* config, uint8 index)
+{
+    if ((config->wakeUpCmdBufferA != NULL_PTR) && (config->wakeUpCmdBufferB != NULL_PTR) && (config->wakeUpCmdBufferC != NULL_PTR))
+    {
+        if (config->protocol == SPM_PROTOCOL_CAN)
+        {
+            config->txFrameBufferA[index] |= config->wakeUpCmdBufferA[index];
+            config->txFrameBufferB[index] |= config->wakeUpCmdBufferB[index];
+            config->txFrameBufferC[index] |= config->wakeUpCmdBufferC[index];
+        }
+        else
+        {
+            config->txFrameBufferA[index] = config->wakeUpCmdBufferA[index];
+            config->txFrameBufferB[index] = config->wakeUpCmdBufferB[index];
+            config->txFrameBufferC[index] = config->wakeUpCmdBufferC[index];
+        }
+    }
+}
+
+/**
+ * @brief Checks if buffer contents have changed
+ *
+ * @param[in] config Pointer to protocol-specific configuration
+ * @param[in] index Current buffer index being checked
+ * @return TRUE if buffer changed, FALSE otherwise
+ */
+static boolean Sum_Spm_CheckBufferChanges(const Sum_Spm_WkUpFrameConfig* config, uint8 index)
+{
+    boolean bufferChanged = FALSE;
+
+    /* Check if the buffer has changed */
+    if ((config->txFrameBufferA[index] != config->state->prevFrameBufferA[index]) ||
+        (config->txFrameBufferB[index] != config->state->prevFrameBufferB[index]) ||
+        (config->txFrameBufferC[index] != config->state->prevFrameBufferC[index]))
+    {
+        bufferChanged = TRUE;
+        config->state->hasTransmittedAtLeastOnce = TRUE;
+        config->state->transmissionActive  = TRUE;
+    }
+
+    return bufferChanged;
+}
+
+/**
+ * @brief Performs protocol-specific frame transmission
+ *
+ * @param[in] config Pointer to protocol-specific configuration
+ * @return TRUE if transmission successful, FALSE otherwise
+ */
+static boolean Sum_Spm_TransmitProtocolFrames(const Sum_Spm_WkUpFrameConfig* config)
+{
+    boolean transmissionSuccess ;
+
+«IF Spm_ECU_INTERMEDIATE(spm) == true-»
+    if (config->protocol == SPM_PROTOCOL_CAN)
+    {
+        /* Direct CAN transmission - type-safe and clear */
+        boolean canTxA_Success;
+        boolean canTxB_Success;
+        boolean canTxC_Success;
+
+        canTxA_Success = (E_OK == CanIf_Transmit(Spm_CanIf_Tx_WakeUpFrame_A.pduId, &Spm_CanIf_Tx_WakeUpFrame_A.pduInfo));
+        canTxB_Success = (E_OK == CanIf_Transmit(Spm_CanIf_Tx_WakeUpFrame_B.pduId, &Spm_CanIf_Tx_WakeUpFrame_B.pduInfo));
+        canTxC_Success = (E_OK == CanIf_Transmit(Spm_CanIf_Tx_WakeUpFrame_C.pduId, &Spm_CanIf_Tx_WakeUpFrame_C.pduInfo));
+
+        transmissionSuccess = (canTxA_Success && canTxB_Success && canTxC_Success);
+    }
+«ENDIF-»
+«IF Spm_IsETHCommandPresent(spm) == true-»
+«IF Spm_ECU_INTERMEDIATE(spm) == true-»
+    else if (config->protocol == SPM_PROTOCOL_ETH)
+«ELSE-»
+    if (config->protocol == SPM_PROTOCOL_ETH)
+«ENDIF-»
+    {
+        /* Direct ETH transmission - uses transmission data properly */
+         transmissionSuccess = (E_OK == SPM_Send_ETHWkUpFrame(&Spm_EthWkUpFrame));
+    }
+«ENDIF-»
+«IF Spm_ECU_INTERMEDIATE(spm) == true || Spm_IsETHCommandPresent(spm) == true-»
+    else
+    {
+        /* Unknown protocol */
+        transmissionSuccess = FALSE;
+    }
+«ENDIF-»
+
+    return transmissionSuccess;
+}
+
+/**
+ * @brief Check if a sending of WUFs with all zeros is needed.
+ *
+ * @param[in] config Pointer to protocol-specific configuration (includes state)
+ */
+static void Sum_Spm_HandleSteadyState(const Sum_Spm_WkUpFrameConfig* config)
+{
+    /* This function checks if the buffers are all zeros and the hasTransmittedAtLeastOnce is set to TRUE. */
+    if (Sum_Spm_IsNoDevicesActivated(config->state->hasTransmittedAtLeastOnce, config) == TRUE)
+    {
+        (void)Sum_Common_MemSet(config->txFrameBufferA, 0, (WAKEUP_FRAME_LEN * sizeof(uint8)));
+        (void)Sum_Common_MemSet(config->txFrameBufferB, 0, (WAKEUP_FRAME_LEN * sizeof(uint8)));
+        (void)Sum_Common_MemSet(config->txFrameBufferC, 0, (WAKEUP_FRAME_LEN * sizeof(uint8)));
+        config->state->numberWUFAllZerosSent++;
+    }
+    else
+    {
+        config->state->numberWUFAllZerosSent = 0u;
+    }
+}
+
+/**
+ * @brief Processes frame transmission logic when timer elapsed
+ *
+ * @param[in] config Pointer to protocol-specific configuration
+ */
+static void Sum_Spm_ProcessFrameTransmission(Sum_Spm_WkUpFrameConfig* config)
+{
+    boolean transmissionSuccess;
+
+    /* [$Satisfies $DDS_SPM 0100] *//* [$Satisfies $DDS_SPM 0111] *//* [$Satisfies $DDS_SPM 0112] */
+    if (config->state->transmissionActive  == TRUE)
+    {
+        /* Store the buffer before sending to avoid missing data */
+        Sum_Spm_StoreWkUpFrameBuffer(config);
+
+        /* Protocol-specific transmission */
+        transmissionSuccess = Sum_Spm_TransmitProtocolFrames(config);
+
+        if ((config->protocol == SPM_PROTOCOL_ETH) ||
+           ((config->protocol == SPM_PROTOCOL_CAN) && (transmissionSuccess == TRUE)))
+        {
+            /* If the trasmission gone well, re-load the timerTracker. */
+            config->timerTickTracker = config->steadyStateTickPeriodicity;
+        }
+    }
+}
+/**
+ * @brief protocol-specific wake-up frame processing
+ *
+ * This function handles wake-up frame processing for a specific protocol
+ *
+ * @param[in] config Pointer to protocol-specific configuration
+ */
+static void Sum_Spm_ProtocolSpecificHandler(Sum_Spm_WkUpFrameConfig* config)
+{
+    uint8 i;
+    boolean bufferChanged;
+    boolean paramValidationOk = TRUE;
+
+
+    /* Input parameter validation */
+    if ((config == NULL_PTR) ||
+        (config->txFrameBufferA == NULL_PTR) || (config->txFrameBufferB == NULL_PTR) || (config->txFrameBufferC == NULL_PTR) ||
+        (config->state == NULL_PTR) ||
+        (config->wakeUpCmdBufferA == NULL_PTR) || (config->wakeUpCmdBufferB == NULL_PTR) || (config->wakeUpCmdBufferC == NULL_PTR))
+    {
+        paramValidationOk = FALSE;
+    }
+
+    if (paramValidationOk == TRUE)
+    {
+        /* Decrement the timer  */
+        if ((config->timerTickTracker) > 0u)
+        {
+            (config->timerTickTracker)--;
+        }
+
+        /* Timer elapsed. Necessary to transmit the WkUp Frame. */
+        if (0u == (config->timerTickTracker))
+        {
+            /* [$Satisfies $DDS_SPM 0108] *//* [$Satisfies $DDS_SPM 0106] *//* [$Satisfies $DDS_SPM 0117] *//* [$Satisfies $DDS_SPM 0311] *//* [$Satisfies $DDS_SPM 0110] */
+            for (i = 0u; i < WAKEUP_FRAME_LEN; i++)
+            {
+                /* Update frame buffers that will be sent over the bus ORing with
+                   the buffers that store the commands retrieved by parsing the WakeUp sequences.
+                   No flag are updated. */
+                Sum_Spm_UpdateFrameBuffers(config, i);
+
+                /* Check if the buffer that will be sent is different from the one previously sent.
+                   If yes, the hasTransmittedAtLeastOnce flag is set to true and the transmissionActive  flag set to True.
+                   The bufferChanged flag will be used in order to understand the tick tracker timer
+                   needs to be reloaded with the burst periodicity (if TRUE) or with the normal one. */
+                bufferChanged = Sum_Spm_CheckBufferChanges(config, i);
+
+            }
+
+            /* This function check if a sending of WUF with all zeros if:
+                - hasTransmittedAtLeastOnce is TRUE
+                - all three WUF is zeros.
+
+                If the above conditions are satisfied, the tracker numberWUFAllZerosSent is increased by one.
+                Otherwise, it is reset to zero.
+             */
+            Sum_Spm_HandleSteadyState(config);
+
+            /* Process frame transmission if the transmissionActive flag is TRUE.
+               It reload the timer timerTickTracker as normal periodicity steadyStateTickPeriodicity. */
+            Sum_Spm_ProcessFrameTransmission(config);
+
+            /* Handling of the timerTickTracker and burstPhaseCounter w.r.t. internal flag. */
+            Sum_Spm_HandlerBurstPhasePeriodicity(bufferChanged, config);
+
+            /* Check if all-zero wakeup frame has been transmitted for 3 steady state intervals
+               and the tramsission is Active. */
+            if ((config->state->numberWUFAllZerosSent >= 3u) && (config->state->transmissionActive  == TRUE))
+            {
+                /* Stop transmitting the frame */
+                config->timerTickTracker = config->steadyStateTickPeriodicity;
+                config->state->transmissionActive  = FALSE;
+                config->state->numberWUFAllZerosSent = 0u;
+            }
+        }
+    }
+}
+
+/**
+ * @brief Handles the timing for wake-up frame transmission over CAN and Ethernet.
+ *
+ */
+/* [$Satisfies $DDS_SPM 0133] */
+/* PRQA S 1532 1 # Following macro are used to access data structure */
+void Sum_Spm_WkUpTiming_Handler(void){
+
+    /* Process each protocol using handler with organized state */
+«IF Spm_ECU_INTERMEDIATE(spm) == true-»
+    Sum_Spm_ProtocolSpecificHandler(&Spm_WkUpFrameConfig_CAN);
+«ENDIF-»
+
+«IF Spm_IsETHCommandPresent(spm) == true-»
+    Sum_Spm_ProtocolSpecificHandler(&Spm_WkUpFrameConfig_ETH);
+«ENDIF-»
+
+}
+/**
+ * @brief  wake-up frame handler for all protocols (CAN, ETH, GPIO)
+ * @details Handles buffer operations and protocol-specific timer management
+ *
+ * @param[in] ComandEnum The enumeration value of the command (bit position)
+ * @param[in] cmd        Boolean to set (TRUE) or clear (FALSE) the bit
+ * @param[in] buffer     Pointer to protocol-specific buffer
+ * @param[in] protocol   Protocol type (CAN, ETH, or GPIO)
+ */
+/* [$Satisfies $DDS_SPM 0105] *//* [$Satisfies $DDS_SPM 0107] *//* [$Satisfies $DDS_SPM 0140] *//* [$Satisfies $DDS_SPM 0113] */
+static void Sum_Spm_LocalWakeUpFrameTx_Handler(const uint8 ComandEnum, const boolean cmd, uint8* buffer, uint16* tickTracker)
+{
+	uint8 offset ;
+	uint8 index ;
+
+	/* Calculate bit position for the command */
+	offset = ComandEnum >> 3u;    /* Divide by 8 to get byte offset */
+	index = ComandEnum & 0x7u;    /* Modulo 8 to get bit position */
+
+	/* Set/clear the command bit in buffer */
+	if(TRUE == cmd){
+		/* [$Satisfies $DDS_SPM 0105] */
+		buffer[offset] |= 1u << index;     /* Set bit using OR logic */
+	}else{
+		/* [$Satisfies $DDS_SPM 0140] *//* [$Satisfies $DDS_SPM 0107] */
+		buffer[offset] &= (~(1u << index)); /* Clear bit using AND logic */
+	}
+
+	/* [$Satisfies $DDS_SPM 0103] */
+    /* Set counter to 1 - in this way, next time Sum_Spm_ProtocolSpecificHandler() is called, the timer will elapse. */
+    if(NULL_PTR != tickTracker){
+	    *tickTracker = 1u;
+    }
+
+}
+/**
+ * @brief			Set periodicity of WkUp Frames.
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+/* PRQA S 1532 1 # Following macro are used to access data structure */
+void SPM_PM_Init_WkUpFrame_Period(void){
+    /* A rolling buffer is used to store WUFs that will be received
+       The rolling buffer will manage WUFs time validity. */
+    Sum_Spm_WufRollingBuffer_Init();
+
+«IF Spm_ECU_INTERMEDIATE(spm) == true -»
+    Spm_WkUpFrameConfig_CAN.timerTickTracker = SPM_PERIOD_CAN_WKUP_TICK;
+    Spm_WkUpFrameConfig_CAN.steadyStateTickPeriodicity = SPM_PERIOD_CAN_WKUP_TICK;
+«ENDIF -»
+«IF Spm_IsETHCommandPresent(spm) == true -»
+    Spm_WkUpFrameConfig_ETH.timerTickTracker = SPM_PERIOD_ETH_WKUP_TICK;
+    Spm_WkUpFrameConfig_ETH.steadyStateTickPeriodicity = SPM_PERIOD_ETH_WKUP_TICK;
+«ENDIF -»
+
+}
+
+/* ****************************************************************************
+ * END: FUNCTIONS OF COMPONENT
+ ******************************************************************************/
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

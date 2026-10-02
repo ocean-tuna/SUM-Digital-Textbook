@@ -1,0 +1,1042 @@
+
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+«IMPORT bsw::Sd»
+«IMPORT bsw::TcpIp»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Cfg.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for Spm Cfg
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_PBCfg.h"
+«IF Spm_ECU_INTERMEDIATE(spm) == true -»
+/* ------------------ Inclusion of Can callback  --------------------- */
+#include "CanIf_Cfg.h"
+#include "Cdd_Cdd_Up_Cbk.h"
+«ENDIF-»
+
+#include "Sum_Common_Utils.h"
+
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan SEPARATOR "\n" -»
+«IF Spm_PwrMgrHeartbeatRxIsConfigured(vlan) && (vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatRxSendRecvIntRef.size > 1) -»
+#define SPM_«vlan.shortName»_NUM_OF_HB_RX_CONFIG («vlan.spmVLANComPwrMgrHeartbeat.spmPwrMgrHeartbeatRxSendRecvIntRef.size»u)
+«ENDIF -»
+
+/* PRQA S 1531 EOF # This object can be used in other translation units and is defined here for template needs */
+
+
+/**
+ * @brief
+ *
+ * @param[in]		in0_out1				Parameter defines the direction of the communication handling
+ * @param[inout]	srcIpU32Ptr				Pointer to the source address to publish OR received in/from the frame
+ * @param[inout]	counterU32Ptr			Pointer Value of the heartbeat counter in the frame
+ * @param[inout]	activeProfileU16Ptr		Pointer value to number of profile active in the current/remote SPM instance
+ * @param[inout]	metadataPtr				Pointer to metadata buffer
+ *
+ * @return			Std_ReturnType
+ * @retval			E_OK					Transmission OR reception successfully happened
+ * @retval			E_NOT_OK				Transmission OR reception failed
+ *
+ * @note			The function scope is private since it is used by Top level function Spm_HandleVLANCommunication
+ */
+static Std_ReturnType Spm_«vlan.shortName»_PwrMgrHeartbeatHandleCom(
+	Spm_CommHanldeDirectionType                  const   in0_out1,
+	uint32 				                        *const   srcIpU32Ptr,
+	uint32 					                    *const   counterU32Ptr,
+	uint16 					                    *const   activeProfilesU16Ptr,
+	uint8  					                    *const   metadataPtr
+	);
+
+/**
+ * @brief
+ *
+ * @param[in]		in0_out1				Parameter defines the direction of the communication handling
+ * @param[inout]	srcIpU32Ptr				Pointer to the source address to publish OR received in/from the frame
+ * @param[inout]	A_wkupU8Ptr			    Pointer Value to the wake-up frame A buffer
+ * @param[inout]	B_wkupU8Ptr		        Pointer value to the wake-up frame B buffer
+ * @param[inout]	B_wkupU8Ptr		        Pointer value to the wake-up frame C buffer
+ * @param[inout]	metadataPtr				Pointer to metadata buffer
+ *
+ * @return			Std_ReturnType
+ * @retval			E_OK					Transmission OR reception successfully happened
+ * @retval			E_NOT_OK				Transmission OR reception failed
+ *
+ * @note			The function scope is private since it is used by Top level function Spm_HandleVLANCommunication
+ */
+static
+Std_ReturnType Spm_«vlan.shortName»_PwrMgrWakeupHandleCom(
+	Spm_CommHanldeDirectionType                  const   in0_out1,
+	uint32 					 	                *const   srcIpU32Ptr,
+	uint8  				                        *const   A_wkupU8Ptr,
+	uint8  					                    *const   B_wkupU8Ptr,
+	uint8  					                    *const   C_wkupU8Ptr,
+	uint8  					                    *const   metadataPtr
+	);
+
+/**
+ * @brief
+ *
+ * @param[in]		in0_out1				Parameter defines the direction of the communication handling
+ * @param[inout]	srcIpU32Ptr				Pointer to the source address to publish OR received in/from the frame
+ * @param[inout]	A_wkupU8Ptr			    Pointer Value to the wake-up frame A buffer
+ * @param[inout]	B_wkupU8Ptr		        Pointer value to the wake-up frame B buffer
+ * @param[inout]	B_wkupU8Ptr		        Pointer value to the wake-up frame C buffer
+ * @param[inout]	metadataPtr				Pointer to metadata buffer
+ *
+ * @return			Std_ReturnType
+ * @retval			E_OK					Transmission OR reception successfully happened
+ * @retval			E_NOT_OK				Transmission OR reception failed
+ *
+ * @note			The function scope is private since it is used by Top level function Spm_HandleVLANCommunication
+ */
+static
+Std_ReturnType Spm_«vlan.shortName»_PwrMgrWakeupMulticastHandleCom(
+	Spm_CommHanldeDirectionType                  const   in0_out1,
+	uint32 					 	                *const   srcIpU32Ptr,
+	uint8  				                        *const   A_wkupU8Ptr,
+	uint8  					                    *const   B_wkupU8Ptr,
+	uint8  					                    *const   C_wkupU8Ptr,
+	uint8  					                    *const   metadataPtr
+	);
+
+
+/**
+ * @brief
+ *
+ * @param[in]		in0_out1				Parameter defines the direction of the communication handling
+ * @param[inout]	srcIpU32Ptr				Pointer to the source address to publish OR received in/from the frame
+ * @param[inout]	dstIpU32Ptr				Pointer to the deestination address to publish OR received in/from the frame
+ * @param[inout]	prMsgTypeU8Ptr			Pointer value to Request Message Type code (Just for completeness - Fixed value)
+ * @param[inout]	rspsMsgTypeU8Ptr		Pointer value to Request Response Message Type code (Just for completeness - Fixed value)
+ * @param[inout]	reqTypeSRef				Pointer value to request payload in the frame
+ * @param[inout]	resTypeSRef				Pointer value to request response in the frame
+ * @param[inout]	metadataPtr				Pointer to metadata buffer
+ *
+ * @return			Std_ReturnType
+ * @retval			E_OK					Transmission OR reception successfully happened
+ * @retval			E_NOT_OK				Transmission OR reception failed
+ *
+ * @note			The function scope is private since it is used by Top level function Spm_HandleVLANCommunication
+ */
+static
+Std_ReturnType Spm_«vlan.shortName»_SwMgrInfoHandleCom(
+	Spm_CommHanldeDirectionType    			     const   in0_out1,
+	uint32 							 			*const   srcIpU32Ptr,
+	uint32 							 			*const   dstIpU32Ptr,
+	uint8										*const	 prMsgTypeU8Ptr,
+	uint8										*const	 rspsMsgTypeU8Ptr,
+	ProfileRequestDataType_SvcStruct 		    *const	 reqTypeSRef,
+	RequestStatusProfileStateDataType_SvcStruct *const   resTypeSRef,
+	uint8										*const	 metadataPtr
+	);
+«ENDFOREACH»
+
+/* ------------------------------------------------------------------- */
+
+/* ======================================================================================
+ * START SECTION: PROFILE CONSUMED IPDU SUPPORT
+ * ...................................................................................... */
+«FOREACH spm.spmConfigSet.spmPowPrf.sortBy(e|e.spmSrvcAndInstID * 256 + e.spmProfNumber) AS pp-»
+«REM»Tx side«ENDREM»
+	«IF pp.spmComIPduGroupEvnt_Tx.size > 0-»
+#define SPM_«pp.shortName»_NUM_OF_CTR_PDU_GRP_TX («pp.spmComIPduGroupEvnt_Tx.size»U)
+/*
+ * Pdu for Sw dep «pp.shortName» (TX)
+ */
+static const Spm_Rte_SwitchPduGroup
+Spm_Rte_SwitchPduGroup_«pp.shortName»_tx_refs[SPM_«pp.shortName»_NUM_OF_CTR_PDU_GRP_TX] = {
+		«FOREACH pp.spmComIPduGroupEvnt_Tx AS pduGr SEPARATOR "\t,\n" -»
+	(Rte_Switch_PP_SPM_BswM_ComIpduGroup_«pduGr.shortName»_SPM_SWCH_PDUGR)
+		«ENDFOREACH-»
+};
+	«ENDIF-»
+«REM»Rx side«ENDREM»
+	«IF pp.spmComIPduGroupEvnt_Rx.size > 0-»
+#define SPM_«pp.shortName»_NUM_OF_CTR_PDU_GRP_RX («pp.spmComIPduGroupEvnt_Rx.size»U)
+/*
+ * Pdu for Sw dep «pp.shortName» (RX)
+ */
+static const Spm_Rte_SwitchPduGroup
+Spm_Rte_SwitchPduGroup_«pp.shortName»_rx_refs[SPM_«pp.shortName»_NUM_OF_CTR_PDU_GRP_RX] = {
+		«FOREACH pp.spmComIPduGroupEvnt_Rx AS pduGr SEPARATOR "\t,\n" -»
+	(Rte_Switch_PP_SPM_BswM_ComIpduGroup_«pduGr.shortName»_SPM_SWCH_PDUGR)
+		«ENDFOREACH-»
+};
+	«ENDIF-»
+«ENDFOREACH-»
+/* ======================================================================================
+ * END SECTION: PROFILE CONSUMED IPDU SUPPORT
+ * ...................................................................................... */
+«FOREACH spm.spmConfigSet.spmPowPrf.select(e|e.spmProfileSwDep.size > 0) AS powprof -»
+static const SpmPrfDepLstType Spm_DeptList_Profile_«powprof.shortName»[«powprof.spmProfileSwDep.size»U];
+«ENDFOREACH-»
+
+static const SpmConfPowPrf Spm_Prf_Cfg[«spm.spmConfigSet.spmPowPrf.size»u];
+
+/* ======================================================================================
+ * START SECTION: ETH WAKE-UP SUPPORT
+ * ...................................................................................... */
+
+/* ======================================================================================
+ * END   SECTION: ETH WAKE-UP SUPPORT
+ * ...................................................................................... */
+
+/* ======================================================================================
+ * START SECTION: CAN WAKE-UP SUPPORT
+ * ...................................................................................... */
+«IF Spm_ECU_INTERMEDIATE(spm) == true»
+
+SpmSduDataBuffType spm_sdu_Can_WuFPduData_Tx_Frame_A = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+SpmSduDataBuffType spm_sdu_Can_WuFPduData_Tx_Frame_B = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+SpmSduDataBuffType spm_sdu_Can_WuFPduData_Tx_Frame_C = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+
+Spm_PduInfoTypeWrpp
+Spm_CanIf_Tx_WakeUpFrame_A = {
+«LET spm.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmTxRef.select(e | e.canIfTxPduCanId == 339).first() AS can_tx -»
+	/* pduId ............................................. */
+	CanIfConf_CanIfTxPduCfg_«can_tx.shortName-»,
+«ENDLET-»
+	/* pduInfo ........................................... */
+	{
+		/* SduDataPtr .................................... */
+		(uint8 *)(&spm_sdu_Can_WuFPduData_Tx_Frame_A[0U]),
+		/* MetaDataPtr ................................... */
+		NULL_PTR,
+		/* SduLength ..................................... */
+		8U
+	}
+};
+
+Spm_PduInfoTypeWrpp
+Spm_CanIf_Tx_WakeUpFrame_B = {
+«LET spm.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmTxRef.select(e | e.canIfTxPduCanId == 355).first() AS can_tx -»
+	/* pduId ............................................. */
+	CanIfConf_CanIfTxPduCfg_«can_tx.shortName-»,
+«ENDLET-»
+	/* pduInfo ........................................... */
+	{
+		/* SduDataPtr .................................... */
+		(uint8 *)(&spm_sdu_Can_WuFPduData_Tx_Frame_B[0U]),
+		/* MetaDataPtr ................................... */
+		NULL_PTR,
+		/* SduLength ..................................... */
+		8U
+	}
+};
+
+Spm_PduInfoTypeWrpp
+Spm_CanIf_Tx_WakeUpFrame_C = {
+«LET spm.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmTxRef.select(e | e.canIfTxPduCanId == 371).first() AS can_tx -»
+	/* pduId ............................................. */
+	CanIfConf_CanIfTxPduCfg_«can_tx.shortName-»,
+«ENDLET-»
+	/* pduInfo ........................................... */
+	{
+		/* SduDataPtr .................................... */
+		(uint8 *)(&spm_sdu_Can_WuFPduData_Tx_Frame_C[0U]),
+		/* MetaDataPtr ................................... */
+		NULL_PTR,
+		/* SduLength ..................................... */
+		8U
+	}
+};
+
+«IF spm.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmRxRef.size > 0-»
+const Spm_RxPduInfoType Spm_CanIf_Rx[SPM_WUF_CAN_RX_LEN] = {
+«FOREACH spm.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmRxRef AS pdu_can -»
+	«LET pdu_can.canIfRxPduCanId.convertToHex().toString().bitWiseAnd("FF") AS canIdLastByte-»
+	«FOREACH cdd AS cdd_itm -»
+		«IF cdd_itm.cddComStackContribution != null && cdd_itm.cddComStackContribution.cddComIfUpperLayerContribution != null && cdd_itm.cddComStackContribution.cddComIfUpperLayerContribution.cddComIfUpperLayerRxPdu.size > 0 -»
+    		«LET cdd_itm.cddComStackContribution.cddComIfUpperLayerContribution.cddComIfUpperLayerRxPdu AS pdus_cdd-»
+      			«FOREACH pdus_cdd AS pdu_cdd -»
+        			«IF pdu_can.canIfRxPduRef.shortName.matches(pdu_cdd.cddComIfPduRef.shortName) -»
+	{
+		/* PduId ............................................*/
+		CddConf_CddComIfUpperLayerRxPdu_«pdu_cdd.shortName»,
+		/* Last byte of CanId ...............................*/
+		0x«canIdLastByte»u
+	},
+					«ENDIF-»
+      			«ENDFOREACH-»
+    		«ENDLET-»
+		«ENDIF-»
+    «ENDFOREACH-»
+	«ENDLET-»
+«ENDFOREACH-»
+};
+«ENDIF-»
+
+«ELSE -»
+/*
+ * Wake-up on CAN is not supported for the current ECU instance
+ */
+«ENDIF -»
+/* ======================================================================================
+ * END SECTION: CAN 	WAKE-UP SUPPORT
+ * ...................................................................................... */
+
+/* PRQA S 2053 EOF # Following macro are used for sake of clarity to access fields of the PGTT.  */
+
+/**
+*
+«FOREACH spm.spmConfigSet.spmPowPrf.sortBy(e|e.spmSrvcAndInstID * 256 + e.spmProfNumber) AS pp -»
+ *
+ * - «pp.shortName» : (Srvc_Inst : «pp.spmSrvcAndInstID», PrfNum : «pp.spmProfNumber»)
+«FOREACH pp.spmProfileSwDep AS dep-»
+ *		- («dep.shortName»)
+«ENDFOREACH -»
+ * 		controls ComIpduGroups:
+ * 			- TX («pp.spmComIPduGroupEvnt_Tx.size»)
+«FOREACH pp.spmComIPduGroupEvnt_Tx AS l-»
+ * 				- «l.shortName»
+«ENDFOREACH-»
+ * 			- RX («pp.spmComIPduGroupEvnt_Rx.size»)
+«FOREACH pp.spmComIPduGroupEvnt_Rx AS l-»
+ * 				- «l.shortName»
+«ENDFOREACH-»
+«ENDFOREACH -»
+ *
+ */
+
+/* PRQA S 3214 EOF # Following macro are used for sake of clarity to access fields of the PGTT.  */
+
+«FOREACH spm.spmConfigSet.spmPowPrf.sortBy(e|e.spmSrvcAndInstID * 256 + e.spmProfNumber) AS powprf ITERATOR pId -»
+# define SPM_POWPRF_«powprf.shortName»_ID		((uint8)«pId.counter0»U)
+«ENDFOREACH»
+
+/* Application Interface ID assigned as read-only value */
+«FOREACH spm.spmConfigSet.spmPowPrf.select(e|e.spmApplIntfID != null) AS appl -»
+static const uint16 Spm_«appl.shortName»_applIfId = «appl.spmApplIntfID»U;
+«ENDFOREACH»
+
+/* Profile bit map index assigned as read-only value */
+«FOREACH spm.spmConfigSet.spmPowPrf.select(e|e.spmProfBitMapIndex != null) AS index -»
+static const uint16 Spm_«index.shortName»_bitMapIndex = «index.spmProfBitMapIndex»U;
+«ENDFOREACH»
+
+«FOREACH spm.spmConfigSet.spmPowPrf.select(e|e.spmProfileSwDep.size > 0) AS powprof -»
+static const SpmPrfDepLstType Spm_DeptList_Profile_«powprof.shortName»[«powprof.spmProfileSwDep.size»U] = {
+«FOREACH powprof.spmProfileSwDep AS dep SEPARATOR ','»
+	{
+		/* ............................................. prfIndex (uint8)  */
+		SPM_POWPRF_«dep.spmProfRef.shortName»_ID,
+		/* ............................................. prfDepType (Enum) */
+		«dep.spmProfDepType»
+	}
+«ENDFOREACH -»
+};
+
+«ENDFOREACH»
+
+«IF spm.spmConfigSet.spmPowPrf.select(e|e.spmProfileIsLocal == false).size > 0 »
+/* =====================================================================================================
+ * SD Service Configuration for Extended Learning Mode
+ * ..................................... */
+«LET sd.sdConfig.sdInstance.sdClientService AS srvs-»
+«LET Spm_GetUniqueSdClientServiceIds(srvs) AS srvAndInstIds-»
+/* Major version arrays for each unique Sd client service Id */
+	«FOREACH srvAndInstIds AS srvAndInstId -»
+static const uint8 Spm_SdMajorVersions_« srvAndInstId.get(0) -»_« srvAndInstId.get(1) -»[« Spm_GetSdClientServiceCntForId(srvs, srvAndInstId.get(0), srvAndInstId.get(1)) -»] = {
+		«FOREACH Spm_GetMajorVerForSdClientServiceId(srvs, srvAndInstId.get(0), srvAndInstId.get(1)) AS majorVer-»
+    « majorVer -»u,
+		«ENDFOREACH-»
+};
+
+	«ENDFOREACH-»
+«IF Spm_GetUniqueSdClientServiceIds(sd.sdConfig.sdInstance.sdClientService).size > 0 »
+/* SD Service Configuration Array - for extended learning mode */
+/* PRQA S 1533 1 # Kept here for modularity */
+Spm_SdServiceConfigType Spm_SdServiceConfig[SPM_SD_CLIENT_SERVICE_CONFIG_NUM] = {
+	«FOREACH srvAndInstIds AS srvAndInstId -»
+	{	/* ..................................................... serviceId (uint16) */
+		« srvAndInstId.get(0)-»u,
+		/* ..................................................... instanceId (uint16) */
+		« srvAndInstId.get(1)-»u,
+		/* ..................................................... majorVersionsNum (uint32) */
+		« Spm_GetSdClientServiceCntForId(srvs, srvAndInstId.get(0), srvAndInstId.get(1)) -»u,
+		/* ..................................................... majorVersions (const uint8*) */
+	 	&Spm_SdMajorVersions_« srvAndInstId.get(0) -»_« srvAndInstId.get(1) »[0u]
+	},
+	«ENDFOREACH-»
+};
+«ENDIF-»
+«ENDLET-»
+«ENDLET-»
+«ENDIF-»
+
+«FOREACH spm.spmConfigSet.spmPowPrf AS prof -»
+	«IF prof.spmProfActivationTimeOutVehOff != null && prof.spmProfileIsLocal -»
+#define Spm_Prf_«prof.shortName»_ActTOVehOff_val	(«prof.spmProfActivationTimeOutVehOff»U)
+	«ENDIF -»
+«ENDFOREACH»
+
+static const SpmConfPowPrf Spm_Prf_Cfg[«spm.spmConfigSet.spmPowPrf.size»u] = {
+«FOREACH spm.spmConfigSet.spmPowPrf.sortBy(e|e.spmSrvcAndInstID * 256 + e.spmProfNumber) AS powprf ITERATOR pId SEPARATOR ','-»
+	{ /* [«pId.counter0»] = .................................................................... «powprf.shortName» */
+		/* ..................................................... PowPrfID (uint32)       		  							  */
+		«powprf.spmSrvcAndInstID»U,
+		/* ..................................................... PowPrfNum (uint8)       		  						      */
+		«powprf.spmProfNumber»U,
+		/* ..................................................... LowVoltagePriority_VEH_OFF (Spm_LowVoltPriorityLevel)  */
+		«Spm_GetLowPriorityFromParameter(powprf.spmVehDefActPriorOFF)»,
+		/* ..................................................... LowVoltagePriority_VEH_ON  (Spm_LowVoltPriorityLevel)  */
+		«Spm_GetLowPriorityFromParameter(powprf.spmVehDefActPriorON)»,
+		/* ..................................................... TimeOutVehOff_second(uint16)   */
+«IF powprf.spmProfActivationTimeOutVehOff != null && powprf.spmProfileIsLocal -»
+		Spm_Prf_«powprf.shortName»_ActTOVehOff_val,
+«ELSE -»
+		0U,
+«ENDIF -»
+		/* ..................................................... ApplIntfID (uint16)     		  */
+	«IF powprf.spmApplIntfID != null -»
+		&(Spm_«powprf.shortName»_applIfId),
+	«ELSE -»
+		NULL_PTR,
+	«ENDIF -»
+			/* ..................................................... BitMapIndex (uint16)        */
+	«IF powprf.spmProfBitMapIndex != null -»
+		&(Spm_«powprf.shortName»_bitMapIndex),
+	«ELSE -»
+		NULL_PTR,
+	«ENDIF -»
+		/* ..................................................... isLocal (boolean)                */
+		«powprf.spmProfileIsLocal.toString().toUpperCase()»,
+		/* ..................................................... SpmLocActivationAllowed (boolean)*/
+		«IF powprf.spmLocActivationAllowed == true»TRUE,«ELSE»FALSE,«ENDIF»
+		/* ..................................................... PrfDepLstSize (uint16)  		  							  */
+		«powprf.spmProfileSwDep.size»U,
+		/* ..................................................... PrfDepLst (List<uint8>)		                              */
+
+	«IF powprf.spmProfileSwDep.size == 0»
+		NULL_PTR
+	«ELSE -»
+		&Spm_DeptList_Profile_«powprf.shortName»[0u]
+	«ENDIF»
+	}
+«ENDFOREACH -»
+};
+
+/* PRQA S 1532 2 # The struct is defined here for modularity reason. */
+const SpmPowPrf_Cfg_WrpTableType SpmPowPrf_Cfg_WrpTable = {
+«FOREACH spm.spmConfigSet.spmPowPrf.sortBy(e|e.spmSrvcAndInstID * 256 + e.spmProfNumber) AS powprf ITERATOR i SEPARATOR "\t,"-»
+	/* Instance «i.counter0» Profile: ............................................................................... «powprf.shortName» */
+	{
+		&(Spm_Prf_Cfg[«i.counter0»U]),
+«IF powprf.spmComIPduGroupEvnt_Tx.size > 0 -»
+        SPM_«powprf.shortName»_NUM_OF_CTR_PDU_GRP_TX,
+		(Spm_Rte_SwitchPduGroup const *)(&Spm_Rte_SwitchPduGroup_«powprf.shortName»_tx_refs[0]),
+«ELSE -»
+		0U,
+		NULL_PTR,
+«ENDIF-»
+«IF powprf.spmComIPduGroupEvnt_Rx.size > 0 -»
+        SPM_«powprf.shortName»_NUM_OF_CTR_PDU_GRP_RX,
+		(Spm_Rte_SwitchPduGroup const *)(&Spm_Rte_SwitchPduGroup_«powprf.shortName»_rx_refs[0]),
+«ELSE -»
+		0U,
+		NULL_PTR,
+«ENDIF-»
+	}
+«ENDFOREACH»
+};
+
+SpmPgttRowEntry_CfgTableType SpmPgttRowEntry_CfgTable;
+
+/*
+*  The following data structure Spm_NetworkInfo_VLANId_xxxx defines a structure of type SPM_NetworkInfo
+*  where information is stored for the VLANs that are NOT present in the SpmVariantHBVLANCfg BUT VLANs present in
+*  the SpmVLANCom. 
+*  SPM accesses the TcpIp module to retrieve the SrcIp for that specific VLAN.
+*  This is valid only for SPM where there are NOT multiple variants configured. 
+*
+*/
+«LET spm.spmConfigSet.spmPgttEntries.spmVariantCfg.spmVariantHBVLANCfg.spmVLANId.toSet() AS hbVlanIds-»
+«FOREACH spm.spmGeneral.spmVLANCom.select(v | !hbVlanIds.contains(v.spmVLANId)) AS vlan-»
+«LET tcpIp.tcpIpConfig.tcpIpLocalAddr.tcpIpStaticIpAddressConfig.tcpIpStaticIpAddress.select(ip | Spm_ReturnSecondOctetIp(ip) == vlan.spmVLANId) AS matchedIps-»
+SPM_NetworkInfo Spm_NetworkInfo_VLANId_«vlan.spmVLANId» = {
+	/* SourceIp to be used for this VLAN, retrieved from TcpIp module (TcpIpStaticIpAddress parameter) */
+	«IF matchedIps.isEmpty»0u«ELSE»«Spm_ComputeIpAddr(matchedIps.first())»«ENDIF»,
+	/* Multicast destination IP is zero since for this particular VLAN, there is no needs to send the HB. */
+	0u, 
+	/* VLAN id*/
+	«vlan.spmVLANId»
+}
+«ENDLET-»
+«ENDFOREACH-»
+«ENDLET-»
+
+/*
+*  The following Spm_NetworkInfo_Wrap_PerVariant[][] and SPM_NetworkInfo_Wrap[] stores the info for the VLAN. 
+*  
+*  In Spm_NetworkInfo_Wrap_PerVariant[][] info for every VLAN is stored.
+* 
+*  If the SPM has multiple variants configured:
+*      Once the SPM becomes branded, the SPM_NetworkInfo_Wrap[] will point to the 
+*      corresponding entry of Spm_NetworkInfo_Wrap_PerVariant[][].
+*  
+*  If the SPM has only ONE variant configured: 
+*      SPM_NetworkInfo_Wrap[] will point to the only entry Spm_NetworkInfo_Wrap_PerVariant[][] + the 
+*      Spm_NetworkInfo_VLANId_yyyy defined above.
+*/
+SPM_NetworkInfo_WrapType Spm_NetworkInfo_Wrap_PerVariant[SUM_SPM_NUMBER_OF_VARIANTS][SUM_SPM_NUMBER_OF_NET_CONF];
+SPM_NetworkInfo_WrapType SPM_NetworkInfo_Wrap[SUM_SPM_NUMBER_OF_NET_CONF];
+
+/*
+*  The following TrgHndlInfo_xxxx_PerVariant[] (where xxxx is the name of the Target Device) 
+*  stores the SpmTrgAssocWkUpFrm and SpmTrgAssocWkupBit for each variant. 
+*  
+*  If the SPM has multiple variants configured:
+*      Once the SPM becomes branded, the Spm_PowMgr_TrgDvc_List[].SpmTrgDevInfo.trgHndl_p will point to the
+*      corresponding entry of TrgHndlInfo_xxxx_PerVariant.
+*  
+*  If the SPM has only ONE variant configured: 
+*      The Spm_PowMgr_TrgDvc_List[].SpmTrgDevInfo.trgHndl_p will point to the only entry of TrgHndlInfo_xxxx_PerVariant[].
+*
+*/
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc AS trgDvc-»
+	«IF trgDvc.spmTrgDvcVariantHndlng.exists(v | v.spmTrgAssocWkUpFrm != null && v.spmTrgAssocWkupBit != null) -»
+const SpmTrgDvcHndlngInfo * TrgHndlInfo_«trgDvc.shortName»_PerVariant[SUM_SPM_NUMBER_OF_VARIANTS] = {
+	«FOREACH 0.upTo(spm.spmConfigSet.spmPgttEntries.spmVariantCfg.size - 1) AS bid -»
+				NULL_PTR,
+	«ENDFOREACH-»
+};
+	«ENDIF-»
+«ENDFOREACH-»
+
+/* 
+*   The following Spm_WkupFrameInfo_PerVariant[] and Spm_ActiveWkupFrameInfo_p[] are needed to store the 
+*   SpmVariantWkupFrame and SpmVariantWkupBit for the SPM.
+*
+*   If the SPM has multiple variants configured: 
+*   	In Spm_WkupFrameInfo_PerVariant[] information of every variant is stored, and it is used when when the SPM 
+*   	is Unbranded state.
+*   	Once the SPM becomes Branded, Spm_ActiveWkupFrameInfo_p points to the corresponding entry in 
+*    	Spm_WkupFrameInfo_PerVariant[]
+*
+*  If the SPM has only ONE variant configured:
+*      In Spm_WkupFrameInfo_PerVariant[] information for that single variant is stored and Spm_ActiveWkupFrameInfo_p  
+*      will point to it.
+* 
+***/
+const SpmTrgDvcHndlngInfo* Spm_WkupFrameInfo_PerVariant[SUM_SPM_NUMBER_OF_VARIANTS];
+const SpmTrgDvcHndlngInfo *Spm_ActiveWkupFrameInfo_p;
+
+«IF Spm_ExistMultipleVariantConfigured(spm) == false -»	
+/**
+ * @brief Getter function for understand if the SPM needs to send the HB over a particular VLAN.
+ *
+ * If the MulticastAddress is set to zero the transmission of the HB is not needed over this VLAN, otherwise it is needed.
+ * 
+ * @param[in] vlanIndex Index of the VLAN to check the need for sending the HB over it. 
+ *
+ * @retval TRUE: HB needs to be sent over this VLAN
+ * 		   FALSE: HB does not need to be sent over this VLAN
+ */
+/* PRQA S 1532 1 # Defined here for modularity reason. */
+boolean Spm_GetHBFrameNeedsToBeSentOverThisVLAN(const uint16 vlanIndex){
+	boolean needsToBeSent = FALSE;
+
+	if(vlanIndex < (uint8)SUM_SPM_NUMBER_OF_NET_CONF){
+
+		/* If the MulticastAddress is set to zero, this means that this VLAN is not described in the
+		'Heartbeat Multicast IP Address Information' section of the 'xxx_Power_Graph_yyy.yaml'. 
+		So that, HB is not needed to be sent in this situation. */	
+		if(SPM_NetworkInfo_Wrap[vlanIndex].SPM_NetInfo->MulticastAddress == 0u){
+			needsToBeSent = FALSE;
+		}else{
+			needsToBeSent = TRUE;
+		}
+	}
+	
+	return needsToBeSent;
+}
+«ENDIF-»	
+
+/* PRQA S 3335 11 # The function will be used from other translation units */
+/* PRQA S 1532 10 # Defined here for modularity reason */
+Std_ReturnType Spm_HandleVLANCommunication(
+		uint16 				        const 		vlanId,
+		Spm_CommHanldeDirectionType const		frameDirection,
+		Spm_CommHandleFrameType     const 		frameType,
+		SPM_HB_dt_Prv              *const 		data_hb,
+		SPM_WkUp_dt_Prv			   *const 		data_wkup,
+		SPM_dt_Prv			       *const 		data_sminfo,
+		uint8                      *const 		metadataPtr
+	)
+{
+	Std_ReturnType rtn_u8;
+	uint8 vlanIdx_comHndlr_u8;
+	uint8 vlanMapItmIdx_u8;
+	Spm_CommHandleFrameType	rcv_comHnld_val_en;
+	const struct { uint8 vlan_index; uint16 vlan_value; } vlanIdMapping_sType_val[«spm.spmGeneral.spmVLANCom.size»U] = {
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan_pgtt ITERATOR i -»
+		{ SPM_«vlan_pgtt.shortName.toUpperCase()»_VLAN_ID, «vlan_pgtt.spmVLANId» },
+«ENDFOREACH -»
+	};
+
+	static Spm_VLAN_Heartbeat_ComHndlrType_fptr const Spm_vlan_hb_comHndlr[«spm.spmGeneral.spmVLANCom.size-»u] = {
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan -»
+		&(Spm_«vlan.shortName»_PwrMgrHeartbeatHandleCom),
+«ENDFOREACH -»
+	};
+
+	static Spm_VLAN_WakeUp_ComHndlrType_fptr const Spm_vlan_wkup_comHndlr[«spm.spmGeneral.spmVLANCom.size-»u] = {
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan -»
+		&(Spm_«vlan.shortName»_PwrMgrWakeupHandleCom),
+«ENDFOREACH -»
+	};
+
+	static Spm_VLAN_WakeUp_ComHndlrType_fptr const Spm_vlan_wkup_Multicast_comHndlr[«spm.spmGeneral.spmVLANCom.size-»u] = {
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan -»
+		&(Spm_«vlan.shortName»_PwrMgrWakeupMulticastHandleCom),
+«ENDFOREACH -»
+	};
+
+	static Spm_VLAN_SmInfo_ComHndlrType_fptr const Spm_vlan_sm_comHndlr[«spm.spmGeneral.spmVLANCom.size-»u] = {
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan -»
+		&(Spm_«vlan.shortName»_SwMgrInfoHandleCom),
+«ENDFOREACH -»
+	};
+
+	vlanMapItmIdx_u8 = 0U;
+	rcv_comHnld_val_en = SPM_INV_COMHNDLING;
+«IF spm.spmGeneral.spmVLANCom.size > 1 -»
+
+	while (vlanMapItmIdx_u8 < SPM_VLAN_COMMHNDL_SIZE) {
+«ENDIF -»
+
+		if (vlanIdMapping_sType_val[vlanMapItmIdx_u8].vlan_value == vlanId) {
+			vlanIdx_comHndlr_u8 = vlanIdMapping_sType_val[vlanMapItmIdx_u8].vlan_index;
+			rcv_comHnld_val_en = frameType;
+«IF spm.spmGeneral.spmVLANCom.size > 1 -»
+			break;
+«ENDIF -»
+		}
+
+«IF spm.spmGeneral.spmVLANCom.size > 1 -»
+		vlanMapItmIdx_u8 += 1U;
+	}
+«ENDIF -»
+
+	switch (rcv_comHnld_val_en) {
+		case SPM_HB_COMHNDLING: {
+			if (data_hb != NULL_PTR) {
+				rtn_u8 = Spm_vlan_hb_comHndlr[vlanIdx_comHndlr_u8](
+											frameDirection,
+											&(data_hb->SrcPMId),
+											&(data_hb->HrtBtCntr),
+											&(data_hb->NmbrPrfAct), metadataPtr);
+			}
+			else {
+				rtn_u8 = E_NOT_OK;
+			}
+
+			break;
+		}
+		case SPM_SM_COMHNDLING: {
+			if (data_sminfo != NULL_PTR) {
+				rtn_u8 = Spm_vlan_sm_comHndlr[vlanIdx_comHndlr_u8](
+											frameDirection,
+											&(data_sminfo->PMSrcId),
+											&(data_sminfo->PMDestId),
+											&(data_sminfo->PR_MsgType),
+											&(data_sminfo->RSPS_MsgType),
+											&(data_sminfo->ProfileRequest),
+											&(data_sminfo->RequestStatusProfileState), metadataPtr);
+			}
+			else {
+				rtn_u8 = E_NOT_OK;
+			}
+
+			break;
+		}
+		case SPM_WK_COMHNDLING: {
+			if (data_wkup != NULL_PTR) {
+				rtn_u8 = Spm_vlan_wkup_comHndlr[vlanIdx_comHndlr_u8](
+											frameDirection,
+											&(data_wkup->SrcPMId),
+											&(data_wkup->WakeupFrameA[0U]),
+											&(data_wkup->WakeupFrameB[0U]),
+											&(data_wkup->WakeupFrameC[0U]), metadataPtr);
+			}
+			else {
+				rtn_u8 = E_NOT_OK;
+			}
+
+			break;
+		}
+		case SPM_WK_MULTICAST_COMHNDLING: {
+			if (data_wkup != NULL_PTR) {
+				rtn_u8 = Spm_vlan_wkup_Multicast_comHndlr[vlanIdx_comHndlr_u8](
+											frameDirection,
+											&(data_wkup->SrcPMId),
+											&(data_wkup->WakeupFrameA[0U]),
+											&(data_wkup->WakeupFrameB[0U]),
+											&(data_wkup->WakeupFrameC[0U]), metadataPtr);
+			}
+			else {
+				rtn_u8 = E_NOT_OK;
+			}
+
+			break;
+		}
+		default: {
+			rtn_u8 = E_NOT_OK;
+			break;
+		}
+	}
+
+	return rtn_u8;
+}
+
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan SEPARATOR "\n"-»
+«LET vlan.spmVLANComPwrMgrHeartbeat AS hb»
+static
+Std_ReturnType Spm_«vlan.shortName»_PwrMgrHeartbeatHandleCom(
+		Spm_CommHanldeDirectionType                  const   in0_out1,
+		uint32 				                        *const   srcIpU32Ptr,
+		uint32 					                    *const   counterU32Ptr,
+		uint16 					                    *const   activeProfilesU16Ptr,
+		uint8  					                    *const   metadataPtr
+	)
+{
+	Std_ReturnType rtn_u8;
+
+	switch (in0_out1) {
+		case SPM_RECV_HNDL: { 
+	«IF Spm_PwrMgrHeartbeatRxIsConfigured(vlan) -»
+
+		«IF hb.spmPwrMgrHeartbeatRxSendRecvIntRef.size > 1 -»
+			/* Variable to track the next port to take into account */
+			static uint8 nextPort_u8 = 0;
+			uint8 index_u8;
+			uint8 currentPort_u8; /* Variable to hold the current port index being processed*/ 
+
+			for( index_u8 = 0u; index_u8 < (uint8) SPM_«vlan.shortName»_NUM_OF_HB_RX_CONFIG; index_u8++ ) 
+			{ 
+				/* Calculate the current port index and call the rte API*/
+				currentPort_u8 = ((nextPort_u8 + index_u8) % SPM_«vlan.shortName»_NUM_OF_HB_RX_CONFIG); 
+				
+				/* PRQA S 2002 1 # Missing default: no risk as currentPort_u8 is always within the valid range of 0 to SPM_«vlan.shortName»_NUM_OF_HB_RX_CONFIG */
+				switch (currentPort_u8)
+				{
+				«FOREACH hb.spmPwrMgrHeartbeatRxSendRecvIntRef AS singleHbRx ITERATOR i-»				
+					case «i.counter0»:
+					{
+						«hb.spmPwrMgrHeartbeatRxImpDataTypeRef.get(i.counter0).toString().split("/").last()» data_in«i.counter0»;
+						rtn_u8 = Rte_Receive_RP_SPM_«vlan.shortName»_PwrMgrHeartbeatRx«i.counter0»_«singleHbRx.toString().split("/").last()»(&(data_in«i.counter0»), metadataPtr);
+						
+						/* Check if the data is received successfully, populate the output parameters and update the NextPort index to process */
+						if( rtn_u8 == E_OK){
+							*(srcIpU32Ptr)   			= data_in«i.counter0».SrcPMId;
+							*(counterU32Ptr) 			= data_in«i.counter0».HrtBtCntr;
+							*(activeProfilesU16Ptr)     = data_in«i.counter0».NmbrPrfAct;
+						}
+						break;
+					}		
+			    «ENDFOREACH»
+				}
+				
+				/* Data received successfully, populate the output parameters and update the NextPort index to process */
+				if( rtn_u8 == E_OK ){
+					nextPort_u8 = (currentPort_u8 + 1u) % SPM_«vlan.shortName»_NUM_OF_HB_RX_CONFIG; 
+					break; // Exit the loop as data has been received successfully
+				}
+				/* Otherwise, proceed to the next available port configured*/
+			}
+		«ELSE-»
+			«hb.spmPwrMgrHeartbeatRxImpDataTypeRef_Foreign.toString().split("/").last()» data_in;
+
+			rtn_u8 = Rte_Receive_RP_SPM_«vlan.shortName»_PwrMgrHeartbeatRx0_«hb.spmPwrMgrHeartbeatRxSendRecvIntRef_Foreign.toString().split("/").last()»(&(data_in), metadataPtr);
+			if(E_OK == rtn_u8){
+				*(srcIpU32Ptr)   			= data_in.SrcPMId;
+				*(counterU32Ptr) 			= data_in.HrtBtCntr;
+				*(activeProfilesU16Ptr)     = data_in.NmbrPrfAct;
+			}
+		«ENDIF-»	
+		
+	«ELSE-»
+			rtn_u8 = E_NOT_OK;
+	«ENDIF-»
+			break;
+		}
+		case SPM_SEND_HNDL: {
+			«IF hb != null && hb.spmPwrMgrHeartbeatTxImpDataTypeRef_Foreign != null && hb.spmPwrMgrHeartbeatTxSendRecvIntRef_Foreign != null -»
+			«hb.spmPwrMgrHeartbeatTxImpDataTypeRef_Foreign.toString().split("/").last()» data_out;
+
+			data_out.SrcPMId 	        = *(srcIpU32Ptr);
+			data_out.HrtBtCntr 	        = *(counterU32Ptr);
+			data_out.NmbrPrfAct         = *(activeProfilesU16Ptr);
+
+			rtn_u8 = Rte_Send_PP_SPM_«vlan.shortName»_PwrMgrHeartbeatTx_«hb.spmPwrMgrHeartbeatTxSendRecvIntRef_Foreign.toString().split("/").last()»(&(data_out), metadataPtr);
+			«ELSE-»
+			rtn_u8 = E_NOT_OK;
+			«ENDIF-»
+
+			break;
+		}
+		default: {
+			rtn_u8 = E_NOT_OK;
+			break;
+		}
+	}
+
+	return rtn_u8;
+}
+«ENDLET»
+«LET vlan.spmVLANComPwrMgrWakeupFrames AS wkup -»
+
+/* PRQA S 3469 EOF # Functions Macro are used as getters to improve code readability. Review of code and unit testing has verified the rightness */
+
+static
+Std_ReturnType Spm_«vlan.shortName»_PwrMgrWakeupHandleCom(
+		Spm_CommHanldeDirectionType                  const   in0_out1,
+		uint32 					 	                *const   srcIpU32Ptr,
+		uint8  				                        *const   A_wkupU8Ptr,
+		uint8  					                    *const   B_wkupU8Ptr,
+		uint8  					                    *const   C_wkupU8Ptr,
+		uint8  					                    *const   metadataPtr
+	)
+{
+	Std_ReturnType rtn_u8;
+
+	switch (in0_out1) {
+		case SPM_RECV_HNDL: { /* IN */
+			«IF wkup != null && wkup.spmPwrMgrWakeupRxImpDataTypeRef_Foreign != null && wkup.spmPwrMgrWakeupRxSendRecvIntRef_Foreign != null -»
+			«wkup.spmPwrMgrWakeupRxImpDataTypeRef_Foreign.toString().split("/").last()» data_in;
+
+			rtn_u8 = Rte_Receive_RP_SPM_«vlan.shortName»_PwrMgrWakeupRx_«wkup.spmPwrMgrWakeupRxSendRecvIntRef_Foreign.toString().split("/").last()»(&(data_in), metadataPtr);
+			
+			if(E_OK == rtn_u8){
+				*(srcIpU32Ptr) = data_in.SrcPMId;
+				(void)Sum_Common_MemCopy(A_wkupU8Ptr, &(data_in.WakeupFrameA[0u]), sizeof(data_in.WakeupFrameA));
+				(void)Sum_Common_MemCopy(B_wkupU8Ptr, &(data_in.WakeupFrameB[0u]), sizeof(data_in.WakeupFrameB));
+				(void)Sum_Common_MemCopy(C_wkupU8Ptr, &(data_in.WakeupFrameC[0u]), sizeof(data_in.WakeupFrameC));
+			}
+			«ELSE-»
+			rtn_u8 = E_NOT_OK;
+			«ENDIF-»
+			
+			break;
+		}
+		case SPM_SEND_HNDL: { /* OUT */
+			«IF wkup != null && wkup.spmPwrMgrWakeupTxImpDataTypeRef_Foreign != null && wkup.spmPwrMgrWakeupTxSendRecvIntRef_Foreign != null -»
+			«wkup.spmPwrMgrWakeupTxImpDataTypeRef_Foreign.toString().split("/").last()» data_out;
+
+			data_out.SrcPMId = *(srcIpU32Ptr);
+			(void)Sum_Common_MemCopy(&(data_out.WakeupFrameA[0u]), A_wkupU8Ptr, sizeof(data_out.WakeupFrameA));
+			(void)Sum_Common_MemCopy(&(data_out.WakeupFrameB[0u]), B_wkupU8Ptr, sizeof(data_out.WakeupFrameB));
+			(void)Sum_Common_MemCopy(&(data_out.WakeupFrameC[0u]), C_wkupU8Ptr, sizeof(data_out.WakeupFrameC));
+
+			rtn_u8 = Rte_Send_PP_SPM_«vlan.shortName»_PwrMgrWakeupTx_«wkup.spmPwrMgrWakeupTxSendRecvIntRef_Foreign.toString().split("/").last()»(&(data_out), metadataPtr);
+			«ELSE-»
+			rtn_u8 = E_NOT_OK;
+			«ENDIF-»
+
+			break;
+		}
+		default: {
+			rtn_u8 = E_NOT_OK;
+			break;
+		}
+	}
+
+	return rtn_u8;
+}
+«ENDLET»
+«LET vlan.spmVLANComPwrMgrWakeupFramesMulticast AS wkupMulticast -»
+static
+Std_ReturnType Spm_«vlan.shortName»_PwrMgrWakeupMulticastHandleCom(
+		Spm_CommHanldeDirectionType                  const   in0_out1,
+		uint32 					 	                *const   srcIpU32Ptr,
+		uint8  				                        *const   A_wkupU8Ptr,
+		uint8  					                    *const   B_wkupU8Ptr,
+		uint8  					                    *const   C_wkupU8Ptr,
+		uint8  					                    *const   metadataPtr
+	)
+{
+	Std_ReturnType rtn_u8;
+
+	switch (in0_out1) {
+		case SPM_RECV_HNDL: { /* IN */
+			«IF wkupMulticast != null && wkupMulticast.spmPwrMgrWakeupRxImpDataTypeMulticastRef_Foreign != null && wkupMulticast.spmPwrMgrWakeupRxSendRecvIntMulticastRef_Foreign != null -»
+			«wkupMulticast.spmPwrMgrWakeupRxImpDataTypeMulticastRef_Foreign.toString().split("/").last()» data_in;
+
+			rtn_u8 = Rte_Receive_RP_SPM_«vlan.shortName»_PwrMgrWakeupRx_Multicast_«wkupMulticast.spmPwrMgrWakeupRxSendRecvIntMulticastRef_Foreign.toString().split("/").last()»(&(data_in), metadataPtr);
+			
+			if(E_OK == rtn_u8){
+				*(srcIpU32Ptr) = data_in.SrcPMId;
+				(void)Sum_Common_MemCopy(A_wkupU8Ptr, &(data_in.WakeupFrameA[0u]), sizeof(data_in.WakeupFrameA));
+				(void)Sum_Common_MemCopy(B_wkupU8Ptr, &(data_in.WakeupFrameB[0u]), sizeof(data_in.WakeupFrameB));
+				(void)Sum_Common_MemCopy(C_wkupU8Ptr, &(data_in.WakeupFrameC[0u]), sizeof(data_in.WakeupFrameC));
+			}
+			«ELSE-»
+			rtn_u8 = E_NOT_OK;
+			«ENDIF-»
+			break;
+		}
+		default: {
+			rtn_u8 = E_NOT_OK;
+			break;
+		}
+	}
+
+	return rtn_u8;
+}
+«ENDLET»
+«LET vlan.spmVLANComSwrMgrInfo AS sm -»
+static
+Std_ReturnType Spm_«vlan.shortName»_SwMgrInfoHandleCom(
+		Spm_CommHanldeDirectionType    			     const   in0_out1,
+		uint32 							 			*const   srcIpU32Ptr,
+		uint32 							 			*const   dstIpU32Ptr,
+		uint8										*const	 prMsgTypeU8Ptr,
+		uint8										*const	 rspsMsgTypeU8Ptr,
+		ProfileRequestDataType_SvcStruct 		    *const	 reqTypeSRef,
+		RequestStatusProfileStateDataType_SvcStruct *const   resTypeSRef,
+		uint8										*const	 metadataPtr
+	)
+{
+	Std_ReturnType rtn_u8;
+
+	switch (in0_out1) {
+		case SPM_RECV_HNDL: { /* IN */
+			«IF sm != null && sm.spmSwMgrInfoRxImpDataTypeRef_Foreign != null && sm.spmSwMgrInfoRxSendRecvIntRef_Foreign != null -»
+			«sm.spmSwMgrInfoRxImpDataTypeRef_Foreign.toString().split("/").last()» data_in;
+
+			rtn_u8 = Rte_Receive_RP_SPM_«vlan.shortName»_SwMgrInfoRx_«sm.spmSwMgrInfoRxSendRecvIntRef_Foreign.toString().split("/").last()»(&(data_in), metadataPtr);
+
+			if(E_OK == rtn_u8){
+				
+			*(srcIpU32Ptr) = data_in.PMSrcId;
+			*(dstIpU32Ptr) = data_in.PMDestId;
+
+			*(prMsgTypeU8Ptr) = 0u;
+			*(rspsMsgTypeU8Ptr) = 1u;
+
+				reqTypeSRef->Size_Indicator = data_in.ProfileRequest.Size_Indicator;
+
+				{
+					uint16 req_idx;
+
+					for (req_idx = 0U; req_idx < data_in.ProfileRequest.Size_Indicator; req_idx++) {
+						SPM_SwMgrInfo_Req_ProfileID_SWID(&(data_in.ProfileRequest), reqTypeSRef, req_idx);
+						SPM_SwMgrInfo_Req_ProfileID_ProfileNumber(&(data_in.ProfileRequest), reqTypeSRef, req_idx);
+						SPM_SwMgrInfo_Req_RequestType(&(data_in.ProfileRequest), reqTypeSRef, req_idx);
+					}
+				}
+
+				resTypeSRef->Size_Indicator = data_in.RequestStatusProfileState.Size_Indicator;
+
+				{
+					uint16 res_idx;
+
+					for (res_idx = 0U; res_idx < data_in.RequestStatusProfileState.Size_Indicator; res_idx++) {
+						SPM_SwMgrInfo_Res_ProfileID_SWID(&(data_in.RequestStatusProfileState), resTypeSRef, res_idx);
+						SPM_SwMgrInfo_Res_ProfileID_ProfileNumber(&(data_in.RequestStatusProfileState), resTypeSRef, res_idx);
+						SPM_SwMgrInfo_Res_RequestStatus(&(data_in.RequestStatusProfileState), resTypeSRef, res_idx);
+						SPM_SwMgrInfo_Res_ProfileStatus(&(data_in.RequestStatusProfileState), resTypeSRef, res_idx);
+					}
+				}
+			}
+			«ELSE-»
+			rtn_u8 = E_NOT_OK;
+			«ENDIF-»
+			break;
+		}
+		case SPM_SEND_HNDL: { /* OUT */
+			«IF sm != null && sm.spmSwMgrInfoTxImpDataTypeRef_Foreign != null && sm.spmSwMgrInfoTxSendRecvIntRef_Foreign != null -»
+			«sm.spmSwMgrInfoTxImpDataTypeRef_Foreign.toString().split("/").last()» data_out;
+
+			data_out.PMSrcId  = *(srcIpU32Ptr);
+			data_out.PMDestId = *(dstIpU32Ptr);
+
+			data_out.PR_MsgType = 0u;
+			data_out.RSPS_MsgType = 1u;
+
+			{
+				data_out.ProfileRequest.Size_Indicator = reqTypeSRef->Size_Indicator;
+
+				{
+					uint16 req_idx;
+
+					for (req_idx = 0U; req_idx < data_out.ProfileRequest.Size_Indicator; req_idx++) {
+						SPM_SwMgrInfo_Req_ProfileID_SWID(reqTypeSRef, &(data_out.ProfileRequest), req_idx);
+						SPM_SwMgrInfo_Req_ProfileID_ProfileNumber(reqTypeSRef, &(data_out.ProfileRequest), req_idx);
+						SPM_SwMgrInfo_Req_RequestType(reqTypeSRef, &(data_out.ProfileRequest), req_idx);
+					}
+				}
+
+				data_out.RequestStatusProfileState.Size_Indicator = resTypeSRef->Size_Indicator;
+
+				{
+					uint16 res_idx;
+
+					for (res_idx = 0U; res_idx < resTypeSRef->Size_Indicator; res_idx++) {
+						SPM_SwMgrInfo_Res_ProfileID_SWID(resTypeSRef, &(data_out.RequestStatusProfileState), res_idx);
+						SPM_SwMgrInfo_Res_ProfileID_ProfileNumber(resTypeSRef, &(data_out.RequestStatusProfileState), res_idx);
+						SPM_SwMgrInfo_Res_RequestStatus(resTypeSRef, &(data_out.RequestStatusProfileState), res_idx);
+						SPM_SwMgrInfo_Res_ProfileStatus(resTypeSRef, &(data_out.RequestStatusProfileState), res_idx);
+					}
+				}
+			}
+
+			rtn_u8 = Rte_Send_PP_SPM_«vlan.shortName»_SwMgrInfoTx_«sm.spmSwMgrInfoTxSendRecvIntRef_Foreign.toString().split("/").last()»(&(data_out), metadataPtr);
+			«ELSE-»
+			rtn_u8 = E_NOT_OK;
+			«ENDIF-»
+
+			break;
+		}
+		default: {
+			rtn_u8 = E_NOT_OK;
+			break;
+		}
+	}
+
+	return rtn_u8;
+}
+«ENDLET -»
+
+«ENDFOREACH»
+
+/* EOF */
+
+
+
+«ENDFILE-»
+«ENDDEFINE»

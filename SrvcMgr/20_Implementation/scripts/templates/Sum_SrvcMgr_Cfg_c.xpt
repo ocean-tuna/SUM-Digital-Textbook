@@ -1,0 +1,577 @@
+«IMPORT bsw»
+«IMPORT bsw::SrvcMgrModule»
+«IMPORT bsw::Sd»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+
+«EXTENSION Util::Sum_SrvcMgr_Utils»
+«DEFINE Root FOR Autosar»
+	«EXPAND SrvcMgr FOR ecu»
+«ENDDEFINE»
+
+«DEFINE SrvcMgr FOR Ecu»
+
+«FILE "Sum_SrvcMgr_Cfg.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Banner
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SrvcMgr
+ * Date        : Apr 20, 2026
+ * Revision    : 8.0.1_Pr16
+ * Description : Source file for Service Manager Config
+ ***************************************************************************************************
+ * END:Banner
+ ***************************************************************************************************
+*/
+#include "Sum_SrvcMgr_Prv.h"
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+«IF sd.sdConfig.sdServiceGroup.size > 0 -»
+static FUNC(uint16, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_GetSrvcGrpId(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index);
+«ENDIF-»
+static FUNC(uint16, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_GetSrvcId(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index);
+
+typedef P2FUNC(uint16, TYPEDEF, (Sum_SrvcMgr_prv_GetIdType_fp)) (CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index);
+/*
+ ***************************************************************************************************
+ * Variables
+ ***************************************************************************************************
+ */
+/*
+ ***************************************************************************************************
+ * Functions
+ ***************************************************************************************************
+ */
+«FOREACH sd.sdConfig.sdServiceGroup AS servicegroup-»
+«LET servicegroup.sdServiceGroupHandleId AS GroupId-»
+«LET servicegroup.shortName AS NameGroup-»
+    «IF (sd.sdConfig.sdInstance.sdClientService.sdServiceGroupRef.shortName.contains(NameGroup) || sd.sdConfig.sdInstance.sdServerService.sdServiceGroupRef.shortName.contains(NameGroup)) == true-»
+/* Represent the Service Ids associated to the Service Group «servicegroup.shortName» */
+static const uint16 Sum_SrvcMgr_prv_ListOfSrvcsIdOfsrvcGrpId_«NameGroup»[] = {
+        «FOREACH sd.sdConfig.sdInstance AS SdInstance-»
+            «FOREACH SdInstance.sdClientService AS SdService-»
+                «FOREACH SdService.sdServiceGroupRef AS GroupRef -»
+                    «IF GroupId == GroupRef.sdServiceGroupHandleId -»
+    «SdService.sdClientServiceId»u,
+                    «ENDIF-»
+                «ENDFOREACH-»
+            «ENDFOREACH-»
+        «FOREACH SdInstance.sdServerService AS SdService-»
+            «FOREACH SdService.sdServiceGroupRef AS GroupRef -»
+                «IF GroupId == GroupRef.sdServiceGroupHandleId -»
+    «SdService.sdServerServiceId»u,
+                «ENDIF-»
+            «ENDFOREACH-»
+        «ENDFOREACH-»
+        «ENDFOREACH-»
+};
+    «ENDIF-»
+«ENDLET-»
+«ENDLET-»
+«ENDFOREACH-»
+
+«IF sd.sdConfig.sdServiceGroup.size > 0 -»
+/* Each member represent a Service Group instance. */
+static const SUM_SrvcMgr_SrvcGrpType SrvcMgr_SrvcGrpInfo[] =
+{
+    «FOREACH sd.sdConfig.sdServiceGroup.sortBy(e | e.sdServiceGroupHandleId) AS servicegroup-»
+        «LET servicegroup.sdServiceGroupHandleId AS GroupId-»
+        «LET servicegroup.shortName AS NameGroup-»
+    {
+        /* Service Group Id */
+        «GroupId»u,
+        «IF (sd.sdConfig.sdInstance.sdClientService.sdServiceGroupRef.shortName.contains(NameGroup) || sd.sdConfig.sdInstance.sdServerService.sdServiceGroupRef.shortName.contains(NameGroup)) == true-»
+        /* List of Service IDs associated with this Service Group */
+        Sum_SrvcMgr_prv_ListOfSrvcsIdOfsrvcGrpId_«NameGroup»,
+        /* Total number of Services associated with this Service Group */
+		«(sd.sdConfig.sdInstance.sdClientService.collect(e | e.sdServiceGroupRef.shortName.contains(NameGroup))).select(e | e == true).size + (sd.sdConfig.sdInstance.sdServerService.collect(e | e.sdServiceGroupRef.shortName.contains(NameGroup))).select(e | e == true).size»u
+        «ELSE-»
+        /* No Services associated with this Service Group */
+        NULL_PTR,
+        0x00u
+        «ENDIF-»
+    },
+        «ENDLET-»
+        «ENDLET-»
+    «ENDFOREACH-»
+};
+«ENDIF-»
+
+«FOREACH sd.sdConfig.sdInstance AS SdInstance-»
+    «FOREACH SdInstance.sdClientService AS SdService-»
+        «LET SdService.sdConsumedEventGroup AS Event-»
+        «IF Event.size > 0-»
+/* Represents the List of SdConsumedEventGroupHandleId of SdConsumedEventGroups associated to the Client Service «SdService.shortName». */
+static const uint16 SrvcMgr_ListOfSdConsumedEventGroup_by_«SdService.shortName»[] =
+{
+            «FOREACH Event.sdConsumedEventGroupHandleId AS EventId-»
+            «EventId-»u,
+            «ENDFOREACH-»
+
+};
+        «ENDIF-»
+        «ENDLET-»
+    «ENDFOREACH-»
+«ENDFOREACH-»
+
+«FOREACH sd.sdConfig.sdInstance AS SdInstance-»
+	«FOREACH SdInstance.sdClientService AS SdService-»
+        «LET SdService.sdConsumedEventGroup AS Event-»
+        «IF Event.size > 0-»
+/* Informations related the SdConsumedEventGroups of the Client Service «SdService.shortName». */
+static const SrvcMgr_SrvcClientSdConsumedEventGroupInfoType SrvcMgr_SrvcClientSdConsumedEventGroupInfo_«SdService.shortName» =
+{
+    /* Total number of SdConsumedEventGroups configured */
+    «Event.size»u,
+    /* The HandleIds list by which the BswM can identify this EventGroup */
+    SrvcMgr_ListOfSdConsumedEventGroup_by_«SdService.shortName»
+};
+        «ENDIF-»
+		«ENDLET-»
+	«ENDFOREACH-»
+«ENDFOREACH-»
+
+
+«FOREACH sd.sdConfig.sdInstance AS SdInstance-»
+    «FOREACH SdInstance.sdClientService AS SdService-»
+        «LET SdService.sdServiceGroupRef AS GroupIdRef-»
+        «IF GroupIdRef.size > 0-»
+/* Represents a list of the Service Groups IDs to which the Client Service «SdService.shortName» is associated. */
+static const uint16 Sum_SrvcMgr_prv_ListOfSrvcGrpIdsOfSrvcId_«SdService.sdClientServiceId»[] =
+{
+            «FOREACH SdService.sdServiceGroupRef AS GroupIdServices-»
+        «GroupIdServices.sdServiceGroupHandleId»u,
+            «ENDFOREACH-»
+};
+        «ENDIF-»
+        «ENDLET-»
+    «ENDFOREACH-»
+    «FOREACH SdInstance.sdServerService AS SdService-»
+        «LET SdService.sdServiceGroupRef AS GroupIdRef-»
+        «IF GroupIdRef.size > 0-»
+/* Represents a list of the Service Groups IDs to which the Server Service «SdService.shortName» is associated. */
+static const uint16 Sum_SrvcMgr_prv_ListOfSrvcGrpIdsOfSrvcId_«SdService.sdServerServiceId»[] =
+{
+        «FOREACH SdService.sdServiceGroupRef AS GroupIdServices-»
+        «GroupIdServices.sdServiceGroupHandleId»u,
+        «ENDFOREACH-»
+};
+        «ENDIF-»
+        «ENDLET-»
+    «ENDFOREACH-»
+«ENDFOREACH-»
+
+«FOREACH sd.sdConfig.sdInstance AS SdInstance-»
+    «FOREACH SdInstance.sdClientService AS SdService-»
+        «LET SdService.sdServiceGroupRef AS GroupIdRef-»
+        «IF GroupIdRef.size > 0-»
+/** Information about the Services Group referenced by the Client Service. */
+static const SrvcMgr_SrvcsGrpAssociatedToSrvcInfoType SrvcMgr_SrvcsGrpAssociatedToSrvc_«SdService.shortName-» =
+{
+	/* Total number of Service Group(s) */
+    «GroupIdRef.size»u,
+    /* List of Service Group Id(s) */
+    Sum_SrvcMgr_prv_ListOfSrvcGrpIdsOfSrvcId_«SdService.sdClientServiceId»
+};
+        «ENDIF-»
+        «ENDLET-»
+    «ENDFOREACH-»
+    «FOREACH SdInstance.sdServerService AS SdService-»
+        «LET SdService.sdServiceGroupRef AS GroupIdRef-»
+        «IF GroupIdRef.size > 0-»
+/** Information about the Services Group referenced by the Server Service. */
+static const SrvcMgr_SrvcsGrpAssociatedToSrvcInfoType SrvcMgr_SrvcsGrpAssociatedToSrvc_«SdService.shortName-» =
+{
+	/* Total number of Service Group(s) */
+    «GroupIdRef.size-»u,
+     /* List of Service Group Id(s) */
+    Sum_SrvcMgr_prv_ListOfSrvcGrpIdsOfSrvcId_«SdService.sdServerServiceId»
+};
+        «ENDIF-»
+        «ENDLET-»
+    «ENDFOREACH-»
+«ENDFOREACH-»
+
+/*PRQA S 3678 2*/ //The following array is not declared as CONST since the member SrvcMgr_CalibrationState can be set at startup.
+/* Each member represent a Service instance. */
+static SUM_SrvcMgr_SrvcInfoType SrvcMgr_SrvcInfo[] =
+{
+«FOREACH SrvcMgr_CreateListOfAllService(sd.sdConfig.sdInstance.sdClientService, sd.sdConfig.sdInstance.sdServerService) AS Srvc-»
+  {
+    /* Service Id */
+    «Srvc.getProperty("id")»u,
+    /* Service Istance ID */
+    «Srvc.getProperty("ServiceIstanceId")»u,
+    /* Service Major Version */
+    «Srvc.getProperty("ServiceMajorVers")»u,
+    /* HandleId used by BswM to identify the Service Instance */
+    «Srvc.getProperty("HandleId")»u,
+     /* Information of the Services Group to which this Service is associated */
+    «IF Srvc.getProperty("GroupIdRefSize") > 0-»
+    &SrvcMgr_SrvcsGrpAssociatedToSrvc_«Srvc.getProperty("ServiceName")-»,
+    «ELSE-»
+    NULL_PTR,
+    «ENDIF-»
+     /* Information about the SdConsumedEventGroups of a Client Service */
+    «IF (Srvc.getProperty("IsClient") == "true" && Srvc.getProperty("CnsmdEvntGrp") > 0) -»
+    &SrvcMgr_SrvcClientSdConsumedEventGroupInfo_«Srvc.getProperty("ServiceName")»,
+    «ELSE-»
+    NULL_PTR,
+    «ENDIF-»
+    /* Flag to represent if the Service is a Client (T) or a Server Service (F)*/
+    «IF (Srvc.getProperty("IsClient") == "true")-»
+    TRUE,
+    «ELSE-»
+    FALSE,
+    «ENDIF-»
+    /* Calibration state of the Service */
+    SUM_SrvcMgr_CalibrationON
+  },
+«ENDFOREACH-»
+};
+
+/**
+ * @brief Returns the ID value of the Service corresponding to Sum_SrvcMgr_prv_Index, present in the SrvcMgr_SrvcInfo.
+ */
+static FUNC(uint16, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_GetSrvcId(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index){
+    return SrvcMgr_SrvcInfo[Sum_SrvcMgr_prv_Index].SrvcMgr_SrvcId;
+}
+
+/**
+ * @brief Returns the HandleId value of the Service corresponding to Sum_SrvcMgr_prv_Index, present the SrvcMgr_SrvcInfo.
+ */
+FUNC(uint16, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_GetSrvcHandleId(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index){
+    return SrvcMgr_SrvcInfo[Sum_SrvcMgr_prv_Index].SrvcMgr_HandleId;
+}
+
+/**
+ * @brief Returns TRUE if the Service (in position Sum_SrvcMgr_prv_Index inside the SrvcMgr_SrvcInfo) is a client, FALSE if it is a server.
+ */
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_IsClientSrvc(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index){
+    return SrvcMgr_SrvcInfo[Sum_SrvcMgr_prv_Index].SrvcMgr_isClientSrvc;
+}
+
+«IF sd.sdConfig.sdServiceGroup.size > 0 -»
+/**
+ * @brief Return the Service Group Id at index Sum_SrvcMgr_prv_Index of the array SrvcMgr_SrvcGrpInfo.
+ */
+static FUNC(uint16, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_GetSrvcGrpId(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index){
+    return SrvcMgr_SrvcGrpInfo[Sum_SrvcMgr_prv_Index].SrvcMgr_SrvcGrpId;
+}
+
+/**
+ * @brief Return the number of Service inside the Service Group for a given index of the array SrvcMgr_SrvcGrpInfo.
+ */
+FUNC(uint16, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetNumberofSrvcsInsideSrvcGrp(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index){
+    return SrvcMgr_SrvcGrpInfo[Sum_SrvcMgr_prv_Index].SrvcMgr_NumberOfSrvcs;
+}
+
+/**
+ * @brief Return the list of Service inside the Service Group for a given index of the array SrvcMgr_SrvcGrpInfo.
+ */
+FUNC(P2CONST(uint16, AUTOMATIC, RTE_APPL_DATA), SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetListofSrvcsInsideSrvcGrp(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index){
+    return SrvcMgr_SrvcGrpInfo[Sum_SrvcMgr_prv_Index].SrvcMgr_ListOfSrvcs;
+}
+«ENDIF-»
+
+/**
+ * @brief Check if a ID (Service or Service Group) is configured in the SD container.
+ *
+ * Perform the binary search algorithm to search if a ID is configured in the SD container.
+ *
+ * @param Sum_SrvcMgr_prv_IndexTarget: Id of the Service or Service Group that is needed to be find.
+ * @param Sum_SrvcMgr_prv_CommandSearch: Command used to understand if the ID to find is a Service or a Service Group.
+ * @param Sum_SrvcMgr_prv_IndexSrvcInTheArray: if the ID is find, this pointer will assume the value of that Service's index in the conf array.
+ * @return Std_ReturnType:
+ *               E_OK: the Service ID is find;
+ *               E_NOT_OK: Otherwise;
+ */
+/*PRQA S 3206 2 # If No Service Group are present, the input parameter Sum_SrvcMgr_prv_CommandSearch is not used. */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_isIdConfigured(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_IndexTarget,
+                                                                      CONST(Sum_SrvcMgr_SearchCommand, AUTOMATIC) Sum_SrvcMgr_prv_CommandSearch,
+                                                                      P2VAR(uint16, TYPEDEF, RTE_APPL_DATA)Sum_SrvcMgr_prv_IndexSrvcInTheArray){
+    uint16 Sum_SrvcMgr_prv_IntervalMid;
+    sint32 Sum_SrvcMgr_prv_IntervalLowerLimit = 0x00;
+    sint32 Sum_SrvcMgr_prv_IntervalUpperLimit;
+    Std_ReturnType ret_value = E_NOT_OK;
+    Sum_SrvcMgr_prv_GetIdType_fp Sum_SrvcMgr_prv_GetId;
+
+    «IF sd.sdConfig.sdServiceGroup.size > 0 -»
+    if(Sum_SrvcMgr_prv_CommandSearch == SUM_SrvcMgr_SearchService){
+        Sum_SrvcMgr_prv_IntervalUpperLimit = (sint32)((sint32)SUM_SRVCMGR_NUMBER_OF_SRVC_CONFIGURED - 0x01);
+        Sum_SrvcMgr_prv_GetId = Sum_SrvcMgr_prv_GetSrvcId;
+    }else{
+        Sum_SrvcMgr_prv_IntervalUpperLimit = (sint32)((sint32)SUM_SRVCMGR_NUMBER_OF_SRVCGRP_CONFIGURED - 0x01);
+        Sum_SrvcMgr_prv_GetId = Sum_SrvcMgr_prv_GetSrvcGrpId;
+    }
+    «ELSE-»
+    Sum_SrvcMgr_prv_IntervalUpperLimit = (sint32)((sint32)SUM_SRVCMGR_NUMBER_OF_SRVC_CONFIGURED - 0x01);
+    Sum_SrvcMgr_prv_GetId = Sum_SrvcMgr_prv_GetSrvcId;
+    «ENDIF-»
+
+    while((Sum_SrvcMgr_prv_IntervalLowerLimit <= Sum_SrvcMgr_prv_IntervalUpperLimit) && (ret_value == E_NOT_OK)){
+        Sum_SrvcMgr_prv_IntervalMid = ((uint16)Sum_SrvcMgr_prv_IntervalLowerLimit + (((uint16)Sum_SrvcMgr_prv_IntervalUpperLimit - (uint16)Sum_SrvcMgr_prv_IntervalLowerLimit) / 0x02u));
+
+        if(Sum_SrvcMgr_prv_GetId(Sum_SrvcMgr_prv_IntervalMid) == Sum_SrvcMgr_prv_IndexTarget){
+            ret_value = E_OK;
+            *Sum_SrvcMgr_prv_IndexSrvcInTheArray = Sum_SrvcMgr_prv_IntervalMid;
+        }else{
+            if(Sum_SrvcMgr_prv_IndexTarget > Sum_SrvcMgr_prv_GetId(Sum_SrvcMgr_prv_IntervalMid) ){
+                Sum_SrvcMgr_prv_IntervalLowerLimit = (sint32)((sint32)Sum_SrvcMgr_prv_IntervalMid + 0x01);
+    	    }else{
+                Sum_SrvcMgr_prv_IntervalUpperLimit = (sint32)((sint32)Sum_SrvcMgr_prv_IntervalMid - 0x01);
+            }
+        }
+    }
+
+    return ret_value;
+}
+
+/**
+ * @brief Set the Status Calibration for a given Service Id.
+ *
+ *
+ * @param Sum_SrvcMgr_prv_Index: Id of the Service that is necessary to set the status.
+ * @param Sum_SrvcMgr_prv_State: State to be set for the Service Id instance.
+ * @return boolean:
+ *               TRUE: the Status is properly set;
+ *               FALSE: the Status is not set since the Id instance is not find;
+ */
+ /*PRQA S 1503 1*/ //This function will be used in future development.
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_SetSrvcCalibrationState(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index, CONST(Sum_SrvcMgr_CalibrationState, AUTOMATIC) Sum_SrvcMgr_prv_State){
+    boolean ret = FALSE;
+    uint16 i;
+    for(i = 0; ((i < SUM_SRVCMGR_NUMBER_OF_SRVC_CONFIGURED) && (ret == FALSE)); i++){
+        if(Sum_SrvcMgr_prv_Index == SrvcMgr_SrvcInfo[i].SrvcMgr_SrvcId){
+            SrvcMgr_SrvcInfo[i].SrvcMgr_CalibrationState = Sum_SrvcMgr_prv_State;
+            ret = TRUE;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @brief Get SrvcMgr_CalibrationState of the Service at index Sum_SrvcMgr_prv_SrvcIndexInTheConfArray in the SrvcMgr_SrvcInfo.
+ *
+ * @param Sum_SrvcMgr_prv_SrvcIndexInTheConfArray: index in the conf array of the Service which we are looking for.
+ * @return Sum_SrvcMgr_CalibrationState:
+ *               - SUM_SrvcMgr_CalibrationON: the Service is calibrated;
+ *               - SUM_SrvcMgr_CalibrationOFF: the Service is NOT calibrated;
+ */
+FUNC(Sum_SrvcMgr_CalibrationState, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetSrvcCalibrationState(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray)
+{
+    return SrvcMgr_SrvcInfo[Sum_SrvcMgr_prv_SrvcIndexInTheConfArray].SrvcMgr_CalibrationState;
+}
+
+/**
+ * @brief Check if the Service at index Sum_SrvcMgr_prv_SrvcIndexInTheConfArray in the SrvcMgr_SrvcInfo array has a
+ *  SrvcMgr_SrvcClientSdConsumedEventGroupInfo associated.
+ *
+ * @param Sum_SrvcMgr_prv_SrvcIndexInTheConfArray: index in the conf array of the Service which we are looking for.
+ * @return boolean:
+ *               - TRUE: the Service has a struct SrvcMgr_SrvcClientSdConsumedEventGroupInfo associated (that means that Service has at least one SdConsumedEventGroup associated);
+ *               - FALSE: Otherwise;
+ */
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_HasServiceConsumedEventGroup(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray)
+{
+    boolean ret;
+    if(SrvcMgr_SrvcInfo[Sum_SrvcMgr_prv_SrvcIndexInTheConfArray].SrvcMgr_SrvcClientSdConsumedEventGroupInfo == NULL_PTR){
+        ret = FALSE;
+    }else{
+        ret = TRUE;
+    }
+    return ret;
+}
+
+/**
+ * @brief Return the pointer to the struct SrvcMgr_SrvcClientSdConsumedEventGroupInfo of the SrvcMgr_SrvcInfo's
+ * member at Sum_SrvcMgr_prv_SrvcIndexInTheConfArray index.
+ *
+ * @param Sum_SrvcMgr_prv_SrvcIndexInTheConfArray: index in the conf array of the Service which we are looking for.
+ * @return const SrvcMgr_SrvcClientSdConsumedEventGroupInfoType *:
+ *               - return pointer to the struct SrvcMgr_SrvcClientSdConsumedEventGroupInfo of the SrvcMgr_SrvcInfo's
+ *                 member of Sum_SrvcMgr_prv_SrvcIndexInTheConfArray index;
+ */
+FUNC(P2CONST(SrvcMgr_SrvcClientSdConsumedEventGroupInfoType, AUTOMATIC, RTE_APPL_DATA), SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetSrvcClientSdConsumedEventGroupInfo(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray)
+{
+    return SrvcMgr_SrvcInfo[Sum_SrvcMgr_prv_SrvcIndexInTheConfArray].SrvcMgr_SrvcClientSdConsumedEventGroupInfo;
+}
+
+
+/**
+ * @brief Check if a service belongs to a Service Group.
+ *
+ * This function checks if the service at the given index references any SdServiceGroup.
+ * According to AUTOSAR [SWS_Sd_00746], services that belong to a service group must only
+ * be controlled via Sd_ServiceGroupStart/Stop, not via Sd_ServerServiceSetState/Sd_ClientServiceSetState.
+ *
+ * @param Sum_SrvcMgr_prv_Index: Index of the service in the configuration array.
+ * @return TRUE if service belongs to a service group, FALSE otherwise.
+ */
+static FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_BelongsToServiceGroup(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index)
+{
+    return (SrvcMgr_SrvcInfo[Sum_SrvcMgr_prv_Index].SrvcMgr_SrvcsGrpAssociatedInfo != NULL_PTR);
+}
+
+/**
+ * @brief Start or Stop Service Groups associated with a service.
+ *
+ * This function starts or stops all Service Groups to which the service belongs.
+ * According to AUTOSAR [SWS_Sd_00746] and [SD_GM_0028], services belonging to a 
+ * service group must only be controlled via Sd_ServiceGroupStart/Stop.
+ *
+ * @param Index_of_SrvID: Index of the service in the configuration array.
+ * @param Sum_SrvcMgr_prv_ActivationCommand: TRUE to start service groups, FALSE to stop.
+ */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_ConfigureServiceGroupActivation(CONST(uint16, AUTOMATIC) Index_of_SrvID, CONST(boolean, AUTOMATIC) Sum_SrvcMgr_prv_ActivationCommand)
+{
+	Std_ReturnType retVal = E_NOT_OK;
+	uint16 Sd_loop;
+
+	if(Sum_SrvcMgr_pub_BelongsToServiceGroup(Index_of_SrvID) == TRUE)
+	{
+		for(Sd_loop = 0U; Sd_loop < SrvcMgr_SrvcInfo[Index_of_SrvID].SrvcMgr_SrvcsGrpAssociatedInfo->SrvcMgr_NumberOfSrvcGrps; Sd_loop++)
+		{
+			if(Sum_SrvcMgr_prv_ActivationCommand == TRUE)
+			{
+				/* Activate: Start the service group */
+				Sd_ServiceGroupStart(SrvcMgr_SrvcInfo[Index_of_SrvID].SrvcMgr_SrvcsGrpAssociatedInfo->SrvcMgr_ListOfSrvcGrps[Sd_loop]);
+			}
+			else
+			{
+				/* Deactivate: Stop the service group */
+				Sd_ServiceGroupStop(SrvcMgr_SrvcInfo[Index_of_SrvID].SrvcMgr_SrvcsGrpAssociatedInfo->SrvcMgr_ListOfSrvcGrps[Sd_loop]);
+			}
+		}
+		retVal = E_OK;
+	}
+
+	return retVal;
+}
+
+/**
+* @brief			Function to retrieve the Service Instance ID
+*  
+* @param            Sum_SrvcMgr_prv_Index: Index of the Service in the configuration array
+* @return			uint16: the value of the Service Instance ID configured
+*/
+/* PRQA S 1505 2 # Here for modularity. Can be used, in future, to retrieve the information. */
+FUNC(uint16,SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetSrvcInstanceId(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index)
+{
+    return SrvcMgr_SrvcInfo[Sum_SrvcMgr_prv_Index].SrvcMgr_SrvcInstanceId;
+}
+
+/**
+* @brief			Function to retrieve the Major Version of the Service
+*
+* @param            Sum_SrvcMgr_prv_Index: Index of the Service in the configuration array
+* @return			uint8: the value of the Major Version configured
+*/
+/* PRQA S 1505 2 # Here for modularity. Can be used, in future, to retrieve the information. */
+FUNC(uint8,SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetSrvcMajorVersion(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index)
+{
+    return SrvcMgr_SrvcInfo[Sum_SrvcMgr_prv_Index].SrvcMgr_SrvcMajorVersion;
+}
+
+/**
+* @brief			Function to retrieve the Sd_SdEnableExtendedLearningTableFormat value
+*
+* @return			boolean: the value of the Calibration parameter SdEnableExtendedLearningTableFormat
+*/
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetSdEnableExtendedLearningTableFormat(void)
+{
+	return SchM_CData_Sd_SdEnableExtendedLearningTableFormat();
+}
+
+/**
+* @brief			Function to retrieve the Dtc value
+*
+* @param serviceId		The Service ID for which the DTC value is to be retrieved. Must be a valid configured Service ID.
+* @param dtcValue		Pointer to a variable where the retrieved DTC value will be stored. Must not be NULL.
+* @return			Std_ReturnType: E_OK, if the DTC value was successfully retrieved, Otherwise E_NOT_OK.
+*/
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_RetrieveDtcIdValue (CONST(uint16, AUTOMATIC) serviceId, P2VAR(uint16, AUTOMATIC, RTE_APPL_DATA) dtcValue)
+{
+	/* PRQA S 2981 2 */ /* Initialisation is useful for verifying the correctness of the operations performed. */
+    Std_ReturnType retVal = E_NOT_OK;
+    uint32 ipAddress;
+    uint16 srvcmgr_srvcIndexInConfigArray;
+    uint16 srvcmgr_InstanceId;
+    uint8 srvcmgr_MajorVersion;
+    /* Initialize the dtcValue variable*/
+    *dtcValue = 0x0000u;
+
+    /* Check the value of SdEnableExtendedLearningTableFormat calib parameter. */
+    if(Sum_SrvcMgr_pub_GetSdEnableExtendedLearningTableFormat() == FALSE)
+    {
+        /* If False, the major Version and Instance id is zero. So no need to search the Service Index.*/
+        retVal = Sd_GetNodeAddress(serviceId, 0u, 0u, &ipAddress);
+    }
+    else
+    {
+        /* Obtain the index by searching the Service ID in the SrvcMgr_SrvcInfo configuration array. */
+        retVal = Sum_SrvcMgr_pub_isIdConfigured(serviceId, SUM_SrvcMgr_SearchService, &srvcmgr_srvcIndexInConfigArray);
+
+        if (retVal == E_OK)
+        {
+            /* Retrieve the InstanceId and MajorVersion for this Serviceid*/
+            srvcmgr_InstanceId= Sum_SrvcMgr_pub_GetSrvcInstanceId(srvcmgr_srvcIndexInConfigArray);
+            srvcmgr_MajorVersion= Sum_SrvcMgr_pub_GetSrvcMajorVersion(srvcmgr_srvcIndexInConfigArray);
+            retVal = Sd_GetNodeAddress(serviceId,srvcmgr_InstanceId,srvcmgr_MajorVersion,&ipAddress);
+        }
+        else
+        {
+            /* Nothing to do. Returns E_NOT_OK */
+        }
+    }
+
+    if (retVal == E_OK)
+    {
+        /* Retrieve the DTC id from the SPM module */
+        (void) Rte_Call_SUM_SrvcMgr_RP_SPM_SrvcMgr_GetDTCIdentifier_GetDTCIdentifier(ipAddress,dtcValue);
+    }
+
+
+    return retVal;
+}
+
+/**
+ * @brief			Function to update  the InstanceId and MajorVersion to 0 for each configured Service
+ *
+ * @return			void
+ */
+FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_UpdateMajorVersionAndInstanceId(void)
+{
+    uint16 i;
+    for (i = 0; i < SUM_SRVCMGR_NUMBER_OF_SRVC_CONFIGURED; i++)
+    {	
+        
+        SrvcMgr_SrvcInfo[i].SrvcMgr_SrvcInstanceId = 0u;
+        SrvcMgr_SrvcInfo[i].SrvcMgr_SrvcMajorVersion = 0u;
+    }
+}
+
+«ENDFILE-»
+«ENDDEFINE»

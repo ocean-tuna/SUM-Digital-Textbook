@@ -1,0 +1,357 @@
+
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION Util::Spm_Utils»
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_SpmTypes.h"-»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : SPM - Complex Device Driver :: Header of module types
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#include "Rte_Type.h"
+
+#ifndef SUM_SPM_TYPES_H_
+#define SUM_SPM_TYPES_H_
+
+#ifndef SPM_ACTIVATE
+#define SPM_ACTIVATE (1U)
+#endif
+
+#ifndef SPM_DEACTIVATE
+#define SPM_DEACTIVATE (2U)
+#endif
+
+#ifndef SPM_ACTIVATED
+#define SPM_ACTIVATED (2U)
+#endif
+
+#ifndef SPM_DEACTIVATING
+#define SPM_DEACTIVATING (3U)
+#endif
+
+#ifndef SPM_UNKNOWN
+#define SPM_UNKNOWN (255U)
+#endif
+
+#ifndef SPM_OK_ACTIVATION
+#define SPM_OK_ACTIVATION (1U)
+#endif
+
+#ifndef SPM_OK_DEACTIVATION
+#define SPM_OK_DEACTIVATION (2U)
+#endif
+
+typedef enum {
+	Spm_REQUEST_NOT_APPLICABLE = 0x00U,
+    Spm_REJECTED_REQUEST_INVALID = 0x10U,
+    Spm_REJECTED_RESET_DETECTED = 0X11u,
+    Spm_REJECTED_PROFILE_UNKNOWN = 0x12U,
+    Spm_REJECTED_LACK_OF_PERMISSION = 0x13U,
+    Spm_REJECTED_LACK_OF_COMPUTATION_RESOURCES = 0x14U,
+    Spm_REJECTED_LACK_OF_POWER = 0x15U,
+	Spm_REJECTED_LACK_OF_THERMAL_CAPABILITY = 0x16U,
+	Spm_REJECTED_PROFILE_BLOCKED = 0x17U,
+	Spm_REJECTED_LOSS_OF_HEARTBEAT = 0x18U,
+    Spm_REQUEST_ACCEPTED = 0xFFU
+} SpmRejectionReasonType;
+
+/**
+ * @brief
+ */
+typedef enum {
+	Spm_RequestedProfile   	    	= 0x00U,
+	Spm_DepRequestedProfile        		   ,
+	Spm_RepresentativeReqProfile
+} SpmPowPrfItemEnumType;
+
+/**
+ * @brief
+ */
+typedef enum {
+	Spm_HostIfSlot_Tx,
+	Spm_HostIfSlot_Rx,
+	Spm_HostIfSlot_NotInstantiated
+} SpmHsotIfDirectionEnumType;
+
+/**
+ * @brief
+ */
+typedef enum {
+	Spm_ActRequest     = 0U,
+	Spm_DeaRequest         ,
+	Spm_ReqAck             ,
+	Spm_ProfileStsChg	   ,
+	Spm_None
+} SpmToSpmMsgEnumType;
+
+/**
+ * @brief
+ */
+typedef enum {
+	Spm_Rsrc_Off       = 0x00U,
+	Spm_Rscr_Monitored        ,
+	Spm_Rscr_Lost
+} SpmResrcMonitoringStsEnumType;
+
+/**
+ * @brief
+ */
+typedef enum  {
+	Spm_PowPrf_Inactive  = 0x00U,
+	Spm_PowPrf_Activating       ,
+	Spm_PowPrf_ActivationFailed ,
+	Spm_PowPrf_Activated        ,
+	Spm_PowPrf_ImmDeactivation  , /* Imminent deactivation */
+	Spm_PowPrf_Deactivating
+} SpmPowPrfStatusEnumType;
+
+typedef enum {
+	Spm_No_PowerOn_Retry_Ongoing = 0u,
+	Spm_PowerOff_Retry_Ongoing,
+	Spm_WaitTime_Retry_Ongoing,
+	Spm_PowerOn_Retry_Ongoing,
+	Spm_WaitTime_ToRestart
+}SpmPowerOnDeviceRetryType;
+/**
+ * @brief
+ */
+typedef enum {
+	Spm_UnInitialized = 0x00U,
+	Spm_Initialized          ,
+	Spm_Running              ,
+	Spm_PrepareToShutdown
+} SpmStateEnumType;
+
+typedef enum {
+	Spm_ProfActivation	= 0x00U,
+	Spm_ProfDeActivation
+} SpmProfReqEnumType;
+
+typedef struct{
+    uint32 TrgDvcID;
+    uint8 row;
+    uint8 column;
+}SpmTrgDvcInit;
+
+typedef struct{
+	uint8 indexTrgDvc;
+	uint8 indexTrgDvcIPAssociated;
+}SpmTrgDvcCoordinates;
+
+typedef enum{
+	SPM_INIT_FEEDBACK_NOT_SENT_TO_ACT_REQ = 0x00u,
+	SPM_INIT_FEEDBACK_SENT_TO_ACT_REQ,
+	SPM_INIT_FEEDBACK_NOT_SENT_TO_DEACT_REQ,
+	SPM_INIT_FEEDBACK_SENT_TO_DEACT_REQ,
+	SPM_NO_FEEDBACK_NEEDED
+}SpmInitialFeedbackToRequester;
+
+typedef enum{
+	Spm_NO_REQ_PRESENT = 0x00u,
+	Spm_ONLY_ACTIVATED_REQ_PRESENT,
+	Spm_ONLY_CONSUMED_REQ_PRESENT,
+	Spm_ACTIVATED_AND_CONSUMED_REQ_PRESENT,
+	Spm_SUSPENDED_REQ_PRESENT
+}SpmPresencyDependencyTypeRequest;
+
+typedef enum{
+	SPM_REQUESTER_NOT_PRESENT = 0x00u,
+	SPM_REQUESTER_PRESENT_AS_DEACT,
+	SPM_REQUESTER_PRESENT_AS_ACT,
+}SpmRequesterPresenceInReqList;
+
+typedef enum{
+	SPM_PRF_DEP_ACT_AND_CONS = 0x00u,
+	SPM_PRF_ACTIVATED = 0x01u,
+	SPM_PRF_CONSUMED = 0x02u,
+	SPM_NULL_REQ,
+	SPM_REQ_DEACTIVATION
+}SpmRequestDependencyType;
+
+typedef struct {
+	uint8 			  prfIndex;
+	SpmRequestDependencyType prfDepType;
+} SpmPrfDepLstType;
+
+«FOREACH spm.spmGeneral.spmVLANCom AS vlan ITERATOR id -»
+#define SPM_«vlan.shortName.toUpperCase()»_VLAN_ID	(«id.counter0»U)
+«ENDFOREACH -»
+
+/**
+ * @brief the enum type defines the type of frames to handle
+ *
+ * SPM supports the following frames direclty:
+ *
+ * | Frame | Code |
+ * |:---------------------:|:--------:|
+ * | PM Heartbeat Frame    | 0        |
+ * | SM Profile Info Frame | 1        |
+ * | PM Wakeup Frame (ETH) | 2        |
+ */
+typedef enum {
+	SPM_HB_COMHNDLING 	         = 0x00u, /**< Handle communication of Heartbeat frame */
+	SPM_SM_COMHNDLING	         = 0x01u, /**< Handle communication of SM frame */
+	SPM_WK_COMHNDLING            = 0x02u, /**< Handle communication of WakeUp frame */
+	SPM_WK_MULTICAST_COMHNDLING  = 0x03u, /**< Handle communication of Multicast WakeUp frame */
+	SPM_INV_COMHNDLING  		 = 0xFFu  /**< Error Code - Unsupported frame */
+} Spm_CommHandleFrameType;
+
+/**
+ * @brief the enum type defines the direction of frames that SPM handles
+ *
+ * SPM supports the following frames direclty:
+ *
+ * | Frame | Code |
+ * |:----------:|:--------:|
+ * | Sending    | 0        |
+ * | Receiving  | 1        |
+ */
+typedef enum {
+	SPM_RECV_HNDL		= 0x00u, /**< Handling the frame in receiving side */
+	SPM_SEND_HNDL		= 0x01u  /**< Handling the frame in sending side   */
+} Spm_CommHanldeDirectionType;
+
+/* @brief Enum that defines the priority levels */
+typedef enum {
+	SPM_NOT_APPLICABLE = 0U,
+	SPM_LOW = 1U, 
+	SPM_MEDIUM_LOW = 2U,
+	SPM_MEDIUM = 3U,
+	SPM_MEDIUM_HIGH = 4U,
+	SPM_HIGH = 5U,
+	SPM_CRITICAL = 6U,
+	SPM_EMERGENCY = 7U,
+	SPM_ACCESS = 8U
+} Spm_LowVoltPriorityLevel;
+
+/**
+ * @brief The struct defines the Data Type for the payload of a PM Heartbeat Frame
+ *
+ * @note The frame definition follows the model specified by the extract but it is
+ *       private at SPM internal development scope
+ */
+typedef struct {
+	uint32											SrcPMId;	/**< SourceIp of the SPM node */
+	uint32											HrtBtCntr;  /**< Current value of the heartbeat counter to share */
+	uint16											NmbrPrfAct; /**< Number of the current profile NOT in inactive state */
+} SPM_HB_dt_Prv;
+
+/**
+ * @brief The struct defines the Data Type for the payload of a SM Info frame
+ *
+ * @note The frame definition follows the model specified by the extract but it is
+ *       private at SPM internal development scope
+ */
+typedef struct {
+	uint32											PMSrcId;					/**< SourceIp of the SPM node */
+	uint32											PMDestId;					/**< DestinationIp of the SPM remote node */
+	uint8											PR_MsgType;					/**< Code that address the beginning of the requests part in the message */
+	ProfileRequestDataType_SvcStruct				ProfileRequest;				/**< Profile request payload */
+	uint8											RSPS_MsgType;				/**< Code that address the beginning of the response part in the message */
+	RequestStatusProfileStateDataType_SvcStruct		RequestStatusProfileState;	/**< Profile request response payload */
+} SPM_dt_Prv;
+
+/**
+ * @brief The struct defines the Data Type for the payload of a PM Wakeup frame
+ *
+ * @note The frame definition follows the model specified by the extract but it is
+ *       private at SPM internal development scope
+ */
+typedef struct {
+	uint32											SrcPMId;					/**< SourceIp of the SPM node */
+	uint8											WakeupFrameA[8U];			/**< Wakeup frame A buffer (Ethernet) */
+	uint8											WakeupFrameB[8U];			/**< Wakeup frame B buffer (Ethernet) */
+	uint8											WakeupFrameC[8U];			/**< Wakeup frame C buffer (Ethernet) */
+} SPM_WkUp_dt_Prv;
+
+/**
+ * @brief The function pointer is a reference to function for handling Hertbeat communication
+ *        to/from current SPM instance
+ */
+typedef Std_ReturnType (*Spm_VLAN_Heartbeat_ComHndlrType_fptr)(
+	Spm_CommHanldeDirectionType		             const   in0_out1,
+	uint32 						                *const   srcIpU32Ptr,
+	uint32                                      *const   counterU32Ptr,
+	uint16                                      *const   activeProfilesU16Ptr,
+	uint8                                       *const   metadataPtr);
+
+/**
+ * @brief The function pointer is a reference to function for handling Wakeup frame (Ethernet) communication
+ *        to/from current SPM instance
+ */
+typedef Std_ReturnType (*Spm_VLAN_WakeUp_ComHndlrType_fptr)(
+	Spm_CommHanldeDirectionType                  const   in0_out1,
+	uint32 						                *const   srcIpU32Ptr,
+	uint8  						                *const   A_wkupU8Ptr,
+	uint8  						                *const   B_wkupU8Ptr,
+	uint8  						                *const   C_wkupU8Ptr,
+	uint8  					                    *const   metadataPtr);
+
+/**
+ * @brief The function pointer is a reference to function for handling SwMgrInfo communication
+ *        to/from current SPM instance
+ */
+typedef Std_ReturnType (*Spm_VLAN_SmInfo_ComHndlrType_fptr)(
+	Spm_CommHanldeDirectionType   				 const   in0_out1,
+	uint32 							 			*const   srcIpU32Ptr,
+	uint32 							 			*const   dstIpU32Ptr,
+	uint8										*const	 prMsgTypeU8Ptr,
+	uint8										*const	 rspsMsgTypeU8Ptr,
+	ProfileRequestDataType_SvcStruct 		    *const	 reqTypeSRef,
+	RequestStatusProfileStateDataType_SvcStruct *const   resTypeSRef,
+	uint8										*const	 metadataPtr);
+
+typedef struct{
+	const SPM_NetworkInfo* SPM_NetInfo;
+}SPM_NetworkInfo_WrapType;
+
+typedef struct{
+	RID_Enum cmdEnum; 
+	boolean *sendTracker; 
+	boolean (*getActiveLocalProfOrRequestedRemoteProf)(); 
+}ProfileHandleE0D7Config; 
+
+typedef struct{
+	uint32 ActivityTimerInTick;  /* Cumulative amount of tick that the profile was active. */
+	uint8 ActivationCount;       /* Number of times the profile was directly locally activated. */
+}SpmDiagActivityTiming; 
+
+typedef struct{
+	uint16 ServiceId; 
+	uint8 ProfNumber; 
+	uint8 LastByteIPRequester; 
+	SpmDiagActivityTiming ActualPowerOffRecords; 
+}SpmDiagActivatedProfileStruct; 
+
+#endif
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE»

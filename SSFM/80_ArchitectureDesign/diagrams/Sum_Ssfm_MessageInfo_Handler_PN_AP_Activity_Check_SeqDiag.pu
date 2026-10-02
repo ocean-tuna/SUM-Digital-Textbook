@@ -1,0 +1,84 @@
+@startuml Sum_Ssfm_MessageInfo_Handler_PN_AP_Activity_Check_SeqDiag
+
+participant NodeStatus_Manager as NSM
+box SUM_SSFM
+    participant Sum_Ssfm_MessageInfo_Handler as MIH
+end box
+participant SUM_PNC as PNC
+
+note over NSM, PNC
+**Background: Timer Management**
+
+**AP (Service) Timer:**
+  Managed in: Runnable_ServiceActivationStatusReceived (event-driven)
+  Starts: When service becomes active (SPM notification)
+  Stops: When service becomes inactive
+  
+**PN Timer:**
+  Managed in: Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive (periodic)
+  Starts: When PN becomes active (first detected)
+  Stops: When PN becomes inactive
+end note
+
+== Check Instant Active Status (with PN timer management) ==
+
+NSM -> MIH: Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive(serialData)
+
+alt Service-Based (AP)
+    MIH -> MIH: Return ServiceInfo->IsActive
+    note right
+      AP timer already managed
+      by ServiceActivationStatusReceived
+    end note
+    MIH --> NSM: Return AP status
+    
+else PN-Based (OCM)
+    alt pSigRxStatus == NULL
+        MIH --> NSM: Return TRUE (no PN checks)
+    else PNs configured
+        loop For each PN
+            MIH -> PNC: Rte_Read_PNC_RxStatus_Sig_<Id>()
+            PNC --> MIH: PN active status
+            
+            alt PN active
+                MIH -> MIH: If timer not started:\nAvailableSince = current_time
+                note right: Start PN timer
+            else PN inactive
+                MIH -> MIH: AvailableSince = 0
+                note right: Stop PN timer
+            end
+        end
+        MIH --> NSM: Return TRUE if any PN active
+    end
+end
+
+== Check 5-Second Stability (read-only) ==
+
+NSM -> MIH: Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive_StabilityCheck(serialData)
+
+alt Service-Based (AP)
+    MIH -> MIH: Check: IsActive && AvailableSince != 0\n&& elapsed >= 5000ms
+    alt AP stable >= 5s
+        MIH --> NSM: Return TRUE
+        note right: Early exit
+    end
+end
+
+alt AP not stable OR PN-Based
+    alt pSigRxStatus == NULL
+        MIH --> NSM: Return TRUE (default)
+    else PNs configured
+        loop For each PN
+            MIH -> PNC: Rte_Read_PNC_RxStatus_Sig_<Id>()
+            PNC --> MIH: PN active status
+            
+            alt PN active && elapsed >= 5000ms
+                MIH --> NSM: Return TRUE
+                note right: Found stable PN
+            end
+        end
+        MIH --> NSM: Return FALSE (no stable PN/AP)
+    end
+end
+
+@enduml

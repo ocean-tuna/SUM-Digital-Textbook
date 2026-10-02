@@ -1,0 +1,80 @@
+«IMPORT bsw»
+«IMPORT bsw::PNCModule»
+«EXTENSION templates::mathlib»
+«EXTENSION templates::Sum_Pnc_General»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+
+«REM»Start Define«ENDREM»
+«DEFINE Root FOR Autosar»
+    «EXPAND Expand FOR ecu»
+«ENDDEFINE»
+«REM»End Define«ENDREM»
+
+«DEFINE Expand FOR Ecu»
+«FILE "Sum_Pnc_Autosar_Runnable.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_PNC
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Sum_Pnc_Autosar_Runnable.c source file
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/*
+ * @defgroup PNC_AR_Runnable_C    PNC - APPLICATION LAYER MODULE
+*/
+
+#include "Sum_Pnc.h"
+#include "Rte_SUM_PNC.h"
+
+#if (Generate_Pnc_InitRunnable_Status == STD_ON)
+
+/*********************************************************************************
+ * Function name : RE_PNC_Init
+ * Description   : Runnable call function SUM_PNC_Init
+ * Parameter in  : none
+ * Parameter out : none
+ * Return value  : none
+ *
+ * [$Satisfies $SDD_PNC 100]
+ ********************************************************************************/
+/* PRQA S 1503 8 # It's scheduled in the OS */
+FUNC(void, PNC_CODE) RE_PNC_Init(void)
+{
+    /* Keeping as 32 bit variable for lower chance the value could be overwritten to exactly 0. */
+	static uint32 Pnc_init_status = 0x0;
+
+	/* Just a plausibility check in case the user accidentally calls this function
+     * more than once */
+	if(Pnc_init_status != (uint32)SUM_INITIALIZED)
+	{
+		SUM_PNC_Init();
+		Pnc_init_status = SUM_INITIALIZED;
+	}
+
+}
+#endif
+
+
+
+«ENDFILE-»
+«ENDDEFINE»

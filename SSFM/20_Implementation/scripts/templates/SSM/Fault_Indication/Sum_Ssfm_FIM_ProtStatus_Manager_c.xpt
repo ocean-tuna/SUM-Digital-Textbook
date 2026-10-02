@@ -1,0 +1,316 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_FIM_ProtStatus_Manager.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM Fault Indications Manager - Protection
+ 				 Operation Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+«IF Ssfm_IsAnyProtected(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)»
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+
+
+/* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA ITERATOR i-»
+«IF Ssfm_IsProtected(SSFM_SERIAL_DATA)-»
+«LET SSFM_SERIAL_DATA.sum_Ssfm_FpI_Debouncer.sum_Ssfm_EventFilter_Ref AS DEB_INSTANCE-»
+	«IF Ssfm_isXofYFilterType(DEB_INSTANCE)-»
+static uint16 Sum_Ssfm_Get_CalibPar_DebX_«SSFM_SERIAL_DATA.shortName»_FpI(void){
+	return Rte_CData_«DEB_INSTANCE.shortName»_X();
+}
+static uint16 Sum_Ssfm_Get_CalibPar_DebY_«SSFM_SERIAL_DATA.shortName»_FpI(void){
+	return Rte_CData_«DEB_INSTANCE.shortName»_Y();
+}
+	«ENDIF-»
+«ENDLET-»
+«ENDIF-»
+«ENDFOREACH-»
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 1531 1 # Based on the architecture design it is decided to keep the object in the corresponding component. */
+Sum_Ssfm_FxI_SerialData Sum_Ssfm_Protected_SerialDatas[SSFM_SSM_NUM_OF_PROTECTED_SERIALDATAS] = {
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA-»
+«IF Ssfm_IsProtected(SSFM_SERIAL_DATA)-»
+	{
+		// FpI variable
+		FALSE,
+	    // FpI Port
+		«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == false-»
+		&Rte_Write_PP_SSFM_SerialData_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()»_FpI_PrtctionStatus,
+		«ELSEIF Ssfm_GetFxISourceVariable(SSFM_SERIAL_DATA) == "FpI"-»
+		&Rte_Write_PP_SSFM_SerialData_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()»_FxI_RxSerialData_FxI,
+		«ELSE-»
+		NULL_PTR,
+		«ENDIF-»
+		// FpFA variable
+		FALSE,
+	    // FpFA Port
+		«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == false-»
+		&Rte_Write_PP_SSFM_SerialData_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()»_FpFA_DTC_STATUS_FPFA,
+		«ELSEIF Ssfm_GetFxISourceVariable(SSFM_SERIAL_DATA) == "FpI"-»
+		&Rte_Write_PP_SSFM_SerialData_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()»_FxFA_DTC_STATUS_FXFA,
+		«ELSE-»
+		NULL_PTR,
+		«ENDIF-»
+		// Event Debouncer Ref
+		&(Sum_Ssfm_FIM_Protected_Debouncers[«counterInc("protected") - 1»]),
+		/* MAC authentication is enabled or not */
+		NULL_PTR,
+		/* Number of occurrence */
+		0u,
+	},
+«ENDIF-»
+«ENDFOREACH-»
+};
+
+«LET sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo AS ECUs-»
+«LET Ssfm_GetControllerECUInfos(ECUs, false) AS controllers-»
+Sum_Ssfm_Debouncer Sum_Ssfm_FIM_Protected_Debouncers[SSFM_SSM_NUM_OF_PROTECTED_SERIALDATAS] = {
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.select(e | e.Ssfm_IsProtected()) AS SERIAL_DATA-»
+«LET SERIAL_DATA.sum_Ssfm_FpI_Debouncer.sum_Ssfm_EventFilter_Ref AS DEB_INSTANCE-»
+	{
+		/* Error filter type */
+		SUM_SSFM_ErrorFilter_«Ssfm_GetFilterType(DEB_INSTANCE)-»,
+		«IF Ssfm_isXofYFilterType(DEB_INSTANCE)-»
+		/* Number of configured X threshold */
+		&Sum_Ssfm_Get_CalibPar_DebX_«SERIAL_DATA.shortName»_FpI,
+		/* Number of configured Y threshold */
+		&Sum_Ssfm_Get_CalibPar_DebY_«SERIAL_DATA.shortName»_FpI,
+		«ELSE-»
+		/* Number of configured X threshold */
+		NULL_PTR,
+		/* Number of configured Y threshold */
+		NULL_PTR,
+		«ENDIF-»
+		/* Callback function */
+		«IF Ssfm_IsTimeBasedFilterType(DEB_INSTANCE)-»
+		&Sum_Ssfm_FIM_Debouncer_MUX,
+		«ELSE-»
+		NULL_PTR,
+		«ENDIF-»
+		/* Counter failed event */
+		0u,
+		/* Number of sample or ms*/
+		0u,
+		/* First failed flag */
+		FALSE,
+		/* Last Evaluation Status */
+		SUM_SSFM_EvaluationSts_Unknown,
+		/* Reference to Protected Serial Data */
+		{.FIM = &(Sum_Ssfm_SerialDatas[«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.indexOf(SERIAL_DATA)»])}, /* PRQA S 1053 # To use the union type. */
+		/* Owner Type*/
+		SUM_SSFM_DebouncerRefType_FIM_FpI,
+		/* Reference to DemEvent */
+		«IF !SERIAL_DATA.Ssfm_IsLINChannelCfg()-»
+		«IF SERIAL_DATA.Ssfm_IsServiceBased()-»
+		// Resolved in runtime for service based traffic
+		NULL_PTR,
+		«ELSE-»
+			«LET Ssfm_Get_ComBasedSerialData_InvalidDataDemEvents(controllers, SERIAL_DATA) AS DEM_EVENTS-»
+			«IF DEM_EVENTS.size > 1 -»
+		// Resolved in runtime for multiple provider serial data
+		NULL_PTR,
+			«ELSE-»
+		&(Sum_Ssfm_FxI_DemEvents[«Ssfm_Get_AllComBasedSerialData_InvalidDataDemEvents(controllers, sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData).indexOf(DEM_EVENTS.get(0))»]),
+			«ENDIF-»
+			«ENDLET-»
+		«ENDIF-»
+		«ELSE-»
+			«LET Ssfm_Get_LINInfoOfSerialData(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo, SERIAL_DATA) AS LIN_INFO-»
+			«LET Ssfm_Get_InvalidLINDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo) AS LIN_DEM_EVENTS-»
+			«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo AS LIN_INFO-»
+			«IF Ssfm_Get_InvalidLINDemEvents_index(LIN_INFO, SERIAL_DATA) != -1 -»
+		&(Sum_Ssfm_FxI_DemEvents[«Ssfm_Get_SizeofFxl_DemEvent(controllers, sSFM) + LIN_DEM_EVENTS.indexOf(LIN_INFO.sum_Ssfm_LINInfo_Event.sum_Ssfm_InvalidData_DemEvent_Ref)»]),
+			«ENDIF-»
+			«ENDFOREACH-»
+			«ENDLET-»
+			«ENDLET-»
+		«ENDIF-»
+	},
+«ENDLET-»
+«ENDFOREACH-»
+};
+«ENDLET-»
+«ENDLET-»
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+
+/**
+ * @brief			SSFM function used to set the FpI interface state
+ *
+ * @param[in]       serialData        - Sum_Ssfm_SerialData*: Sum_Ssfm_SerialData structure to access the SerialData info and RTE functions
+ * @param[in]       transformer_error - const Rte_TransformerError*: E2E/Transformer check status
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			void
+ */
+/* PRQA S 1532 11 # The function belongs to Protection Status Manager yet used in ReceivedSerialData Handler. */
+FUNC(void, SUM_SSFM_SSM_CODE) Sum_Ssfm_ProtStatus_Manager_Set_FpI_Given_Transformer_Error(Sum_Ssfm_SerialData* serialData, const Rte_TransformerError* transformer_error)
+{
+   	/*[$Satisfies $DDS_SSFM 021]*/ /*[$Satisfies $DDS_SSFM 023]*/
+   	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+   	// Check if SerialData is Protected
+   	/*[$Satisfies $DDS_SSFM 189]*/
+    if((serialData->Protected != NULL_PTR) && (dtcs_are_disabled == FALSE))
+    {
+    	switch(transformer_error->errorCode){
+    		// No Error: Set FpI to False
+    		case E_OK:
+    		case E_SAFETY_NODATA_OK:
+    		case E_SAFETY_INIT_OK:
+    		case E_SAFETY_INVALID_OK:
+    			serialData->Protected->FxI = FALSE;
+    			break;
+
+    		// Error: Set FpI to True
+	   		case E_SAFETY_VALID_ERR:
+	   		case E_SAFETY_NODATA_ERR:
+	   		case E_SAFETY_INIT_ERR:
+	   		case E_SAFETY_INVALID_ERR:
+	   		case E_SAFETY_SOFT_RUNTIMEERROR:
+	   		case E_SAFETY_HARD_RUNTIMEERROR:
+«IF Ssfm_AnySomeIpConfigured(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+   			case E_SER_GENERIC_ERROR:
+	   		case E_SER_WRONG_PROTOCOL_VERSION:
+	   		case E_SER_WRONG_INTERFACE_VERSION:
+	   		case E_SER_MALFORMED_MESSAGE:
+	   		case E_SER_WRONG_MESSAGE_TYPE:
+«ENDIF-»
+	   			serialData->Protected->FxI = TRUE;
+				break;
+
+			/* PRQA S 2053 7 # The following error codes do not present in any header files*/
+	   		/*
+   			case E_E2E_HARD_SAFETY_ERR:
+	   		case E_SAFETY_NOSM_ERR:
+	   			serialData->Protected->FxI = TRUE;
+				break;
+			*/
+
+			// Default: Keep the state
+			/* PRQA S 2016 2 # Given the unknown error code the FpI state should remain untouched.*/
+			default:
+				break;
+   		}
+«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == false-»
+		//Sets the FpI port
+		serialData->Protected->FP_Rte_Write_PP_FxI_LocalSWC(serialData->Protected->FxI);
+«ENDIF-»
+    	/*[$Satisfies $DDS_SSFM 083]*/
+		if (serialData->Protected->DebouncerRef != NULL_PTR){
+			Sum_Ssfm_FxI_Debouncing_Handler(serialData, serialData->Protected);
+		}
+		// Update E0B8/E0BA
+		if(serialData->Protected->FxI == TRUE){
+			Sum_Ssfm_DID_E0B8_MetricUpdated(serialData, SUM_SSFM_DID_E0B8_Protected);
+			/* Update E0BA - Signal Protection Calculation Incorrect*/
+			Sum_Ssfm_DID_E0BA_Update_Message_Protection(serialData);
+		}
+
+	}
+}
+/* PRQA S 1503 20 # The function might be useful for another case later. */
+/**
+ * @brief			SSFM function used to set the FpI interface state
+ *
+ * @param[in]       serialData      - Sum_Ssfm_SerialData*:  The SerialData structure to access the message info and RTE functions
+ * @param[in]       protection_status - boolean: Value to force for FpI
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			void -
+ */
+FUNC(void, SUM_SSFM_SSM_CODE) Sum_Ssfm_ProtStatus_Manager_Set_FpI(Sum_Ssfm_SerialData* serialData, boolean protection_status)
+{
+  	/*[$Satisfies $DDS_SSFM 011]*/ /*[$Satisfies $DDS_SSFM 021]*/ /*[$Satisfies $DDS_SSFM 022]*/
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	/*[$Satisfies $DDS_SSFM 189]*/
+	if((serialData->Protected != NULL_PTR) && (dtcs_are_disabled == FALSE)){
+		//Sets the FpI variable equal to the protection status
+		serialData->Protected->FxI = protection_status;
+«IF sSFM.sum_Ssfm_General.Ssfm_IsSinglePortSupportEnabled() == false-»
+		//Sets the FpI port equal to security_status
+	  	serialData->Protected->FP_Rte_Write_PP_FxI_LocalSWC(protection_status);
+«ENDIF-»
+    	/*[$Satisfies $DDS_SSFM 083]*/
+		if (serialData->Protected->DebouncerRef != NULL_PTR){
+			Sum_Ssfm_FxI_Debouncing_Handler(serialData, serialData->Protected);
+		}
+		// Update E0B8/E0BA
+		if(serialData->Protected->FxI == TRUE){
+			Sum_Ssfm_DID_E0B8_MetricUpdated(serialData, SUM_SSFM_DID_E0B8_Protected);
+			/* Update E0BA - Signal Protection Calculation Incorrect */
+			Sum_Ssfm_DID_E0BA_Update_Message_Protection(serialData);
+		}
+
+	}
+}
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+«ENDIF-»
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

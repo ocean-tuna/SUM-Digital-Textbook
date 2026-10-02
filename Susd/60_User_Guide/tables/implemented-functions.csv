@@ -1,0 +1,10 @@
+3;1;6
+"\textbf{Functionality}";"\textbf{Status}";"\textbf{Description}"
+"ActiveWakeup and WakeupSrcReason DIDs";"Updated";"Configurable as per project specific needs."
+"Shutdown counts for SWCs and SUMs";"Updated";"Manage shutdown counts so that they are not greater than its intended max values."
+"VehicleBatteryVoltage / BatteryVoltage_Actual ";"Updated";"BatteryVoltage_Actual provider is defined by SUSD.
+
+
+VehicleBatteryVoltage across is uint8 with values range from 3 to 25.5V
+All Consumers of ‘BatteryVoltage_Actual’ shall reference from SUSD/BatteryVoltage_Actual 
+instead of /GM_SUM/Interfaces/BatteryVoltage_Actual/, as we plan to discontinue from Common."

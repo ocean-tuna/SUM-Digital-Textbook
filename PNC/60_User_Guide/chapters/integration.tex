@@ -1,0 +1,85 @@
+\chapter{Integration Notes}
+
+\section{Integration into a Project}
+\ifnum \DocumentGroup=1{
+There is no need for standard installation procedure for RTA-SUM PNC. Once RTA-SUM plugin is installed,
+RTA-SUM PNC gets avilable for being integrated into a project. Create a new RTA-CAR project
+in ISOLAR-A/B and select the Model Year (MY) version. Open the RTA Code Generator dialog and enable
+RTA-SUM PNC by choosing the MY selected during the project creation. If the option \textit{Not Configured}
+is chosen instead, the module will not be integrated.\newline
+Please refer to RTA-SUM plugin Getting Started Guide for more details about how to integrate this
+module into a project. 
+}
+\else{
+There is no need for standard installation procedure for PNC. The folder itself contains all the necessary
+artifacts to integrate into a project. Dropping the complete folder structure into a BSW configuration
+project will enable the user to configure PNC and generate all the necessary artifacts.
+}
+\fi
+
+Refer to \href {https://rtahotline.etas.com/confluence/display/RH/RTA-SUM}{RTA-SUM Knowledge Base} for more details about 
+how to integrate this module into a project. 
+
+\section{Module Dependencies}
+\begin{enumerate}
+\item All through the PN state machine, the activation criteria condition evaluates local activation: sensor inputs and application signal inputs, where both the signal value and its corresponding signal status are considered.
+\item The combined local activation criterion evaluates as: a sensor being active alone is sufficient for local activation, but signal-based activation requires both the signal value and its signal status to be active at the same time. Remote activation is driven exclusively by NM frame reception via the NM frame indication callback, which sets the NM remote activation criterion independently of the local criteria.
+\item The user/integrator should ensure that the ComM Channels referred in ‘ComM\_PNC\_Ref’ of Partial Network configuration under {\color{blue} PNC/PNCConfigSets/SUM\_PNC\_PARTIAL\_NETWORK\_PARAMET ERs} should match with ComM channels configured in ‘ComM\_Channel\_Ref’ under {\color{blue} PNC/PNCGen eral/ComM\_PNC\_Channels}.  
+\end{enumerate}
+
+
+\section{Configuring RTA-SUM PNC}
+Once the complete package has been added to a BSW project, an additional module PNC should
+appear. From here you can open and begin configuring the module. Specific description of each
+configurable parameter is available in the “Description” view of 
+\ifnum \DocumentGroup=1{
+ISOLAR-A/B
+}
+\else
+{ISOLAR-A with BCT add-on}
+\fi
+when a parameter is selected.
+Refer to Section \ref{chap:conf} for more details about RTA-SUM PNC configuration.
+
+\section{Generating Artifacts}
+\label{sec:Artifacts}
+
+Generating the C/H/SWCD files from your configuration is similar to other BSW modules delivered
+from ETAS. The Code Generation perspective of the 
+\ifnum \DocumentGroup=1{
+ISOLAR-A/B
+}
+\else
+{ISOLAR-A with BCT add-on}
+\fi
+should present the user with a dialog
+to select specific module within the project to generate. 
+\ifnum \DocumentGroup=1{}
+\else{Either a Partial Build or Full Build can be used, depending on the needs of the user.}
+\fi
+In case of any configuration errors present in PNC, the
+console window will output a description of any errors found during generation. Further, when the
+user is configuring the module, the Problems Log will show any active errors in the configuration of
+PNC. A third visual aid is the appearance of red X’s in the configuration view over items which are
+invalid. Simply hovering over these X’s will provide the user a description of the problem. These are
+static validations.
+
+After generating the SUM files, execute the MemMap tool to generate memory mapping file of the module (\file{SUM\_PNC\_MemMap.h}).
+
+\section{Configuring the RTE}
+
+After the user has configured and generated the artifacts for PNC, the output SWCD file \linebreak(\file{PNC\_Cfg\_SWCD.arxml}) can be used for the RTE configuration.
+This is a complete SWC description per the AUTOSAR standard of all the users configured ports and interfaces required for the project specific configuration.
+This SWCD is a standard ASW component and not a module description.
+Therefore, there are no special considerations to be taken into account when configuring the RTE.
+It is recommended that if specific changes are required to the SWCD, the user does not manually edit this file, rather update and regenerate the configuration with the required changes.
+
+Note: RTE command used for RTE generation
+
+\begin{rtecommandline}
+-nts --samples=memmap --os-define-osenv=RTAOS40 --exclusive-area-optimization=enable --os-output-param=all --have-64bit-int-types=1 --strict-unconnected-rport-check=off -tsl=256
+\end{rtecommandline}
+
+% In order to fulfill the requirement to store the SumPNCInitValue in memory, AUTOSAR typed Per Instance Memory is used for storing this data in non-volatile memory.
+% Therefore, it is assumed the user will configure the NVM stack to support this required information.
+% Further, it is expected that during shutdown, the appropriate BSW services will write that specific NVM block to persistent storage.

@@ -1,0 +1,59 @@
+@startuml Sum_Ssfm_Overview
+
+top to bottom direction
+skinparam linetype ortho
+
+note top of SUM_SSFM
+Modify in future the names of te components according
+to the definition in the document
+end note
+
+component SUM_SSFM {
+    [Sum_Ssfm_Initialization] as I
+
+    component Handlers {
+        [Sum_Ssfm_DTC1961_Handler]
+        [Sum_Ssfm_DTC1962_Handler]
+        [Sum_Ssfm_DTCU19A3_57_Handler]
+		[Sum_Ssfm_DTCU19A3_92_Handler]
+        [Sum_Ssfm_DTCU19A3_8A_Handler]
+        [Sum_Ssfm_Errh_U19A3_54_Handler]
+        [Sum_Ssfm_DTCTriggeredMessage_Generator_Handler]
+        [Sum_Ssfm_DID_E0B9_Handler]
+		[Sum_Ssfm_DID_E0B8_Handler]
+		[Sum_Ssfm_DID_E0BA_Handler]
+        [Sum_Ssfm_Service0x14_Handler]
+		[Sum_Ssfm_LinBusoff_Handler] 
+        [Sum_Ssfm_MessageInfo_Handler] as IH
+		
+    }
+
+    component Managers {
+        [Sum_Ssfm_ExecutionManager] as E
+
+        component Others {
+            [Sum_Ssfm_DTC_Enable_Manager]
+            [Sum_Ssfm_DTC_Error_Filter_Manager]
+            [Sum_Ssfm_Bsw_Errors_Manager]
+            [Sum_Ssfm_RunCrankFault_Manager]
+            [Sum_Ssfm_SecOC_ErrorManager]
+            [Sum_Ssfm_LinResponder_Error_Manager]
+            [Sum_Ssfm_LNMConfigurationErrors_Manager]
+            [Sum_Ssfm_SignalStatusAv_LoC_Manager]
+            [Sum_Ssfm_FaultIndications_Manager]
+            [Sum_Ssfm_Service_Manager]
+            [Sum_Ssfm_SignalBased_MultipleProvider_Manager]
+            [Sum_Ssfm_SignalBased_Controller_DataManager]
+            [Sum_Ssfm_ServiceBased_TrgDvc_DataManager]
+        }
+    }
+}
+
+I --0)-- E
+E ---d0)--- Handlers
+E ---l0)--- Others
+Managers ---d0)--- Handlers
+Handlers ---u0)--- Managers
+I ---d0)--- IH
+
+@enduml

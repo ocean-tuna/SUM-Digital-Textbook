@@ -1,0 +1,5 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};getManufacturerEnableCounter
+\cellcolor{ETASlightgray}\textbf{Parameters};void 
+\cellcolor{ETASlightgray}\textbf{Return};uint8 mec Manufacturer Enable Counter
+\cellcolor{ETASlightgray}\textbf{Description};Returns the MEC stored in the RAM copy of the NVM

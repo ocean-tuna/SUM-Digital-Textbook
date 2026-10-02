@@ -1,0 +1,229 @@
+«IMPORT bsw»
+«IMPORT bsw::PNCModule»
+«EXTENSION templates::mathlib»
+«EXTENSION templates::Sum_Pnc_General»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+
+
+«DEFINE Root FOR Autosar»
+    «EXPAND Expand FOR ecu»
+«ENDDEFINE»
+
+
+«DEFINE Expand FOR Ecu»
+«FILE "Sum_Pnc_Types.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_PNC
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Module header for Macro and Typedefs Definitions
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+
+#ifndef PNC_Types_H
+#define PNC_Types_H
+/*
+ *******************************************************************************
+ * Includes
+ *******************************************************************************
+ */
+#include "Std_Types.h"
+
+/*******************************************************************************
+ * Defines
+ *******************************************************************************
+ */
+
+ /*
+ *******************************************************************************
+ * Macro Definitions
+ *******************************************************************************
+ */
+ /* PNC_ZERO = 0 */
+ #define PNC_ZERO ((Std_ReturnType)0u)
+
+ /*Used for Mode Switch Interface PNC_ComM_CurrentModeUser <n>
+ to indicate current state of ComM for the desired communication channel.*/
+/* [$Satisfies $SDD_PNC 032] */
+ #define SUM_COMM_NO_COMMUNICATION 			 	(ComMChannel_State)0x00
+ #define SUM_COMM_FULL_COM_READY_SLEEP 		 	(ComMChannel_State)0x01
+ #define SUM_COMM_FULL_COM_NETWORK_REQUESTED 	(ComMChannel_State)0x02
+ #define SUM_COMM_FULL_COMMUNICATION 		 	(ComMChannel_State)0x03
+ #define SUM_COMM_SILENT_COMMUNICATION 		 	(ComMChannel_State)0x04
+
+ /*Used for Mode Request (PN Request from SUM_PNC) and Mode Switch(Current state from ComM)*/
+ /*PNC_BswM_CurrentPNCModeReq <n> SUM_PNC_NO_COMMUNICATION and SUM_PNC_REQUESTED */
+ /* PNC_BswM_CurrentPNCModeUser<n> for individual PN, all states defined below */
+/* [$Satisfies $SDD_PNC 031] */
+ #define SUM_PNC_NO_COMMUNICATION 				(PNC_State)0x00
+ #define SUM_PNC_PREPARE_SLEEP 					(PNC_State)0x01
+ #define SUM_PNC_READY_SLEEP 					(PNC_State)0x02
+ #define SUM_PNC_REQUESTED 						(PNC_State)0x03
+ #define SUM_PNC_INVALID 						(PNC_State)0xFF
+
+ /*Used for Mode Request Interface PNC_BswMPduGroupSwitchTxReq<n> and
+ PNC_BswMPduGroupSwitchRxReq<n> (to Com) to request for Tx or Rx PDU Group
+ enabling associated with specific Partial networks.*/
+/* [$Satisfies $SDD_PNC 033] */
+ #define SUM_PDUGRP_STOP 						(PduGroup_State)0u
+ #define SUM_PDUGRP_START 						(PduGroup_State)1u
+ #define START 									(PDUgroup)1u
+ #define STOP 									(PDUgroup)0u
+
+/**
+ * \addtogroup Shutdown_Macros
+ * @{
+ */
+ /* Macro Definition for Shutdown values */
+ #define SHUTDOWN_ENABLE						0xFFu
+ #define SHUTDOWN_DISABLE						0x00u
+
+/**
+ * @}
+ */
+
+
+/**
+ * \addtogroup PN_Deactivation_Macros
+ * @{
+ */
+
+/* Macro Definitions for PN De-activation, If a given PN gets deactivated,
+ *  DID bits of that PN are updated to report deactivated */
+/** Local Deactivation */
+#define LOCAL_DEACTIVE 							1u
+/** Remote Deactivation */
+#define REMOTE_DEACTIVE 						2u
+
+/**
+ * @}
+ */
+
+/* Macro definition for NM Frame management used in Deadline Monitoring */
+#define PNC_NM_FRAME_LENGTH                     8u
+#define PNC_USER_DATA_INDEX_START               2u
+#define PNC_PN_REQUESTED                        1u
+#define PNC_ECU_ID_BYTE_INDEX                   0u
+#define PNC_BYTE_LENGTH                         8u
+#define PNC_ONE                                 1u
+
+/* Macro for Deadline Monitoring status */
+#define PNC_DM_INACTIVE                         0u
+#define PNC_DM_ACTIVE                           1u
+
+/* Macro for DM BswM Notification */
+#define PNC_DM_DISABLE                          0u
+#define PNC_DM_ENABLE                           1u
+
+
+
+ /* Enumeration datatypes used in PNC module*/
+/* [$Satisfies $SDD_PNC 044] */
+typedef enum {PNC_ENABLE_CHECK=0,
+			  PNC_MONITOR_ACTIVATION,
+			  PNC_ACK_ACTIVATION,
+			  PNC_TX_ENABLE,
+			  PNC_LOCALLY_ACTIVE,
+			  PNC_REMOTELY_ACTIVE
+			  }PNC_Modes;
+
+/**
+ * \addtogroup Alarm_Macros
+ * @{
+ */
+
+/* Type definitions and macros used in PNC */
+#define PNC_ALARM_PASSIVE       (1u)
+#define PNC_ALARM_ACTIVE        (2u)
+#define PNC_ALARM_ACT_REQ       (3u)
+#define PNC_REPEAT_MESSAGE_TIME (4u)
+
+/**
+ * @}
+ */
+
+/**
+ * \addtogroup PNC_Timer_Macros
+ * @{
+ */
+/* These Timer constants are chosen as these are maximum and is
+ not divisible by 10. These should only be used for calculations */
+#define PNC_TIMER_INVALID   (0xFFu) /* 255 */
+#define PNC_TIMER_EXPIRED   (0xFEu) /* 254 */
+#define PNC_TIMER_INIT      (0x00u)
+
+/**
+ * @}
+ */
+
+/*******************************Typedefs***************************************/
+/* Pointer to function for SUM Activation_Sensor Rte_Call Interfaces */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Activation_sensor_Rte_Call_Interface) (CONSTP2VAR(Criteria_Struct, AUTOMATIC, AUTOMATIC) Arg_Activation_criteria_out);
+
+/* Pointer to function for Rte_Write_PNC_Active_RxPDU_Enable Interface API */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Rte_Write_PNC_Active_RxPDU_Enable_Interface) (boolean data )  ;
+
+/* Pointer to function for Rte_Write_PNC_Active_TxPDU_Enable Interface API */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Rte_Write_PNC_Active_TxPDU_Enable_Interface) (boolean data)  ;
+
+/* Pointer to function for SUM Activation_Signal Rte Interfaces */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Activation_Signal_Interface) (CONSTP2VAR(Criteria_Struct, AUTOMATIC, AUTOMATIC)data);
+
+/* Pointer to function for SUM Activation_Signal Status Rte Interfaces */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Activation_Signal_Status_Interface) (CONSTP2VAR(Criteria_Struct, AUTOMATIC, AUTOMATIC)data);
+
+/* Pointer to function for Rte_Switch_PNC_BswMPduGroupSwitchTxReq Interface API */
+typedef P2FUNC(PNC_State, TYPEDEF, Rte_mode_Bswm_ComM_Current_PNC_ModeUser_MDG_PNC_State_Interface)(void);
+
+/* Pointer to function for Rte_mode_PP_Bswm_ComM_Current_ModeUser_MDG_ComMChannel_State Interface API */
+typedef P2FUNC(ComMChannel_State, TYPEDEF, Rte_mode_Bswm_ComM_Current_ModeUser_MDG_ComMChannel_State_Interface)(void);
+
+/* Pointer to function for Rte_mode_PP_Bswm_Current_ModeReq_MDG_PNC_State Interface API */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Rte_Switch_Bswm_ComM_Current_ModeReq_PNC_State_Interface)(VAR(PNC_State,AUTOMATIC)data );
+
+/* Pointer to function for Rte_Switch_PNC_BswMPduGroupSwitchRxReq Interface API */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Rte_Switch_PNC_BswMPduGroupSwitchRxReq_Interface)(VAR(PduGroup_State,AUTOMATIC)data  );
+
+/* Pointer to function for Rte_Switch_PNC_BswMPduGroupSwitchTxReq Interface API */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Rte_Switch_PNC_BswMPduGroupSwitchTxReq_Interface)(VAR(PduGroup_State,AUTOMATIC)data  );
+
+/* Pointer to function for Rte_Read_PNC_DisableNormalComm_DIAG_Interface  API */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Rte_Read_PNC_DisableNormalComm_DIAG_Interface)(P2VAR(uint8,AUTOMATIC,AUTOMATIC)data );
+
+typedef P2FUNC(boolean, TYPEDEF, FP_PNC_pCdata_Type)(void);
+
+/* Pointer to function for Rte_Switch_PP_PNC_BswM_PDUGroup_DM_Switch API */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Rte_Switch_PP_PNC_BswM_PDUGroup_DM_Switch)(VAR(uint8,AUTOMATIC)data );
+
+/* Pointer to function for Rte_CData_SUM_PN_DTC_TIMER */
+typedef P2FUNC(uint32, TYPEDEF, Rte_CData_SUM_PN_DTC_TIMER)(void);
+
+/* Pointer to function for Rte_Write_PP_PNC_PN_DTC_Allowed */
+typedef P2FUNC(Std_ReturnType, TYPEDEF, Rte_Write_PP_PNC_PN_DTC_Allowed)(VAR(SUM_PNC_DTC_AllowedType, AUTOMATIC) data);
+
+/*************************************Post Build***************************************/
+
+#endif /* PNC_types_H */
+/********************************** END OF FILE ******************************************************/
+«ENDFILE»
+«ENDDEFINE»

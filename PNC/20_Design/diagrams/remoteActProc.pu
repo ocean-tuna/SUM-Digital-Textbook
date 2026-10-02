@@ -1,0 +1,25 @@
+@startuml remoteActProc
+
+state PN_IDLE {
+    state PNC_ENABLE_CHECK:* Local Activation Criteria is FALSE
+    state PNC_ENABLE_CHECK:* NM Remote Criterion (SUM_PNC_Criteria_NM_Act_Remote) == TRUE
+    state PNC_ENABLE_CHECK:* PN state != PNC_NO_COMM
+    state PNC_ENABLE_CHECK:* DIAG_DisableNormalComm is <ENABLE_NORMAL_COMM>
+    state PNC_ENABLE_CHECK:* Request activation of PN RX Pdu Group
+    state PNC_ENABLE_CHECK:* SUM_PNC_PASSIVE_SYNCH_TIME is ON
+
+    state PNC_TX_ENABLE:* Request Tx PDU activation
+    state PNC_TX_ENABLE:* Notify SUSD via SUSD_PNC_UpdateRecord (SUM_PNC_NM_WR)
+}
+
+state PN_ACTIVE {
+    state PNC_REMOTELY_ACTIVE:* Bus communication is Full Comm
+    state PNC_REMOTELY_ACTIVE:* PN state transition != PNC_NO_COMM
+    state PNC_REMOTELY_ACTIVE:* NM Deadline Monitoring Timer active
+}
+
+[*] --> PNC_ENABLE_CHECK
+PNC_ENABLE_CHECK -> PNC_TX_ENABLE
+PNC_TX_ENABLE -> PNC_REMOTELY_ACTIVE
+
+@enduml

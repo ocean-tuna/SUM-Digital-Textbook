@@ -1,0 +1,11 @@
+{
+   "Name": "PermitExecutionMask",
+   "Description": "PermitExecution mask to start execution of the TCS module.",
+   "Multiplicity": "1..1",
+   "Category": "ECUC-INTEGER-PARAM-DEF",
+   "Range": "0..255",
+   "Default": "254",
+   "Container": "TcsGeneral",
+   "Req_Definition": [],
+   "Req_Satisfies": []
+}

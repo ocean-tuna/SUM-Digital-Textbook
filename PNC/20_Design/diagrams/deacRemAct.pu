@@ -1,0 +1,33 @@
+@startuml deacRemAct
+skinparam ParticipanrPadding 20
+skinparam BoxPadding 20
+
+participant "Remote ECU"
+participant BswM
+
+participant SUM_PNC
+
+autonumber
+"Remote ECU" -> SUM_PNC: NM REMOTE ACTIVATION (SUM_PNC_Criteria_NM_Act_Remote == TRUE)
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_PNC: PNC MainFunction
+note left: Local Activation Criteria == TRUE\n(while in PNC_REMOTELY_ACTIVE)
+activate SUM_PNC
+
+SUM_PNC -> BswM: PNC_BswM_CurrentPNCModeReq
+note left: SUM_PNC_REQUESTED
+activate BswM
+deactivate BswM
+
+BswM -> SUM_PNC: PNC_BswM_CurrentPNCModeUser
+activate SUM_PNC
+deactivate SUM_PNC
+
+SUM_PNC -> SUM_PNC: Transition to PNC_LOCALLY_ACTIVE
+activate SUM_PNC
+deactivate SUM_PNC
+deactivate SUM_PNC
+
+@enduml

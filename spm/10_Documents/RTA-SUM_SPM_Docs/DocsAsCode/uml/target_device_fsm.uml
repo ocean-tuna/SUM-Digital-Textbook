@@ -1,0 +1,33 @@
+@startuml
+
+[*] --> Off
+
+Off --> Initializing : IsRequested OR IsRequester
+Off --> On : HeartBeat received\nAND value <= Power Down threshold
+Off --> Pending_Shutdown : HeartBeat received\nAND value > Power Down threshold
+
+Initializing --> Off : NOT IsRequested\nAND NOT IsRequester\n(no longer monitored)
+Initializing --> On : HeartBeat received\nAND value <= Power Down threshold
+Initializing --> Pending_Shutdown : HeartBeat received\nAND value > Power Down threshold
+Initializing --> Faulted : DTC timeout elapsed\n(no HeartBeat received)
+
+On --> Pending_Shutdown : HeartBeat received\nAND value > Power Down threshold
+On --> Reboot : HeartBeat received\nAND value < penultimate HeartBeat value
+On --> Off : DTC timeout elapsed\nAND NOT IsRequested\nAND NOT IsRequester
+On --> Faulted : DTC timeout elapsed\nAND (IsRequested OR IsRequester)
+
+Pending_Shutdown --> Reboot : HeartBeat received\nAND value < penultimate HeartBeat value
+Pending_Shutdown --> Off : DTC timeout elapsed\nAND NOT IsRequested\nAND NOT IsRequester
+Pending_Shutdown --> Faulted : DTC timeout elapsed\nAND (IsRequested OR IsRequester)
+
+Reboot --> Pending_Shutdown : HeartBeat received\nAND value > Power Down threshold
+Reboot --> On : HeartBeat received\nAND value > penultimate HeartBeat value\n(correctly increasing)
+Reboot --> Off : DTC timeout elapsed\nAND NOT IsRequested\nAND NOT IsRequester
+Reboot --> Faulted : DTC timeout elapsed\nAND (IsRequested OR IsRequester)
+
+Faulted --> Off : NOT IsRequested\nAND NOT IsRequester\n(no longer monitored)
+Faulted --> Pending_Shutdown : HeartBeat received\nAND value > Power Down threshold
+Faulted --> On : HeartBeat received\nAND value > penultimate HeartBeat value\n(correctly increasing)
+Faulted --> Reboot : HeartBeat received\nAND value < penultimate HeartBeat value
+
+@enduml

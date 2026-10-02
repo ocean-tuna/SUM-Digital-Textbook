@@ -1,0 +1,37 @@
+@startuml Sum_Ssfm_Secp_Errors_Aggregator_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_Secp_Errors_Aggregator"
+
+**Interfaces Legend**
+   //II152 //: ERRH_ExecutionStatus
+   //ri120 //: BswM_SECPErrors
+   //II164 //: isGeneralSequenceOrMemoryFail
+   //II165 //: SecPErrorOccurred
+
+   
+endlegend
+
+note top of EC
+It is responsible for verifying the occurrence of SECP errors. It verifies if any SECP error occurred and if a general, memory or sequence error occurred.
+end note
+
+component [SSFM::Sum_Ssfm_Secp_Errors_Aggregator_Handler] as EC{
+    portin ri120
+
+	[Sum_Ssfm_Secp_Errors_Aggregator_Handler]  as E
+}
+   interface II152
+   interface II164
+   interface II165
+
+
+  II152 -> E
+  ri120 -> E
+  E -> II164
+  E -> II165  
+
+
+@enduml

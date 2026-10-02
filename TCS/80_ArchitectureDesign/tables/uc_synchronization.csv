@@ -1,0 +1,4 @@
+3;6;8;8
+\cellcolor{ETASlightgray}\textbf{Scenario No.};\cellcolor{ETASlightgray}\textbf{Arch. Requirement};\cellcolor{ETASlightgray}\textbf{Description};\cellcolor{ETASlightgray}\textbf{System Requirement}
+1;\RequirementTag{ADS_TCS}{023};Synchronization with Master Clock \textbf{fulfilled}; \Satisfies{SRS_TCS 001}\\ \Satisfies{SRS_TCS 003}\\ \Satisfies{SRS_TCS 007}\\ \Satisfies{SRS_TCS 009}\\ \Satisfies{SRS_TCS 010}\\ \Satisfies{SRS_TCS 028}\\
+2;\RequirementTag{ADS_TCS}{024};Synchronization with Master Clock \textbf{missing}; \Satisfies{SRS_TCS 003}\\ \Satisfies{SRS_TCS 007}\\ \Satisfies{SRS_TCS 009}\\ \Satisfies{SRS_TCS 010}

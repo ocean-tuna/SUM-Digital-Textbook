@@ -1,0 +1,11 @@
+6;2;2;2;4
+\textbf{Port Interface};\textbf{Port Type};\textbf{P-Port};\textbf{R-Port};\textbf{Description}
+TCS_SWC_Clock;Sender / Receiver;SUM_TCS;SUM_SOH;Provides timestamp data for error monitoring.
+TimeSyncMessage;Sender / Receiver;remote SW-C;SUM_TCS;Master Clock Signal received from TS_Master ECU.
+TimeSyncMessage_Av;Sender / Receiver;SUM_SSM;SUM_TCS;Availability of the Master Clock Signal.
+SUSD_TCS_PermitExecution;Sender / Receiver;SUM_SUSD;SUM_TCS;Informs SUM_TCS whether it is allowed to perform its functions.
+TCS_SUSD_ShutdownPermission;Sender / Receiver;SUM_TCS;SUM_SUSD;Informs SUM_SUSD whether SUM_TCS is ready for a shutdown.
+TCS_Dem_Clock;Client / Server;SUM_TCS;Dem;Provides Dem with timestamp data to write in the extended data record of a DTC.
+TCS_Dcm_Clock;Client / Server;SUM_TCS;Dcm;Used to implement the Read function of DID F129.
+RP_NvMService_TCSTimeValue;Client / Server;NVM;SUM_TCS;Needed to use NVM services to store \code{SumTCSInitValue}.
+RP_SUSD_TCS_BatteryVoltage_DisableNVMWrite;Sender / Receiver;SUM_SUSD;SUM_TCS;Needed to read battery voltage condition to perform NvmWrite.

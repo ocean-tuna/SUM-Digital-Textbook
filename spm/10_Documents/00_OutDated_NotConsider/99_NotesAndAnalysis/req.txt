@@ -1,0 +1,38 @@
+
+«FOREACH powprf.spmPowPrfDepList AS dep-»«spm.spmConfigSet.spmConfiguredPowPrf.indexOf(dep)»U, «ENDFOREACH-»
+
+RTA-SUM SPM is a Complex-Device Driver that implements the GM SDV Power Management functions in:
+* CCU compute domain
+* Mechatronic Domain
+* CHM domain
+
+RTA-SUM SPM embeddes:
+* Software Manager (SM)
+* Power Manager (PM)
+as submodules. The SPM external interaction with SM and PM shall happen only by the means of SPM interaction.
+
+RTA-SUM SPM shall be able to act as:
+* Service Requester: in case its Control Unit acts as a Client
+* Service Provider: in case its Control Unit acts as a Server
+RTA-SUM SPM can be also Service Requester and Service Provider at the same session/at the same time.
+
+the PM module (as SPM) shall communicate with the remote PM(s) by the following mechanisms:
+* CAN bus system
+* Ethernet bus system
+* internal domain signal-based communication system
+
+The PM module (as SPM) manage an internal liveness incremental-counter, the heartbeat counter, to inform the interested nodes on in the network about its
+liveness status.
+
+The PM emits the heartbeat counter value on the network periodically. The value of the period is a configuration parameter that represents the time-value in seconds.
+
+The requested PM module (as SPM) emits 0 as heartbeat value on the netwrok, when it receives a request but the respective SM still has not been in INITIALIZED state.
+
+The requested PM module monitors the initialization of the SM within a time window.The value of the time window depends from a calibration parameter.
+
+When the requested SM moves to init state, the requested PM starts to update the Heartbeat counter up towards.
+
+The PM module (as SPM) in a requested host sends its Heartbeat counter to the requester PM on the Etherent bus
+
+The PM module (as SPM) in a requested host initializes the heartbeat incremental counter
+

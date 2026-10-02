@@ -1,0 +1,4 @@
+5;5;2
+Mode User interface(PNC-BSWM);Description;Info obtained via
+PNC_BswM_CurrentPNCModeUser; To inform the current state of the PN; ComM
+PNC_ComM_CurrentModeUser; To inform the current state of channels related to the PN(s) for this ECU; ComM

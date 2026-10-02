@@ -1,0 +1,5 @@
+18;7;7;5
+\textbf{Document Name};\textbf{Description};\textbf{Version};\textbf{Released}
+SDV-8002 AUTOSAR Standard Utility Modules Specification;SUSD module specification;27.27.174.3p1;02/15/2024
+SDV-6001 Diagnostic Infrastructure Specification;Required DIDs and RID;27.27.174.3p1;02/15/2024
+SDV-5101 LIN Commander Communication Strategy Specification;LIN Communication strategy;27.27.174.3P0;02/15/2024

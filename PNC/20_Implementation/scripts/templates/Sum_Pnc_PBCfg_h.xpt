@@ -1,0 +1,66 @@
+«IMPORT bsw»
+«IMPORT bsw::PNCModule»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«REM»«EXTENSION templates::validator::common::PNC_Ext»comment«ENDREM»
+«EXTENSION templates::Sum_Pnc_General»
+
+«REM» ********************* Start Define ********************** «ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND PNC FOR ecu»
+«ENDDEFINE»
+«REM»End Define«ENDREM»
+
+«REM»************************  xPandrba_SentIf ***********************«ENDREM»
+«DEFINE PNC FOR Ecu»
+
+«FILE "Sum_Pnc_PBCfg.h"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_PNC
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : PNC_PBCfc.h header file
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+/*
+\defgroup PNC_H    PNC - APPLICATION LAYER MODULE
+*/
+
+#ifndef PNC_PBCfg_H
+#define PNC_PBCfg_H
+
+ /*******************************************************************************
+ * Function Calls
+ *******************************************************************************/
+
+/* Boolean calibration parameter flag for controlling whether to
+	process inputs and outputs related to PNn or not */
+
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PNC_PN_CFG ITERATOR i -»
+FUNC(uint32, RTE_CODE) PNC_Rte_CData_SUM_PN_DTC_TIMER_«PNC_PN_CFG.comM_PNC_Ref.shortName »(void);
+«ENDFOREACH-»
+
+
+#endif
+«ENDFILE-»
+«ENDDEFINE»

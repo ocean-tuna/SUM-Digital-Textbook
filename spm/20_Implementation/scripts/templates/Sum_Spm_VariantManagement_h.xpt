@@ -1,0 +1,65 @@
+
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+«IMPORT bsw::EthSM»
+«IMPORT bsw::ComModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_VariantManagement.h"»
+
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source file for Sum_Spm_VariantManagement
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+/* EOF */
+
+#ifndef SUM_SPM_VARIANTMANAGEMENT_H_
+#define SUM_SPM_VARIANTMANAGEMENT_H_
+
+#include "Sum_Spm_PBCfg.h"
+
+/*Global variables*/
+extern uint8 Spm_ActiveVariantIdx_u8;
+
+«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+extern boolean Sum_Spm_GetIsBranded(void);
+extern void Sum_Spm_SetIsBranded(boolean value);
+extern void    Sum_Spm_SetVariantId(uint8 value);
+«ENDIF-»
+extern void Sum_Spm_VariantManagement_DataStructureInit(void);
+extern void Sum_Spm_DataStructurePopulation_WithoutVariant(void);
+extern void Sum_Spm_GetVariantId_DataStructurePopulation_WithVariant(void);
+
+#endif
+
+«ENDFILE-»
+«ENDDEFINE»

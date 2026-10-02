@@ -1,0 +1,10 @@
+3;3;3;6
+"\textbf{Signals in a Signal Group}";"\textbf{Protected / Unprotected}";"\textbf{Interfaces if Tx}";"\textbf{Interfaces if Rx}"
+"MAC, ARC";"Protected";"CalcARC";"E_Verify, CalcIndications, FcI, FcFA, FoI, FoFA, FsI, FsFA, FpI, FpFA"
+"MAC, ARC, CRC";"Protected";"CalcARC_CRC";"E_Verify, CalcIndications, FcI, FcFA, FoI, FoFA, FsI, FsFA, FpI, FpFA"
+"MAC, ARC, PV";"Protected";"CalcARC_PV";"E_Verify, CalcIndications, FcI, FcFA, FoI, FoFA, FsI, FsFA, FpI, FpFA"
+"MAC, ARC, CS";"Protected";"CalcARC_CS";"E_Verify, CalcIndications, FcI, FcFA, FoI, FoFA, FsI, FsFA, FpI, FpFA"
+"ARC";"Unprotected";"CalcARC";"CalcIndications, FoI, FoFA, FsI, FsFA FpI, FpFA"
+"ARC, CS";"Unprotected";"CalcARC_CS";"CalcIndications, FoI, FoFA, FsI, FsFA, FpI, FpFA"
+"ARC, CRC";"Unprotected";"CalcARC_CRC";"CalcIndications,  FoI, FoFA, FsI, FsFA, FpI, FpFA"
+"ARC, PV";"Unprotected";"CalcARC_PV";"CalcIndications, FoI, FoFA, FsI, FsFA, FpI, FpFA"

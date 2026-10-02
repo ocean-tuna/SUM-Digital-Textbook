@@ -1,0 +1,8 @@
+4;3;5
+Tool Name;Version No.;Description
+ISOLAR-AB;12.3.3BETA1;AUTOSAR Authoring and BSW Configuration tools.
+RTA-BSW;12.3.3pr1;BSW automatic configuration and code generation.
+RTA-RTE;12.4.0;RTE generator used for testing.
+MemMapGen;12.3.0;Memory Map file generator.
+CANTATA;9.5;Used for function and unit testing.
+PRQA Framework;2.4.0;Used for static analysis

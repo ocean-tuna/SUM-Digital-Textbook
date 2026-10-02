@@ -1,0 +1,23 @@
+50;8;12;12;20
+\textbf{Port Interface};\textbf{Port Type};\textbf{P-Port};\textbf{R-Port};\textbf{Description}
+ERRH_E_BswEvent;Sender / Receiver;SUM_ERRH;SUM_SOH;Reception of DEM events which are routed from SUM_ERRH to the SUM_SOH for processing.
+SUSD_SOH_PermitExecution;Sender / Receiver;SUM_SUSD;SUM_SOH;Permit Execution interface to indicate that operating conditions are correct for the SUM_SOH to execute its functions.
+PNC_SUSD_ShutdownPermission;Sender / Receiver;SUM_PNC;SUM_SOH;Notification to the SUM_SOH of any active or not active partial networks.
+SSC_E_SecureMessageMonitoringEvents;Sender / Receiver;SUM_SSC;SUM_SOH;Notification of MAC failures along with their types.
+DIAG_ECUResetRequest;Sender / Receiver;SUM_DIAG;SUM_SOH;Notification of a service 0x11 tester-initiated request for ECU Reset (not programming).
+SUSD_SOH_ResetOccured;Sender / Receiver;SUM_SUSD;SUM_SOH;Notification to the SUM_SOH that a reset occurred. The type of reset is also communicated to the SUM_SOH. Type of resets may be delayed or immediate.
+SSFM_ClearDiagReq;Sender / Receiver;SUM_SSFM;SUM_SOH;Notification to the SUM_SOH that a service 0x04 or a service 0x14 request was accepted or rejected.
+DIAG_SOH_DiagSessionRequest;Sender / Receiver;SUM_DIAG;SUM_SOH;Notification to the SUM_SOH that a reprogramming request took place (service 0x10 subfunction 0x02).
+SSC_SOH_SecurityAccessError;Sender / Receiver;SUM_SSC;SUM_SOH;Notification to the SUM_SOH of the occurrences of service 0x27 failures.
+BatteryVoltage_DisableNVMWrite;Sender / Receiver;SUM_SUSD;SUM_SOH;Notification to the SUM_SOH from SUM_SUSD that vehicle battery voltage is too low to perform NVM writes.
+DIAG_GetMEC;Sender / Receiver;SUM_DIAG;SUM_SOH;This interface is used by the SUM_DIAG to communicate to SUM_SOH to value of the MEC.
+DataServices<SOH>Data<n>;Client / Server;DCM;SUM_SOH;To support the collection of Diagnostic DIDs that are part of the SUM_SOH functionalities.
+DiagnosticReprogrammingRequest;Sender / Receiver;BswM;SUM_SOH;Notification of a request to shutdown to reset as part of programming to jump to boot.
+SOH_WdgM_IndividualMode<1...n>;Mode Switch;WdgM;SUM_SOH;Notification of WdgM local supervision failures occurrence for all supervised entities excluding the SUM_SOH and the SUM_ERRH.\newline \footnotesize{These interfaces replace the SOH_BswM_WdgM _IndividualMode<1...n> interfaces described in GB8002.}
+SOH_WdgM_IndividualMode_Errh;Mode Switch;WdgM;SUM_SOH;Notification of the WdgM SUM_ERRH local supervision failures occurrences. \newline \footnotesize{This interface replaces the SOH_BsWM_WdgM _ERRHMode interface described in GB8002.}
+RP_ErrorStatus;Mode Switch;BswM;SOH;This interface is used by the BswM to notify SUM_SOH of SecP errors occurrences.
+NvMService;Client / Server;NvM;SOH;The interface provides services for the management and maintenance of NV data related to SOH Metrics.
+RoutineServices_Clear_SUM_SOH_logs;Client / Server;DCM;SOH;The interface provides services for the clear of the SOH Metrics.
+WdgM_LocalSupervision; Client / Server;WdgM;SUM_SOH;Notify the checkpoint reachement for implementing the Local Supervision.
+SOH_ERRH_ClearRID0x02C0;Client / Server;SUM_ERRH;SUM_SOH;The interface provides service for starting clear, all the metrics related to SUM_SOH Local Supervision Detector implemented at ERRH side.
+SOH_SUSD_ShutdownPermission;Sender / Receiver;SUM_SOH;SUM_SUSD;Shutdown Permission interface to indicate that operating conditions are correct for the SUM_SOH to execute the shutdown.

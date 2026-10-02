@@ -1,0 +1,3 @@
+4;4;5;5;6;5;7
+\textbf{RID Name};\textbf{ID};\textbf{Enable Conditions};\textbf{Security Levels};\textbf{Availability};\textbf{Sub-Functions Required};\textbf{Description}
+Clear ECU Wakeup Detection Records;0x041A;None;None;A;[0x01] Start Routine;This Routine Identifier clears all ECU Wakeup Detection Records read with DID 0xF09E ECU Wakeup Detection Records. When this RID is successfully completed the record values in DID 0xF09E should be 00000000 for each record.

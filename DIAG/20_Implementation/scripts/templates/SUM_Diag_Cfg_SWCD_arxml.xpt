@@ -1,0 +1,1399 @@
+«IMPORT bsw»
+«IMPORT bsw::DiagModule»
+«EXTENSION templates::mathlib»
+«EXTENSION Util::DIAG_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND DIAG FOR ecu»
+«ENDDEFINE»
+
+«DEFINE DIAG FOR Ecu»
+
+«FILE "SUM_Diag_Cfg_SWCD.arxml"»<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2021 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_DIAG
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr24
+ * Description : SWCD
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+-->
+
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00049.xsd">
+  <AR-PACKAGES>
+  <AR-PACKAGE>
+  <SHORT-NAME>SwcImplementations</SHORT-NAME>
+  <ELEMENTS>
+    <SWC-IMPLEMENTATION>
+      <SHORT-NAME>IMPL_SUM_DIAG</SHORT-NAME>
+      <CODE-DESCRIPTORS>
+        <CODE>
+          <SHORT-NAME>Code</SHORT-NAME>
+          <ARTIFACT-DESCRIPTORS>
+            <AUTOSAR-ENGINEERING-OBJECT>
+              <SHORT-LABEL>AutosarEngineeringObject</SHORT-LABEL>
+              <CATEGORY>SWSRC</CATEGORY>
+            </AUTOSAR-ENGINEERING-OBJECT>
+          </ARTIFACT-DESCRIPTORS>
+        </CODE>
+      </CODE-DESCRIPTORS>
+      <PROGRAMMING-LANGUAGE>C</PROGRAMMING-LANGUAGE>
+      <RESOURCE-CONSUMPTION>
+       <SHORT-NAME>Diag_ResourceConsumption_0</SHORT-NAME>
+        <MEMORY-SECTIONS>
+          <MEMORY-SECTION>
+            <SHORT-NAME>CODE</SHORT-NAME>
+          </MEMORY-SECTION>
+        </MEMORY-SECTIONS>
+      </RESOURCE-CONSUMPTION>
+      <BEHAVIOR-REF DEST="SWC-INTERNAL-BEHAVIOR">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB</BEHAVIOR-REF>
+    </SWC-IMPLEMENTATION>
+  </ELEMENTS>
+  </AR-PACKAGE>
+    <AR-PACKAGE>
+      <SHORT-NAME>SUM_DIAG</SHORT-NAME>
+      <AR-PACKAGES>
+        <AR-PACKAGE>
+          <SHORT-NAME>Component</SHORT-NAME>
+          <ELEMENTS>
+            <APPLICATION-SW-COMPONENT-TYPE>
+              <SHORT-NAME>SUM_DIAG</SHORT-NAME>
+«REM» [$Satisfies $SDD_DIAG 070] «ENDREM-»
+              <PORTS>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>DIAG_ECUResetRequest</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/DIAG_ECUResetRequest</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>DIAG_ShutdownPermission</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/DIAG_ShutdownPermission</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+				<P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_DIAG_DID_F1A0_ManufacturersEnableCounter</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«diag.diagGeneral.dIAG_DID_F1A0_MEC_Reference.shortName»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«IF (diag.diagGeneral.dIAG_DID_F1B0_Reference != null)-»
+				        <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_DIAG_DID_F1B0</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«diag.diagGeneral.dIAG_DID_F1B0_Reference.shortName»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«ENDIF-»
+«IF (diag.diagGeneral.sum_Diag_EnableDID_E0CC == true)-»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_DIAG_DID_E0CC_ServiceDiscoveryLearningTableStatus</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«diag.diagGeneral.dIAG_DID_E0CC_Reference.shortName»</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«ENDIF-»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>DIAG_SetInitialReflashFlag</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/DIAG_SSC_InitialReflashFlag</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«FOREACH diag.diagConfigSet.commChannels.commChannel.commChannelRef AS channelRef-»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_DIAG_DisableNormalComm_Ch«channelRef.comMChannelId»</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/DIAG_DisableNormalComm</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«ENDFOREACH»
+«FOREACH diag.diagConfigSet.commChannels.commChannel.commChannelRef.shortName AS channel_name-»
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>BswM_CommunicationMode_«channel_name»</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/SUM_DIAG/Component/DIAG_BswM_Dcm_CommunicationMode_CurrentState</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«ENDFOREACH»
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>SUSD_DIAG_PermitExecution</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SUSD_PermitExecution</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>SUSD_Vehicle_Power_Mode</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SUSD_VehiclePowerMode</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+				<R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_Av</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/RxMonitoredSignal_Av</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+				  <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>SSC_DIAG_ReadMemorySecurityVerification</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SSC_DIAG_ReadMemorySecurityVerification</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                   <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>DIAG_GetEcuAddress</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SSC_DIAG_GetECUAddress</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«IF (diag.diagGeneral.mecStorageInHsm == true)-»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_DIAG_ReadMEC</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/DIAG_ReadMEC</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_HSM_SecureDataStore</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/HSM_SecureDataStore</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_DemService_U19A392</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dem/PortInterfaces/DiagnosticMonitor</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«ELSE-»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_DIAG_SSC_GetMEC</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/DIAG_GetMEC</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_DIAG_SSFM_GetMEC</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/DIAG_GetMEC</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«ENDIF-»
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>BswM_DiagSession</SHORT-NAME>
+                  <REQUIRED-COM-SPECS>
+                    <MODE-SWITCH-RECEIVER-COM-SPEC>
+                      <SUPPORTS-ASYNCHRONOUS-MODE-SWITCH>true</SUPPORTS-ASYNCHRONOUS-MODE-SWITCH>
+                    </MODE-SWITCH-RECEIVER-COM-SPEC>
+                  </REQUIRED-COM-SPECS>
+                  <REQUIRED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/BswM_Modes/DIAG_BswM_DiagSession</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>Dcm_SessionCtrlType</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DCMServices</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+				<R-PORT-PROTOTYPE>
+                  <SHORT-NAME>OTA_PSF_Precondition</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/SUM_DIAG/Component/OTA_PSF_Preconditions</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+				<R-PORT-PROTOTYPE>
+                  <SHORT-NAME>EnableCondition_OTA_PSF</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dem/PortInterfaces/EnableCondition</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>DIAG_RequestHandler</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/ServiceRequestNotification</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«IF (diag.diagGeneral.mecStorageInHsm != true)-»
+				<R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_NvMService_MECBlock</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_NvM/PortInterfaces/NvMService</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«ENDIF-»
+				<R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_DcmService_GetSecurityLevel</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DCMServices</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+				<R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_NvMService_OTABlock</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_NvM/PortInterfaces/NvMService</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«IF (diag.diagGeneral.mecStorageInHsm != true)-»
+				<P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_DIAG_SOH_GetMEC</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/DIAG_GetMEC</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+«ENDIF-»
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>DIAG_SOH_DiagSessionRequest</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/DIAG_SOH_DiagSessionRequest</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_DIAG_SSC_InitialReflashFlag_WrtStatus</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/DIAG_SSC_InitialReflashFlag_WrtStatus</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+  	            <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_SUSD_DIAG_BatteryVoltage_DisableNVMWrite</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/BatteryVoltage_DisableNVMWrite</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+«REM» [$Satisfies $SDD_DIAG 097] «ENDREM-»
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_DIAG_BswM_controlDTCSetting</SHORT-NAME>
+                  <REQUIRED-COM-SPECS>
+                    <MODE-SWITCH-RECEIVER-COM-SPEC>
+                      <ENHANCED-MODE-API>true</ENHANCED-MODE-API>
+                      <MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/GM_SUM/Interfaces/SUM_ControlDTCSetting/ControlDTCSetting</MODE-GROUP-REF>
+                      <SUPPORTS-ASYNCHRONOUS-MODE-SWITCH>true</SUPPORTS-ASYNCHRONOUS-MODE-SWITCH>
+                    </MODE-SWITCH-RECEIVER-COM-SPEC>
+                  </REQUIRED-COM-SPECS>
+                  <REQUIRED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/GM_SUM/Interfaces/SUM_ControlDTCSetting</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <R-PORT-PROTOTYPE>
+                  <SHORT-NAME>RP_Com_DIAG_BSPMP_RmtProgmActvAuth</SHORT-NAME>
+                  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/SUM_DIAG/Component/BSPMP_RmtProgmActvAuth_Signal</REQUIRED-INTERFACE-TREF>
+                </R-PORT-PROTOTYPE>
+                <P-PORT-PROTOTYPE>
+                  <SHORT-NAME>PP_DIAG_SWC_RmtPrgmOtaPsf_Status</SHORT-NAME>
+                  <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/DIAG_RmtPrgmOtaPsf</PROVIDED-INTERFACE-TREF>
+                </P-PORT-PROTOTYPE>
+            «IF (!Diag_SsfmIsSinglePortSupported(sSFM))-»
+                <R-PORT-PROTOTYPE>
+	              <SHORT-NAME>RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_FsFA</SHORT-NAME>
+	              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SignalGroup_FsFA</REQUIRED-INTERFACE-TREF>
+	            </R-PORT-PROTOTYPE>
+            «ELSE-»
+	            <R-PORT-PROTOTYPE>
+	              <SHORT-NAME>RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_FxFA</SHORT-NAME>
+	              <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SignalGroup_FxFA</REQUIRED-INTERFACE-TREF>
+	            </R-PORT-PROTOTYPE>
+            «ENDIF-»
+              </PORTS>
+              <INTERNAL-BEHAVIORS>
+                <SWC-INTERNAL-BEHAVIOR>
+                  <SHORT-NAME>SUM_DIAG_IB</SHORT-NAME>
+                  <DATA-TYPE-MAPPING-REFS>
+                    <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/SUM_DIAG/Component/Communication_Mode_DTMS</DATA-TYPE-MAPPING-REF>
+                    <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/BswM_Modes/DiagSession_DTMS</DATA-TYPE-MAPPING-REF>
+					<DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/BswM_Modes/DTCSetting_DTMS</DATA-TYPE-MAPPING-REF>
+                    <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/BswM_Modes/DTMS_ECUM_MODE</DATA-TYPE-MAPPING-REF>
+                    <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/GM_SUM/Infrastructure/DTMS_ControlDTCSetting</DATA-TYPE-MAPPING-REF>
+                    «IF Diag_IsOTAServiceBased(diag.diagGeneral)-»
+                    <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">«diag.diagGeneral.dIAG_ServiceBased_OTA_DataTypeMappingSet»</DATA-TYPE-MAPPING-REF>
+                    «ENDIF-»
+                  </DATA-TYPE-MAPPING-REFS>
+                  <AR-TYPED-PER-INSTANCE-MEMORYS>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>TesterSourceAddress</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint16</TYPE-TREF>
+                    </VARIABLE-DATA-PROTOTYPE>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>Ecu_Address</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                    </VARIABLE-DATA-PROTOTYPE>
+                  </AR-TYPED-PER-INSTANCE-MEMORYS>
+                  <EVENTS>
+                    <TIMING-EVENT>
+                      <SHORT-NAME>TE_Main</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_DIAG_Main</START-ON-EVENT-REF>
+                      <PERIOD>«diag.diagGeneral.dIAG_TE_Main_Period / 1000.0»</PERIOD>
+                    </TIMING-EVENT>
+                    <TIMING-EVENT>
+                      <SHORT-NAME>TE_Shutdown_Permission</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_Shutdown_Permission</START-ON-EVENT-REF>
+                      <PERIOD>«diag.diagGeneral.dIAG_TE_Shutdown_Permission_Period / 1000.0»</PERIOD>
+                    </TIMING-EVENT>
+                    <TIMING-EVENT>
+                      <SHORT-NAME>TE_BswM_ModeUser</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_BswM_ModeUser</START-ON-EVENT-REF>
+                      <PERIOD>«diag.diagGeneral.dIAG_TE_BswM_ModeUser_Period / 1000.0»</PERIOD>
+                    </TIMING-EVENT>
+                    <TIMING-EVENT>
+                      <SHORT-NAME>TE_MEC_Handler</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_MEC_Handler</START-ON-EVENT-REF>
+                      <PERIOD>«diag.diagGeneral.dIAG_TE_MEC_Handler_Period / 1000.0»</PERIOD>
+                    </TIMING-EVENT>
+					<TIMING-EVENT>
+                      <SHORT-NAME>TE_OTA_PSF</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_OTA_PSF</START-ON-EVENT-REF>
+                      <PERIOD>«diag.diagGeneral.dIAG_TE_OTA_PSF_Period / 1000.0»</PERIOD>
+                    </TIMING-EVENT>
+                    <SWC-MODE-SWITCH-EVENT>
+                      <SHORT-NAME>MSE_SwitchedToDefault</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_SwitchedToDefaultSession</START-ON-EVENT-REF>
+		              <ACTIVATION>ON-ENTRY</ACTIVATION>
+                      <MODE-IREFS>
+                      <MODE-IREF>
+                         <CONTEXT-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/BswM_DiagSession</CONTEXT-PORT-REF>
+                         <CONTEXT-MODE-DECLARATION-GROUP-PROTOTYPE-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/BswM_Modes/DIAG_BswM_DiagSession/SUM_DIAG_SESSION</CONTEXT-MODE-DECLARATION-GROUP-PROTOTYPE-REF>
+                         <TARGET-MODE-DECLARATION-REF DEST="MODE-DECLARATION">/BswM_Modes/MDG_BswM_DiagSession/DEFAULT_SESSION</TARGET-MODE-DECLARATION-REF>
+                       </MODE-IREF>
+                       </MODE-IREFS>
+                    </SWC-MODE-SWITCH-EVENT>
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_RequestHandler_Indication</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_RequestHandler_Indication</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_RequestHandler</CONTEXT-P-PORT-REF>
+                        <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/ServiceRequestNotification/Indication</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+                    <OPERATION-INVOKED-EVENT>
+                      <SHORT-NAME>OIE_RequestHandler_Confirmation</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_RequestHandler_Confirmation</START-ON-EVENT-REF>
+                      <OPERATION-IREF>
+                        <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_RequestHandler</CONTEXT-P-PORT-REF>
+                        <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/ServiceRequestNotification/Confirmation</TARGET-PROVIDED-OPERATION-REF>
+                      </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+                    <OPERATION-INVOKED-EVENT>
+					  <SHORT-NAME>OIE_ConditionCheckRead</SHORT-NAME>
+					  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/ConditionCheckRead</START-ON-EVENT-REF>
+					  <OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_DID_F1A0_ManufacturersEnableCounter</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«diag.diagGeneral.dIAG_DID_F1A0_MEC_Reference.shortName»/ConditionCheckRead</TARGET-PROVIDED-OPERATION-REF>
+					  </OPERATION-IREF>
+                    </OPERATION-INVOKED-EVENT>
+					<OPERATION-INVOKED-EVENT>
+					  <SHORT-NAME>OIE_ReadData</SHORT-NAME>
+					  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/ReadData</START-ON-EVENT-REF>
+					  <OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_DID_F1A0_ManufacturersEnableCounter</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«diag.diagGeneral.dIAG_DID_F1A0_MEC_Reference.shortName»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+					  </OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+					<OPERATION-INVOKED-EVENT>
+					  <SHORT-NAME>OIE_WriteData</SHORT-NAME>
+					  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/WriteData</START-ON-EVENT-REF>
+					  <OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_DID_F1A0_ManufacturersEnableCounter</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«diag.diagGeneral.dIAG_DID_F1A0_MEC_Reference.shortName»/WriteData</TARGET-PROVIDED-OPERATION-REF>
+					  </OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+«IF (diag.diagGeneral.dIAG_DID_F1B0_Reference != null)-»
+					<OPERATION-INVOKED-EVENT>
+					  <SHORT-NAME>OIE_F1B0_ReadData</SHORT-NAME>
+					  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_DID_F1B0_ReadData</START-ON-EVENT-REF>
+					  <OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_DID_F1B0</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«diag.diagGeneral.dIAG_DID_F1B0_Reference.shortName»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+					  </OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+«ENDIF-»
+«IF (diag.diagGeneral.sum_Diag_EnableDID_E0CC == true)-»
+					<OPERATION-INVOKED-EVENT>
+					  <SHORT-NAME>OIE_Diag_E0CC_ReadData</SHORT-NAME>
+					  <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_Diag_DID_E0CC_ReadData</START-ON-EVENT-REF>
+					  <OPERATION-IREF>
+						<CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_DID_E0CC_ServiceDiscoveryLearningTableStatus</CONTEXT-P-PORT-REF>
+						<TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«diag.diagGeneral.dIAG_DID_E0CC_Reference.shortName»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+					  </OPERATION-IREF>
+					</OPERATION-INVOKED-EVENT>
+«ENDIF-»
+					«IF (diag.diagGeneral.diagGenerateInitRunnable == true)-»
+                    <TIMING-EVENT>
+                      <SHORT-NAME>TE_Runnable_DIAG_Init</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_DIAG_Init</START-ON-EVENT-REF>
+                      <PERIOD>«diag.diagGeneral.dIAG_TE_Runnable_DIAG_Init_Period / 1000.0»</PERIOD>
+                    </TIMING-EVENT>
+					«ENDIF»
+                    <SWC-MODE-SWITCH-EVENT>
+                      <SHORT-NAME>MSE_DIAG_ControlDtcSetting_Enabled</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_DIAG_ControlDTCSetting_Enabled</START-ON-EVENT-REF>
+                      <ACTIVATION>ON-ENTRY</ACTIVATION>
+                      <MODE-IREFS>
+                        <MODE-IREF>
+                          <CONTEXT-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_DIAG_BswM_controlDTCSetting</CONTEXT-PORT-REF>
+                          <CONTEXT-MODE-DECLARATION-GROUP-PROTOTYPE-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/GM_SUM/Interfaces/SUM_ControlDTCSetting/ControlDTCSetting</CONTEXT-MODE-DECLARATION-GROUP-PROTOTYPE-REF>
+                          <TARGET-MODE-DECLARATION-REF DEST="MODE-DECLARATION">/GM_SUM/Infrastructure/MDG_ControlDTCSetting/SUM_ENABLEDTCSETTING</TARGET-MODE-DECLARATION-REF>
+                        </MODE-IREF>
+                      </MODE-IREFS>
+                    </SWC-MODE-SWITCH-EVENT>
+                    <SWC-MODE-SWITCH-EVENT>
+                      <SHORT-NAME>MSE_DIAG_ControlDtcSetting_Disabled</SHORT-NAME>
+                      <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Runnable_DIAG_ControlDTCSetting_Disabled</START-ON-EVENT-REF>
+                      <ACTIVATION>ON-ENTRY</ACTIVATION>
+                      <MODE-IREFS>
+                        <MODE-IREF>
+                          <CONTEXT-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_DIAG_BswM_controlDTCSetting</CONTEXT-PORT-REF>
+                          <CONTEXT-MODE-DECLARATION-GROUP-PROTOTYPE-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/GM_SUM/Interfaces/SUM_ControlDTCSetting/ControlDTCSetting</CONTEXT-MODE-DECLARATION-GROUP-PROTOTYPE-REF>
+                          <TARGET-MODE-DECLARATION-REF DEST="MODE-DECLARATION">/GM_SUM/Infrastructure/MDG_ControlDTCSetting/SUM_DISABLEDTCSETTING</TARGET-MODE-DECLARATION-REF>
+                        </MODE-IREF>
+                      </MODE-IREFS>
+                    </SWC-MODE-SWITCH-EVENT>
+                  </EVENTS>
+                  <EXPLICIT-INTER-RUNNABLE-VARIABLES>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>IR_Normal_msg_transmission</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/GM_SUM/ImplementationDataTypes/SUM_DiagNormalCom_ModeType</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                          <SHORT-LABEL>Normal_msg_transmission_InitValue</SHORT-LABEL>
+                          <VALUE>0</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </VARIABLE-DATA-PROTOTYPE>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>IR_NumberActiveDiagnosticRequest</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                          <SHORT-LABEL>NumberActiveDiagnosticRequest_InitValue</SHORT-LABEL>
+                          <VALUE>0</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </VARIABLE-DATA-PROTOTYPE>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>IR_Sub_function</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</TYPE-TREF>
+                      <INIT-VALUE>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                          <SHORT-LABEL>Sub_function_InitValue</SHORT-LABEL>
+                          <VALUE>0</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </VARIABLE-DATA-PROTOTYPE>
+                    <VARIABLE-DATA-PROTOTYPE>
+                      <SHORT-NAME>IR_DIAG_ControlDTCsetting</SHORT-NAME>
+                      <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+                      <INIT-VALUE>
+                        <TEXT-VALUE-SPECIFICATION>
+                          <SHORT-LABEL>DIAG_ControlDTCsetting</SHORT-LABEL>
+                          <VALUE>FALSE</VALUE>
+                        </TEXT-VALUE-SPECIFICATION>
+                      </INIT-VALUE>
+                    </VARIABLE-DATA-PROTOTYPE>
+                  </EXPLICIT-INTER-RUNNABLE-VARIABLES>
+                  <PORT-API-OPTIONS>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/BswM_DiagSession</PORT-REF>
+                    </PORT-API-OPTION>
+					<PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/OTA_PSF_Precondition</PORT-REF>
+                    </PORT-API-OPTION>
+					<PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_OTABlock</PORT-REF>
+                    </PORT-API-OPTION>
+					<PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_MECBlock</PORT-REF>
+                    </PORT-API-OPTION>
+					<PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_DcmService_GetSecurityLevel</PORT-REF>
+                    </PORT-API-OPTION>
+                    «FOREACH diag.diagConfigSet.commChannels.commChannel.commChannelRef AS channelRef-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_DisableNormalComm_Ch«channelRef.comMChannelId»</PORT-REF>
+                    </PORT-API-OPTION>
+                    «ENDFOREACH»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_ECUResetRequest</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_SetInitialReflashFlag</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_GetEcuAddress</PORT-REF>
+                    </PORT-API-OPTION>
+					<PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SSC_DIAG_ReadMemorySecurityVerification</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SSC_GetMEC</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SSFM_GetMEC</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_RequestHandler</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_ShutdownPermission</PORT-REF>
+                    </PORT-API-OPTION>
+                    «FOREACH diag.diagConfigSet.commChannels.commChannel.commChannelRef.shortName AS channel_name-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/BswM_CommunicationMode_«channel_name»</PORT-REF>
+                    </PORT-API-OPTION>
+                    «ENDFOREACH»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/Dcm_SessionCtrlType</PORT-REF>
+                    </PORT-API-OPTION>
+		            <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_Av</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUSD_DIAG_PermitExecution</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUSD_Vehicle_Power_Mode</PORT-REF>
+                    </PORT-API-OPTION>
+		     <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SOH_GetMEC</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_SOH_DiagSessionRequest</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_DIAG_SSC_InitialReflashFlag_WrtStatus</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_SUSD_DIAG_BatteryVoltage_DisableNVMWrite</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_DIAG_BswM_controlDTCSetting</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      «IF Diag_IsOTAServiceBased(diag.diagGeneral)-»
+                      <ERROR-HANDLING>TRANSFORMER-ERROR-HANDLING</ERROR-HANDLING>
+                      «ENDIF-»
+                      <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_Com_DIAG_BSPMP_RmtProgmActvAuth</PORT-REF>
+                    </PORT-API-OPTION>
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SWC_RmtPrgmOtaPsf_Status</PORT-REF>
+                    </PORT-API-OPTION>
+				«IF (!Diag_SsfmIsSinglePortSupported(sSFM))-»
+			 		<PORT-API-OPTION>
+	                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+	                  <INDIRECT-API>false</INDIRECT-API>
+	                  <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_FsFA</PORT-REF>
+	                </PORT-API-OPTION>
+        		«ELSE-»
+	        		<PORT-API-OPTION>
+	                  <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+	                  <INDIRECT-API>false</INDIRECT-API>
+	                  <PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_FxFA</PORT-REF>
+	                </PORT-API-OPTION>
+				«ENDIF-»
+
+«IF (diag.diagGeneral.dIAG_DID_F1B0_Reference != null)-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_DID_F1B0</PORT-REF>
+                    </PORT-API-OPTION>
+«ENDIF-»
+«IF (diag.diagGeneral.sum_Diag_EnableDID_E0CC == true)-»
+                    <PORT-API-OPTION>
+                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                      <INDIRECT-API>false</INDIRECT-API>
+                      <PORT-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_DID_E0CC_ServiceDiscoveryLearningTableStatus</PORT-REF>
+                    </PORT-API-OPTION>
+«ENDIF-»
+                  </PORT-API-OPTIONS>
+                  <RUNNABLES>
+«IF (diag.diagGeneral.diagGenerateInitRunnable == true)-»
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_DIAG_Init</SHORT-NAME>
+                      <SERVER-CALL-POINTS>
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_1</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/EnableCondition_OTA_PSF</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dem/PortInterfaces/EnableCondition/SetEnableCondition</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+                      </SERVER-CALL-POINTS>
+                      <SYMBOL>RE_DIAG_Init</SYMBOL>
+                    </RUNNABLE-ENTITY>
+«ENDIF-»
+					  <RUNNABLE-ENTITY>
+					  <SHORT-NAME>Runnable_SwitchedToDefaultSession</SHORT-NAME>
+					  <MODE-ACCESS-POINTS>
+						<MODE-ACCESS-POINT>
+						  <MODE-GROUP-IREF>
+							<R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+							  <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/BswM_DiagSession</CONTEXT-R-PORT-REF>
+							  <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/BswM_Modes/DIAG_BswM_DiagSession/SUM_DIAG_SESSION</TARGET-MODE-GROUP-REF>
+							</R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+						  </MODE-GROUP-IREF>
+						</MODE-ACCESS-POINT>
+					  </MODE-ACCESS-POINTS>
+					  <SYMBOL>Runnable_SwitchedToDefaultSession</SYMBOL>
+					  <WRITTEN-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WLV_IR_Normal_msg_transmission</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_Normal_msg_transmission</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </WRITTEN-LOCAL-VARIABLES>
+                    </RUNNABLE-ENTITY>
+					<RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_OTA_PSF</SHORT-NAME>
+                      <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_OtaPsf</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/OTA_PSF_Precondition</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/OTA_PSF_Preconditions/VDP_ota_psf</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_DisableWriteData</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_SUSD_DIAG_BatteryVoltage_DisableNVMWrite</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/BatteryVoltage_DisableNVMWrite/DisableWriteData</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_RmtProgmActvAuth_RxSignal</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_Com_DIAG_BSPMP_RmtProgmActvAuth</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/BSPMP_RmtProgmActvAuth_Signal/RmtProgmActvAuthRxSignal</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+					    <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_RmtProgmActvAuth_Av</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_Av</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/RxMonitoredSignal_Av/SignalAvailability</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                «IF (!Diag_SsfmIsSinglePortSupported(sSFM))-»
+                       <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_RmtProgmActvAuth_FsFA</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_FsFA</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SignalGroup_FsFA/DTC_STATUS_FSFA</TARGET-DATA-PROTOTYPE-REF>
+                          	</AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                «ELSE-»
+                       <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_RmtProgmActvAuth_FxFA</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_FxFA</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SignalGroup_FxFA/DTC_STATUS_FXFA</TARGET-DATA-PROTOTYPE-REF>
+                       	 	</AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                «ENDIF-»
+					  </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+					  <DATA-SEND-POINTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_RmtProgmOtaPsf_Status</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SWC_RmtPrgmOtaPsf_Status</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_RmtPrgmOtaPsf/DIAG_RemoteProgrammingOtaPsf</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-SEND-POINTS>
+                      <SERVER-CALL-POINTS>
+						 <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_1</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/EnableCondition_OTA_PSF</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dem/PortInterfaces/EnableCondition/SetEnableCondition</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_OTASetRamBlockStatus</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_OTABlock</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/SetRamBlockStatus</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+						<SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_OTAWriteBlock</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_OTABlock</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/WriteBlock</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+						<SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_OTAGetErrorStatus</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_OTABlock</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/GetErrorStatus</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+                      </SERVER-CALL-POINTS>
+					  <SYMBOL>Runnable_OTA_PSF</SYMBOL>
+                    </RUNNABLE-ENTITY>
+             		<RUNNABLE-ENTITY>
+                      <SHORT-NAME>WriteData</SHORT-NAME>
+                        <CAN-BE-INVOKED-CONCURRENTLY>true</CAN-BE-INVOKED-CONCURRENTLY>
+					  <DATA-SEND-POINTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_DIAG_SSC_GetMEC</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SSC_GetMEC</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_GetMEC/GetMec</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                         <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_DIAG_SSFM_GetMEC</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SSFM_GetMEC</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_GetMEC/GetMec</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+			           <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_DIAG_SOH_GetMEC</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SOH_GetMEC</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_GetMEC/GetMec</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-SEND-POINTS>
+					  <SERVER-CALL-POINTS>
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_MECSetRamBlockStatus</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_MECBlock</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/SetRamBlockStatus</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+						<SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_MECWriteBlock</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_MECBlock</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/WriteBlock</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+						<SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_MECGetErrorStatus</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_MECBlock</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/GetErrorStatus</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+					  </SERVER-CALL-POINTS>
+					  <SYMBOL>WriteData</SYMBOL>
+                    </RUNNABLE-ENTITY>
+					<RUNNABLE-ENTITY>
+                      <SHORT-NAME>ReadData</SHORT-NAME>
+                        <CAN-BE-INVOKED-CONCURRENTLY>true</CAN-BE-INVOKED-CONCURRENTLY>
+«IF (diag.diagGeneral.mecStorageInHsm == true)-»
+                      <SERVER-CALL-POINTS>
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SSCP_ReadData_DemU19A392</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_DemService_U19A392</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dem/PortInterfaces/DiagnosticMonitor/SetEventStatus</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+                      </SERVER-CALL-POINTS>
+«ENDIF-»
+                      <SYMBOL>ReadData</SYMBOL>
+                    </RUNNABLE-ENTITY>
+«IF (diag.diagGeneral.dIAG_DID_F1B0_Reference != null)-»
+					          <RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_DID_F1B0_ReadData</SHORT-NAME>
+                      <SYMBOL>Runnable_DID_F1B0_ReadData</SYMBOL>
+                    </RUNNABLE-ENTITY>
+«ENDIF-»
+«IF (diag.diagGeneral.sum_Diag_EnableDID_E0CC == true)-»
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_Diag_DID_E0CC_ReadData</SHORT-NAME>
+                      <SYMBOL>Runnable_Diag_DID_E0CC_ReadData</SYMBOL>
+                    </RUNNABLE-ENTITY>
+«ENDIF-»
+					<RUNNABLE-ENTITY>
+                      <SHORT-NAME>ConditionCheckRead</SHORT-NAME>
+                        <CAN-BE-INVOKED-CONCURRENTLY>true</CAN-BE-INVOKED-CONCURRENTLY>
+                      <SYMBOL>ConditionCheckRead</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_BswM_ModeUser</SHORT-NAME>
+                      <DATA-SEND-POINTS>
+«FOREACH diag.diagConfigSet.commChannels.commChannel.commChannelRef AS channelRef-»
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_NormalCommStatus_Ch«channelRef.comMChannelId»</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_DisableNormalComm_Ch«channelRef.comMChannelId»</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_DisableNormalComm/NormalComMode</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+«ENDFOREACH»
+                      </DATA-SEND-POINTS>
+                      <MODE-ACCESS-POINTS>
+«FOREACH diag.diagConfigSet.commChannels.commChannel.commChannelRef.shortName AS channel_name-»
+                        <MODE-ACCESS-POINT>
+                          <MODE-GROUP-IREF>
+                            <R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                              <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/BswM_CommunicationMode_«channel_name»</CONTEXT-R-PORT-REF>
+                              <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/SUM_DIAG/Component/DIAG_BswM_Dcm_CommunicationMode_CurrentState/SUM_COMM_MODE</TARGET-MODE-GROUP-REF>
+                            </R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                          </MODE-GROUP-IREF>
+                        </MODE-ACCESS-POINT>
+«ENDFOREACH»
+                        <MODE-ACCESS-POINT>
+                          <MODE-GROUP-IREF>
+                            <R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                              <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/BswM_DiagSession</CONTEXT-R-PORT-REF>
+                              <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/BswM_Modes/DIAG_BswM_DiagSession/SUM_DIAG_SESSION</TARGET-MODE-GROUP-REF>
+                            </R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                          </MODE-GROUP-IREF>
+                        </MODE-ACCESS-POINT>
+						</MODE-ACCESS-POINTS>
+                      <SYMBOL>Runnable_BswM_ModeUser</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_DIAG_Main</SHORT-NAME>
+                      <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_PermitExecution</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUSD_DIAG_PermitExecution</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_PermitExecution/SUSD_SWC_ExecutionStatus</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                      <DATA-SEND-POINTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_EcuAddress</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_GetEcuAddress</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SSC_DIAG_GetECUAddress/EcuAddress</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_DiagResetRequest</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_ECUResetRequest</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_ECUResetRequest/DiagResetRequest</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_InitialReflashFlag</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_SetInitialReflashFlag</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_SSC_InitialReflashFlag/DE_InitialReflashFlag</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+«FOREACH diag.diagConfigSet.commChannels.commChannel.commChannelRef AS channelRef-»
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_NormalCommStatus_Ch«channelRef.comMChannelId»</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_DisableNormalComm_Ch«channelRef.comMChannelId»</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_DisableNormalComm/NormalComMode</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+«ENDFOREACH»
+                      </DATA-SEND-POINTS>
+                      <SERVER-CALL-POINTS>
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_InitialReflashFlag_WrtStatus</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_DIAG_SSC_InitialReflashFlag_WrtStatus</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/DIAG_SSC_InitialReflashFlag_WrtStatus/WrtStatus</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+                      </SERVER-CALL-POINTS>
+                      <SYMBOL>Runnable_DIAG_Main</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_Shutdown_Permission</SHORT-NAME>
+                      <READ-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>RLV_IR_NumberActiveDiagnosticRequest</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_NumberActiveDiagnosticRequest</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </READ-LOCAL-VARIABLES>
+                      <DATA-SEND-POINTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_Shutdown_Vote</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_ShutdownPermission</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_ShutdownPermission/SUSD_UserRequest</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-SEND-POINTS>
+					  <MODE-ACCESS-POINTS>
+                        <MODE-ACCESS-POINT>
+                          <MODE-GROUP-IREF>
+                            <R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                              <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/BswM_DiagSession</CONTEXT-R-PORT-REF>
+                              <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/BswM_Modes/DIAG_BswM_DiagSession/SUM_DIAG_SESSION</TARGET-MODE-GROUP-REF>
+                            </R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                          </MODE-GROUP-IREF>
+                        </MODE-ACCESS-POINT>
+					  </MODE-ACCESS-POINTS>
+                      <SYMBOL>Runnable_Shutdown_Permission</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                    <SHORT-NAME>Runnable_MEC_Handler</SHORT-NAME>
+                    <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_DisableWriteData</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_SUSD_DIAG_BatteryVoltage_DisableNVMWrite</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/BatteryVoltage_DisableNVMWrite/DisableWriteData</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+					  <DATA-RECEIVE-POINT-BY-VALUES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPV_VehiclePowerMode</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUSD_Vehicle_Power_Mode</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_VehiclePowerMode/VehiclePowerMode</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-RECEIVE-POINT-BY-VALUES>
+                      <DATA-SEND-POINTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_DIAG_SSC_GetMEC</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SSC_GetMEC</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_GetMEC/GetMec</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                       <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_DIAG_SSFM_GetMEC</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SSFM_GetMEC</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_GetMEC/GetMec</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+					  <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_DIAG_SOH_GetMEC</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/PP_DIAG_SOH_GetMEC</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_GetMEC/GetMec</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-SEND-POINTS>
+					  <SERVER-CALL-POINTS>
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_MECSetRamBlockStatus</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_MECBlock</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/SetRamBlockStatus</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+						<SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_MECWriteBlock</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_MECBlock</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/WriteBlock</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+						<SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_MECGetErrorStatus</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_NvMService_MECBlock</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_NvM/PortInterfaces/NvMService/GetErrorStatus</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+					  </SERVER-CALL-POINTS>
+                      <SYMBOL>Runnable_MEC_Handler</SYMBOL>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_RequestHandler_Indication</SHORT-NAME>
+					 <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+					  <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_RmtProgmActvAuth_RxSignal</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_Com_DIAG_BSPMP_RmtProgmActvAuth</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/BSPMP_RmtProgmActvAuth_Signal/RmtProgmActvAuthRxSignal</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPA_OTA_PSF_Availability</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_SSFM_DIAG_BSPMP_RmtProgmActvAuth_Av</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/RxMonitoredSignal_Av/SignalAvailability</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                      <DATA-RECEIVE-POINT-BY-VALUES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DRPV_VehiclePowerMode</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUSD_Vehicle_Power_Mode</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_VehiclePowerMode/VehiclePowerMode</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-RECEIVE-POINT-BY-VALUES>
+                      <DATA-SEND-POINTS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_DiagResetRequest</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_ECUResetRequest</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_ECUResetRequest/DiagResetRequest</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>DSP_DiagSessionRequest</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <AUTOSAR-VARIABLE-IREF>
+                              <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/DIAG_SOH_DiagSessionRequest</PORT-PROTOTYPE-REF>
+                              <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_SOH_DiagSessionRequest/DiagSessionRequest</TARGET-DATA-PROTOTYPE-REF>
+                            </AUTOSAR-VARIABLE-IREF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </DATA-SEND-POINTS>
+                      <READ-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>RLV_IR_Normal_msg_transmission</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_Normal_msg_transmission</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>RLV_IR_DIAG_ControlDTCsetting</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_DIAG_ControlDTCsetting</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </READ-LOCAL-VARIABLES>
+                      <SERVER-CALL-POINTS>
+                        <SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_0_0</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SSC_DIAG_ReadMemorySecurityVerification</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SSC_DIAG_ReadMemorySecurityVerification/ReadMemorySecurityVerification</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+						<SYNCHRONOUS-SERVER-CALL-POINT>
+                          <SHORT-NAME>SynchronousServerCallPoint_GetSecurityLevel</SHORT-NAME>
+                          <OPERATION-IREF>
+                            <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/RP_DcmService_GetSecurityLevel</CONTEXT-R-PORT-REF>
+                            <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DCMServices/GetSecurityLevel</TARGET-REQUIRED-OPERATION-REF>
+                          </OPERATION-IREF>
+                        </SYNCHRONOUS-SERVER-CALL-POINT>
+                      </SERVER-CALL-POINTS>
+                      <SYMBOL>Runnable_RequestHandler_Indication</SYMBOL>
+                      <WRITTEN-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WLV_IR_Sub_function</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_Sub_function</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WLV_IR_NumberActiveDiagnosticRequest</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_NumberActiveDiagnosticRequest</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </WRITTEN-LOCAL-VARIABLES>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_RequestHandler_Confirmation</SHORT-NAME>
+                      <READ-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>RLV_IR_Sub_function</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_Sub_function</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </READ-LOCAL-VARIABLES>
+                      <SYMBOL>Runnable_RequestHandler_Confirmation</SYMBOL>
+                      <WRITTEN-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WLV_IR_Normal_msg_transmission</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_Normal_msg_transmission</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+			                  <VARIABLE-ACCESS>
+                          <SHORT-NAME>WLV_IR_NumberActiveDiagnosticRequest</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_NumberActiveDiagnosticRequest</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </WRITTEN-LOCAL-VARIABLES>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_DIAG_ControlDTCSetting_Disabled</SHORT-NAME>
+                      <SYMBOL>Runnable_DIAG_ControlDTCSetting_Disabled</SYMBOL>
+					  <WRITTEN-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WLV_IR_DIAG_ControlDTCsetting_Disabled</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_DIAG_ControlDTCsetting</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </WRITTEN-LOCAL-VARIABLES>
+                    </RUNNABLE-ENTITY>
+                    <RUNNABLE-ENTITY>
+                      <SHORT-NAME>Runnable_DIAG_ControlDTCSetting_Enabled</SHORT-NAME>
+                      <SYMBOL>Runnable_DIAG_ControlDTCSetting_Enabled</SYMBOL>
+					  <WRITTEN-LOCAL-VARIABLES>
+                        <VARIABLE-ACCESS>
+                          <SHORT-NAME>WLV_IR_DIAG_ControlDTCsetting_Enabled</SHORT-NAME>
+                          <ACCESSED-VARIABLE>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/IR_DIAG_ControlDTCsetting</LOCAL-VARIABLE-REF>
+                          </ACCESSED-VARIABLE>
+                        </VARIABLE-ACCESS>
+                      </WRITTEN-LOCAL-VARIABLES>
+                    </RUNNABLE-ENTITY>
+                  </RUNNABLES>
+                  <SERVICE-DEPENDENCYS>
+                    <SWC-SERVICE-DEPENDENCY>
+                      <SHORT-NAME>SN_NvM_TesterSourceAddress</SHORT-NAME>
+                      <ASSIGNED-DATAS>
+                        <ROLE-BASED-DATA-ASSIGNMENT>
+                          <ROLE>ramBlock</ROLE>
+                          <USED-DATA-ELEMENT>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/TesterSourceAddress</LOCAL-VARIABLE-REF>
+                          </USED-DATA-ELEMENT>
+                        </ROLE-BASED-DATA-ASSIGNMENT>
+                      </ASSIGNED-DATAS>
+					  <SERVICE-NEEDS>
+                        <NV-BLOCK-NEEDS>
+                          <SHORT-NAME>NvM_Needs_TesterSourceAddress</SHORT-NAME>
+                          <RESTORE-AT-START>true</RESTORE-AT-START>
+                          <STORE-AT-SHUTDOWN>true</STORE-AT-SHUTDOWN>
+                        </NV-BLOCK-NEEDS>
+                      </SERVICE-NEEDS>
+                    </SWC-SERVICE-DEPENDENCY>
+					<SWC-SERVICE-DEPENDENCY>
+                      <SHORT-NAME>SN_NvM_Ecu_Address</SHORT-NAME>
+                      <ASSIGNED-DATAS>
+                        <ROLE-BASED-DATA-ASSIGNMENT>
+						  <ROLE>ramBlock</ROLE>
+                          <USED-DATA-ELEMENT>
+                            <LOCAL-VARIABLE-REF DEST="VARIABLE-DATA-PROTOTYPE">/SUM_DIAG/Component/SUM_DIAG/SUM_DIAG_IB/Ecu_Address</LOCAL-VARIABLE-REF>
+                          </USED-DATA-ELEMENT>
+                        </ROLE-BASED-DATA-ASSIGNMENT>
+                      </ASSIGNED-DATAS>
+					  <SERVICE-NEEDS>
+                        <NV-BLOCK-NEEDS>
+                          <SHORT-NAME>NvM_Needs_Ecu_Address</SHORT-NAME>
+                          <RESTORE-AT-START>true</RESTORE-AT-START>
+                          <STORE-AT-SHUTDOWN>true</STORE-AT-SHUTDOWN>
+                        </NV-BLOCK-NEEDS>
+                      </SERVICE-NEEDS>
+                    </SWC-SERVICE-DEPENDENCY>
+                  </SERVICE-DEPENDENCYS>
+                </SWC-INTERNAL-BEHAVIOR>
+              </INTERNAL-BEHAVIORS>
+            </APPLICATION-SW-COMPONENT-TYPE>
+			<SENDER-RECEIVER-INTERFACE>
+          <SHORT-NAME>OTA_PSF_Preconditions</SHORT-NAME>
+          <IS-SERVICE>false</IS-SERVICE>
+          <DATA-ELEMENTS>
+            <VARIABLE-DATA-PROTOTYPE>
+              <SHORT-NAME>VDP_ota_psf</SHORT-NAME>
+              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/boolean</TYPE-TREF>
+            </VARIABLE-DATA-PROTOTYPE>
+          </DATA-ELEMENTS>
+        </SENDER-RECEIVER-INTERFACE>
+		<SENDER-RECEIVER-INTERFACE>
+          <SHORT-NAME>BSPMP_RmtProgmActvAuth_Signal</SHORT-NAME>
+          <IS-SERVICE>false</IS-SERVICE>
+          <DATA-ELEMENTS>
+            <VARIABLE-DATA-PROTOTYPE>
+              <SHORT-NAME>RmtProgmActvAuthRxSignal</SHORT-NAME>
+              <CATEGORY>VALUE</CATEGORY>
+		          <SW-DATA-DEF-PROPS>
+		            <SW-DATA-DEF-PROPS-VARIANTS>
+		              <SW-DATA-DEF-PROPS-CONDITIONAL>
+		                <SW-CALIBRATION-ACCESS>READ-ONLY</SW-CALIBRATION-ACCESS>
+		              </SW-DATA-DEF-PROPS-CONDITIONAL>
+		            </SW-DATA-DEF-PROPS-VARIANTS>
+		          </SW-DATA-DEF-PROPS>
+«IF diag.diagGeneral.dIAG_BSPMP_RmtProgmActvAuthRef.metaType.toString().contains("ComSignal")-»
+	«IF Diag_IsOTAServiceBased(diag.diagGeneral)-»
+			  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">«Diag_GetImplementationDataTypePath(diag.diagGeneral.dIAG_ServiceBased_OTA_Ref)-»</TYPE-TREF>
+	«ELSE -»
+              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/«diag.diagGeneral.dIAG_BSPMP_RmtProgmActvAuthRef.comSignalType.toLowerCase()»</TYPE-TREF>
+	«ENDIF-»
+«ELSE -»
+			  <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/SUM_DIAG/Component/RxSignal_BSPMP_RmtProgmActvAuth_GroupSignal</TYPE-TREF>
+«ENDIF-»
+            </VARIABLE-DATA-PROTOTYPE>
+          </DATA-ELEMENTS>
+        </SENDER-RECEIVER-INTERFACE>
+
+
+		<MODE-SWITCH-INTERFACE>
+		  <SHORT-NAME>DIAG_BswM_Dcm_CommunicationMode_CurrentState</SHORT-NAME>
+		  <IS-SERVICE>false</IS-SERVICE>
+		  <MODE-GROUP>
+			<SHORT-NAME>SUM_COMM_MODE</SHORT-NAME>
+			<TYPE-TREF DEST="MODE-DECLARATION-GROUP">/SUM_DIAG/Component/MDG_BswM_CommunicationMode</TYPE-TREF>
+		  </MODE-GROUP>
+		</MODE-SWITCH-INTERFACE>
+        <MODE-DECLARATION-GROUP>
+          <SHORT-NAME>MDG_BswM_CommunicationMode</SHORT-NAME>
+          <CATEGORY>EXPLICIT_ORDER</CATEGORY>
+          <INITIAL-MODE-REF DEST="MODE-DECLARATION">/SUM_DIAG/Component/MDG_BswM_CommunicationMode/NORMAL_COM_ENABLED</INITIAL-MODE-REF>
+          <MODE-DECLARATIONS>
+            <MODE-DECLARATION>
+              <SHORT-NAME>NORMAL_COM_ENABLED</SHORT-NAME>
+              <CATEGORY>VALUE</CATEGORY>
+              <VALUE>0</VALUE>
+            </MODE-DECLARATION>
+            <MODE-DECLARATION>
+              <SHORT-NAME>NORMAL_COM_DISABLED</SHORT-NAME>
+              <CATEGORY>VALUE</CATEGORY>
+              <VALUE>1</VALUE>
+            </MODE-DECLARATION>
+          </MODE-DECLARATIONS>
+          <ON-TRANSITION-VALUE>255</ON-TRANSITION-VALUE>
+        </MODE-DECLARATION-GROUP>
+		<DATA-TYPE-MAPPING-SET>
+		  <SHORT-NAME>Communication_Mode_DTMS</SHORT-NAME>
+		  <MODE-REQUEST-TYPE-MAPS>
+			<MODE-REQUEST-TYPE-MAP>
+			  <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+			  <MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP">/SUM_DIAG/Component/MDG_BswM_CommunicationMode</MODE-GROUP-REF>
+			</MODE-REQUEST-TYPE-MAP>
+		  </MODE-REQUEST-TYPE-MAPS>
+		</DATA-TYPE-MAPPING-SET>
+«REM» Implementation Data Type and Base Type for Com Group Signal «ENDREM»
+«IF Diag_IsRmtProgActvAuthGroupSignal(diag.diagGeneral) && !Diag_IsOTAServiceBased(diag.diagGeneral)-»
+  		<IMPLEMENTATION-DATA-TYPE>
+	        <SHORT-NAME>RxSignal_BSPMP_RmtProgmActvAuth_GroupSignal</SHORT-NAME>
+	        <LONG-NAME>
+	            <L-4 L="EN">RmtProgActvAuthRxSignal</L-4>
+	        </LONG-NAME>
+	        <CATEGORY>STRUCTURE</CATEGORY>
+	        <SUB-ELEMENTS>
+«FOREACH diag.diagGeneral.dIAG_BSPMP_RmtProgmActvAuthRef.parent.comGroupSignal AS single_signal-»
+	         <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+	            <SHORT-NAME>RxSignal_«single_signal.shortName»</SHORT-NAME>
+	            <CATEGORY>TYPE_REFERENCE</CATEGORY>
+	            <SW-DATA-DEF-PROPS>
+	                <SW-DATA-DEF-PROPS-VARIANTS>
+	                    <SW-DATA-DEF-PROPS-CONDITIONAL>
+	        «IF single_signal.comSignalType == "UINT8_N"-»
+	        				<IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/SUM_DIAG/Component/IMPL_LenNByte«single_signal.comSignalLength»</IMPLEMENTATION-DATA-TYPE-REF>
+	        «ELSE-»
+	                        <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/«single_signal.comSignalType.toLowerCase()»</IMPLEMENTATION-DATA-TYPE-REF>
+	        «ENDIF-»
+	                    </SW-DATA-DEF-PROPS-CONDITIONAL>
+	                 </SW-DATA-DEF-PROPS-VARIANTS>
+	            </SW-DATA-DEF-PROPS>
+              </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+«ENDFOREACH-»
+			</SUB-ELEMENTS>
+         </IMPLEMENTATION-DATA-TYPE>
+
+«FOREACH Diag_SignalLenghtList(diag.diagGeneral.dIAG_BSPMP_RmtProgmActvAuthRef.parent.comGroupSignal) AS sigSize-»
+		<IMPLEMENTATION-DATA-TYPE>
+              <SHORT-NAME>IMPL_LenNByte«sigSize»</SHORT-NAME>
+              <CATEGORY>VALUE</CATEGORY>
+              <SW-DATA-DEF-PROPS>
+                <SW-DATA-DEF-PROPS-VARIANTS>
+                  <SW-DATA-DEF-PROPS-CONDITIONAL>
+                    <BASE-TYPE-REF DEST="SW-BASE-TYPE">/SUM_DIAG/Component/Bytes«sigSize»</BASE-TYPE-REF>
+                  </SW-DATA-DEF-PROPS-CONDITIONAL>
+                </SW-DATA-DEF-PROPS-VARIANTS>
+              </SW-DATA-DEF-PROPS>
+         </IMPLEMENTATION-DATA-TYPE>
+
+           <SW-BASE-TYPE>
+              <SHORT-NAME>Bytes«sigSize»</SHORT-NAME>
+              <CATEGORY>FIXED_LENGTH</CATEGORY>
+              <BASE-TYPE-SIZE>8</BASE-TYPE-SIZE>
+              <BASE-TYPE-ENCODING>NONE</BASE-TYPE-ENCODING>
+              <MEM-ALIGNMENT>8</MEM-ALIGNMENT>
+              <NATIVE-DECLARATION>Bytes_«sigSize»</NATIVE-DECLARATION>
+           </SW-BASE-TYPE>
+
+           <IMPLEMENTATION-DATA-TYPE>
+              <SHORT-NAME>Bytes_«sigSize»</SHORT-NAME>
+              <CATEGORY>STRUCTURE</CATEGORY>
+              <SUB-ELEMENTS>
+              	<IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                  <SHORT-NAME>Array_«sigSize»</SHORT-NAME>
+                  <CATEGORY>ARRAY</CATEGORY>
+                  <ARRAY-SIZE-SEMANTICS>FIXED-SIZE</ARRAY-SIZE-SEMANTICS>
+                  <SUB-ELEMENTS>
+	                <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+	                  <SHORT-NAME>ArrayElement</SHORT-NAME>
+	                  <CATEGORY>TYPE_REFERENCE</CATEGORY>
+	                  <ARRAY-SIZE>«sigSize»</ARRAY-SIZE>
+	                  <ARRAY-SIZE-SEMANTICS>FIXED-SIZE</ARRAY-SIZE-SEMANTICS>
+	                  <SW-DATA-DEF-PROPS>
+	                    <SW-DATA-DEF-PROPS-VARIANTS>
+	                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+	                        <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_Platform/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+	                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+	                    </SW-DATA-DEF-PROPS-VARIANTS>
+	                  </SW-DATA-DEF-PROPS>
+	       			</IMPLEMENTATION-DATA-TYPE-ELEMENT>
+	       		   </SUB-ELEMENTS>
+	       		 </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+	       	   </SUB-ELEMENTS>
+	       	</IMPLEMENTATION-DATA-TYPE>
+«ENDFOREACH-»
+«ENDIF-»
+          </ELEMENTS>
+        </AR-PACKAGE>
+      </AR-PACKAGES>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>
+«ENDFILE»
+«ENDDEFINE»

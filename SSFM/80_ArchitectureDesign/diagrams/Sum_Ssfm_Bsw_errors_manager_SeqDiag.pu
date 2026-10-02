@@ -1,0 +1,24 @@
+@startuml Sum_Ssfm_Bsw_Errors_Manager_SeqDiag
+
+participant RTE as R
+participant DEM as DEM
+participant Sum_SOH as SOH
+box SUM_SSFM
+    participant Sum_Ssfm_Dem_CB_EventUdsStatusChanged_DemEventName  as BSW_ERROR
+end box
+
+
+
+activate BSW_ERROR
+
+DEM -> BSW_ERROR: Event Status changed
+alt RTE Dem Server Call Function Pointer to set dem event after filter != null
+    BSW_ERROR -> RTE: Set/Reset related Dem events based of filtering result
+end
+alt RTE Dem Server Call Function Pointer to set dem event after filter == null
+    BSW_ERROR -> SOH: send notification to SUM_SOH regarding particular BSW errors.
+end
+BSW_ERROR -> BSW_ERROR: store confirmed BUS_OFF DTCs.
+deactivate BSW_ERROR
+
+@enduml 

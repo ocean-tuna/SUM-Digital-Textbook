@@ -1,0 +1,41 @@
+@startuml
+== Normal behaviour ==
+alt Previous write ongoing
+    DCM -> Runnable_SOH_RIDClearLogs: OpStatus : DCM_INITIAL ; 0xFXXX
+    Runnable_SOH_RIDClearLogs -> NvM: Check Write
+    NvM --> Runnable_SOH_RIDClearLogs: NVM_REQ_OK
+	Runnable_SOH_RIDClearLogs -> NvM: Clean & Write
+    NvM --> Runnable_SOH_RIDClearLogs: NVM_REQ_OK
+    Runnable_SOH_RIDClearLogs --> DCM: DCM_PENDING
+    ...
+    DCM -> Runnable_SOH_RIDClearLogs: OpStatus : DCM_PENDING ; 0xFXXX
+    Runnable_SOH_RIDClearLogs -> NvM: Check Write
+    NvM --> Runnable_SOH_RIDClearLogs: NVM_REQ_PENDING
+    Runnable_SOH_RIDClearLogs --> DCM: DCM_PENDING
+	...
+else No Write
+    DCM as "DCM RID 0x02C0"-> Runnable_SOH_RIDClearLogs: OpStatus : DCM_INITIAL ; 0xFXXX
+    Runnable_SOH_RIDClearLogs -> NvM: Check Write
+    NvM --> Runnable_SOH_RIDClearLogs:  NVM_REQ_PENDING
+    Runnable_SOH_RIDClearLogs --> DCM: DCM_E_GENERALPROGRAMMINGFAILURE
+end
+...
+alt Write OK
+    DCM -> Runnable_SOH_RIDClearLogs: OpStatus : DCM_PENDING ; 0xFXXX
+    Runnable_SOH_RIDClearLogs -> NvM: Check Write
+    NvM --> Runnable_SOH_RIDClearLogs: E_OK 
+    Runnable_SOH_RIDClearLogs --> DCM: E_OK
+else Write fails
+    DCM -> Runnable_SOH_RIDClearLogs: OpStatus : DCM_PENDING ; 0xFXXX
+    Runnable_SOH_RIDClearLogs -> NvM: Check Write
+    NvM --> Runnable_SOH_RIDClearLogs: E_NOT_OK
+    Runnable_SOH_RIDClearLogs --> DCM: DCM_E_GENERALPROGRAMMINGFAILURE
+end
+== Invalid DID ==
+DCM -> Runnable_SOH_RIDClearLogs: OpStatus : DCM_INITIAL ; 0xF123
+Runnable_SOH_RIDClearLogs --> DCM: E_NOT_OK ; DCM_E_REQUESTOUTOFRANGE
+== Valid DID, monitor not configured ==
+DCM -> Runnable_SOH_RIDClearLogs: OpStatus : DCM_INITIAL ; 0xF08F
+Runnable_SOH_RIDClearLogs --> DCM: E_OK 
+
+@enduml

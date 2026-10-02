@@ -1,0 +1,100 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Request_Queue.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for defining the interfaces between CanIf and Spm
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+#ifndef _SUM_SPM_REQUEST_QUEUE_H_
+#define _SUM_SPM_REQUEST_QUEUE_H_
+
+
+#include "Rte_SPM_Type.h"
+#include "Sum_SpmTypes.h"
+
+#define MAX_SIZE_BUFF (2u * (uint16)«spm.spmConfigSet.spmPowPrf.size»U)
+
+enum SPM_RequestType {
+    SPM_REQ_NONE,
+    SPM_LOC_REQ_ACT,
+    SPM_REM_REQ_ACT,
+    SPM_LOC_REQ_DEA,
+    SPM_REM_REQ_DEA
+};
+
+enum Sum_Spm_RequestOrderType{
+    Sum_Spm_FirstReq = 0x00u,
+    Sum_Spm_LastReq,
+    Sum_Spm_IntermidiateReq
+};
+
+enum SPM_ProfileLocationType {
+    SPM_PRF_IS_LOC,
+    SPM_PRF_IS_REM
+};
+
+struct SPM_ProfileReqItm {
+	/* Index of the Power Profile, based on the configured array*/
+    uint16  posOfPrfInCfgArray;
+     /* Request Code: the LSB can be 0 ACTIVATE or 1 DEACTIVE Request, the MSB must be 1 if the Power Profile is root. */
+    uint8   reqCode;
+     /* Target device Ip of the requester*/
+    uint32  TrgDvcIpRequester;
+    /* Request dependency type*/
+    SpmRequestDependencyType reqDependencyType;
+};
+
+enum SPM_ProfileReqFIFO_QueueStatusCode {
+    SPM_RQ_EMPTY,
+    SPM_RQ_NOEMPTY,
+    SPM_RQ_FULL
+};
+
+struct SPM_ProfileReqFIFO_Queue {
+    struct SPM_ProfileReqItm buffer[MAX_SIZE_BUFF];
+    uint16 head;
+    uint16 tail;
+    enum SPM_ProfileReqFIFO_QueueStatusCode status;
+};
+
+void SPM_InitQueue(struct SPM_ProfileReqFIFO_Queue * const me_queue);
+extern boolean SPM_EnqueueRequest(struct SPM_ProfileReqFIFO_Queue * const me_queue, struct SPM_ProfileReqItm new_itm);
+extern boolean SPM_DequeueRequest(struct SPM_ProfileReqFIFO_Queue * const me_queue, struct SPM_ProfileReqItm * const new_itm);
+
+
+
+#endif
+
+/* EOF */
+
+«ENDFILE»
+«ENDDEFINE»

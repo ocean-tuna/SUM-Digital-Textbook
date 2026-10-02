@@ -1,0 +1,36 @@
+@startuml use_of_pgtt
+
+entity msg
+
+msg -> Spm_MsgHandler
+activate Spm_MsgHandler
+
+Spm_MsgHandler -> Spm_MsgHandler: Spm_VerifyReq()
+
+Spm_MsgHandler -> Spm_Controller: Spm_ActivateProfileRoutine()
+activate Spm_Controller
+
+Spm_Controller -> Spm_Controller: Sd_GetNodeAddress(**IN**: service_id, OUT: ip_address)
+
+Spm_Controller -> Spm_SmPmIf: Spm_PowerOnDevice(**IN**: ip_address)
+activate Spm_SmPmIf
+
+Spm_SmPmIf -> Spm_SmPmIf: Spm_GetTrgDvcPgtt(IN: ip_address, **OUT**: TrgDvcPgtt)
+
+== Other stuff ==
+
+Spm_SmPmIf -> Spm_HostIf: Spm_SendSMmsg()
+activate Spm_HostIf
+
+Spm_HostIf --> Spm_SmPmIf
+deactivate Spm_HostIf
+
+Spm_SmPmIf --> Spm_Controller
+deactivate Spm_SmPmIf
+
+Spm_Controller --> Spm_MsgHandler
+deactivate Spm_Controller
+
+deactivate Spm_MsgHandler
+
+@enduml

@@ -1,0 +1,392 @@
+
+import bsw;
+import bsw::LNMModule;
+
+extension org::eclipse::xtend::util::stdlib::io;
+
+/*
+ *****************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2017 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as the communication of its contents to
+ * others without explicit authorization is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Author: UVA5MI
+ * Version: SUM_LNM 4.0.0
+ * Date : 2019-11-22
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+context LNM_General ERROR "LNM_General: Main function periodicity shall be configured " :
+	(this.lNM_MainFunction_Period != null)
+;
+
+context LNM_General ERROR "LNM_General: Main function periodicity is a real number between 0.001 and 0.2 seconds " :
+	((this.lNM_MainFunction_Period >= 0.001) && (this.lNM_MainFunction_Period <= 0.2) )
+;
+
+context LNM_General ERROR "LNM_General: NetworkFaultManager periodicity shall be configured " :
+	(this.lNM_NetworkFaultManager_Period != null)
+;
+
+context LNM_General ERROR "LNM_General: Main function periodicity is a real number between 0.001 and 0.2 seconds " :
+	((this.lNM_NetworkFaultManager_Period >= 0.001) && (this.lNM_NetworkFaultManager_Period <= 0.2) )
+;
+
+context LNM_General ERROR "LNM_General: PermiExecution Mask shall be configured " :
+	(this.lNM_PermitExecution_Mask != null)
+;
+
+context LNM_General ERROR "LNM_General: PermiExecution Mask is an integer between 0 and 255 " :
+	((this.lNM_PermitExecution_Mask >= 0) && (this.lNM_PermitExecution_Mask <= 255))
+;
+
+context LNM_General ERROR "LNM_General: CyberFill_Supported shall be configured" :
+	(this.cyberFill_Supported != null)
+;
+
+context LNM_General if (this.cyberFill_Supported == true) ERROR "LNM_General: If CyberFill_Supported is true, then LNM_CyberFillValue shall be configured" :
+	(this.lNM_CyberFillValue != null)
+;
+
+context LNM_General if (this.cyberFill_Supported == true) ERROR "LNM_General: CyberFill value shall be between 0 and 255" :
+	((this.lNM_CyberFillValue >= 0) && (this.lNM_CyberFillValue <= 255))
+;
+
+context LNM_General ERROR "LNM_General: LNM_TWu_Delay_Commander shall be configured" :
+	(this.lNM_TWuDelay_Commander != null)
+;
+
+context LNM_General ERROR "LNM_General: LNM_TWu_Delay_Commander value shall be between 0 and 200" :
+	((this.lNM_TWuDelay_Commander > 0)&&(this.lNM_TWuDelay_Commander <= 200))
+;
+
+context LNM_General ERROR "LNM_General: LNM_TWu_Delay_Responder shall be configured" :
+	(this.lNM_TWuDelay_Responder != null)
+;
+
+context LNM_General ERROR "LNM_General: LNM_TWu_Delay_Responder value shall be between 0 and 200" :
+	((this.lNM_TWuDelay_Responder > 0)&&(this.lNM_TWuDelay_Responder <= 200))
+;
+
+context LNM_General ERROR "LNM_General: LNM_WupTxRetries_Commander shall be configured" :
+	(this.lNM_WupTxRetries_Commander != null)
+;
+
+context LNM_General ERROR "LNM_General: LNM_WupTxRetries_Commander value shall be between 0 and 255" :
+	((this.lNM_WupTxRetries_Commander >= 0)&&(this.lNM_WupTxRetries_Commander <= 255))
+;
+
+context LNM_General ERROR "LNM_General: Network Status periodicity shall be configured " :
+	(this.lNM_NetworkStatus_Period != null)
+;
+
+context LNM_General ERROR "LNM_General: Network Status periodicity periodicity is a real number between 0.001 and 0.2 seconds " :
+	((this.lNM_NetworkStatus_Period >= 0.001) && (this.lNM_NetworkStatus_Period <= 0.2) )
+;
+
+context LNM_General ERROR "LNM_General: Lost Communication with LIN Responder DTC enable parameter must be configured for " +  this.shortName:
+	(this.lNM_C_DTC_LostCommWithLinResp_Enabled != null)
+;
+
+context LNM_Networks ERROR "LNM_Networks: At least one network shall be configured" :
+	(this.lNMNetwork.size > 0)
+;
+
+context LNM_General ERROR "LNM_General: Sum_Lnm_ScheduleChannelUserFuncs_Enabled shall be configured" :
+    (this.sum_Lnm_ScheduleChannelUserFuncs_Enabled != null)
+;
+
+context LNM_Networks
+    if (this.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == true)
+    ERROR "LNM_Networks: Sum_LNM_LinSMNetworkId_ref shall be configured" :
+    (this.lNMNetwork.forAll(e|e.sum_LNM_LinSMNetworkId_ref != null))
+;
+
+context LNM_Networks
+    if (this.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_Networks: LNM_ActivationMask value shall be between 0 and 254" :
+	(this.lNMNetwork.forAll(e|(e.lNM_ActivationMask >= 0 &&e.lNM_ActivationMask < 255)))
+;
+
+context LNM_Networks
+    if (this.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_Networks: LNM_DeactivationMask value shall be between 0 and 254" :
+	(this.lNMNetwork.forAll(e|(e.lNM_DeactivationMask >= 0 &&e.lNM_DeactivationMask < 255)))
+;
+
+context LNM_General ERROR "LNM_General: Network Schedule periodicity periodicity is a real number between 0.001 and 0.2 seconds " :
+	((this.lNM_ScheduleManagement_Period >= 0.001) && (this.lNM_ScheduleManagement_Period <= 0.2) )
+;
+
+context LNM_Networks
+    if (this.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_Networks: A network schedule management shall be configured for each network" :
+	(this.lNMNetwork.lNM_ScheduleManagement != null)
+;
+
+context LNM_ScheduleStates
+    if (parent.parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_ScheduleStates: The SLEEP state must be configured" :
+	(this.lNM_SleepState != null)
+;
+
+context LNM_ScheduleState
+    if (parent.parent.parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_ScheduleState: The reference to the schedule table must be provided" :
+	(this.lNM_ScheduleRef != null)
+;
+
+context LNM_ScheduleTransition
+    if (parent.parent.parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_ScheduleTransition: The reference to the Start state of the transition must be configured" :
+	(this.lNM_StartStateRef != null)
+;
+
+context LNM_ScheduleTransition
+    if (parent.parent.parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_ScheduleTransition: The reference to the End state of the transition must be configured" :
+	(this.lNM_EndStateRef != null)
+;
+
+context LNM_ScheduleTransition
+    if (parent.parent.parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_ScheduleTransition: The reference to the transition rule must be configured" :
+	(this.lNM_TransitionRuleRef != null)
+;
+
+context LNM_ScheduleSignal
+    if (parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_ScheduleSignal: The schedule signal type must be configured" :
+	(this.lNM_ScheduleSignalType != null)
+;
+
+context LNM_ScheduleSignal
+    if (parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_ScheduleSignal: The schedule signal source must be configured" :
+	(this.lNM_ScheduleSignalSource != null)
+;
+
+context LNM_ScheduleSignal
+    if (this.lNM_ScheduleSignalSource.matches("VPM") == true)
+    ERROR "LNM_Condition: VPM Schedule Signal Type must be uint8 for " + this.shortName:
+	(this.lNM_ScheduleSignalType.matches("uint8") == true)
+;
+
+context LNM_Condition
+    if (parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_Condition: Condition operator must be configured" :
+	(this.lNM_CompareOperator != null)
+;
+
+context LNM_Condition
+    if (parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_Condition: Condition value must be configured" :
+	(this.lNM_CompareValue != null)
+;
+
+context LNM_Condition
+    if (parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_Condition: Condition input must be configured" :
+	(this.lNM_InputRef != null)
+;
+
+context LNM_Condition
+    if (this.lNM_InputRef.lNM_ScheduleSignalSource.matches("VPM") == true)
+    ERROR "LNM_Condition: VPM compare value must be configured for " + this.shortName:
+	(this.lNM_CompareVPMValue != null)
+;
+
+context LNM_Rule
+    if (parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)&&(this.lNM_ConditionRef.size > 1) ERROR "LNM_Rule: Logic operator for rule must be configured" :
+	(this.lNM_LogicOperator != null)
+;
+
+context LNM_Rule
+    if (parent.parent.parent.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false)
+    ERROR "LNM_Rule: At least one condition shall be referenced" :
+	(this.lNM_ConditionRef.size > 0)
+;
+
+context LNM_Networks ERROR "LNM_Networks: The MSCL strategy must be configured" :
+	(this.lNMNetwork.lNM_MSCL_Strategy != null)
+;
+
+context LNM_Networks ERROR "LNM_Networks: At least one responder must be configured" :
+	(this.lNMNetwork.lNM_Responders.size > 0)
+;
+
+context LNM_Responders ERROR "LNM_Responders: LNM_MSCL_BitIndex must be configured" :
+	(this.lNM_MSCL_BitIndex != null)
+;
+
+context LNM_Responders ERROR "LNM_Responders: LNM_MSCL_BitIndex must be between 0 and 7" :
+	((this.lNM_MSCL_BitIndex >= 0) && (this.lNM_MSCL_BitIndex <= 7))
+;
+
+context LNM_Responders if (this.lNM_MSCL_ByteIndex.matches("MSCL_BYTE_2") == true) ERROR "LNM_Responders: MSCL bit 7 of Byte 2 is reserved" :
+	(this.lNM_MSCL_BitIndex != 7)
+;
+
+context LNM_Responders ERROR "LNM_Responders: LNM_MSCL_ByteIndex must be configured" :
+	(this.lNM_MSCL_ByteIndex != null)
+;
+
+context LNM_Responders ERROR "LNM_Responders: LNM_LossOfComm_withDevice_Timer must be configured" :
+	(this.lNM_LossOfComm_withDevice_Timer != null)
+;
+
+context LNM_Responders ERROR "LNM_Responders: LNM_LossOfComm_withDevice_Timer must be between 0 and 65535" :
+	((this.lNM_LossOfComm_withDevice_Timer >= 0) && (this.lNM_LossOfComm_withDevice_Timer <= 65535))
+;
+
+context LNM_Responders ERROR "LNM_Responders: LNM_Internal_Electronic_Failure_Supported must be configured" :
+	(this.lNM_Internal_Electronic_Failure_Supported != null)
+;
+
+context LNM_Responders if(this.lNM_Internal_Electronic_Failure_Supported == true) ERROR "LNM Responders: If Internal Electronic Failure is supported, LNM_IEF_APINFO2_Supported must be configured" :
+    (this.lNM_IEF_APINFO2_Supported != null)
+;
+
+context LNM_Responders if((this.lNM_Internal_Electronic_Failure_Supported == true) && (this.lNM_IEF_APINFO2_Supported == true)) ERROR "LNM Responders: If APINFO2 for Internal Electronic Failure is supported, the reset threshold must be configured" :
+    (this.lNM_IEF_Reset_Threshold != null)
+;
+
+context LNM_Responders if((this.lNM_Internal_Electronic_Failure_Supported == true) && (this.lNM_IEF_APINFO2_Supported == true)) ERROR "LNM Responders: APINFO2 reset threshold must be between 1 and 255" :
+    ((this.lNM_IEF_Reset_Threshold >= 1) && (this.lNM_IEF_Reset_Threshold <= 255))
+;
+
+context LNM_Responders if(this.lNM_Internal_Electronic_Failure_Supported == true) ERROR "LNM Responders: If Internal Electronic Failure is supported, LNM_IEF_APINFO4_Supported must be configured" :
+    (this.lNM_IEF_APINFO4_Supported != null)
+;
+
+context LNM_Responders if(this.lNM_Internal_Electronic_Failure_Supported == true) ERROR "LNM Responders: If Internal Electronic Failure is supported, at least one of the two signal (APINFO2, APINFO4) must be supported" :
+    ((this.lNM_IEF_APINFO2_Supported == true) || (this.lNM_IEF_APINFO4_Supported == true))
+;
+
+context LNM_Responders ERROR "LNM_Responders: LNM_Responder_Device_Not_Configured_Supported must be configured" :
+	(this.lNM_Responder_Device_Not_Configured_Supported != null)
+;
+
+context LNM_Responders if(this.lNM_Responder_Device_Not_Configured_Supported == true) ERROR "LNM Responders: LNM_Config_Retries must be configured if Responder Device Not Configured is supported" :
+    (this.lNM_Config_Retries != null)
+;
+
+context LNM_Responders if(this.lNM_Responder_Device_Not_Configured_Supported == true) ERROR "LNM Responders: LNM_Config_Retries must be between 0 and 7" :
+    ((this.lNM_Config_Retries >= 0) && (this.lNM_Config_Retries <= 7))
+;
+
+context LNM_Networks if (this.lNMNetwork.lNM_MSCL_Strategy.matches("Calibration") == true) ERROR "LNM_Responders: MSCL is based on calibration. An init value of the calibration must be configure for all the responders" :
+	(this.lNMNetwork.lNM_Responders.lNM_C_ResponderPresent_InitValue != null)
+;
+
+context LNM_General ERROR "LNM_General: MSCL DID F1BE reference must be provided" :
+	(this.lNM_DID_F1BE_Reference != null)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be in range 1-16" :
+	(this.lNMNetwork.select(e|((e.lNM_Network_ID < 1) || (e.lNM_Network_ID > 16))).size == 0)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 1).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 2).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 3).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 4).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 5).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 6).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 7).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 8).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 9).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 10).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 11).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 12).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 13).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 14).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 15).size <= 1)
+;
+
+context LNM_Networks ERROR "LNM_Networks: Network ID must be unique" :
+	(this.lNMNetwork.lNM_Network_ID.select(e|e == 16).size <= 1)
+;
+
+context LNMNetwork ERROR "LNMNetwork: LIN Bus off DTC enable parameter must be configured for " +  this.shortName:
+	(this.lNM_C_DTC_LINBusOff != null)
+;
+
+context LNMNetwork
+    if (this.lNM_ActivationSignalType.matches("VPM") == true)
+    ERROR "LNM_Condition: VPM rule must configured for " + this.shortName:
+	(this.sum_LNM_VPMRule_ref != null)
+;
+context LNMNetwork ERROR "LNMNetwork: LNM Pre-sleep Delay calibration parameter must be configured for " +  this.shortName:
+	(this.lNM_C_PreSleepDelay != null)
+;
+
+context LNMNetwork ERROR "LNMNetwork: LNM_C_PreSleepDelay value must be between 0 and 4000" +  this.shortName:
+	((this.lNM_C_PreSleepDelay >= 0)&&(this.lNM_C_PreSleepDelay <= 4000))
+;
+
+context LNM_General
+	ERROR "LNM_General: the LnmGenerateInitRunnable parameter must be configured, since it is mandatory. ":
+	(this.lnmGenerateInitRunnable != null)
+;
+
+context LNM_General
+	if (this.lnmGenerateInitRunnable == true)
+	ERROR "LNM_General: the Sum_Lnm_InitFuncPeriodicity parameter must be configured if the LnmGenerateInitRunnable is set to TRUE.  ":
+	(this.lnmInitFuncPeriodicity != null)
+;
+

@@ -1,0 +1,35 @@
+@startuml Sum_Ssfm_Ssm_ExecutionManager_SeqDiag
+
+control Scheduler as TE
+participant RTE as R
+box SUM_SSFM
+    participant Sum_Ssfm_Initialization as I
+    participant Sum_Ssfm_ExecutionManager as E
+end box
+
+TE -> E: Scheduling Event
+E -> E: Sum_Ssfm_SsmExecutionManager()
+activate E
+activate E
+E -> I: get intialization status for SSM
+activate I
+I --> E
+deactivate I
+deactivate E
+
+alt SSM initialized **AND** ERRH in Running 
+E -> R: Read from interface //SUSD_PermitExecution//
+activate R
+R --> E
+deactivate R
+end
+
+E -> E: Evaluate execution Mode of SSM
+
+E -> R: Write **//0xFF//** on interface //SUM_SSFM_SSM_ShutdownPermission//
+activate R
+R --> E
+deactivate R
+deactivate E
+
+@enduml 

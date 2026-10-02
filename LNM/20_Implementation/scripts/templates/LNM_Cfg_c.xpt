@@ -1,0 +1,764 @@
+«IMPORT bsw»
+«IMPORT bsw::LNMModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::LNM_Utils»
+
+«DEFINE LnmCfg FOR Autosar»
+«FILE "SUM_LNM_Cfg.c" -»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_LNM
+ * Date        : Jun 26, 2026
+ * Revision    : 8.0.1_rc
+ * Description : LNM Configuration source file
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/*
+ **********************************************************************************************************************
+ * Includes
+ **********************************************************************************************************************
+ */
+
+#include "Rte_SUM_LNM.h"
+#include "SUM_LNM_Cfg.h"
+#include "SUM_LNM_Network_Management.h"
+#include "SUM_LNM_MainFunction.h"
+
+/*PRQA S 3432 EOF # This is due to the testing project, not part of the module itself*/
+/*
+ **********************************************************************************************************************
+ * Private Functions declaration
+ **********************************************************************************************************************
+ */
+ «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+«FOREACH lNM.lNM_Arbitration.lNM_Inputs.lNM_ScheduleSignal AS ScheduleSignal -»
+«IF ScheduleSignal.lNM_ScheduleSignalSource.matches("VPM") == false -»
+static FUNC(boolean, SUM_LNM_CODE) LNM_Get_ScheduleSignal_«ScheduleSignal.shortName -»(P2VAR(«ScheduleSignal.lNM_ScheduleSignalType -», AUTOMATIC, RTE_APPL_DATA) schedule_signal);
+«ENDIF -»
+«ENDFOREACH -»
+«FOREACH lNM.lNM_Arbitration.lNM_Conditions.lNM_Condition AS Condition -»
+static FUNC(boolean, SUM_LNM_CODE) LNM_CheckCondition_«Condition.shortName -»(void);
+«ENDFOREACH -»
+«FOREACH lNM.lNM_Arbitration.lNM_Rules.lNM_Rule AS Rule -»
+static FUNC(boolean, SUM_LNM_CODE) LNM_CheckRule_«Rule.shortName -»(void);
+«ENDFOREACH -»
+«ENDIF -»
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+static FUNC(void, SUM_LNM_CODE) LNM_ScheduleManagement_«Network.shortName -»(void);
+«ENDFOREACH -»
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+  /*PRQA S 0779 7 # it is a generation function name depends on the configuration name */
+  /*PRQA S 0789 7 # it is a generation function name depends on the configuration name */
+  «FOREACH Network.lNM_Responders AS Responder -»
+static boolean Sum_LNM_Errh_Get_C_DTCProcess_Ief_«Network.shortName -»_«Responder.shortName -»(void);
+  «ENDFOREACH -»
+«ENDFOREACH -»
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+static FUNC(boolean, SUM_LNM_CODE) LNM_Get_C_DTC_«Network.shortName -»_LINBusOff(void);
+«ENDFOREACH -»
+
+
+/*
+ **********************************************************************************************************************
+ * Data Structures declaration
+ **********************************************************************************************************************
+ */
+
+ «FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+static LNM_Responder_Status_Type LNM_Responder_Status_«Network.shortName -»[LNM_NUMBER_OF_RESPONDERS_NETWORK_«Network.shortName -»];
+«ENDFOREACH -»
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+static LNM_Responder_Info_Type LNM_Responder_Info_«Network.shortName -»[LNM_NUMBER_OF_RESPONDERS_NETWORK_«Network.shortName -»] =
+{
+    «FOREACH Network.lNM_Responders AS Responder -»
+    /* Responder «Responder.shortName -» configuration */
+    {
+        /* LNM_MSCL_Index */
+        «IF Responder.lNM_MSCL_ByteIndex.matches("MSCL_BYTE_1") -»
+        «Responder.lNM_MSCL_BitIndex -»u,
+        «ELSE -»
+        «Responder.lNM_MSCL_BitIndex + 8 -»u,
+        «ENDIF -»
+        /* LNM_LoCWithDevice_Timer */
+        «Responder.lNM_LossOfComm_withDevice_Timer -»u,
+        /* LNM_LoCWithDevice_LNM_ERRH_NodeId */
+        &Rte_Write_PP_LNM_ERRH_NodeStatusIdx_«Network.shortName -»_«Responder.shortName -»_NodeStatusId,
+        /* LNM_LoCWithDevice_LNM_ERRH_NodeTimer */
+        &Rte_Write_PP_LNM_ERRH_NodeStatusIdx_«Network.shortName -»_«Responder.shortName -»_NodeStatusTimer,
+        /* LNM_LoCWithDevice_SSM_LNM_NodeTimeout */
+        &Rte_Read_RP_SSM_LNM_NodeTimeout_«Network.shortName -»_«Responder.shortName -»_NodeTimeout,
+        /* LNM_IEF_Supported */
+        &Sum_LNM_Errh_Get_C_DTCProcess_Ief_«Network.shortName -»_«Responder.shortName -»,
+        /* LNM_IEF_LNM_ERRH_IntElectFault */
+        «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+        &Rte_Write_PP_LNM_ERRH_IntElectFault_«Network.shortName -»_«Responder.shortName -»_IntElectFault,
+        «ELSE -»
+        NULL_PTR,
+        «ENDIF -»
+        /* LNM_IEF_APINFO2 */
+        «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+          «IF Responder.lNM_IEF_APINFO2_Supported == true -»
+        &Rte_Read_RP_COM_LNM_APINFO2_«Network.shortName -»_«Responder.shortName -»_APINFO2,
+          «ELSE -»
+        NULL_PTR,
+          «ENDIF -»
+        «ELSE -»
+        NULL_PTR,
+        «ENDIF -»
+        /* LNM_IEF_APINFO4 */
+        «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+          «IF Responder.lNM_IEF_APINFO4_Supported == true -»
+        &Rte_Read_RP_COM_LNM_APINFO4_«Network.shortName -»_«Responder.shortName -»_APINFO4,
+          «ELSE -»
+        NULL_PTR,
+          «ENDIF -»
+        «ELSE -»
+        NULL_PTR,
+        «ENDIF -»
+        /* LNM_APINFO2_Threshold */
+        «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+          «IF Responder.lNM_IEF_APINFO2_Supported == true -»
+        «Responder.lNM_IEF_Reset_Threshold -»u,
+          «ELSE -»
+        0u,
+          «ENDIF -»
+        «ELSE -»
+        0u,
+        «ENDIF -»
+        «IF Responder.lNM_Responder_Device_Not_Configured_Supported == true -»
+        /* LNM_NotConfigured_APINFO3 */
+        &Rte_Read_RP_COM_LNM_APINFO3_«Network.shortName -»_«Responder.shortName -»_APINFO3,
+        /* LNM_ERRH_NotConfigured */
+        &Rte_Write_PP_LNM_ERRH_NotConfigured_«Network.shortName -»_«Responder.shortName -»_NotConfigured,
+        «ELSE -»
+        /* LNM_NotConfigured_APINFO3 */
+        NULL_PTR,
+        /* LNM_ERRH_NotConfigured */
+        NULL_PTR,
+        «ENDIF -»
+    },
+    «ENDFOREACH -»
+};
+«ENDFOREACH -»
+
+const LNM_Network_Info_Type LNM_Network_Info[LNM_NUMBER_OF_NETWORKS] =
+{
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+    /* «Network.shortName -» configuration*/
+    {
+        /* LNM_Responders */
+        LNM_Responder_Info_«Network.shortName -»,
+        /* LNM_ScheduleManager */
+        &LNM_ScheduleManagement_«Network.shortName -»,
+        /* LNM_ScheduleRequest */
+        &Rte_Switch_PP_LNM_BswM_LinSM_ScheduleRequest_LNMNetwork_«Network.lNM_Network_ID -»_RequestSchedule_LNMNetwork_«Network.lNM_Network_ID -»,
+        /* LNM_GetCurrentSchedule */
+        &Rte_Mode_RP_LNM_BswM_LinSM_CurrentSchedule_LNMNetwork_«Network.lNM_Network_ID -»_CurrentSchedule_LNMNetwork_«Network.lNM_Network_ID -»,
+        /* LNM_GetNetworkStatus */
+        &Rte_Mode_RP_LNM_BswM_LinSM_CurrentState_LNMNetwork_«Network.lNM_Network_ID -»_CurrentMode_LNMNetwork_«Network.lNM_Network_ID -»,
+        «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+        «IF Network.lNM_ActivationSignalType.matches("Rule") == true -»
+        /* LNM_ActivationTypeIsRule */
+        TRUE,
+        /* LNM_GetActivationRule */
+        &LNM_CheckRule_«Network.sum_LNM_Rule_ref.shortName -»,
+        /* LNM_GetActivationSignal */
+        NULL_PTR,
+        «ELSE -»
+        /* LNM_ActivationTypeIsRule */
+        FALSE,
+        /* LNM_GetActivationRule */
+        NULL_PTR,
+        /* LNM_GetActivationSignal */
+        &Rte_Read_RP_LNM_ActivationSignal_«Network.shortName -»_ActivationSignal,
+        «ENDIF -»
+        «ELSE -»
+        /* LNM_ActivationTypeIsRule */
+        FALSE,
+        /* LNM_GetActivationRule */
+        NULL_PTR,
+        /* LNM_GetActivationSignal */
+        NULL_PTR,
+        «ENDIF -»
+        /* LNM_GetActivationSignal_Av */
+        «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+        «IF Network.lNM_ActivationSignalType.matches("Com") == true -»
+        &Rte_Read_RP_LNM_ActivationSignal_Av_«Network.shortName -»_SignalAvailability,
+        «ELSE -»
+        NULL_PTR,
+        «ENDIF -»
+        «ELSE -»
+        NULL_PTR,
+        «ENDIF -»
+        /* LNM_RequestComMode */
+        &Rte_Switch_PP_LNM_BswM_ComM_RequestComMode_LNMNetwork_«Network.lNM_Network_ID -»_RequestMode_LNMNetwork_«Network.lNM_Network_ID -»,
+        /* LNM_isComActivationSignal */
+        «IF Network.lNM_ActivationSignalType.matches("Com") == true -»
+        TRUE,
+        «ELSE -»
+        FALSE,
+        «ENDIF -»
+        «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+        /* LNM_ActivationMask */
+        «Network.lNM_ActivationMask -»u,
+        /* LNM_DeactivationMask */
+        «Network.lNM_DeactivationMask -»u,
+        «ELSE -»
+        /* Default LNM_ActivationMask */
+        254u,
+        /* Default LNM_DeactivationMask */
+        254,
+        «ENDIF -»
+        /* LNM_ResponderNumber */
+        «Network.lNM_Responders.size -»u,
+        /* LNM_MSCL_SSM_Notification */
+        &Rte_Write_PP_«Network.shortName -»_LNM_SSM_MSCL_MSCL,
+        /* LNM_Network_ID */
+        «Network.lNM_Network_ID -»u,
+        /* LNM_ERRH_LossCommBus */
+        &Rte_Write_PP_LNM_ERRH_LossCommBus_«Network.shortName -»_LossCommBus,
+        /* LNM_Responder_Status */
+        LNM_Responder_Status_«Network.shortName -»,
+        «IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == true -»
+        /* LinSM Network ID mapping to LNM Newtwork ID */
+        «Network.sum_LNM_LinSMNetworkId_ref.linSmNetworkIndex -»u,
+        /* ComM Channel ID mapping to LNM Newtwork ID */
+        «Network.sum_LNM_LinSMNetworkId_ref.linSMComMNetworkHandleRef.comMChannelId -»u,
+        «ELSE -»
+        /* Fixed LinSM Network ID if the user function callbacks not used */
+        0u,
+        /* Fixed ComM Channel Network ID if the user function callbacks not used */
+        0u,
+        «ENDIF -»
+        /* LNM_Get_LINBusOff_DTCEnable */
+        &LNM_Get_C_DTC_«Network.shortName -»_LINBusOff,
+    },
+«ENDFOREACH -»
+};
+
+/*
+ **********************************************************************************************************************
+ * Global Functions implementation
+ **********************************************************************************************************************
+ */
+«IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network ITERATOR i-»
+
+/******************************************************************************
+* Function name: LNM_Activation_«Network.shortName»
+* Description: Activation / Deactivation request of LIN channel «Network.shortName»
+* Parameters in:
+* Return value:
+* Remarks for:
+* Satisfies: [$SDD_LNM 020]
+ ******************************************************************************/
+«IF Network.lNM_ActivationSignalType.matches("Rule") == true && 
+    sum_Lnm_ActivationRuleIncludesVPM(Network.sum_LNM_Rule_ref) == true -»
+/*PRQA S 1505 1 # Runnable implementation that can also be called by another module*/
+«ELSE -»
+/*PRQA S 1503 1 # Runnable implementation to be called by another module*/
+«ENDIF -»
+FUNC(void, SUM_LNM_CODE) LNM_Activation_«Network.shortName -»(void)
+{
+    «IF Network.lNM_ActivationSignalType.matches("Rule") == false -»
+    VAR(uint8,AUTOMATIC) activation_signal_status;
+    «IF Network.lNM_ActivationSignalType.matches("Com") == true -»
+    VAR(uint8,AUTOMATIC) activation_signal_av;
+    «ENDIF -»
+    VAR(Std_ReturnType,AUTOMATIC) ret;
+
+    «ENDIF -»
+    «IF Network.lNM_ActivationSignalType.matches("Rule") == true -»
+    LNM_Network_Status[«i.counter0 -»].activation_requested = TRUE;
+    LNM_Network_Status[«i.counter0 -»].activation_rule = LNM_Network_Info[«i.counter0 -»].LNM_GetActivationRule();
+    «ELSE -»
+    /* Read the activation signal status that generated the function call */
+    ret = LNM_Network_Info[«i.counter0 -»].LNM_GetActivationSignal(&activation_signal_status);
+    if(ret == LNM_E_OK )
+    {
+        «IF Network.lNM_ActivationSignalType.matches("Com") == true -»
+        /* Satisfies: [$SDD_LNM 021] */
+        /* Com activation signal: check the availability of the signal */
+        ret = LNM_Network_Info[«i.counter0 -»].LNM_GetActivationSignal_Av(&activation_signal_av);
+        if(ret == LNM_E_OK)
+        {
+            if(activation_signal_av == LNM_SIGNAL_AVAILABLE)
+            {
+                /* Set the flags that manage activation and deactivation criteria */
+                LNM_Network_Status[«i.counter0 -»].activation_requested = TRUE;
+                LNM_Network_Status[«i.counter0 -»].activation_signal = activation_signal_status;
+            }
+        }
+        «ELSE -»
+        /* Set the flags that manage activation and deactivation criteria */
+        LNM_Network_Status[«i.counter0 -»].activation_requested = TRUE;
+        LNM_Network_Status[«i.counter0 -»].activation_signal = activation_signal_status;
+        «ENDIF -»
+    }
+    «ENDIF -»
+}
+«ENDFOREACH -»
+
+«IF (sum_Lnm_ExistsRuleWithVPM(lNM)) -» 
+/******************************************************************************
+* Function name: LNM_Activation_Rule_VPM
+* Description: Function that triggers evaluation of rules for the LIN channels with 
+               vehicle power mode as part of the activation/deactivation rule.
+* Parameters in:
+* Return value:
+* Remarks for:
+* Satisfies: [$SDD_LNM 020]
+ ******************************************************************************/
+ /* PRQA S 1532 1 # Function invoked by other functions in external file */
+FUNC(void, SUM_LNM_CODE) LNM_Activation_Rule_VPM (void)
+{
+  «FOREACH lNM.lNM_Networks.lNMNetwork AS Network ITERATOR i-»
+  «IF Network.lNM_ActivationSignalType.matches("Rule") == true -»
+  «IF sum_Lnm_ActivationRuleIncludesVPM(Network.sum_LNM_Rule_ref) -»
+  LNM_Activation_«Network.shortName -»();
+  «ENDIF -»
+  «ENDIF -»
+  «ENDFOREACH -»
+}
+
+«ENDIF -»
+/*
+ **********************************************************************************************************************
+ * Private Functions implementation
+ **********************************************************************************************************************
+ */
+
+«FOREACH lNM.lNM_Arbitration.lNM_Inputs.lNM_ScheduleSignal AS ScheduleSignal -»
+«IF ScheduleSignal.lNM_ScheduleSignalSource.matches("VPM") == false -»
+/******************************************************************************
+* Function name: LNM_Get_ScheduleSignal_«ScheduleSignal.shortName »
+* Description: Functions that returns the value of the schedule signal.
+*              The return value is used to signal if an error occurred during
+*              the execution of the function
+* Parameters in: The schedule signal must be provided as a pointe input.
+*                It will be written by the function
+* Return value: boolean error status
+* Remarks for:
+* Satisfies: [$SDD_LNM 031]
+ ******************************************************************************/
+static FUNC(boolean, SUM_LNM_CODE) LNM_Get_ScheduleSignal_«ScheduleSignal.shortName -»(P2VAR(«ScheduleSignal.lNM_ScheduleSignalType -», AUTOMATIC, RTE_APPL_DATA) schedule_signal)
+{
+    VAR(Std_ReturnType,AUTOMATIC) status;
+    VAR(boolean,AUTOMATIC) rv = FALSE;
+    «IF ScheduleSignal.lNM_ScheduleSignalSource.matches("Com") == true -»
+    VAR(uint8,AUTOMATIC) schedule_signal_av;
+    «ENDIF -»
+
+
+    «IF ScheduleSignal.lNM_ScheduleSignalSource.matches("Com") == true -»
+    /* Satisfies: [$SDD_LNM 032] */
+	/* Read signal availability */
+    status = Rte_Read_RP_LNM_ScheduleSignal_Av_«ScheduleSignal.shortName -»_SignalAvailability(&schedule_signal_av);
+    if(status == LNM_E_OK)
+    {
+        if(schedule_signal_av == LNM_SIGNAL_AVAILABLE)
+        {
+            /* Signal is available. Possible to proceed */
+            rv = TRUE;
+        }
+    }
+
+    if(rv == TRUE)
+    {
+        /* Reset to FALSE rv. It must be set to TRUE only if schedule signal is correctly read */
+        rv = FALSE;
+    «ENDIF -»
+   	    /* Read the activation signal */
+   	    status = Rte_Read_RP_LNM_ScheduleSignal_«ScheduleSignal.shortName -»_ScheduleSignal(schedule_signal);
+	    if(status == LNM_E_OK)
+	    {
+	        /* Schedule signal read success */
+	        rv = TRUE;
+	    }
+	«IF ScheduleSignal.lNM_ScheduleSignalSource.matches("Com") == true -»
+    }
+    «ENDIF -»
+
+    return rv;
+}
+
+«ENDIF -»
+«ENDFOREACH -»
+
+«FOREACH lNM.lNM_Arbitration.lNM_Conditions.lNM_Condition AS Condition -»
+/******************************************************************************
+* Function name: LNM_CheckCondition_«Condition.shortName »
+* Description: Functions that checks the selected enable condition
+* Parameters in:
+* Return value: boolean: TRUE  -> Condition satified
+*                        FALSE -> Condition not satisfied
+* Remarks for:
+ ******************************************************************************/
+static FUNC(boolean, SUM_LNM_CODE) LNM_CheckCondition_«Condition.shortName -»(void)
+{
+    VAR(boolean,AUTOMATIC) rv = FALSE;
+    
+    «IF Condition.lNM_InputRef.metaType.toString().matches("bsw::LNMModule::LNM_ScheduleSignal") == true -»
+    «IF Condition.lNM_InputRef.lNM_ScheduleSignalSource.matches("VPM") == true -»
+    SUM_VehiclePowerMode_Signal_States PowerMode;
+    «ELSE -»
+    VAR(boolean,AUTOMATIC) status;
+    VAR(«Condition.lNM_InputRef.lNM_ScheduleSignalType -»,AUTOMATIC) schedule_signal = 0u;
+    «ENDIF -»
+    «ENDIF -»
+
+    /* Get the value of the input signal */
+    «IF Condition.lNM_InputRef.metaType.toString().matches("bsw::LNMModule::LNM_ScheduleSignal") == true -»
+    
+    «IF Condition.lNM_InputRef.lNM_ScheduleSignalSource.matches("VPM") == true -»
+    if (E_OK == Rte_Read_RP_SUSD_LNM_VehiclePowerMode_VehiclePowerMode(&(PowerMode)))
+    {
+        if (PowerMode  «Condition.lNM_CompareOperator -» («Condition.lNM_InputRef.lNM_ScheduleSignalType -») «Condition.lNM_CompareValue -»u ) 
+        {
+            rv = TRUE;
+        }
+    }
+    «ELSE -»
+    status = LNM_Get_ScheduleSignal_«Condition.lNM_InputRef.shortName -»(&schedule_signal);
+    if(status == TRUE)
+    {
+        /* Input has been correctly processed. Evaluate the condition */
+        if(schedule_signal «Condition.lNM_CompareOperator -» («Condition.lNM_InputRef.lNM_ScheduleSignalType -»)«Condition.lNM_CompareValue -»u)
+        {
+            rv = TRUE;
+        }
+    }
+    «ENDIF -»
+    «ENDIF -»
+
+    return rv;
+}
+«ENDFOREACH -»
+
+«FOREACH lNM.lNM_Arbitration.lNM_Rules.lNM_Rule AS Rule -»
+/******************************************************************************
+* Function name: LNM_CheckRule_«Rule.shortName »
+* Description: Functions that checks the selected rule
+* Parameters in:
+* Return value: boolean: TRUE  -> Rule satified
+*                        FALSE -> Rule not satisfied
+* Remarks for:
+ ******************************************************************************/
+static FUNC(boolean, SUM_LNM_CODE) LNM_CheckRule_«Rule.shortName -»(void)
+{
+    «FOREACH Rule.lNM_ConditionRef AS Ref ITERATOR i -»
+    VAR(boolean,AUTOMATIC) clause_«i.counter0 -»;
+    «ENDFOREACH -»
+
+    /* Read each condition / rule */
+    «FOREACH Rule.lNM_ConditionRef AS Ref ITERATOR i -»
+      «IF Ref.metaType.toString().matches("bsw::LNMModule::LNM_Condition") == true -»
+    clause_«i.counter0 -» = LNM_CheckCondition_«Ref.shortName -»();
+      «ELSE -»
+    clause_«i.counter0 -» = LNM_CheckRule_«Ref.shortName -»();
+      «ENDIF -»
+    «ENDFOREACH -»
+
+    /* Rule evaluation */
+    return (clause_0«FOREACH Rule.lNM_ConditionRef.withoutFirst() AS Ref ITERATOR i -» «Rule.lNM_LogicOperator -» clause_«i.counter0 + 1-»«ENDFOREACH-»);
+}
+
+«ENDFOREACH -»
+«ENDIF -»
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network ITERATOR i -»
+/******************************************************************************
+* Function name: LNM_ScheduleManagement_«Network.shortName »
+* Description: Functions that executes schedule FSM of the network
+* Parameters in:
+* Return value:
+* Remarks for:
+* Satisfies: [$SDD_LNM 030] [$SDD_LNM 032] [$SDD_LNM 511] [$SDD_LNM 512] [$SDD_LNM 515]
+ ******************************************************************************/
+static FUNC(void, SUM_LNM_CODE) LNM_ScheduleManagement_«Network.shortName -»(void)
+{		
+«IF lNM.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false -»
+	VAR(boolean,AUTOMATIC) rule_status;
+
+    switch(LNM_Network_Status[«i.counter0 -»].current_schedule_state)
+    {
+        case «Network.lNM_ScheduleManagement.lNM_ScheduleStates.lNM_SleepState.shortName -»_«Network.shortName -»:
+            /*Reserved for any actions for the sleep schedule*/
+            break;
+
+        case «Network.lNM_ScheduleManagement.lNM_ScheduleStates.lNM_StartState.shortName -»_«Network.shortName -»:
+            «FOREACH Network.lNM_ScheduleManagement.lNM_ScheduleTransitions.lNM_ScheduleTransition AS Transition -»
+              «IF Transition.lNM_StartStateRef.shortName.matches(Network.lNM_ScheduleManagement.lNM_ScheduleStates.lNM_StartState.shortName) -»
+            rule_status = LNM_CheckRule_«Transition.lNM_TransitionRuleRef.shortName -»();
+                «IF Transition.lNM_EndStateRef.metaType.toString().matches("bsw::LNMModule::LNM_ScheduleState") == true -»
+				if(rule_status == TRUE)
+				{
+				/* Transition to «Transition.lNM_EndStateRef.shortName -» state */
+				LNM_Network_Status[«i.counter0 -»].current_schedule_state = «Transition.lNM_EndStateRef.shortName -»_«Network.shortName -»;
+                LNM_Network_Status[«i.counter0 -»].schedule_request_success = FALSE;
+                LNM_Network_Status[«i.counter0 -»].desired_schedule = «Transition.lNM_EndStateRef.lNM_ScheduleRef.linSMScheduleIndex -»u;
+				LNM_Network_Status[«i.counter0 -»].presleep_timer_started = FALSE;
+				}
+                «ELSE -»
+				«IF Network.lNM_C_PreSleepDelay != 0 -»
+				if((rule_status == TRUE) && (LNM_Network_Status[«i.counter0 -»].presleep_timer_started == FALSE))
+				{
+					/* Start pre-sleep timer */
+					LNM_Network_Status[«i.counter0 -»].presleep_timer_started = TRUE;
+					/* PRQA S 3469 1 # Configuration value, generated, in future can be used by other modules */
+					LNM_Network_Status[«i.counter0 -»].presleep_timer = Rte_CData_LNM_C_PreSleepDelay_«Network.shortName -»(); 
+					LNM_Network_Status[«i.counter0 -»].presleep_timer *= 1000u; /*Convert to us*/
+				}
+				«ELSE -»
+				if(rule_status == TRUE)
+				{
+				LNM_Network_Status[«i.counter0 -»].current_schedule_state = LNM_SLEEP_SCHEDULE_STATE;								
+				/* Request NO_COMMUNICATION of the channel */
+				LNM_Network_Info[«i.counter0 -»].LNM_RequestComMode(LNM_NO_COMMUNICATION);
+				/* Any additional actions upon transitioning to sleep can be added here */
+				}
+				«ENDIF -»
+                «ENDIF -»
+              «ENDIF -»
+            «ENDFOREACH -»
+            break;
+
+        «FOREACH Network.lNM_ScheduleManagement.lNM_ScheduleStates.lNM_ScheduleState AS ScheduleState -»
+        case «ScheduleState.shortName -»_«Network.shortName -»:
+            «FOREACH Network.lNM_ScheduleManagement.lNM_ScheduleTransitions.lNM_ScheduleTransition AS Transition -»
+              «IF Transition.lNM_StartStateRef.shortName.matches(ScheduleState.shortName) -»
+            rule_status = LNM_CheckRule_«Transition.lNM_TransitionRuleRef.shortName -»();
+            
+                «IF Transition.lNM_EndStateRef.metaType.toString().matches("bsw::LNMModule::LNM_ScheduleState") == true -»
+				if(rule_status == TRUE)
+				{
+				/* Transition to «Transition.lNM_EndStateRef.shortName -» state */
+				LNM_Network_Status[«i.counter0 -»].current_schedule_state = «Transition.lNM_EndStateRef.shortName -»_«Network.shortName -»;
+                LNM_Network_Status[«i.counter0 -»].schedule_request_success = FALSE;
+                LNM_Network_Status[«i.counter0 -»].desired_schedule = «Transition.lNM_EndStateRef.lNM_ScheduleRef.linSMScheduleIndex -»u;
+				LNM_Network_Status[«i.counter0 -»].presleep_timer_started = FALSE;
+				}
+                «ELSE -»
+				«IF Network.lNM_C_PreSleepDelay != 0 -»
+				if((rule_status == TRUE) && (LNM_Network_Status[«i.counter0 -»].presleep_timer_started == FALSE))
+				{				
+					/* Start pre-sleep timer */
+					LNM_Network_Status[«i.counter0 -»].presleep_timer_started = TRUE;
+					/* PRQA S 3469 1 # Configuration value, generated, in future can be used by other modules */
+					LNM_Network_Status[«i.counter0 -»].presleep_timer = Rte_CData_LNM_C_PreSleepDelay_«Network.shortName -»(); 
+					LNM_Network_Status[«i.counter0 -»].presleep_timer *= 1000u; /*Convert to us*/
+				}
+				«ELSE -»
+				if(rule_status == TRUE)
+				{
+				LNM_Network_Status[«i.counter0 -»].current_schedule_state = LNM_SLEEP_SCHEDULE_STATE;								
+				/* Request NO_COMMUNICATION of the channel */
+				LNM_Network_Info[«i.counter0 -»].LNM_RequestComMode(LNM_NO_COMMUNICATION);
+				/* Any additional actions upon transitioning to sleep can be added here */
+				}
+				«ENDIF -»
+                «ENDIF -»
+            
+              «ENDIF -»
+            «ENDFOREACH -»
+            break;
+
+        «ENDFOREACH -»
+        default:
+            /*Nothing to do*/
+            break;
+    }
+	/* Schedule requests management */
+	LNM_ScheduleTable_Request(«i.counter0 -»);
+	
+	/* Call the pre-sleep timer management function */
+    LNM_PreSleep_Timer_Management(«i.counter0 -»);
+
+«ELSE -» /* User function case */
+    /* Get required schedule from user function */
+    LNM_Network_Status[«i.counter0 -»].desired_schedule = LNM_GetRequiredSchedule(«Network.sum_LNM_LinSMNetworkId_ref.linSmNetworkIndex -»);
+
+    /* Check whether the desired schedule has been successfully activated */
+    LNM_Network_Status[«i.counter0 -»].schedule_request_success = FALSE;
+	
+	/* Schedule requests management */
+	LNM_ScheduleTable_Request(«i.counter0 -»);
+«ENDIF -»
+}
+«ENDFOREACH -»
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network ITERATOR i -»
+  «FOREACH Network.lNM_Responders AS Responder ITERATOR j -»
+    «IF Responder.lNM_Internal_Electronic_Failure_Supported == true -»
+      «IF Responder.lNM_IEF_APINFO2_Supported == true -»
+/******************************************************************************
+* Function name: LNM_APINFO2_«Network.shortName -»_«Responder.shortName »
+* Description: APINFO2 notification. Updates the counter for IEF DTC
+* Parameters in:
+* Return value:
+* Remarks for:
+* Satisfies: [$SDD_LNM 081]
+ ******************************************************************************/
+ /*PRQA S 1503 1 # Runnable implementation to be called by another module*/
+FUNC(void, SUM_LNM_CODE) LNM_APINFO2_«Network.shortName -»_«Responder.shortName -»(void)
+{
+    VAR(Std_ReturnType,AUTOMATIC) rv;
+    VAR(boolean,AUTOMATIC) apinfo2;
+
+    if(LNM_GlobalStatus == LNM_RUNNING)
+    {
+        /* Check that the responder is present in the network */
+        if((LNM_Network_Status[«i.counter0 -»u].MSCL & ((uint16)LNM_RESPONDER_PRESENT << LNM_Network_Info[«i.counter0 -»u].LNM_Responders[«j.counter0 -»u].LNM_MSCL_Index)) != LNM_ZERO)
+        {
+            /* Read the reset notification */
+            rv = LNM_Network_Info[«i.counter0 -»u].LNM_Responders[«j.counter0 -»u].LNM_IEF_APINFO2(&apinfo2);
+            if(rv == LNM_E_OK)
+            {
+                /* Update counters */
+                if(apinfo2 == ERROR_EVENT_INACTIVE)
+                {
+                    /* Reset counter to 0 if no reset has been notified */
+                    LNM_Network_Info[«i.counter0 -»u].LNM_Responder_Status[«j.counter0 -»u].ief_reset_counter = LNM_ZERO;
+                }
+                else
+                {
+                    /* A reset has been notified. Increment the counter */
+                    if(LNM_Network_Info[«i.counter0 -»u].LNM_Responder_Status[«j.counter0 -»u].ief_reset_counter < LNM_Network_Info[«i.counter0 -»u].LNM_Responders[«j.counter0 -»u].LNM_APINFO2_Threshold)
+                    {
+                        LNM_Network_Info[«i.counter0 -»u].LNM_Responder_Status[«j.counter0 -»u].ief_reset_counter++;
+                    }
+                }
+            }
+        }
+    }
+}
+
+      «ENDIF -»
+    «ENDIF -»
+  «ENDFOREACH -»
+«ENDFOREACH -»
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network ITERATOR i -»
+  «FOREACH Network.lNM_Responders AS Responder ITERATOR j -»
+    «IF Responder.lNM_Responder_Device_Not_Configured_Supported == true -»
+/******************************************************************************
+* Function name: LNM_APINFO3_«Network.shortName -»_«Responder.shortName -»
+* Description: APINFO3 notification. Monitors Responder Not Configured DTC
+* Parameters in:
+* Return value:
+* Remarks for:
+* Satisfies: [$SDD_LNM 090] [$SDD_LNM 091] [$SDD_LNM 092]
+ ******************************************************************************/
+ /*PRQA S 1503 1 # Runnable implementation to be called by another module*/
+FUNC(void, SUM_LNM_CODE) LNM_APINFO3_«Network.shortName -»_«Responder.shortName -»(void)
+{
+    VAR(Std_ReturnType,AUTOMATIC) rv;
+    VAR(boolean,AUTOMATIC) apinfo3;
+    VAR(uint8,AUTOMATIC) event_status = ERROR_EVENT_INACTIVE;
+    VAR(uint8,AUTOMATIC) max_retries;
+
+    /* Check if the LNM is allowed to execute its functions */
+    if(LNM_GlobalStatus == LNM_RUNNING)
+    {
+        /* Read calibration parameter max retries */
+		/* PRQA S 3469 1 # The function like macros is used. This is necessary to get value via RTE variable */
+        max_retries = Rte_CData_LNM_Config_Retries_«Network.shortName -»_«Responder.shortName -»();
+
+        /* Check that the responder is present in the network */
+        if((LNM_Network_Status[«i.counter0 -»u].MSCL & ((uint16)LNM_RESPONDER_PRESENT << LNM_Network_Info[«i.counter0 -»u].LNM_Responders[«j.counter0 -»u].LNM_MSCL_Index)) != LNM_ZERO)
+        {
+            /* Read APINFO3 */
+            rv = LNM_Network_Info[«i.counter0 -»u].LNM_Responders[«j.counter0 -»u].LNM_NotConfigured_APINFO3(&apinfo3);
+            if(rv == LNM_E_OK)
+            {
+                /* Update counters */
+                if(apinfo3 == ERROR_EVENT_INACTIVE)
+                {
+                    /* No retries needs to be done. Event is passed */
+                    LNM_Network_Info[«i.counter0 -»u].LNM_Responder_Status[«j.counter0 -»u].not_configured_counter = LNM_ZERO;
+                }
+                else
+                {
+                    /* Not configured responder. Update counter of retries before setting DTC  */
+                    if(LNM_Network_Info[«i.counter0 -»u].LNM_Responder_Status[«j.counter0 -»u].not_configured_counter <= max_retries)
+                    {
+                        LNM_Network_Info[«i.counter0 -»u].LNM_Responder_Status[«j.counter0 -»u].not_configured_counter++;
+                    }
+                }
+
+                max_retries++;
+                if(LNM_Network_Info[«i.counter0 -»u].LNM_Responder_Status[«j.counter0 -»u].not_configured_counter == max_retries)
+                {
+                    event_status = LNM_ERROR_EVENT_ACTIVE;
+                }
+
+                /* Report test result to ERRH */
+                (void) LNM_Network_Info[«i.counter0 -»u].LNM_Responders[«j.counter0 -»u].LNM_ERRH_NotConfigured(event_status);
+            }
+        }
+    }
+}
+    «ENDIF -»
+  «ENDFOREACH -»
+«ENDFOREACH -»
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+  «FOREACH Network.lNM_Responders AS Responder -»
+  
+/******************************************************************************
+* Function name: Sum_LNM_Errh_Get_C_DTCProcess_Ief_«Network.shortName -»_«Responder.shortName -»
+* Description: LNM getter function to access C_DTCProcess_Ief_«Network.shortName -»_«Responder.shortName -»
+* Parameters in: void
+* Return value: boolean
+ ******************************************************************************/ 
+static boolean Sum_LNM_Errh_Get_C_DTCProcess_Ief_«Network.shortName -»_«Responder.shortName -»(void)
+{
+    /*PRQA S 3469 1 # RTE generated function*/
+    return  Rte_CData_Sum_LNM_Errh_C_DTCProcess_Ief_«Network.shortName -»_«Responder.shortName -»();
+}  
+  «ENDFOREACH -»
+«ENDFOREACH -»
+
+«FOREACH lNM.lNM_Networks.lNMNetwork AS Network -»
+/******************************************************************************
+* Function name: LNM_Get_C_DTC_«Network.shortName -»_LINBusOff
+* Description: LIN Bus off DTC enable status for «Network.shortName»
+* Parameters in:
+* Return value:
+* Remarks for:
+ ******************************************************************************/
+static FUNC(boolean, SUM_LNM_CODE) LNM_Get_C_DTC_«Network.shortName -»_LINBusOff(void){
+    /*PRQA S 3469 1 # RTE generated function*/
+	  return Rte_CData_LNM_C_DTC_«Network.shortName -»_LINBusOff();
+}
+
+«ENDFOREACH -»
+/********************************** END OF FILE ******************************************************/
+
+«ENDFILE»
+«ENDDEFINE»

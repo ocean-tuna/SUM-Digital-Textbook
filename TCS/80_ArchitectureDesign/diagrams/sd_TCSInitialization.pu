@@ -1,0 +1,31 @@
+@startuml sd_TCSInitialization
+skinparam ParticipantPadding 40
+mainframe SUM_TCS Initialization
+
+box BSW #lightblue
+    participant BswM
+endbox
+
+participant RTE
+
+box SUM
+    participant SUM_TCS
+endbox
+
+activate BswM
+== start Initialization ==
+
+group if (TcsGenerateInitRunnable == False)
+BswM --> SUM_TCS: **Callout**
+end
+
+group if (TcsGenerateInitRunnable == True)
+SUM_TCS -> SUM_TCS : Runnable_TCS_Init();
+SUM_TCS -> SUM_TCS : TCS_init();
+end
+
+
+== end Initialization ==
+deactivate BswM
+
+@enduml

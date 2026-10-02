@@ -1,0 +1,154 @@
+«IMPORT bsw»
+«IMPORT bsw::SrvcMgrModule»
+«IMPORT bsw::Dem»
+«IMPORT bsw::Sd»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::Sum_SrvcMgr_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SrvcMgr FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SrvcMgr FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_SrvcMgr_Calibration_Controller.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Banner
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SrvcMgr
+ * Date        : Apr 20, 2026
+ * Revision    : 8.0.1_Pr16
+ * Description : Source file for Service Manager Calibration Controller
+ ***************************************************************************************************
+ * END:Banner
+ ***************************************************************************************************
+*/
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SrvcMgr_START_SEC_CODE
+#include "SUM_SrvcMgr_MemMap.h"
+#include "Sum_SrvcMgr_Prv.h"
+
+
+/**
+ * @brief Perform the API SrvcMgr_DisableService(const uint16 Sum_SrvcMgr_ServiceId).
+ *
+ * This function is invoked by a C/S calls. Please, take into account that if the first API
+ * (Sd_ClientServiceSetState()/Sd_ServerServiceSetState()) return E_NOT_OK the second API (Sd_CalibrateServicesOff())
+ * will not be called.
+ *
+ * @param[in] Sum_SrvcMgr_ServiceId: Id of the Service that is necessary to disable.
+ *
+ * @return Std_ReturnType
+ *         - E_OK: The Service is properly disabled;
+ *         - E_NOT_OK: Otherwise.
+ */
+/*[$Satisfies $DDS_SrvcMgr 012]*/
+/*PRQA S 1503 1*/ //This function will be called by a C/S calls.
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_DisableService(VAR(uint16, AUTOMATIC) serviceId)
+{
+    Std_ReturnType ret;
+    uint16 SrvcMgr_prv_IndexInTheConfArray;
+    uint16 Sum_SrvcMgr_prv_ServiceHandleId;
+    const uint16 Sum_SrvcMgr_prv_ServiceId = serviceId;
+    /* Check if the SrvcID received is properly configured in the SD Container. */
+    ret = Sum_SrvcMgr_pub_isIdConfigured(Sum_SrvcMgr_prv_ServiceId, SUM_SrvcMgr_SearchService, &SrvcMgr_prv_IndexInTheConfArray);
+
+    if(ret == E_OK){
+        /*Get the HanldeId associated to the ServiceID from SD configuration.*/
+        Sum_SrvcMgr_prv_ServiceHandleId = Sum_SrvcMgr_prv_GetSrvcHandleId(SrvcMgr_prv_IndexInTheConfArray);
+        /* Check if the Srvc is a Client or Server. Necessary to invoke correctly the SD API.  */
+        if(Sum_SrvcMgr_pub_IsClientSrvc(SrvcMgr_prv_IndexInTheConfArray) == TRUE){
+            ret = Sd_ClientServiceSetState(Sum_SrvcMgr_prv_ServiceHandleId, SD_CLIENT_SERVICE_RELEASED);
+        }else{
+            ret = Sd_ServerServiceSetState(Sum_SrvcMgr_prv_ServiceHandleId, SD_SERVER_SERVICE_DOWN);
+        }
+
+        /* Check ithe result of the previous SD API's invokatio. If it is returns E_NOT_OK, the call to the SD API  Sd_CalibrateServicesOff
+           the call to the SD API  Sd_CalibrateServicesOff will be meaningless. */
+        if(ret == E_OK){
+            /* PRQA S 1340 1 */ /* For sure, the Sd_CalibrateServicesOff does not want to modify the value passed. */
+            /* PRQA S 3469 1 # This function will be defined in BSW */
+            ret = Sd_CalibrateServicesOff(&Sum_SrvcMgr_prv_ServiceId, 0x01u);
+            if(ret == E_OK){
+                (void)Sum_SrvcMgr_pub_SetSrvcCalibrationState(Sum_SrvcMgr_prv_ServiceId, SUM_SrvcMgr_CalibrationOFF);
+            }
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @brief Perform the API SrvcMgr_DisableServiceGroup(const uint16 Sum_SrvcMgr_ServiceGroupId).
+ *
+ * This function is invoked by a C/S calls.
+ *
+ * @param Sum_SrvcMgr_ServiceGroupId: Id of the Service Group that is necessary to disable.
+ *
+ * @return Std_ReturnType:
+ *              - E_OK: The Service Group is properly disabled;
+ *              - E_NOT_OK: Otherwise;
+ */
+/*[$Satisfies $DDS_SrvcMgr 013]*/
+/*PRQA S 3206 2 # If No Service Group are present, the input parameter is not used. */
+/*PRQA S 1503 1 # This function will be called by a C/S calls. */
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_DisableServiceGroup(VAR(uint16, AUTOMATIC) serviceGroupId)
+{
+    «IF sd.sdConfig.sdServiceGroup.size > 0 -»
+    const uint16* SrvcMgr_ListOfServiceAssociated;
+    const uint16 Sum_SrvcMgr_prv_ServiceGroupId = serviceGroupId;
+    Std_ReturnType ret;
+    uint16 SrvcMgr_prv_IndexInTheConfArray;
+    uint16 SrvcMgr_NumberofSrvcAssociated;
+    uint16 j;
+
+    /* Check if the SrvcGrpID received is properly configured in the SD Container. */
+    ret = Sum_SrvcMgr_pub_isIdConfigured(Sum_SrvcMgr_prv_ServiceGroupId, SUM_SrvcMgr_SearchServiceGroup, &SrvcMgr_prv_IndexInTheConfArray);
+
+    if(ret == E_OK){
+        /* Check if the SrvcGrp has Srvc associated. If there are no Srvd associated, the operation to disable the SrvcGrp is meaningless. */
+        SrvcMgr_NumberofSrvcAssociated = Sum_SrvcMgr_pub_GetNumberofSrvcsInsideSrvcGrp(SrvcMgr_prv_IndexInTheConfArray);
+        if(SrvcMgr_NumberofSrvcAssociated > 0x00u){
+            Sd_ServiceGroupStop(Sum_SrvcMgr_prv_ServiceGroupId);
+            /* Get the pointer to the list of Srvc associated to this SrvcGrp, necessary to call the  SD API Sd_CalibrateServicesOff(). */
+            SrvcMgr_ListOfServiceAssociated = Sum_SrvcMgr_pub_GetListofSrvcsInsideSrvcGrp(SrvcMgr_prv_IndexInTheConfArray);
+            /* PRQA S 3469 1 # This function will be defined in BSW */
+            ret = Sd_CalibrateServicesOff(SrvcMgr_ListOfServiceAssociated, SrvcMgr_NumberofSrvcAssociated);
+            if(ret == E_OK){
+                for(j = 0u; j < SrvcMgr_NumberofSrvcAssociated; j++){
+                    (void)Sum_SrvcMgr_pub_SetSrvcCalibrationState(SrvcMgr_ListOfServiceAssociated[j], SUM_SrvcMgr_CalibrationOFF);
+                }
+            }
+        }else{
+            ret = E_NOT_OK;
+        }
+    }
+    «ELSE-»
+    Std_ReturnType ret = E_NOT_OK;
+    «ENDIF-»
+    return ret;
+}
+
+#define SUM_SrvcMgr_STOP_SEC_CODE
+#include "SUM_SrvcMgr_MemMap.h"
+
+«ENDFILE-»
+«ENDDEFINE»

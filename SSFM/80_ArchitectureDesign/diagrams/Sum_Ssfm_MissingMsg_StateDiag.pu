@@ -1,0 +1,12 @@
+@startuml Sum_Ssfm_MissingMsg_StateDiag
+
+state Sum_Ssfm_LinResponder_MissingMsg_Handler{
+    state SUM_SSFM_EcuNodeState_Normal
+    state SUM_SSFM_EcuNodeState_LostComm
+
+	[*] --> SUM_SSFM_EcuNodeState_Normal
+	SUM_SSFM_EcuNodeState_Normal --> SUM_SSFM_EcuNodeState_LostComm: (error_status == ERROR_EVENT_ACTIVE)
+	SUM_SSFM_EcuNodeState_LostComm --> SUM_SSFM_EcuNodeState_Normal: (error_status == ERROR_EVENT_INACTIVE)        
+}
+
+@enduml 

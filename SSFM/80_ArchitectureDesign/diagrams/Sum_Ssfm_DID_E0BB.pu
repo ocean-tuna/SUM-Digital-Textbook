@@ -1,0 +1,30 @@
+@startuml Sum_Ssfm_DID_E0BB
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DID_E0BB"
+
+**Interfaces Legend**
+   //ri140 //: DCM DataServices
+   
+endlegend
+
+note top of EC
+DID E0BB Handler is responsible for managing MAC Verification Per Key Slot information.
+It provides current status (passing, indeterminate, failed, unused) for each configured key slot,
+including Transmitter DTC, Status, and Fail Timer. Data is persisted to NvM for accumulation
+across ignition cycles.
+end note
+
+interface "DCM DataServices" as ri140
+
+component [SSFM::Sum_Ssfm_DID_E0BB] as EC {
+	component [Sum_Ssfm_DID_E0BB] as E
+}
+
+ri140 -down-> EC
+
+
+
+@enduml

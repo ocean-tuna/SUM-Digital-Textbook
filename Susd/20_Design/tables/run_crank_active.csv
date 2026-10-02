@@ -1,0 +1,10 @@
+3;3;2;5;2
+\textbf{Primary Run / Crank Command Active};\textbf{Secondary Run / Crank Command Active};\textbf{Run / Crank Input Invalid};\textbf{Run / Crank Active};\textbf{Run / Crank Active Invalid}
+VALID AND AVAILABLE AND NOT FoFA;;;"Primary Run / Crank
+
+If FoI: last valid received Primary Run / Crank.";Valid
+INVALID OR UNAVAILABLE OR FoFA;VALID AND AVAILABLE AND NOT FoFA;;"Secondary Run / Crank
+
+If FoI: last valid received Secondary Run / Crank.";Valid
+INVALID OR UNAVAILABLE OR FoFA;INVALID OR UNAVAILABLE OR FoFA;VALID;Run / Crank Input;Valid
+INVALID OR UNAVAILABLE OR FoFA;INVALID OR UNAVAILABLE OR FoFA;INVALID;Last Known Run / Crank Active;Invalid

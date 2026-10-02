@@ -1,0 +1,48 @@
+
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm.h"-»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : SPM - Complex Device Driver :: Header of module
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef _SUM_SPM_H_
+#define _SUM_SPM_H_
+
+#include "SUM_Common_Types.h"
+
+«IF spm.spmGeneral.spmGenerateInitRunnable == false-»
+extern void SPM_Init(void);
+«ENDIF-»
+
+/* EOF */
+#endif
+«ENDFILE-»
+«ENDDEFINE»

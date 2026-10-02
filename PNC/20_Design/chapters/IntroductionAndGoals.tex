@@ -1,0 +1,86 @@
+\chapter{Introduction and Goals}
+This model design document describes the system design of the model of the RTA-SUM module Partial Network Coordinator. The Standard Utility Module, Partial Network Controller (SUM\_PNC), is a software component located in the Application Layer of the standardized architecture of AUTOSAR.
+
+\section{Introduction}
+
+\subsection{System Purpose}
+SUM\_PNC manages all of the BSW services related to Partial Networks (PNs) for the ECU that is a member of any PN. SUM\_PNC shall be implemented in all ECUs that are members of any PN.
+\\
+SUM\_PNC is responsible for the following functions: 
+
+\begin{enumerate}
+	\item For ECUs that are Activating ECUs, SUM\_PNC contains the PN Activation Criteria and Deactivation Criteria per the "Global B PNC Activation Specification". This document defines the Global B Partial Networks, roles of the ECUs within the Partial Networks, and activation/deactivation criteria for each Partial Network. Refer (*);
+	\item SUM\_PNC is the only SW-C that interfaces with the BSW services to activate and deactivate Partial Networks;  
+	\item For all ECUs that are Activated ECUs, SUM\_PNC interfaces with the BSW services to track the activation status (active or inactive) of the PN; 
+	\item For all ECUs that are members of any PN, SUM\_PNC provides a port that is used to indicate communication capability from SUM\_PNC for each SW-C; 
+	\item Collection of all input signals and input integrity signals (e.g. Rx\_MonitoredSignalAvailability from SUM\_SSFM) that are relevant to Activation/Deactivation Criteria for the PN in which the ECU participates. (Integrity signals apply to both the hardware and communication based signals.); 
+	\item Collection of all conditional logic related to activation/deactivation criteria for the PN in which the ECU activates/deactivates;
+	\item Execute a sequence to fulfil the activation of a PN request;
+	\item Execute a sequence to fulfil the deactivation of a PN request; 
+	\item Identify PN mapping to communication channel(s); 
+\end{enumerate}
+\noindent
+\textbf{(*)}: The ECU’s within the Partial networks are assigned with role of Activator ECU’s and Activated ECU’s. There will be set of conditions based on which the activators will set activation criteria/deactivation criteria.
+\\
+\textbf{Activation Criteria}: a set of conditions that result in the activation of a PN. These condition are typically a combination of local inputs and / or serial data signals.
+\\
+\textbf{Deactivation Criteria}: a set of conditions that result in the deactivation of a PN.
+
+\subsection{Document Purpose}
+This document introduces the key ideas of the architecture of Standard utility module: Partial Network Coordinator (SUM\_PNC). Its intended audience comprises System Architects, Product Architects, Developers and Testers who need a rough understanding on the concepts of the product.
+\\
+\\
+The document describes the product and its functionality on the component level, the interfaces and the interactions of the partial network coordinator with the rest of the standard utility modules, software components and BSW modules.
+\\
+\\
+The document does not explain the components design in detail.
+
+\section{Goals of the Architecture}
+
+\subsection{Goals}
+The main goals of the architecture are:
+
+\begin{enumerate}
+	\item \textbf{Configurability}: The module has to be designed with the highest possible level of configurability, in order to be easy to adapt it in the future to changes on the standard or even in some project requirements;
+	\item \textbf{Maintainability}: The architecture of the component shall be clearly defined and easy to understand, in order to guarantee the maximum possible level of maintainability;
+	\item \textbf{Performance}: The component shall be designed in order to maximize run-time execution speed as well as memory consumption;
+	\item \textbf{Correctness of Implementation}: The Detailed Design must to be aligned to the Architecture document;
+\end{enumerate}
+
+\subsubsection{\textit{Maintainability}}
+
+\begin{enumerate}
+	\item SUM\_PNC shall implement a Mode User port interface to BswM to obtain notification of Partial Network status of all PNs which the ECU participates in.
+	\item SUM\_PNC shall implement $<$n$>$ port(s), PNC\_ActiveTxPDUEnable$<$n$>$ to publish notification of transmit ready capability for a specific Partial Network to SUM\_SUSD and SUM\_SSC.
+    \item SUM\_ERRH, SUM\_SOH, and SUM\_SSC all require the PNC\_ActiveTxPDUEnable interface.
+    \item All ECUs that are designated to process Partial Network activation and/or deactivation criteria shall implement a Mode Request port interface from SUM\_PNC to BswM for the purpose of activating and/or deactivating Partial Networks relevant to the ECU.
+	\item All ECUs that are members of a Partial Network shall implement a Mode Request port interface from SUM\_PNC to BswM for the purpose of activation and deactivating PDU Rx groups relevant to these Partial Networks.
+	\item All ECUs that are members of a Partial Network shall implement a Mode Request port interface from SUM\_PNC to BswM for the purpose of activation and deactivating PDU Tx groups relevant to these Partial Networks.
+	\item SUM\_PNC shall implement a port, Shutdown Permission, which can publish notification to SUM\_SUSD to control the disable or enable shutting down the ECU.
+\end{enumerate}
+
+\section{Stakeholders}
+Below diagram illustrates SUM-PNC dependency with other SUMs and AUTOSAR System Services
+
+%image or uml
+\begin{figure}[h!]
+	\centering
+	\includegraphics[scale=0.6]{images/stakeholders.png}
+\end{figure}
+
+Important stakeholders for this architecture are:
+
+\begin{itemize}
+	\item SUM Modules: SUSD, SSC, SOH, ERRH, SSFM, DIAG;
+	\item BSW Modules: BswM, Com, ComM;
+\end{itemize}
+\noindent
+Following sections will help in understanding each SUM module and BSW module interfacing dependency and functionalities in detail.
+\section{Definitions, Acronyms and Abbreviations}
+
+%tables acronymnsAndAbbr
+\input{generated/tables/acronAbb.tex}
+
+\section{Referenced Documents}
+
+\input{generated/tables/references.tex}

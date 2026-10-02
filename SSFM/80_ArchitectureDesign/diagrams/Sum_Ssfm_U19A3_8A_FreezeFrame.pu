@@ -1,0 +1,15 @@
+@startuml Sum_Ssfm_U19A3_8A_FreezeFrame
+
+participant Tool as Tool
+participant DEM as DEM
+participant Rte as Rte
+participant Sum_Ssfm_DID_0xE0BB_Handler as DID0xE0BB
+
+Tool -> DEM : UDS 19 06 19 A3 8A FF
+DEM -> Rte: Rte_Call_Dem_E0BB_ReadData(uint8 * Data)
+Rte -> DID0xE0B9: Runnable_SSFM_E0BB_FreezeFrame(uint8 * Data)
+DID0xE0B9 --> Rte: Data
+Rte -> DEM: Data
+DEM -> Tool: UDS 59 06 19 A3 8A 01 FF [Data]
+
+@enduml 

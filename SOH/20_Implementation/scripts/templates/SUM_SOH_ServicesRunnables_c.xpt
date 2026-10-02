@@ -1,0 +1,1210 @@
+«IMPORT bsw»
+«IMPORT bsw::NvMModule»
+«IMPORT bsw::SOHModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+
+
+«DEFINE SOHServicesRunnablesC FOR Autosar»
+	«EXPAND CreateSohStruct FOR this.ecu.sOH»
+«ENDDEFINE»
+
+«DEFINE CreateSohStruct FOR SOH»
+«FILE "SUM_SOH_ServicesRunnables.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SOH
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Source for SOH Services Runnables
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/*! @defgroup SOH_ServicesRunnables_c The SOH_ServicesRunnables.c file
+ *  This is the SOH_ServicesRunnables.c file
+ *  @{
+ */
+
+/*
+ ***************************************************************************************************
+ * Includes
+ ***************************************************************************************************
+ */
+#include "Rte_SUM_SOH.h"
+#include "SUM_SOH_Utilities.h"
+
+
+#define SUM_SOH_START_SEC_CODE
+#include "SUM_SOH_MemMap.h" /* PRQA S 5087 */ /* include SUM_SOH_MemMap.h required here to occupy the space in memory for the described macro*/
+
+/*
+ ***************************************************************************************************
+ * Functions
+ ***************************************************************************************************
+ */
+/* PRQA S 3432 EOF *//* The violation is in the Compiler.h used for the test poject*/
+static void SOH_ConvertUint16ToBigEndianUint8Array(uint16 source, CONSTP2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) output );
+
+
+static FUNC(Std_ReturnType, SUM_SOH_CODE) ComputeReturnStatus(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus, SOH_MonitorType const* monitor);
+
+ /*
+ *Internal function: SOH_FindMonitor implementation.
+ *@param[in]  option for record type
+ *@param[out] true if control option record is in range, false otherwise
+ *@return pointer to monitor or NULL_PTR if request out of range or monitor not supported */
+static SOH_MonitorType* SOH_FindMonitor(VAR(Dcm_StartDataIn_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.shortName»_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.first().shortName»Type, AUTOMATIC) ControlOptionRecord, boolean* DidInRange)
+{
+	SOH_MonitorType* monitor = NULL_PTR;
+
+	switch(ControlOptionRecord)
+	{
+
+	    case 0xF08F:
+			*DidInRange = TRUE;
+#if (SOH_IMMEDIATE_DELAYED_SUPPORT_ENABLED || SOH_DIAG_RESET_SUPPORT_ENABLED)
+            monitor = &SOH_ResetReliabilityMonitor;
+#endif
+			break;
+
+		case 0xF090:
+	    	*DidInRange = TRUE;
+
+#if (SOH_STATUS_NVM_SUPPORT_ENABLED || SOH_ACTION_NVM_SUPPORT_ENABLED || SOH_PRIVILEGE_NVM_SUPPORT_ENABLED|| \
+     SOH_EXCEP_OS_SUPPORT_ENABLED   ||SOH_SERV_OS_SUPPORT_ENABLED      || SOH_STACK_OS_SUPPORT_ENABLED || \
+     SOH_MEMPROT_OS_SUPPORT_ENABLED || SOH_TIMEPROT_OS_SUPPORT_ENABLED || SOH_ERR_OS_SUPPORT_ENABLED)
+             monitor = &SOH_MemoryStatusReliabilityMonitor;
+#endif
+        break;
+
+	    case 0xF091:
+			*DidInRange = TRUE;
+# if(SOH_SHUTDOWN_DELAY_SUPPORT_ENABLED)
+			monitor = &SOH_PlatformReliabilityMonitor;
+#endif
+		break;
+
+		case 0xF092:
+			*DidInRange = TRUE;
+#if (SOH_CLEAR_DIAG_INFO_SUPPORT_ENABLED || SOH_DIAG_SESSION_SUPPORT_ENABLED || SOH_SEC_ACCESS_FAILURES_SUPPORT_ENABLED|| \
+	 SOH_MAC_FAILURES_SUPPORT_ENABLED    || SOH_SECP_ERRORS_SUPPORT_ENABLED )
+
+			monitor = &SOH_CommunicationReliabilityMonitor;
+#endif
+		break;
+
+		case 0xF093:
+			*DidInRange = TRUE;
+#if (SOH_LOCAL_SUP_FAILURES_SUPPORT_ENABLED || SOH_WdgMDEM_SUP_ERRORS_SUPPORT_ENABLED || SOH_ERRH_LOCAL_SUP_ERRORS_SUPPORT_ENABLED)
+			monitor = &SOH_WdgMReliabilityMonitor;
+#endif
+		break;
+
+		case 0xF094:
+			*DidInRange = TRUE;
+#if (ERRH_SOH_LOCAL_SUP_ERRORS_SUPPORT_ENABLED)
+			monitor = &SOH_WdgMReliabilityF094Monitor;
+#endif
+		break;
+
+	    case 0xFFFF:
+			*DidInRange = TRUE;
+#if (NUM_OF_DETECTORS != 0u)
+			monitor = &SOH_AllMonitors;
+#endif
+		break;
+
+	    default:
+			*DidInRange = FALSE;
+	    break;
+	}
+
+	return monitor;
+}
+
+
+/*!
+ *Runnable_SOH_RIDClearLogs implementation (RID 0x02C0).
+ *Clear the metrics of the detectors associated to the monitor described in Dcm_StartDataIn_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.shortName»_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.first().shortName»Type, AUTOMATIC) DataIn_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.first().shortName»
+ *If it receives 0xFFFF it clears all the metrics.
+ *
+ *@param[in]  metric to clear
+ *@param[in]  operation status
+ *@param[out] status of the clear
+ *@param[out] error code
+ *@return E_OK
+ */
+
+/* PRQA S 1503 3 *//* It's scheduled in the OS [$Satisfies $SDD_SOH 114]*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_RIDClearLogs(VAR(Dcm_StartDataIn_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.shortName»_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.first().shortName»Type, AUTOMATIC) DataIn_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.first().shortName»,
+                                                             VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                             P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) DataOut_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.first().shortName»,
+                                                             P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+
+	Std_ReturnType ReturnStatus = E_NOT_OK;
+	boolean findRetValue = FALSE;
+	SOH_MonitorType const* monitor;
+	boolean OutOfRange=FALSE;
+
+	/* [$Satisfies $SDD_SOH 037] [$Satisfies $SDD_SOH 038] [$Satisfies $SDD_SOH 039] [$Satisfies $SDD_SOH 102] */
+
+	/*ECU supports AUTOSAR and implements SUM_SOH and RID execution was successful */
+	*DataOut_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.dcmDspStartRoutine.dcmDspStartRoutineOut.dcmDspStartRoutineOutSignal.first().shortName» = 0x04;
+
+	/*Start checking the Monitor that must be cleared and save it to reduce code size*/
+	monitor = SOH_FindMonitor(DataIn_«sOHGeneral.sOH_RID_02C0_SOH_Clear_Log_Reference.dcmDspStartRoutine.dcmDspStartRoutineIn.dcmDspStartRoutineInSignal.first().shortName», &findRetValue);
+
+    /* If the control option record is out of range, set the Error Code to DCM_E_REQUESTOUTOFRANGE */
+	if(findRetValue == FALSE)
+	{
+		OutOfRange=TRUE;
+	    *ErrorCode = DCM_E_REQUESTOUTOFRANGE;
+	}
+	else /* If the requested DID is part of RID 0x020C but a monitor is not supported, no data to be cleared, return a positive answer with status record 0x04 */
+	{
+		ReturnStatus = E_OK;
+	}
+
+	/* If the control option record is in range and a monitor is supported, perform the clear of the contents of the DIDs */
+	if(monitor != NULL_PTR )
+	{
+		ReturnStatus = ComputeReturnStatus(OpStatus, monitor);
+	}
+
+	/* If the return status is not OK and the control option record is in range, set the Error Code to  DCM_E_GENERALREJECT (NvM error) */
+	if((ReturnStatus==E_NOT_OK)&&(OutOfRange==FALSE))
+	{
+		*ErrorCode = DCM_E_GENERALREJECT;
+	}
+
+	return ReturnStatus;
+
+}
+
+/*!
+ *	\Requirement{033}
+ *		It calls SOH_ClearItems() to clear the detection counters, the time windows and the DID counters in the SOH_MonitorType instances.
+ *	\Satisfies{019}
+ *
+ *	This function is called only by Runnable_SOH_RIDClearLogs() as part of the RID 0x02C0 Clear_SUM_SOH_logs.
+ */
+static FUNC(Std_ReturnType, SUM_SOH_CODE) ComputeReturnStatus(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+																	   SOH_MonitorType const* monitor)
+{
+
+	Std_ReturnType ReturnStatus=E_NOT_OK;
+	Std_ReturnType NvMStatus;
+
+	switch(OpStatus)
+	{
+		/*DCM Initial phase, if no write pending, clean the monitor, return PENDING*/
+	    /*DCM Pending phase, check that the writes have been performed.
+	     * If there is any write pending previously, return PENDING
+	     * or Start clearing items and return PENDING
+	     * Or check NVM status and return OK or NOT_OK
+	     * */
+		case DCM_INITIAL :
+			/* Check if at least one NvM write status is pending */
+			NvMStatus = SOH_CheckNvMWritesList(monitor->SOH_Detectors, monitor->length);
+			if(NvMStatus != SOH_E_PENDING)
+			{
+			    /*[$Satisfies $SDD_SOH 015]*/
+
+                /* Notify that this runnable is updating the NvM */
+				Rte_IrvWrite_Runnable_SOH_RIDClearLogs_SOH_SOHRIDIsWriting((TRUE));
+
+				/* [$Satisfies $DDS_SOH 033] */
+                /* No NvM activity pending, so clear all the metrics and write them in the NvM */
+				NvMStatus = SOH_ClearItems(monitor->SOH_Detectors, monitor->length);
+
+                /*If the writes have started, return PENDING */
+				if(NvMStatus==E_OK)
+				{
+					ReturnStatus = SOH_E_PENDING;
+				}
+			}
+			else
+			{
+				ReturnStatus = E_NOT_OK;
+			}
+		break;
+		case DCM_PENDING :
+		        /*Check if the NvM writing has been completed*/
+			    ReturnStatus = SOH_CheckNvMWritesList(monitor->SOH_Detectors, monitor->length);
+		break;
+		/* If the state is invalid, return NOT_OK*/
+		default:
+			ReturnStatus=E_NOT_OK;
+		break;
+	}
+
+    /*Notify that this runnable is not updating the NvM ( No NvM write is ongoing)*/
+	if(ReturnStatus!=SOH_E_PENDING)
+	{
+		Rte_IrvWrite_Runnable_SOH_RIDClearLogs_SOH_SOHRIDIsWriting((FALSE));
+	}
+
+	return ReturnStatus;
+
+}
+
+ /*
+ *Internal function: SOH_ConvertUint16ToBigEndianUint8Array implementation.
+ *
+ * It converts an uint16 to an uint8 two byte array big endian ordered
+ *
+ *@param[in]   source
+ *@param[out]  output
+ *@return void
+ */
+static void SOH_ConvertUint16ToBigEndianUint8Array(uint16 source, CONSTP2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) output )
+{
+	    /* to Big-Endian  */
+		*output       = (uint8) ((source & 0xFF00u) >> 8u);
+		*(output+1)   = (uint8) ((source & 0x00FFu) );
+}
+
+/**
+ * Runnable_SOH_DID_F08F_Data_ImmeReset_Cntr implementation.
+ * Updates the DCM "data" array with the Immediate Reset DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+ /* [$Satisfies $SDD_SOH 040] [$Satisfies $SDD_SOH 031] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F08F_Data_ImmeReset_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                             P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_ImmediateDelayed_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_ImmeReset]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+	       	«ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+
+
+
+/**
+ * Runnable_SOH_DID_F08F_Data_DiagReset_Cntr implementation.
+ * Updates the DCM "data" array with the Diagnostic Reset DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 041] [$Satisfies $SDD_SOH 031] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F08F_Data_DiagReset_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                             P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_DiagnosticReset_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_DiagReset]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	        «ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+	       	«ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+
+
+
+/**
+ * Runnable_SOH_DID_F08F_Data_DelayedReset_Cntr implementation.
+ * Updates the DCM "data" array with the Delayed Reset DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 042] [$Satisfies $SDD_SOH 031] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F08F_Data_DelayedReset_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                                P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_ImmediateDelayed_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_DelayedReset]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	        «ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+
+
+/**
+ * Runnable_SOH_DID_F08F_CheckRead implementation.
+ * Check condition runnable for DID 0xFO8F, returns always E_OK
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  Error code ( always 0 )
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 043] [$Satisfies $SDD_SOH 031] */
+ /* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F08F_CheckRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                   P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    switch (OpStatus)
+    {
+        case DCM_INITIAL:
+        case DCM_PENDING:
+            *ErrorCode = 0u;
+            break;
+        default:
+            /*Do nothing*/
+            break;
+    }
+    return(E_OK);
+}
+
+/**
+ * Runnable_SOH_DID_F092_Data_ClearDiagInfo_Cntr implementation.
+ * Updates the DCM "data" array with the Clear Diagnostic Information Accepted Request DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 034] [$Satisfies $SDD_SOH 074] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F092_Data_ClearDiagInfo_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                                 P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+            «IF sOHGeneral.sOH_ClearDiagnosticInformation_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_ClearDiagInfo]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F092_Data_Reject_ClearDiag_Cntr implementation.
+ * Updates the DCM "data" array with the Clear Diagnostic Information Rejected Request DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 034] [$Satisfies $SDD_SOH 075] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F092_Data_Reject_ClearDiag_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                                    P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+            «IF sOHGeneral.sOH_ClearDiagnosticInformation_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_RejectClearDiag]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	        «ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F092_Data_DiagSession_Cntr implementation.
+ * Updates the DCM "data" array with the Diagnostic Session Control Request DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 034] [$Satisfies $SDD_SOH 076] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F092_Data_DiagSession_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                               P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+            «IF sOHGeneral.sOH_DiagnosticSessionControl_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_DiagSession]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F092_Data_Accept_DiagSession_Cntr implementation.
+ * Updates the DCM "data" array with the Accepted Diagnostic Session Control Request DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 034] [$Satisfies $SDD_SOH 077] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F092_Data_Accept_DiagSession_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                                      P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+            «IF sOHGeneral.sOH_DiagnosticSessionControl_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_AcceptDiagSession]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F092_Data_SecurityAccess_Cntr implementation.
+ * Updates the DCM "data" array with the SecurityAccess (Service 0x27) Failures DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 034] [$Satisfies $SDD_SOH 078] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F092_Data_SecurityAccess_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                                  P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+            «IF sOHGeneral.sOH_SecurityAccessFailures_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_SecurityAccess]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F092_Data_MACfail_TenAct_Cntr implementation.
+ * Updates the DCM "data" array with the MAC Failures Types 1 and 2 DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 034] [$Satisfies $SDD_SOH 079] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F092_Data_MACfail_TenAct_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                                  P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+            «IF sOHGeneral.sOH_MACFailures_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_MACfailTenAct]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F092_Data_ReplayCount_Cntr implementation.
+ * Updates the DCM "data" array with the MAC Failures Type 3 DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 034] [$Satisfies $SDD_SOH 080] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F092_Data_ReplayCount_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                               P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+			«IF sOHGeneral.sOH_MACFailures_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_ReplayCount]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F092_Data_SecP_Cntr implementation.
+ * Updates the DCM "data" array with the SecP Errors DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 034] [$Satisfies $SDD_SOH 081] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F092_Data_SecP_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                        P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+            «IF sOHGeneral.sOH_SecPErrors_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_SecP]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F092_CheckRead implementation.
+ * Check condition runnable for DID 0xF092, returns always E_OK
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  Error code ( always 0 )
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 034] [$Satisfies $SDD_SOH 082] */
+ /* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F092_CheckRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                   P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    switch (OpStatus)
+    {
+        case DCM_INITIAL:
+        case DCM_PENDING:
+            *ErrorCode = 0u;
+            break;
+        default:
+            /*Do nothing*/
+            break;
+    }
+    return(E_OK);
+}
+
+
+/**
+ * Runnable_SOH_DID_F093_Data_LocalStatFail_Cntr implementation.
+ * Updates the DCM "data" array with the Local Status Failures DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 104] [$Satisfies $SDD_SOH 035] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F093_Data_LocalStatFail_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                                 P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+            «IF sOHGeneral.sOH_LocalSupervisionFailures_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_LocalStatFail]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F093_Data_Data_WdgM_DEMErr_Cntr implementation.
+ * Updates the DCM "data" array with the DEM Failures DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 105] [$Satisfies $SDD_SOH 035] */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F093_Data_Data_WdgM_DEMErr_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                                    P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+			«IF sOHGeneral.sOH_WdgMDEMSupervisionErrors_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_WdgMDEMErr]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F093_Data_ERRHSupFail_Cntr implementation.
+ * Updates the DCM "data" array with the ERRH Failures DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 106] [$Satisfies $SDD_SOH 035]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F093_Data_ERRHSupFail_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                               P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+            «IF sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_ERRHSupFail]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F093_Data_ERRH_Local_Supervision_Status implementation.
+ * Updates the DCM "data" array with the ERRH Local Supervision Status ( 1 byte unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 107] [$Satisfies $SDD_SOH 035]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F093_Data_ERRH_Local_Supervision_Status(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                                            P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+«IF sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true -»
+	uint8 ERRH_Local_Supervision_Status;
+«ENDIF-»
+
+    switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+            «IF sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true -»
+            	/* get current local supervision status of ERRH */
+            	ERRH_Local_Supervision_Status = Rte_Mode_SOH_WdgM_IndividualMode_Errh_currentMode();
+            	*Data = ERRH_Local_Supervision_Status;
+            «ELSE-»
+	       		*Data = 0xFFu;
+			«ENDIF-»
+                break;
+            default:
+                /*Do nothing*/
+                break;
+        }
+        return(E_OK);
+
+}
+
+/**
+ * Runnable_SOH_DID_F093_CheckRead implementation.
+ * Check condition runnable for DID 0xF093, returns always E_OK
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  Error code ( always 0 )
+ * @return E_OK
+ */
+/* [$Satisfies $SDD_SOH 108] */
+ /* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F093_CheckRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                   P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    switch (OpStatus)
+    {
+        case DCM_INITIAL:
+        case DCM_PENDING:
+            *ErrorCode = 0u;
+            break;
+        default:
+            /*Do nothing*/
+            break;
+    }
+    return(E_OK);
+}
+
+/**
+ * Runnable_SOH_DID_F090_Data_StatNVM_Cntr implementation.
+ * Updates the DCM "data" array with the Status NVM DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/*[$Satisfies $SDD_SOH 048] [$Satisfies $SDD_SOH 032] [$Satisfies $SDD_SOH 047]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F090_Data_StatNVM_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                           P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_StatNvM_SupportEnabled == true-»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_StatNVM]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       «ELSE-»
+	            *Data      = (uint8)0xFF;
+               (*(Data+1)) = (uint8)0xFF;
+	       «ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+ /*[$Satisfies $SDD_SOH 049] [$Satisfies $SDD_SOH 032] [$Satisfies $SDD_SOH 047]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+ FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F090_Data_ActNVM_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                           P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_ActNvM_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_ActNVM]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	        «ELSE-»
+                *Data      = (uint8)0xFF;
+               (*(Data+1)) = (uint8)0xFF;
+	       «ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+
+ /*[$Satisfies $SDD_SOH 050] [$Satisfies $SDD_SOH 032] [$Satisfies $SDD_SOH 047]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+ FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F090_Data_PrivNVM_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                            P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_PrivNvM_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_PrivNVM]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	        «ELSE-»
+                *Data      = (uint8)0xFF;
+               (*(Data+1)) = (uint8)0xFF;
+           «ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+
+ /*[$Satisfies $SDD_SOH 051] [$Satisfies $SDD_SOH 032] [$Satisfies $SDD_SOH 068]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+ FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F090_Data_ExcepOS_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                            P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_ExcepOS_SupportEnabled == true-»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_ExcepOS]->SOH_TresholdItem.SOH_DIDCntr, Data);
+            «ELSE-»
+                *Data      = (uint8)0xFF;
+               (*(Data+1)) = (uint8)0xFF;
+           «ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+ /*[$Satisfies $SDD_SOH 083] [$Satisfies $SDD_SOH 032] [$Satisfies $SDD_SOH 068]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+ FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F090_Data_ServOS_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                           P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_ServOS_SupportEnabled == true-»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_ServOS]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	        «ELSE-»
+                *Data      = (uint8)0xFF;
+               (*(Data+1)) = (uint8)0xFF;
+           «ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+
+
+ /*[$Satisfies $SDD_SOH 053] [$Satisfies $SDD_SOH 032] [$Satisfies $SDD_SOH 068]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+ FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F090_Data_StackOS_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                            P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_StackOS_SupportEnabled == true-»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_StackOS]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	        «ELSE-»
+                *Data      = (uint8)0xFF;
+               (*(Data+1)) = (uint8)0xFF;
+           «ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+ /*[$Satisfies $SDD_SOH 085] [$Satisfies $SDD_SOH 032] [$Satisfies $SDD_SOH 068]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+ FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F090_Data_MemProtOS_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                              P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_MemProtOS_SupportEnabled == true-»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_MemProtOS]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       «ELSE-»
+                *Data      = (uint8)0xFF;
+               (*(Data+1)) = (uint8)0xFF;
+           «ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+ /*[$Satisfies $SDD_SOH 055] [$Satisfies $SDD_SOH 032] [$Satisfies $SDD_SOH 068]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+ FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F090_Data_TimeProtOS_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                               P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_TimeProtOS_SupportEnabled == true-»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_TimeProtOS]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	        «ELSE-»
+                *Data      = (uint8)0xFF;
+               (*(Data+1)) = (uint8)0xFF;
+           «ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+
+ /*[$Satisfies $SDD_SOH 056] [$Satisfies $SDD_SOH 032] [$Satisfies $SDD_SOH 068]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+ FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F090_Data_ErrOS_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                          P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_ErrOS_SupportEnabled == true-»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_ErrOS]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       «ELSE-»
+                *Data      = (uint8)0xFF;
+               (*(Data+1)) = (uint8)0xFF;
+           «ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+
+}
+
+ /**
+ * Runnable_SOH_DID_F090_CheckRead implementation.
+ * Check condition runnable for DID 0xF090, returns always E_OK
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  Error code ( always 0 )
+ * @return E_OK
+ */
+/*[$Satisfies $SDD_SOH 084] [$Satisfies $SDD_SOH 032]*/
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F090_CheckRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                   P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    switch (OpStatus)
+    {
+        case DCM_INITIAL:
+        case DCM_PENDING:
+            *ErrorCode = 0u;
+            break;
+        default:
+            /*Do nothing*/
+            break;
+    }
+    return(E_OK);
+}
+
+
+
+/**
+ * Runnable_SOH_DID_F091_Data_ShutDown_Cntr implementation.
+ * Updates the DCM "data" array with the Shutdown Delay DID Counter ( 2 bytes unsigned )
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  DCM data pointer
+ * @return E_OK
+ */
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+ FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F091_Data_ShutDown_Cntr(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                             P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+
+{
+	switch (OpStatus)
+	    {
+	        case DCM_INITIAL:
+	        case DCM_PENDING:
+	        «IF sOHGeneral.sOH_ShutdownDelay_SupportEnabled == true -»
+	       		SOH_ConvertUint16ToBigEndianUint8Array(*SOH_DetectorItems[SOH_ShutdownDelay]->SOH_TresholdItem.SOH_DIDCntr, Data);
+	       	«ELSE-»
+	       		*Data = 0xFFu;
+	       	    (*(Data+1)) = 0xFFu;
+			«ENDIF-»
+	            break;
+	        default:
+	            /*Do nothing*/
+	            break;
+	    }
+	    return(E_OK);
+}
+
+
+ /**
+ * Runnable_SOH_DID_F091_CheckRead implementation.
+ * Check condition runnable for DID 0xF091, returns always E_OK
+ *
+ * @param[in]  DCM operation status
+ * @param[out]  Error code ( always 0 )
+ * @return E_OK
+ */
+
+/* PRQA S 1503 3 *//* It's scheduled in the OS*/
+FUNC(Std_ReturnType, SUM_SOH_CODE) Runnable_SOH_DID_F091_CheckRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                                   P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    switch (OpStatus)
+    {
+        case DCM_INITIAL:
+        case DCM_PENDING:
+            *ErrorCode = 0u;
+            break;
+        default:
+            /*Do nothing*/
+            break;
+    }
+    return(E_OK);
+}
+
+
+#define SUM_SOH_STOP_SEC_CODE
+#include "SUM_SOH_MemMap.h" /* PRQA S 5087 */ /* include SUM_SOH_MemMap.h required here to occupy the space in memory for the described macro*/
+
+
+
+/********************************** END OF FILE ******************************************************/
+
+/*! @} */
+
+«ENDFILE»
+«ENDDEFINE»

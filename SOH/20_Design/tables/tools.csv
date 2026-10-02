@@ -1,0 +1,8 @@
+5;5;15
+\textbf{Tool Name};\textbf{Version};\textbf{Description}
+ISOLAR-AB;12.3.3BETA1;AUTOSAR Authoring and BSW Configuration tools.
+RTA-BSW;12.3.3pr1;BSW automatic configuration and code generation.
+RTA-RTE;12.4.0;RTE generator used for testing
+RTA-OS;6.1.0; OS that is used for testing, as AUTOSAR OS
+MemMapGen;12.3.0; MemMap header file generator.
+Cantata;9.5;Used for functional testing

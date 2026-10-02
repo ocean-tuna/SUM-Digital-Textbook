@@ -1,0 +1,23 @@
+@startuml Sum_Ssfm_ExecutionManager_SeqDiag
+
+control Scheduler as TE
+participant RTE as R
+box SUM_SSFM
+    participant Sum_Ssfm_Initialization as I
+    participant Sum_Ssfm_ExecutionManager as E
+end box
+
+TE -> E: Scheduling Event
+E -> E: Runnable_SSFM_ExecutionManager()
+activate E
+E -> E: Sum_Ssfm_ErrhExecutionManager()
+activate E
+deactivate E
+
+E -> E: Sum_Ssfm_SsmExecutionManager()
+activate E
+deactivate E
+
+deactivate E
+
+@enduml 

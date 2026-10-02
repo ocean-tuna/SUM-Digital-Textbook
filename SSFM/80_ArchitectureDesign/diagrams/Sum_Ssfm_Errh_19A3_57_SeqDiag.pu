@@ -1,0 +1,26 @@
+@startuml Sum_Ssfm_Errh_U19A3_57_SeqDiag
+
+participant Dem 
+box SUM_SSFM
+    participant Sum_Ssfm_Errh_U19A3_57_Handler as ERRH_U19A3_57
+end box
+participant Sum_SSC as SSC
+participant Sum_SUSD as SUSD
+
+activate ERRH_U19A3_57
+
+ERRH_U19A3_57 -> ERRH_U19A3_57: Check if calibration parameter is set
+
+alt Calibration parameter is set
+    ERRH_U19A3_57 -> SUSD: Ask for battery voltage range
+    SUSD --> ERRH_U19A3_57
+    alt (No OBD Support and voltage in range) or (OBD Support and not under voltage)
+        ERRH_U19A3_57 -> SSC: Ask for U19A3 57 status
+        SSC --> ERRH_U19A3_57
+        ERRH_U19A3_57 -> Dem: Set/Reset the U19A3 57 status
+    end
+end
+
+deactivate ERRH_U19A3_57
+
+@enduml 

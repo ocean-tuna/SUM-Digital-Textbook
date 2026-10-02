@@ -1,0 +1,805 @@
+«IMPORT bsw»
+«IMPORT bsw::DiagModule»
+«EXTENSION templates::mathlib»
+«EXTENSION Util::DIAG_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND DIAG FOR ecu»
+«ENDDEFINE»
+
+«DEFINE DIAG FOR Ecu»
+
+«FILE "SUM_Diag_Services.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Banner
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *--------------------------------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *--------------------------------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *--------------------------------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_DIAG
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr24
+ * Description : SUM_DIAG diagnostic services
+ ***************************************************************************************************
+ * END:Banner
+ ***************************************************************************************************
+ */
+
+/*
+ **********************************************************************************************************************
+ * Includes
+ **********************************************************************************************************************
+ */
+#include "SUM_Diag.h"
+#include "Rte_SUM_DIAG.h"
+#include "SUM_DIAG_Ram.h"
+
+/*
+ **********************************************************************************************************************
+ * Defines/Macros
+ **********************************************************************************************************************
+ */
+#define SUM_DIAG_DDDI_MEMADDR_MINREQLEN (6u)
+#define SUM_DIAG_DDDI_MEMADDR_STARTBYTE (4u)
+
+/*
+ **********************************************************************************************************************
+ * Variables
+ **********************************************************************************************************************
+ */
+/*
+ **********************************************************************************************************************
+ * Static Functions
+ **********************************************************************************************************************
+ */
+static FUNC(uint32, SUM_DIAG_CODE) Diag_CalcMemoryInfo(const uint8 * requestData,
+                                                       uint8 dataSize);
+
+/*
+ **********************************************************************************************************************
+ * Functions
+ **********************************************************************************************************************
+ */
+
+#define SUM_DIAG_START_SEC_CODE
+#include "SUM_DIAG_MemMap.h"  /* PRQA S 5087 # include SUM_DIAG_MemMap.h required here for memory mapping */
+
+/***********************************************************************************
+
+  Function name :   DiagnosticSessionControl_Indication
+  Description   :   Check preconditions for executing DiagnosticSessionControl service request
+  Parameter in  :   uint8 SID, const uint8* RequestData, uint16 DataSize, uint8 ReqType, uint16 SourceAddress
+  Parameter out :   uint8* ErrorCode
+  Return value  :   Std_ReturnType E_OK or E_NOT_OK
+  Remarks       :   subFunction 1 == defaultSession, 2 == programmingSession, 3 == extendedDiagnosticSession
+                                4 == safetySystemDiagnosticSession
+                    [$Satisfies $SDD_DIAG 036] [$Satisfies $SDD_DIAG 046][$Satisfies $SDD_DIAG 047]
+                    [$Satisfies $SDD_DIAG 049] [$Satisfies $SDD_DIAG 080][$Satisfies $SDD_DIAG 091]
+                    [$Satisfies $SDD_DIAG 099]
+************************************************************************************/
+
+/* PRQA S 1532 EOF */ /* This function is called by another module at the integration level. */
+FUNC(Std_ReturnType, RTE_CODE) DiagnosticSessionControl_Indication (VAR(uint8, AUTOMATIC) SID,
+                                                                    P2CONST(uint8, AUTOMATIC, RTE_APPL_DATA) RequestData,
+                                                                    VAR(uint32, AUTOMATIC) DataSize,
+                                                                    VAR(uint8, AUTOMATIC) ReqType,
+                                                                    VAR(uint16, AUTOMATIC) SourceAddress,
+                                                                    CONSTP2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)/* PRQA S 3432 # Suppress violation warnings for MR12 20.7, see Compiler.h for details */
+{
+	«IF Diag_IsRmtProgActvAuthGroupSignal(diag.diagGeneral)»
+    static RxSignal_BSPMP_RmtProgmActvAuth_GroupSignal signal_group = {0};
+    «ELSEIF Diag_IsOTAServiceBased(diag.diagGeneral)-»
+    static «Diag_GetImplementationDataTypeName(diag.diagGeneral.dIAG_ServiceBased_OTA_Ref)» srv_signal;
+    Rte_TransformerError transformerError;
+    «ENDIF»
+    boolean OTA_PSF1;
+    uint8 subFunction;
+    boolean dtc_setting;
+    uint8 normal_msg_transmission;
+    boolean off_powermode;
+    Dcm_SecLevelType current_Security_Level;
+    boolean ProgrammingSessionReq_b;
+    Std_ReturnType retValue = E_NOT_OK;
+
+    /*To resolve MISRA Rule2.7 violation*/
+    SUM_PARAM_UNUSED(ReqType);
+    SUM_PARAM_UNUSED(SourceAddress);
+
+    if ((SID == (uint8)DiagnosticSessionControl) && (DataSize >= DIAG_SESSION_CTRL_MIN_DATASIZE))
+    {
+        /* get and save the service subfunction in the requestdata */
+    	subFunction = (RequestData[IDX_SUBFUNCTION] & DIAG_SUPPRESSPOSRSPMSGINDICATIONBIT_MASK);
+
+        Rte_IrvWrite_Runnable_RequestHandler_Indication_IR_Sub_function((subFunction));
+
+        /* subfunction 2 is programmingSession */
+        if (subFunction == (uint8)SubFunction_02)
+        {
+        	/* Indicate the Programming Session requested */
+        	ProgrammingSessionReq_b = TRUE;
+            /* Read the DTC setting value from the IRV */
+            dtc_setting = Rte_IrvRead_Runnable_RequestHandler_Indication_IR_DIAG_ControlDTCsetting(); /* PRQA S 3469 # This not part of the DIAG Module. The Owner of this Macro is the RTE. */
+            /* Read the normal message transmission is enabled or disabled */
+            normal_msg_transmission = Rte_IrvRead_Runnable_RequestHandler_Indication_IR_Normal_msg_transmission();/* PRQA S 3469 # This not part of the DIAG Module. The Owner of this Macro is the RTE. */
+            /* Read the vehicle power mode from SUSD */
+            off_powermode = check_offpowermode();
+
+            /* Read the OTA PSF flag*/
+            «IF Diag_IsRmtProgActvAuthGroupSignal(diag.diagGeneral)-»
+			/* Reception of the OTA-PSF flag via the Com Signal Group */
+			(void)Rte_Read_SUM_DIAG_RP_Com_DIAG_BSPMP_RmtProgmActvAuth_RmtProgmActvAuthRxSignal(&signal_group);
+			OTA_PSF1 = signal_group.RxSignal_«diag.diagGeneral.dIAG_BSPMP_RmtProgmActvAuthRef.shortName»;
+			«ELSEIF Diag_IsOTAServiceBased(diag.diagGeneral)-»
+			(void)Rte_Read_SUM_DIAG_RP_Com_DIAG_BSPMP_RmtProgmActvAuth_RmtProgmActvAuthRxSignal(&srv_signal, &transformerError);
+			OTA_PSF1 = srv_signal.«Diag_GetImplementationDataTypeElementName(diag.diagGeneral.dIAG_ServiceBased_OTA_Ref)»;
+			«ELSE-»
+			/* Reception of the OTA-PSF flag via the Com Signal */
+			(void)Rte_Read_SUM_DIAG_RP_Com_DIAG_BSPMP_RmtProgmActvAuth_RmtProgmActvAuthRxSignal(&OTA_PSF1);
+			«ENDIF-»
+
+            /* Security level */
+            (void)Rte_Call_RP_DcmService_GetSecurityLevel_GetSecurityLevel(&current_Security_Level);
+
+            /* check DTC_Setting_Disabled, normal_msg_transmission, OTA PSF and off_power_mode */
+            if ((dtc_setting == TRUE)
+               && (normal_msg_transmission == SUM_DiagNormalCom_Disable)
+               && (off_powermode == TRUE)
+               && ((OTA_PSF1 == TRUE)
+               || (current_Security_Level != (uint8)0x03))) //current_Security_Level is obtained from Dcm_GetSecurityLevel call to DCM.
+            {
+                retValue = E_OK;
+            }
+            else
+            {
+                *ErrorCode = (uint8)DCM_E_CONDITIONSNOTCORRECT;
+            }
+        }
+        /*SubFunction Not 2*/
+        else
+        {
+            ProgrammingSessionReq_b = FALSE;
+            retValue = E_OK;
+        }
+    }
+    else
+    {
+        ProgrammingSessionReq_b = FALSE;
+        retValue = E_OK;  /* added to address OI_157 */
+    }
+
+    /* Write port notification to the SUM_SOH that a reprogramming request took place */
+    (void)Rte_Write_DIAG_SOH_DiagSessionRequest_DiagSessionRequest(ProgrammingSessionReq_b);
+
+    return retValue;
+}
+
+/***********************************************************************************
+
+  Function name :   DiagnosticSessionControl_Confirmation
+  Description   :    Save tester sourceaddress and clear flags
+  Parameter in  :   uint8 SID, uint8 ReqType, uint16 SourceAddress, uint8 ConfirmationStatus
+  Parameter out :   None
+  Return value  :   Std_ReturnType E_OK
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 039] [$Satisfies $SDD_DIAG 050]
+  					[$Satisfies $SDD_DIAG 079]
+ ************************************************************************************/
+FUNC (Std_ReturnType, RTE_CODE) DiagnosticSessionControl_Confirmation (VAR(uint8, AUTOMATIC) SID,
+                                                                       VAR(uint8, AUTOMATIC) ReqType,
+                                                                       VAR(uint16, AUTOMATIC) SourceAddress,
+                                                                       VAR(Dcm_ConfirmationStatusType, AUTOMATIC) ConfirmationStatus)
+{
+    uint8    subFunction;
+
+    SUM_PARAM_UNUSED(ReqType);
+    if ((SID == (uint8)DiagnosticSessionControl) && (ConfirmationStatus == DCM_RES_POS_OK))
+    {
+        /* read the subfunction saved in the indication */
+        subFunction = Rte_IrvRead_Runnable_RequestHandler_Confirmation_IR_Sub_function(); /* PRQA S 3469 # This not part of the DIAG Module. The Owner of this Macro is the RTE. */
+
+        /* subfunction 1 is defaultSession */
+        if (subFunction == (uint8)SubFunction_01)
+        {
+            /* set normal_msg_transmission flags */
+            Rte_IrvWrite_Runnable_RequestHandler_Confirmation_IR_Normal_msg_transmission((SUM_DiagNormalCom_Enable));
+
+            /* in defaultSession so reset stored source address, note, to address OI_139 */
+            setTesterAddress(0u);
+        }
+        /* subfunction 3 is extendedDiagnosticSession */
+        else if (subFunction == (uint8)SubFunction_03)    /* modified to address OI_157 */
+        {
+            /* store tester source address with subnetID in NvM */
+            setTesterAddress(SourceAddress);
+        }
+        else
+        {
+            /* do nothing */
+        }
+    }
+
+    return E_OK;
+}
+
+/***********************************************************************************
+
+  Function name :   EcuReset_Indication
+  Description   :    Check preconditions for executing EcuReset service request
+  Parameter in  :   uint8 SID, byte* RequestData, uint16 DataSize, uint8 ReqType, uint16 SourceAddress
+  Parameter out :   uint8* ErrorCode
+  Return value  :   Std_ReturnType E_OK or E_NOT_OK
+  Remarks       :   [$Satisfies $SDD_DIAG 036][$Satisfies $SDD_DIAG 053][$Satisfies $SDD_DIAG 054]
+                    [$Satisfies $SDD_DIAG 055][$Satisfies $SDD_DIAG 056][$Satisfies $SDD_DIAG 089]
+ ************************************************************************************/
+/* PRQA S 3432 6 # Suppress violation warnings for MR12 20.7, see Compiler.h for details */
+FUNC (Std_ReturnType, RTE_CODE) EcuReset_Indication (VAR(uint8, AUTOMATIC) SID,
+                                                     P2CONST(uint8, AUTOMATIC, RTE_APPL_DATA) RequestData,
+                                                     VAR(uint32, AUTOMATIC) DataSize,
+                                                     VAR(uint8, AUTOMATIC) ReqType,
+                                                     VAR(uint16, AUTOMATIC) SourceAddress,
+                                                     CONSTP2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    uint8            subFunction;
+    Std_ReturnType    retValue = E_NOT_OK;
+
+    /*To resolve MISRA Rule2.7 violation*/
+    SUM_PARAM_UNUSED(ReqType);
+    SUM_PARAM_UNUSED(SourceAddress);
+
+    /* check if the Service ID is related to ECU Reset and validity of datasize */
+    if ((SID == (uint8)ECUReset) && (DataSize >= ECU_RESET_MIN_DATASIZE))
+    {
+
+        /* get and save the service subfunction in the requestdata */
+    	subFunction = (RequestData[IDX_SUBFUNCTION] & DIAG_SUPPRESSPOSRSPMSGINDICATIONBIT_MASK);
+
+        /* notify SOH that a reset request has been received, note, this is to be done                      *
+         * whether request is successful or unsuccessful but:                                               *
+         * The notification happens if SubFunction is not equal to NONE even if this should not be occurred *
+         */
+        if (subFunction != (uint8)SubFunction_00)
+        {
+
+        	/* Write on interface through SOH */
+        	(void)Rte_Write_DIAG_ECUResetRequest_DiagResetRequest(TRUE);
+
+        	/* subfunction 1 is defined to be a 'hardReset' per GM UDS specs */
+			if (subFunction == (uint8)SubFunction_01)
+			{
+				/* check that vehicle power mode is correct */
+				if (check_offpowermode() == TRUE)
+				{
+					retValue = E_OK;
+				}
+				else
+				{
+					*ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+				}
+			}
+			else
+			{
+				retValue = E_OK;
+			}
+        }
+        else
+        {
+        	/* No notification shall be sent */
+        	retValue = E_OK;
+        }
+    }
+    else
+    {
+        retValue = E_OK;    /* added to address OI_157 */
+    }
+
+    return retValue;
+}
+
+/* [$Satisfies $SDD_DIAG 077] */
+#if (RMBA_SERVICE_SUPPORT == STD_ON)
+/**********************************************************************************************************************
+ * Function name : Diag_RMBA_Indication
+ * Description   : Checks preconditions for executing ReadMemoryByAddress service request.
+ * Parameter in  : RequestData - Buffer containing request data except SID
+ * Parameter in  : DataSize - Number of valid bytes in RequestData buffer
+ * Parameter in  : ReqType - Addressing type of the request
+ * Parameter out : ErrorCode - Pointer for providing NRC
+ * Return value  : E_OK if preconditions are met, E_NOT_OK otherwise
+ *********************************************************************************************************************/
+/* [$Satisfies $SDD_DIAG 057][$Satisfies $SDD_DIAG 058][$Satisfies $SDD_DIAG 059] [$Satisfies $SDD_DIAG 073][$Satisfies $SDD_DIAG 096]*/
+/* PRQA S 3432 4 # Suppress violation warnings for MR12 20.7, see Compiler.h for details */
+FUNC(Std_ReturnType, RTE_CODE) Diag_RMBA_Indication(P2CONST(uint8, AUTOMATIC, RTE_APPL_DATA) RequestData,
+                                                    VAR(uint32, AUTOMATIC) DataSize,
+                                                    VAR(uint8, AUTOMATIC) ReqType,
+                                                    CONSTP2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    Std_ReturnType retValue = E_NOT_OK;
+    uint8 memoryAddressLength;
+    uint8 memorySizeLength;
+    const uint8 * memoryAddress;
+    uint16 memorySize;
+
+    SUM_PARAM_UNUSED(DataSize);
+
+    /* ReqType: Addressing type of the request(0=physical request, 1=functional request) */
+    /* Only Physical Request is accepted */
+    if (ReqType == (uint8)PHYSICAL_REQUEST)
+    {
+        /* Extract memory address and size information from ALFID byte of request buffer */
+        memoryAddressLength = (RequestData[0]) & (0xFu);
+        memorySizeLength = (uint8)(((RequestData[0]) & (0xF0u)) >> 4u);
+
+        /* Calculate the memory address from request buffer */
+        memoryAddress = (uint8 *)Diag_CalcMemoryInfo(&(RequestData[1]), memoryAddressLength);/* PRQA S 0306 # Cast necessary to address memory */
+        /* Calculate the memory size from request buffer */
+        memorySize = (uint16)Diag_CalcMemoryInfo(&(RequestData[memoryAddressLength + 1u]), memorySizeLength);
+        retValue = Rte_Call_SSC_DIAG_ReadMemorySecurityVerification_ReadMemorySecurityVerification(memoryAddress, memorySize);
+
+        /*Check the retValue retuned from SSC: if E_NOT_OK update ErrocCode with NRC 0X31*/
+        if(retValue != E_OK)
+        {
+            *ErrorCode = DCM_E_REQUESTOUTOFRANGE;
+        }
+    }
+    else
+    {
+        /* Functional request is not accepted so update ErrorCode with NRC 0X22 value*/
+        *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+    }
+
+    return retValue;
+}
+
+#endif
+
+/***********************************************************************************
+
+  Function name :   CommunicationControl_Indication
+  Description   :    Check preconditions for executing CommunicationControl service request
+  Parameter in  :   uint8 SID, byte* RequestData, uint16 DataSize, uint8 ReqType, uint16 SourceAddress
+  Parameter out :   uint8* ErrorCode
+  Return value  :   Std_ReturnType E_OK or E_NOT_OK
+  Remarks       :   [$Satisfies $SDD_DIAG 036][$Satisfies $SDD_DIAG 041][$Satisfies $SDD_DIAG 042]
+                    [$Satisfies $SDD_DIAG 043][$Satisfies $SDD_DIAG 044]
+ ************************************************************************************/
+/* PRQA S 3432 6 # Suppress violation warnings for MR12 20.7, see Compiler.h for details */
+FUNC (Std_ReturnType, RTE_CODE) CommunicationControl_Indication (VAR(uint8, AUTOMATIC) SID,
+                                                                 P2CONST(uint8, AUTOMATIC, RTE_APPL_DATA) RequestData,
+                                                                 VAR(uint32, AUTOMATIC) DataSize,
+                                                                 VAR(uint8, AUTOMATIC) ReqType,
+                                                                 VAR(uint16, AUTOMATIC) SourceAddress,
+                                                                 CONSTP2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    uint8            subFunction;
+    boolean          isOffPowerMode;
+    Std_ReturnType   retValue = E_OK;
+
+    /*To resolve MISRA Rule2.7 violation*/
+    SUM_PARAM_UNUSED(SourceAddress);
+    SUM_PARAM_UNUSED(ReqType);
+
+    if ((SID == (uint8)CommunicationControl) && (DataSize >= COMM_CTRL_MIN_DATASIZE))
+    {
+
+        /* get and save the service subfunction in the requestdata */
+        subFunction = (RequestData[IDX_SUBFUNCTION] & DIAG_SUPPRESSPOSRSPMSGINDICATIONBIT_MASK);
+
+        Rte_IrvWrite_Runnable_RequestHandler_Indication_IR_Sub_function((subFunction));
+
+        /* get and save if the vehicle is in Off_power_mode */
+        isOffPowerMode = check_offpowermode();
+
+        /* if the subfunction is 0x03 (disableRxAndTx) and power mode isn't OFF update the ErrorCode with NRC 0X22*/
+        if ((subFunction == (uint8)SubFunction_03) && (isOffPowerMode == FALSE))
+        {
+            retValue = E_NOT_OK;
+            *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+
+        }
+
+    }
+    else
+    {
+       /*Nothing to do. Return E_OK*/
+    }
+
+    return retValue;
+}
+
+/***********************************************************************************
+
+  Function name :   CommunicationControl_Confirmation
+  Description   :   In case the confirmation status is OK, set normal_msg_trans flag and write to port
+  Parameter in  :   uint8 SID, uint8 ReqType, uint16 SourceAddress, uint8 ConfirmationStatus
+  Parameter out :   None
+  Return value  :   Std_ReturnType E_OK
+  Remarks       :   Satisfies: [$Satisfies $SDD_DIAG 039] [$Satisfies $SDD_DIAG 045]
+************************************************************************************/
+FUNC (Std_ReturnType, RTE_CODE) CommunicationControl_Confirmation (VAR(uint8, AUTOMATIC) SID,
+                                                                   VAR(uint8, AUTOMATIC) ReqType,
+                                                                   VAR(uint16, AUTOMATIC) SourceAddress,
+                                                                   VAR(Dcm_ConfirmationStatusType, AUTOMATIC) ConfirmationStatus)
+{
+    uint8    subFunction;
+
+    /*To resolve MISRA Rule2.7 violation*/
+    SUM_PARAM_UNUSED(ReqType);
+    if ((SID == (uint8)CommunicationControl) && (ConfirmationStatus == DCM_RES_POS_OK))
+    {
+        /* read the subfunction saved in the indication */
+        subFunction = Rte_IrvRead_Runnable_RequestHandler_Confirmation_IR_Sub_function(); /* PRQA S 3469 # This not part of the DIAG Module. The Owner of this Macro is the RTE. */
+
+        /* subfunction 0 is enableRxAndTx */
+        if (subFunction == (uint8)SubFunction_00)
+        {
+            /* set normal_msg_transmission flag to ENABLE */
+            Rte_IrvWrite_Runnable_RequestHandler_Confirmation_IR_Normal_msg_transmission((SUM_DiagNormalCom_Enable));
+        }
+        /* subfunction 3 is disableRxAndTx */
+        else if (subFunction == (uint8)SubFunction_03)
+        {
+        	/* store tester source address with subnetID in NvM */
+            setTesterAddress(SourceAddress);
+            /* set normal_msg_transmission flag to DISABLE */
+            Rte_IrvWrite_Runnable_RequestHandler_Confirmation_IR_Normal_msg_transmission((SUM_DiagNormalCom_Disable));
+        }
+        else
+        {
+            /* do nothing */
+        }
+    }
+
+    return E_OK;
+}
+
+/* [$Satisfies $SDD_DIAG 075] */
+#if (DDDI_SERVICE_SUPPORT == STD_ON)
+/**********************************************************************************************************************
+ * Function name : Diag_DDDI_Indication
+ * Description   : Checks preconditions for executing DynamicallyDefineDataIdentifier service request.
+ * Parameter in  : RequestData - Buffer containing request data except SID
+ * Parameter in  : DataSize - Number of valid bytes in RequestData buffer
+ * Parameter out : ErrorCode - Pointer for providing NRC
+ * Return value  : E_OK if preconditions are met, E_NOT_OK otherwise
+ *********************************************************************************************************************/
+/* [$Satisfies $SDD_DIAG 051][$Satisfies $SDD_DIAG 052] [$Satisfies $SDD_DIAG 096]*/
+/* PRQA S 3432 3 # Suppress violation warnings for MR12 20.7, see Compiler.h for details */
+FUNC(Std_ReturnType, RTE_CODE) Diag_DDDI_Indication(P2CONST(uint8, AUTOMATIC, RTE_APPL_DATA) RequestData,
+                                                    VAR(uint32, AUTOMATIC) DataSize,
+                                                    CONSTP2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    uint8 subFunction;
+    Std_ReturnType retValue = E_OK;
+    uint8 memoryAddressLength;
+    uint8 memorySizeLength;
+    const uint8 * memoryAddress;
+    uint16 memorySize;
+    uint32 reqDataMemoryLen;
+    uint8 reqDataMemoryBlockLen;
+    uint32 reqDataMemoryBlocks;
+    uint16 i;
+    uint16 byteIndex;
+
+    /* get the service subfunction in the requestdata */
+    subFunction = (RequestData[IDX_SUBFUNCTION] & DIAG_SUPPRESSPOSRSPMSGINDICATIONBIT_MASK);
+
+    /* subfunction 2 is defineByMemoryAddress */
+    if (subFunction == (uint8)SubFunction_02)
+    {
+        /* Check for ALFID data size to protect ALFID header */
+        if (DataSize >= SUM_DIAG_DDDI_MEMADDR_MINREQLEN)
+        {
+            /* Extract memory address and size information from ALFID byte of request buffer */
+            memoryAddressLength = (RequestData[3]) & (0xFu);
+            memorySizeLength = (uint8)(((RequestData[3]) & (0xF0u)) >> 4u);
+            reqDataMemoryLen = DataSize - SUM_DIAG_DDDI_MEMADDR_STARTBYTE;
+            reqDataMemoryBlockLen = memoryAddressLength + memorySizeLength;
+
+            /* The request data length should be greater than zero to avoid 
+                div by zero exception in address computation */
+            if ((reqDataMemoryBlockLen > 0u) && (reqDataMemoryLen >= reqDataMemoryBlockLen))
+            {
+                /* Calculate number of memory blocks in the request buffer */
+                reqDataMemoryBlocks = reqDataMemoryLen / reqDataMemoryBlockLen;
+                for (i = 0u; i < reqDataMemoryBlocks; i++)
+                {
+                    /* Calculate the memory address */
+                    byteIndex = (i * reqDataMemoryBlockLen) + SUM_DIAG_DDDI_MEMADDR_STARTBYTE;
+                    memoryAddress = (uint8 *)Diag_CalcMemoryInfo(&(RequestData[byteIndex]), memoryAddressLength); /* PRQA S 0306 # Cast necessary to address memory */
+                    /* Calculate the memory size */
+                    byteIndex = (i * reqDataMemoryBlockLen) + memoryAddressLength + SUM_DIAG_DDDI_MEMADDR_STARTBYTE;
+                    memorySize = (uint16)Diag_CalcMemoryInfo(&(RequestData[byteIndex]), memorySizeLength);
+                    retValue = Rte_Call_SSC_DIAG_ReadMemorySecurityVerification_ReadMemorySecurityVerification(memoryAddress, memorySize);
+                    if (retValue != E_OK)
+                    {
+                        *ErrorCode = DCM_E_REQUESTOUTOFRANGE;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                retValue = E_NOT_OK;
+                *ErrorCode = DCM_E_REQUESTOUTOFRANGE;
+            }
+        }
+        else
+        {
+            retValue = E_NOT_OK;
+            *ErrorCode = DCM_E_REQUESTOUTOFRANGE;
+        }
+    }
+    
+    return retValue;
+}
+
+#endif
+
+
+
+/***********************************************************************************
+
+ Function name :   WriteData
+ Description   :   This function writes the MEC value to mirror RAM block.
+ When a tester requests to write MEC value of DID F1A0,this function writes this value
+ to the MEC RAM block and also the updated value is send to output port.
+ Parameter in  :   Data,OpStatus
+ Parameter out :   ErrorCode
+ Return value  :   E_OK, or E_NOT_OK, or DIAG_E_PENDING
+ Remarks       :   [$Satisfies $SDD_DIAG 063]
+ ************************************************************************************/
+/* PRQA S 1503 EOF */ /* This function is called at SWC level when the user makes a DID F1A0 write request. */
+/* PRQA S 3432 3 # Suppress violation warnings for MR12 20.7, see Compiler.h for details */
+FUNC(Std_ReturnType, SUM_DIAG_CODE) WriteData(P2CONST(uint8, AUTOMATIC, RTE_APPL_DATA) Data,
+VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    Std_ReturnType ReturnStatus = E_NOT_OK;
+«IF (diag.diagGeneral.mecStorageInHsm != true)-»
+    NvM_RequestResultType NvmErrorStatus;
+«ENDIF-»
+    static uint8 initial_data = 0u;
+
+    if (SUM_DIAG_permit_execution != FALSE)
+    {
+        switch (OpStatus)
+        {
+            case DCM_INITIAL:
+«IF (diag.diagGeneral.mecStorageInHsm == true)-»
+                /* [$Satisfies $SDD_DIAG 132] HSM path: read MEC live, then start HSM write */
+                {
+                    uint8 hsmMecValue;
+                    uint8 hsmMecStatus;
+
+                    if ((SUM_DIAG_HSM_MEC_Availability == DIAG_HSM_MEC_AVAILABLE) &&
+                        (Diag_HSM_MEC_Read(&hsmMecValue, &hsmMecStatus) == E_OK) &&
+                        (hsmMecValue > 0u))
+                    {
+                        initial_data = *Data;
+                        ReturnStatus = Diag_HSM_MEC_WriteStart(initial_data);
+                        if (ReturnStatus == DIAG_E_PENDING)
+                        {
+                            *ErrorCode = E_OK;
+                        }
+                        else
+                        {
+                            *ErrorCode = DCM_E_GENERALPROGRAMMINGFAILURE;
+                            ReturnStatus = E_NOT_OK;
+                        }
+                    }
+                    else
+                    {
+                        *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+                        ReturnStatus = E_NOT_OK;
+                    }
+                }
+«ELSE-»
+                /* check if MEC value has already reached 0 */
+                if (getManufacturerEnableCounter() > 0u)
+                {
+                    initial_data = *Data;
+
+                    /* check that write to RAM block is successful */
+                    ReturnStatus = Rte_Call_RP_NvMService_MECBlock_GetErrorStatus(&NvmErrorStatus);
+
+                    if ((ReturnStatus == E_OK) &&
+                        (NvmErrorStatus!= NVM_REQ_PENDING))
+                    {
+                        /* update RAM copy for successful */
+                        if (ProcessMECWrite(&initial_data) ==  DIAG_E_PENDING)
+                        {
+                            *ErrorCode = E_OK;
+                            ReturnStatus = DIAG_E_PENDING;
+                        }
+                        else
+                        {
+                            *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+                            ReturnStatus = E_NOT_OK;
+                        }
+
+                    }
+                    else
+                    {
+                        *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+                        ReturnStatus = E_NOT_OK;
+                    }
+
+                }
+                else
+                {
+                    *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+                    ReturnStatus = E_NOT_OK;
+                }
+«ENDIF-»
+                break;
+            case DCM_PENDING:
+«IF (diag.diagGeneral.mecStorageInHsm == true)-»
+                /* [$Satisfies $SDD_DIAG 133] Poll HSM write state machine */
+                ReturnStatus = Diag_HSM_MEC_WritePoll();
+                switch(ReturnStatus)
+                {
+                    case DIAG_E_PENDING:
+                        *ErrorCode = E_OK;
+                        ReturnStatus = DIAG_E_PENDING;
+                        break;
+                    case E_OK:
+                        *ErrorCode = E_OK;
+                        ReturnStatus = E_OK;
+                        break;
+                    default:
+                        *ErrorCode = DCM_E_GENERALPROGRAMMINGFAILURE;
+                        ReturnStatus = E_NOT_OK;
+                        break;
+                }
+«ELSE-»
+                ReturnStatus = CheckMECWrite();
+
+                    switch(ReturnStatus)
+                    {
+                        case DIAG_E_PENDING:
+                            *ErrorCode = E_OK;
+                            ReturnStatus = DIAG_E_PENDING;
+                            break;
+                        case E_OK:
+                            *ErrorCode = E_OK;
+                             ReturnStatus = E_OK;
+                             break;
+                        default:
+                            *ErrorCode = DCM_E_GENERALPROGRAMMINGFAILURE;
+                             ReturnStatus = E_NOT_OK;
+                            break;
+                    }
+«ENDIF-»
+                break;
+            default:
+                /* Do Nothing */
+                break;
+        }
+    }
+
+    return ReturnStatus;
+}
+
+/***********************************************************************************
+
+   Function name :   ReadData
+   Description   :   This function reads the MEC value from MEC RAM mirror block
+   Parameter in  :   OpStatus
+   Parameter out :   Data
+   Return value  :   MEC value
+   Remarks       :   [$Satisfies $SDD_DIAG 064]
+************************************************************************************/
+/* PRQA S 3432 3 # Suppress violation warnings for MR12 20.7, see Compiler.h for details */
+/* PRQA S 1503 # This function is called by EcuM module at the integration level. */
+FUNC(Std_ReturnType, SUM_DIAG_CODE) ReadData(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                             P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+{
+    Std_ReturnType retValue = E_NOT_OK;
+
+    if (SUM_DIAG_permit_execution != FALSE)
+    {
+        switch (OpStatus)
+        {
+            case DCM_INITIAL:
+            case DCM_PENDING:
+«IF (diag.diagGeneral.mecStorageInHsm == true)-»
+                /* [$Satisfies $SDD_DIAG 132] HSM path: read MEC live from HSM (no RAM copy per SUMDIAG_81) */
+                {
+                    uint8 hsmMecStatus;
+                    if (Diag_HSM_MEC_Read(Data, &hsmMecStatus) == E_OK)
+                    {
+                        retValue = E_OK;
+                    }
+                    else
+                    {
+                        /* [$Satisfies $SDD_DIAG 132] CYS4008 554376: set DTC on HSM Store MEC Read failure */
+                        (void)Rte_Call_RP_DemService_U19A392_SetEventStatus(DEM_EVENT_STATUS_FAILED);
+                    }
+                }
+«ELSE-»
+                /* reads MEC value from MEC RAM mirror block */
+                *Data = getManufacturerEnableCounter();
+                retValue= E_OK;
+«ENDIF-»
+                break;
+            default:
+                /* Do Nothing */
+                break;
+        }
+    }
+    else
+    {
+        /* Do Nothing */
+    }
+
+    return retValue;
+}
+
+/***********************************************************************************
+
+   Function name :   ConditionCheckRead
+   Description   :   This function checks if the conditions to read the DID
+                     associated with the MEC are correct
+   Parameter in  :   OpStatus
+   Parameter out :   ErrorCode
+   Return value  :   E_OK
+   Remarks       :   [$Satisfies $SDD_DIAG 065]
+************************************************************************************/
+/* PRQA S 1503 EOF */ /* This function is called at SWC level when the user makes a DID F1A0 ConditionCheckRead request. */
+/* PRQA S 3432 2 # Suppress violation warnings for MR12 20.7, see Compiler.h for details */
+FUNC(Std_ReturnType, SUM_DIAG_CODE) ConditionCheckRead(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                                       P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+    switch (OpStatus)
+    {
+        case DCM_INITIAL:
+        case DCM_PENDING:
+            *ErrorCode = E_OK;
+            break;
+        default:
+            /* Do Nothing */
+            break;
+    }
+
+    return E_OK;
+}
+
+/**********************************************************************************************************************
+ * Function name : Diag_CalcMemoryInfo
+ * Description   : Converts memory address or size included in an input data buffer (big-endian) to an integer value.
+ * Parameter in  : requestData - Buffer containing memory address/size bytes
+ * Parameter in  : dataSize - Length of requestData buffer
+ * Return value  : uint32 value
+ *********************************************************************************************************************/
+static FUNC(uint32, SUM_DIAG_CODE) Diag_CalcMemoryInfo(const uint8 * requestData,
+                                                       uint8 dataSize)
+{
+    uint8 index = 0;
+    uint32 tempResult;
+    uint32 result = 0;
+
+    do
+    {
+        tempResult = (uint32) (requestData[index]);
+        tempResult <<= ((uint32)dataSize - index - 1u) * 8u;
+        result |= (uint32) (tempResult);
+        index++;
+    } while (index < dataSize);
+
+    return result;
+}
+
+
+«ENDFILE»
+«ENDDEFINE»

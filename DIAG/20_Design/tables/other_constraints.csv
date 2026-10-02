@@ -1,0 +1,11 @@
+6;6
+\textbf{Configuration parameter for MEC};\textbf{Configuration Value}
+NvMNvBlockLength;1 byte
+NvMRamBlockDataAddress;DIAG_MEC
+NvMSelectBlockForWriteAll;TRUE
+NvMSelectBlockForReadAll;TRUE
+\textbf{Configuration parameter for OTA_PSF};\textbf{Configuration Value}
+NvMNvBlockLength;1 byte
+NvMRamBlockDataAddress;DIAG_OTA_PSF
+NvMSelectBlockForWriteAll;TRUE
+NvMSelectBlockForReadAll;TRUE

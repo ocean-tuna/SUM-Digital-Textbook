@@ -1,0 +1,419 @@
+«IMPORT bsw»
+«IMPORT bsw::SrvcMgrModule»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SrvcMgr FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SrvcMgr FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_SrvcMgr_Execution_Manager.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SrvcMgr
+ * Date        : Apr 20, 2026
+ * Revision    : 8.0.1_Pr16
+ * Description : Source file for SrvcMgr Execution Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SrvcMgr Top Level Library */
+#include "Sum_SrvcMgr_Prv.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+/**
+ *  @brief Variable for permit execution status of SrvcMgr
+ *  @private
+ */
+static boolean Sum_SrvcMgr_FuncPermitExec = FALSE;
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+static FUNC(void, SUM_SrvcMgr_Code) Sum_SrvcMgr_HandlerGetActivateServiceReq(P2VAR(Sum_SrvcMgr_ExecutionStatus, AUTOMATIC, RTE_APPL_DATA) SrvcMgr_prv_Execution_State,
+																	  		 P2VAR(SUSD_UserRequestType, AUTOMATIC, RTE_APPL_DATA) Srvcmgr_prv_shutdown_permission);
+static FUNC(void, SUM_SrvcMgr_Code) Sum_SrvcMgr_prv_SetShutdownPermissionRollingCounter(P2VAR(SUSD_UserRequestType, AUTOMATIC, RTE_APPL_DATA) Srvcmgr_prv_shutdown_permission);
+static FUNC(void, SUM_SrvcMgr_Code) Sum_SrvcMgr_prv_SetFlagsToRunMode(P2VAR(Sum_SrvcMgr_ExecutionStatus, AUTOMATIC, RTE_APPL_DATA) SrvcMgr_prv_Execution_State,
+															          P2VAR(SUSD_UserRequestType, AUTOMATIC, RTE_APPL_DATA) Srvcmgr_prv_shutdown_permission);
+static FUNC(void, SUM_SrvcMgr_Code) Sum_SrvcMgr_prv_SetFlagsToShutdownMode(P2VAR(Sum_SrvcMgr_ExecutionStatus, AUTOMATIC, RTE_APPL_DATA) SrvcMgr_prv_Execution_State,
+															               P2VAR(SUSD_UserRequestType, AUTOMATIC, RTE_APPL_DATA) Srvcmgr_prv_shutdown_permission);
+static FUNC(boolean, SUM_SrvcMgr_Code) Sum_SrvcMgr_prv_PerformDtcU19A6xxActions(void);																		   
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SrvcMgr_START_SEC_CODE
+#include "SUM_SrvcMgr_MemMap.h"
+
+/**
+ * @brief			SrvcMgr permit execution getter function
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - Sum_SrvcMgr_FuncPermitExec
+ */
+
+ /*PRQA S 1503 1*/ //This function will be used in future development.
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_GetFuncPermitExecution(void)
+{
+	return Sum_SrvcMgr_FuncPermitExec;
+}
+
+/**
+ * @brief 			Delay enabling SrvcMgr shutdown if any of the following requests is active:
+ *        			- SPM activate service request;
+ *        			- RID 0x654 learning session request.
+ *
+ * @private
+ * @param[inout]	SrvcMgr_prv_Execution_State: state of the State Machine of Runnable_SrvcMgr_ExecutionManager.
+ * @param[inout]	Srvcmgr_prv_shutdown_permission: value written to the SUSD.
+ * @return			void
+ */
+static FUNC(void, SUM_SrvcMgr_Code) Sum_SrvcMgr_HandlerGetActivateServiceReq(P2VAR(Sum_SrvcMgr_ExecutionStatus, AUTOMATIC, RTE_APPL_DATA) SrvcMgr_prv_Execution_State,
+																	  		 P2VAR(SUSD_UserRequestType, AUTOMATIC, RTE_APPL_DATA) Srvcmgr_prv_shutdown_permission)
+{
+	/* This check is necessary since the SrvcMgr can vote to shutdown only if all the following are true:
+	 * - no request from SPM in ongoing (flag Sum_SrvcMgr_ActivateServiceReq is false).
+	 * - no learning session request (RID 0x654) is active (flag Sum_SrvcMgr_LearningSessionReq is false)
+	 */
+	const boolean activateServiceRequest = Sum_SrvcMgr_pub_GetActivateServiceReq();
+	const boolean learningSessionRequest = Sum_SrvcMgr_pub_GetLearningSessionReq();
+	if (  (activateServiceRequest == FALSE)
+	   && (learningSessionRequest == FALSE)
+	   ) {
+		Sum_SrvcMgr_prv_SetFlagsToShutdownMode(SrvcMgr_prv_Execution_State, Srvcmgr_prv_shutdown_permission);
+	}else{
+		/* If any request is ongoing, we go to the SUM_SrvcMgr_Prepare_to_Shutdown but keeping alive the rolling counter of the shutdown permission. */
+		*SrvcMgr_prv_Execution_State    = SUM_SrvcMgr_Prepare_to_Shutdown;
+		Sum_SrvcMgr_prv_SetShutdownPermissionRollingCounter(Srvcmgr_prv_shutdown_permission); 
+	}
+}
+
+/**
+ * @brief 			Function which scope is to perform the rolling counter of the shutdown permission. 
+ *
+ * @private
+ * @param[inout]	Srvcmgr_prv_shutdown_permission: value written to the SUSD.
+ * @return			void
+ */
+static FUNC(void, SUM_SrvcMgr_Code) Sum_SrvcMgr_prv_SetShutdownPermissionRollingCounter(P2VAR(SUSD_UserRequestType, AUTOMATIC, RTE_APPL_DATA) Srvcmgr_prv_shutdown_permission)
+{
+	(*Srvcmgr_prv_shutdown_permission) += 1u;
+	/*The count (srvcmgr_shutdown_permission) can only take values 0, 1, 2, 3*/
+	(*Srvcmgr_prv_shutdown_permission) &= 0x03u;
+}
+
+/**
+ * @brief 			Function which scope is to set the two input flag to run mode. 
+ *
+ * @private
+ * @param[inout]	SrvcMgr_prv_Execution_State: state of the State Machine of Runnable_SrvcMgr_ExecutionManager.
+ * @param[inout]	Srvcmgr_prv_shutdown_permission: value written to the SUSD.
+ * @return			void
+ */
+static FUNC(void, SUM_SrvcMgr_Code) Sum_SrvcMgr_prv_SetFlagsToRunMode(P2VAR(Sum_SrvcMgr_ExecutionStatus, AUTOMATIC, RTE_APPL_DATA) SrvcMgr_prv_Execution_State,
+															          P2VAR(SUSD_UserRequestType, AUTOMATIC, RTE_APPL_DATA) Srvcmgr_prv_shutdown_permission)
+{
+	*SrvcMgr_prv_Execution_State = SUM_SrvcMgr_Run_Mode;
+	Sum_SrvcMgr_prv_SetShutdownPermissionRollingCounter(Srvcmgr_prv_shutdown_permission); 
+	Sum_SrvcMgr_FuncPermitExec = TRUE;
+}
+
+/**
+ * @brief 			Function which scope is to set the two input flag to shutdown mode. 
+ *
+ * @private
+ * @param[inout]	SrvcMgr_prv_Execution_State: state of the State Machine of Runnable_SrvcMgr_ExecutionManager.
+ * @param[inout]	Srvcmgr_prv_shutdown_permission: value written to the SUSD.
+ * @return			void
+ */
+static FUNC(void, SUM_SrvcMgr_Code) Sum_SrvcMgr_prv_SetFlagsToShutdownMode(P2VAR(Sum_SrvcMgr_ExecutionStatus, AUTOMATIC, RTE_APPL_DATA) SrvcMgr_prv_Execution_State,
+															               P2VAR(SUSD_UserRequestType, AUTOMATIC, RTE_APPL_DATA) Srvcmgr_prv_shutdown_permission)
+{
+	*SrvcMgr_prv_Execution_State = SUM_SrvcMgr_Init_and_Shutdown_Mode; 
+	*Srvcmgr_prv_shutdown_permission = SUM_SRVCMGR_ENABLE_SHUTDOWN;
+	Sum_SrvcMgr_FuncPermitExec = FALSE;
+}
+
+/** * @brief  The functions performs the necessary actions needed for the Dtcs U19A6 57, U19A6 87 and U19A6 54 ONLY when the batteru voltage is available.	
+ *
+ * @private
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean TRUE if the actions for the Dtcs have been performed, FALSE otherwise.
+ *//*[$Satisfies $DDS_SrvcMgr 019] *//*[$Satisfies $DDS_SrvcMgr 018] */
+static FUNC(boolean, SUM_SrvcMgr_Code) Sum_SrvcMgr_prv_PerformDtcU19A6xxActions(void)
+{	
+	/* PRQA S 2981 3 */ /* The initialization in this case is useful in order to avoid undesired values */
+	tableStateType LearningTableState;
+	incompleteLearningReasonsType IncompleteLearningReasons;
+    Std_ReturnType retVal = E_NOT_OK; 
+	BattVltgSnsrStsEnum batteryVoltageStatus;
+	boolean dtcActionsDone = FALSE;
+
+	/* Read battery voltage status */
+	retVal = Rte_Read_RP_SUSD_SrvcMgr_BattVltgSnsrStsAvl_BattVltgSnsrStsEnum(&batteryVoltageStatus);
+
+	/* Check that the battery voltage is available in order to perform the necessary actions for the Dtcs */
+	if ((retVal == E_OK) && (batteryVoltageStatus == Battery_Voltage_Available))
+	{
+		/* PRQA S 3469 1 # This function will be defined in BSW */
+		Sd_GetLearningTableState(&LearningTableState);
+		/* PRQA S 3469 1 # This function will be defined in BSW */
+		retVal = Sd_RetrieveIncompleteLearningReasons(&IncompleteLearningReasons);
+		
+		if (retVal == E_OK)
+		{	
+			Sum_SrvcMgr_prv_HandleU19A6_57Status(LearningTableState, &IncompleteLearningReasons);
+		}	
+		Sum_SrvcMgr_prv_HandleU19A6_87Status(LearningTableState, RID_0654_INIT);
+		Sum_SrvcMgr_prv_HandleU19A6_54Status(LearningTableState);
+		dtcActionsDone = TRUE;
+	}
+	return dtcActionsDone;	
+}
+
+/**
+ * @brief			Helper function to handle U19A6_57 DTC status based on learning table state
+ *
+ * @param[in]		LearningTableState Current state of the learning table
+ * @param[in]		IncompleteLearningReasons Pointer to incomplete learning reasons structure
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			None
+ */
+  /*[$Satisfies $DDS_SrvcMgr 018] */
+FUNC(void, SUM_SRVCMGR_CODE) Sum_SrvcMgr_prv_HandleU19A6_57Status( VAR(tableStateType, AUTOMATIC) LearningTableState,
+    P2CONST(incompleteLearningReasonsType, AUTOMATIC, RTE_APPL_DATA) IncompleteLearningReasons)
+{
+	/* Check U19A6_57 status */
+	if ((LearningTableState == LEARNING_INCOMPLETE) &&
+		(IncompleteLearningReasons->num_Of_Missing_EventGroups > 0u))
+	{
+		/* Set DTC U19A6_57 status */
+		(void) Rte_Write_PP_SrvcMgr_SSFM_U19A6_57_Status_invalid(TRUE);
+	}
+	/* There will not be a case where LEARNING_COMPLETED and Missing_EventGroups > 0 */
+	if ((LearningTableState == LEARNING_COMPLETED) ||
+			((LearningTableState == LEARNING_INCOMPLETE) &&
+			(IncompleteLearningReasons->num_Of_Missing_EventGroups == 0u)))
+	{
+		/* Reset DTC U19A6_57 status */
+		(void) Rte_Write_PP_SrvcMgr_SSFM_U19A6_57_Status_invalid(FALSE);
+	}
+	else
+	{
+		/* do nothing */
+	}
+}
+
+/**
+ * @brief			Helper function to forward the learning table state, for DTC U19A6 87 conditions, to the SSFM module.
+ *
+ * @param[in]		LearningTableState Current state of the learning table
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			None
+ */
+  /*[$Satisfies $DDS_SrvcMgr 019] */
+FUNC(void, SUM_SRVCMGR_CODE)Sum_SrvcMgr_prv_HandleU19A6_87Status ( VAR(tableStateType, AUTOMATIC) LearningTableState ,
+	CONST(SUM_EventType, AUTOMATIC) EventStatus)
+{	
+	SrvcMgr_SSFM_LearningTableStatusType LearningTableStatus;
+	/* LearningTableStatus with status NONE, so that we can send the message only when status has been set to something different */
+	LearningTableStatus.Event = EventStatus;
+	LearningTableStatus.RID_0654_Status = SUM_RID_0654_STATUS_NONE;
+
+	/* Check whether LearningTableState ALL_SERVICES_LEARNED or LEARNING_COMPLETED */
+	if (LearningTableState == LEARNING_COMPLETED)
+	{
+		LearningTableStatus.RID_0654_Status = SUM_RID_0654_STATUS_COMPLETE;
+	}
+	else if ( LearningTableState == LEARNING_INCOMPLETE )
+	{
+		LearningTableStatus.RID_0654_Status = SUM_RID_0654_STATUS_INCOMPLETE;
+
+	}
+	else
+	{
+		/* do nothing */
+	}
+
+	if ( LearningTableStatus.RID_0654_Status != SUM_RID_0654_STATUS_NONE )
+	{	
+		(void) Rte_Write_PP_SrvcMgr_SSFM_LearningTableStatus_LearningTableStatus(&LearningTableStatus);
+	}
+}
+
+/**
+ * @brief			Helper function for Pass or Fail criteria for the DTC U19A6 54.
+ *
+ * @param[in]		LearningTableState Current state of the learning table
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			None
+ *//*[$Satisfies $DDS_SrvcMgr 018] */
+FUNC(void, SUM_SRVCMGR_CODE)Sum_SrvcMgr_prv_HandleU19A6_54Status ( VAR(tableStateType, AUTOMATIC) LearningTableState)
+{
+	/* Check LearningTableState */
+	if (LearningTableState == CLEARED)
+	{
+		/* Set DTC U19A6 54 status (Test Fail Criteria)*/
+		(void) Rte_Write_PP_SrvcMgr_Errh_U19A6_54_Status_U19A6_54_Status(TRUE);
+	}
+	else
+	{
+		/* Reset DTC U19A6 54 status (Test Pass Criteria)*/
+		(void) Rte_Write_PP_SrvcMgr_Errh_U19A6_54_Status_U19A6_54_Status(FALSE);
+	}
+	
+}
+
+/** * @brief 			Runnable function of the SrvcMgr Execution Manager
+ *
+ * @private
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			void
+ */
+
+  /*PRQA S 1503 2*/ //This function will be scheduled by OS itself.
+   /*[$Satisfies $DDS_SrvcMgr 001]*/
+FUNC(void, SUM_SrvcMgr_CODE) Runnable_SrvcMgr_ExecutionManager(void)
+{
+    static Sum_SrvcMgr_ExecutionStatus SrvcMgr_Execution_State = SUM_SrvcMgr_Init_and_Shutdown_Mode;		/* Static variable to store the current status of the SrvcMgr */
+	SUSD_SWC_ExecutionStatusType  	srvcmgr_execution_status;									/* Store the permit execution received value */
+	static SUSD_UserRequestType		srvcmgr_shutdown_permission =  SUM_SRVCMGR_ENABLE_SHUTDOWN;	/* Store the value to pass as shutdown permisison command */
+	boolean srvcmgr_initialization;
+	static boolean Sum_SrvcMgr_DtcActionsDoneOnce = FALSE;
+
+	/* Check if the module has been initialized */
+	/*[$Satisfies $DDS_SrvcMgr 002]*/
+    srvcmgr_initialization = Sum_SrvcMgr_GetInitialization();
+    if(srvcmgr_initialization == TRUE)
+    {
+    	/*
+    	 * @get the permit execution command for SrvcMgr
+    	 */
+		if(E_NOT_OK == Rte_Read_RP_SUSD_SrvcMgr_SUSD_PermitExecution_SUSD_SWC_ExecutionStatus(&(srvcmgr_execution_status)))
+		{
+			/* Command could not be read: value inconsistent, prevent the evaluation */
+			/*[$DDS_SrvcMgr 005]*/
+			SrvcMgr_Execution_State = SUM_SrvcMgr_Invalid_Mode;
+		}
+
+	    switch(SrvcMgr_Execution_State)
+	    {
+	           /* SHUTDOWN */
+	           case SUM_SrvcMgr_Init_and_Shutdown_Mode:
+
+					/*[$DDS_SrvcMgr 003]*/
+					/* SUSD inform us about the wake-up of the ECU by setting the proper bit to match the SUM_SRVCMGR_PERMITEXECUTION_MASK*/
+	            	if((srvcmgr_execution_status | SUM_SRVCMGR_PERMITEXECUTION_MASK) == SUM_SRVCMGR_EXEC_MASKING_PASSED)
+	            	{
+	                    /* SrvcMgr functionality can be executed */
+						Sum_SrvcMgr_prv_SetFlagsToRunMode(&SrvcMgr_Execution_State, &srvcmgr_shutdown_permission);
+	                }
+		       break;
+
+			   /* RUNNING */
+	           case SUM_SrvcMgr_Run_Mode:
+					
+					/* Perform actions related to DTC U19A6 57, U19A6 87 and U19A6 54 only once *//*[$Satisfies $DDS_SrvcMgr 019] */
+					if (Sum_SrvcMgr_DtcActionsDoneOnce == FALSE)
+					{	
+						Sum_SrvcMgr_DtcActionsDoneOnce = Sum_SrvcMgr_prv_PerformDtcU19A6xxActions();
+								
+					}
+					
+					/*
+	                 * Check if shutdown has been requested
+	                 * The only supported shutdown is ECU_RESET.  For normal reset, the SSM has no indication.
+					 * Moreover, the SUSD can inform us to go to shutdown in either set to zero the bit6 (resetbit) or 
+					 * to set to zero at least the bit0 (wakeupbit).
+	                 */
+					/*[$DDS_SrvcMgr 004]*/
+
+	                if ( ((srvcmgr_execution_status | SUM_SRVCMGR_RESETBIT_MASK) 		 != SUM_SRVCMGR_EXEC_MASKING_PASSED) || 
+						 ((srvcmgr_execution_status | SUM_SRVCMGR_PERMITEXECUTION_MASK)  != SUM_SRVCMGR_EXEC_MASKING_PASSED))
+	                {
+	                    /* Begin Shutdown phase */
+						/*[$Satisfies $DDS_SrvcMgr 015]*/
+						Sum_SrvcMgr_HandlerGetActivateServiceReq(&SrvcMgr_Execution_State, &srvcmgr_shutdown_permission); 
+	                }else{
+						Sum_SrvcMgr_prv_SetShutdownPermissionRollingCounter(&srvcmgr_shutdown_permission);
+	                }
+
+	           break;
+
+			   case SUM_SrvcMgr_Prepare_to_Shutdown: 
+			   		if((srvcmgr_execution_status | SUM_SRVCMGR_PERMITEXECUTION_MASK) == SUM_SRVCMGR_EXEC_MASKING_PASSED)
+	            	{
+	                    /* SrvcMgr functionality can be executed */
+						Sum_SrvcMgr_prv_SetFlagsToRunMode(&SrvcMgr_Execution_State, &srvcmgr_shutdown_permission);
+	                }else{
+						/* Check if the request coming from SPM is still ongoing */
+						/*[$Satisfies $DDS_SrvcMgr 015]*/
+						Sum_SrvcMgr_HandlerGetActivateServiceReq(&SrvcMgr_Execution_State, &srvcmgr_shutdown_permission); 
+					}
+		       break;
+
+	           default:
+					/*[$DDS_SrvcMgr 006]*/
+		            Sum_SrvcMgr_prv_SetFlagsToShutdownMode(&SrvcMgr_Execution_State, &srvcmgr_shutdown_permission); 
+	           break;
+	       }
+    }
+    else
+    {
+		Sum_SrvcMgr_prv_SetFlagsToShutdownMode(&SrvcMgr_Execution_State, &srvcmgr_shutdown_permission); 
+    }
+
+    /* @set the shutdown command for SrvcMgr */
+    (void)Rte_Write_PP_SrvcMgr_SUSD_ShutdownPermission_SUSD_UserRequest(srvcmgr_shutdown_permission);
+
+}
+
+#define SUM_SrvcMgr_STOP_SEC_CODE
+#include "SUM_SrvcMgr_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

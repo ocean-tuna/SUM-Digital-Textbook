@@ -1,0 +1,10 @@
+@startuml
+
+actor RemoteState
+
+participant Initializing
+participant Faulted
+
+Initializing -> Faulted : HeartBeat NOT received within \n DTC timeout length AND \n device is still monitored \n (IsRequester is TRUE)
+
+@enduml

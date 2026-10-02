@@ -1,0 +1,124 @@
+«IMPORT bsw»
+«IMPORT bsw::NvMModule»
+«IMPORT bsw::SOHModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE SOHAutosarRunnablesC FOR Autosar»
+	«EXPAND CreateSohStruct FOR this.ecu.sOH»
+«ENDDEFINE»
+
+«DEFINE CreateSohStruct FOR SOH»
+«FILE "SUM_SOH_Autosar_Runnables.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SOH
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Source for SOH Autosar Runnables
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+/*
+ ***************************************************************************************************
+ * Includes
+ ***************************************************************************************************
+ */
+#include "Rte_SUM_SOH.h"
+#include "SUM_SOH_Utilities.h"
+
+/*
+ ***************************************************************************************************
+ * Functions
+ ***************************************************************************************************
+*/
+
+«IF sOHGeneral.sOH_LocalSupervisionFailures_SupportEnabled == true -»
+«FOREACH sOHConfigSet.sOH_WatchdogManagerReliabilityMonitor.local_Supervision_Failures_Detector.supervised_Entity_Reference AS supervisedEntity -»
+/**
+ * \defgroup Runnables
+ * @{
+ * \addtogroup DataReceiveEvent
+ * @{
+ */
+/*!
+ * Runnable_WdgMReliabilityMonitor_FailedLocalSupervision_«supervisedEntity.shortName» implementation.
+ * It handles the notification sent by the BswM through the port SOH_BswM_WdgM_IndividualMode_«supervisedEntity.shortName»
+ * about Failed Local Supervision events of the Supervised Entity «supervisedEntity.shortName».
+ *
+ *@param[in]  void
+ *@param[out] void
+ *@return void
+ */
+/* PRQA S 1503 3 *//* It's scheduled in the OS [$Satisfies $SDD_SOH 113]*/
+FUNC(void, SUM_SOH_CODE) Runnable_WdgMReliabilityMonitor_FailedLocalSupervision_«supervisedEntity.shortName»(void)
+{
+
+    /*[$Satisfies $SDD_SOH 098] */
+	/* Pass event to the corresponding filter */
+	(void) SOH_Event_Detector(SOH_DetectorItems[SOH_LocalStatFail]);
+
+	/* Check condition then Write DID counter and detection counter changed into NvM if satisfied*/
+	SOH_CheckConditionAndWrite(SOH_DetectorItems[SOH_LocalStatFail]);
+}
+/**
+ * @}
+ * @}
+ */
+«ENDFOREACH-»
+«ENDIF-»
+
+«IF sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true -»
+/**
+ * \defgroup Runnables
+ * @{
+ * \addtogroup DataReceiveEvent
+ * @{
+ */
+/*!
+ * Runnable_SOH_WdgMReliabilityMonitor_ERRHFailedLocalSupervision implementation.
+ * It handles the notification sent by the WdgM through the port SOH_BsWM_WdgM_ERRHMode
+ * about Failed Local Supervision events of the ERRH.
+ *
+ *@param[in]  void
+ *@param[out] void
+ *@return void
+ */
+/* PRQA S 1503 3 *//* It's scheduled in the OS [$Satisfies $SDD_SOH 113]*/
+FUNC(void, SUM_SOH_CODE) Runnable_SOH_WdgMReliabilityMonitor_ERRHFailedLocalSupervision(void)
+{
+    /*[$Satisfies $SDD_SOH 100] */
+	/* Pass event to the corresponding filter */
+	(void) SOH_Event_Detector(SOH_DetectorItems[SOH_ERRHSupFail]);
+
+	/* Check condition then Write DID counter and detection counter changed into NvM if satisfied*/
+	SOH_CheckConditionAndWrite(SOH_DetectorItems[SOH_ERRHSupFail]);
+}
+/**
+ * @}
+ * @}
+ */
+«ENDIF-»
+
+/********************************** END OF FILE ******************************************************/
+
+«ENDFILE»
+«ENDDEFINE»

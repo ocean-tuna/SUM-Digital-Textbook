@@ -1,0 +1,13 @@
+@startuml remoteActActiveState
+
+state PN_ACTIVE {
+    state PNC_REMOTELY_ACTIVE:* NM Remote Criterion (SUM_PNC_Criteria_NM_Act_Remote) == TRUE
+    state PNC_REMOTELY_ACTIVE:* NM Deadline Monitoring Timer active
+
+    state PNC_LOCALLY_ACTIVE:* Request the activation of the PN via BswM mode request
+    state PNC_LOCALLY_ACTIVE:* Verify PNC internal state
+}
+
+PNC_REMOTELY_ACTIVE -> PNC_LOCALLY_ACTIVE: Local Activation Criteria == TRUE
+
+@enduml

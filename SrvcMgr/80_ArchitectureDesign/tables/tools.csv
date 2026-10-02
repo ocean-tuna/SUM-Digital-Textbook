@@ -1,0 +1,7 @@
+3;5;10
+\cellcolor{eTASPurple}\textcolor{white}{\textbf{Tool Name}};\cellcolor{eTASPurple}\textcolor{white}{\textbf{Version No.}};\cellcolor{eTASPurple}\textcolor{white}{\textbf{Description}}
+\cellcolor{eTASGray30}ISOLAR-AB;\cellcolor{eTASGray30}12.3.3BETA1;\cellcolor{eTASGray30}AUTOSAR Authoring and BSW Configuration tools.
+\cellcolor{eTASGray30}RTA-BSW;\cellcolor{eTASGray30}12.3.3pr1;\cellcolor{eTASGray30}BSW automatic configuration and code generation.
+\cellcolor{eTASGray30}RTA-RTE;\cellcolor{eTASGray30}12.4.0;\cellcolor{eTASGray30}RTE generator used for testing
+\cellcolor{eTASGray30}MemMapGen;\cellcolor{eTASGray30}12.3.0;\cellcolor{eTASGray30}Memory Map file generator
+\cellcolor{eTASGray30}CANTATA;\cellcolor{eTASGray30}9.5;\cellcolor{eTASGray30}Used for function and unit testing.

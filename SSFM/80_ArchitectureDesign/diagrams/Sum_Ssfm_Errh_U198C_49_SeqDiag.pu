@@ -1,0 +1,28 @@
+@startuml Sum_Ssfm_Errh_U198C_49_SeqDiag
+
+participant Dem
+box SUM_SSFM
+    participant Sum_Ssfm_Errh_U198C_49_Handler as ERRH_U198C_49
+end box
+participant Sum_SSC as SSC
+
+activate ERRH_U198C_49
+SSC -> ERRH_U198C_49: Notification about change in the \n status of the DTC U198C 49
+ERRH_U198C_49 -> ERRH_U198C_49: Check if calibration parameter is set
+
+alt ResetPowerUpRecoveryTimerFlag & BatteryVoltageRecoveryTimerFlag
+    ERRH_U198C_49 -> SSC: Ask for KP Keys Provisioned flag
+    SSC --> ERRH_U198C_49
+    alt KP Keys Provisioned == FALSE
+        ERRH_U198C_49 -> Dem: set the U198C_49 DTC as failed
+    else
+        ERRH_U198C_49 -> ERRH_U198C_49: Apply X/Y debouncing filter
+        alt Debouncing result valid
+            ERRH_U198C_49 -> Dem: set/reset the U198C_49 DTC
+        end
+    end
+end
+
+deactivate ERRH_U198C_49
+
+@enduml

@@ -1,0 +1,58 @@
+@startuml Sum_Ssfm_LNMConfigurationErrors_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_LNMConfigurationErrors_Manager"
+
+**Interfaces Legend**
+   //II152 //: ERRH_ExecutionStatus
+   //ri126 //: LNM_ERRH_NotConfigured<XXX>
+   //ri127 //: LNM_ERRH_NetConfigListNotProgrammed<n>
+   //ri129 //: LNM_ERRH_MissingCalibration<XXX>
+   //II178 //: Debounced Error
+   //II157 //: DisableDTCs
+   //II179 //: Undebounced Error
+   //pi140 //: ERRH_NotConfigured<XXX>_SetEventStatus
+   //pi141 //: ERRH_NetConfigListNotProgrammed<n>_SetEventStatus
+   //pi143 //: LNM_ERRH_MissingCalibration<XXX>_SetEventStatus
+   
+endlegend
+
+note top of EC
+It reads notifications from the LNM about LIN Responder Device Not Configured Errors and it asks the DEM to set/clear DTC accordingly.
+It reads notifications from the LNM about LIN Device Missing Calibration Error and it asks the DEM to set/clear the DTC accordingly.
+It reads notifications from the LNM about Network Configuration List Not Programmed Errors and it asks the DEM to set/clear the DTC accordingly.
+end note
+
+
+component [Sum_Ssfm_LNMConfigurationErrors_Manager] as EC{
+    portin ri126
+	portin ri127
+	portin ri129
+	portout pi140
+	portout pi141
+	portout pi143
+
+	[Sum_Ssfm_LNMConfigurationErrors_Manager]  as E
+}
+
+   interface II152
+   interface II178
+   interface II179
+   interface II157
+
+
+  ri126 -> E
+  ri127 -> E
+  ri129 -> E
+  II152 -> E
+  II178 -> E
+  II157 -> E
+  E -> pi140
+  E -> pi141
+  E -> pi143 
+  E -> II179  
+
+
+@enduml

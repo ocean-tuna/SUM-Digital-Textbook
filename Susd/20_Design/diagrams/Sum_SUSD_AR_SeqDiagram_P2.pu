@@ -1,0 +1,42 @@
+@startuml Sum_SUSD_AR_SeqDiagram_P2
+title Activity Records Feature - Sequence Diagram
+
+participant RTE as RTE
+participant SUM_SUSD as SUSD
+participant NvM as NVM
+participant EcuM as ECUM
+
+== Asynchronous Record Update Entry Points ==
+group Record Update Events
+     RTE -> SUSD : RE_SUSD_SPM_UpdateRecord(recordID, reason, status)
+    activate SUSD
+    SUSD -> SUSD : Sum_SUSD_ActivityRecordUpdated(recordID, reason, status)
+    activate SUSD #MediumPurple
+    SUSD -> SUSD : Increment/Decrement Record_{X}_Counter
+    SUSD -> SUSD : Determine Active Sub-State based on counters
+    deactivate SUSD
+    deactivate SUSD
+
+     RTE -> SUSD : RE_SUSD_PNC_UpdateRecord(recordID, reason, status)
+    activate SUSD
+    SUSD -> SUSD : Sum_SUSD_ActivityRecordUpdated(recordID, reason, status)
+    activate SUSD #MediumPurple
+    SUSD -> SUSD : Increment/Decrement Record_{X}_Counter
+    SUSD -> SUSD : Determine Active Sub-State
+    deactivate SUSD
+    deactivate SUSD
+
+    ECUM -> SUSD : SUSD_UpdatedWakeupSource(wakeupSourceBitmap)
+    activate SUSD
+    SUSD -> SUSD : Decode LIN EcuMWakeupSourceId from bitmap
+    alt LIN wakeup source match
+        SUSD -> SUSD : Sum_SUSD_ActivityRecordUpdated(0x03, EcuMWakeupSourceId, active)
+        activate SUSD #MediumPurple
+        SUSD -> SUSD : Increment/Decrement Record_0x03_Counter
+        SUSD -> SUSD : Determine Active Sub-State
+        deactivate SUSD
+    end
+    deactivate SUSD
+end
+
+@enduml

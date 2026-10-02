@@ -1,0 +1,1 @@
+java -jar $Env:PLANTUML_JAR Spm_ComCdd_tx.pu -tsvg; java -jar $Env:PLANTUML_JAR Spm_ComCdd_rx.pu -tsvg;

@@ -1,0 +1,5 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};setManufacturerEnableCounter
+\cellcolor{ETASlightgray}\textbf{Parameters};uint8 mec (Manufacturer Enable Counter)
+\cellcolor{ETASlightgray}\textbf{Return};void 
+\cellcolor{ETASlightgray}\textbf{Description};Stores MEC in the RAM copy of the NVM block, and marks the block to be written by WriteAll. 

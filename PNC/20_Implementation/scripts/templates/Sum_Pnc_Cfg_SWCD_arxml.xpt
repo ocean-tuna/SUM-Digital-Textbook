@@ -1,0 +1,1133 @@
+«IMPORT bsw»
+«IMPORT bsw::PNCModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+«EXTENSION templates::Sum_Pnc_General»
+«EXTENSION Util::Sum_Pnc_DID_Utils»
+
+«DEFINE GeneratePNC FOR Autosar»
+«EXPAND expandEcu FOR ecu»
+«ENDDEFINE»
+
+«DEFINE expandEcu FOR Ecu»
+«EXPAND PNC_SWC FOR pNC»
+«ENDDEFINE»
+
+«DEFINE PNC_SWC FOR PNC-»
+«FILE "Sum_Pnc_Cfg_SWCD.arxml"-»
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00049.xsd">
+
+<!--
+ ******************************************************************************
+ * BEGIN: Banner
+ ******************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ******************************************************************************
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ******************************************************************************
+ *    Administrative Information (automatically filled in)
+ ******************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_PNC
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : SWCD sPNC
+ ******************************************************************************
+ * END: Banner
+ ******************************************************************************
+ [$Satisfies $SDD_PNC 001]
+-->
+    <AR-PACKAGES>
+        <AR-PACKAGE>
+        <SHORT-NAME>RB</SHORT-NAME>
+        <AR-PACKAGES>
+            <AR-PACKAGE>
+            <SHORT-NAME>GM_SUM</SHORT-NAME>
+            <AR-PACKAGES>
+                <AR-PACKAGE>
+                <SHORT-NAME>ApplicationDatatypes</SHORT-NAME>
+                <ELEMENTS>
+                    <APPLICATION-PRIMITIVE-DATA-TYPE>
+                    <SHORT-NAME>TxPDUGroups</SHORT-NAME>
+                    <CATEGORY>VALUE</CATEGORY>
+                    <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                        <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>NOT-ACCESSIBLE</SW-CALIBRATION-ACCESS>
+                            <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                        </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                    </SW-DATA-DEF-PROPS>
+                    </APPLICATION-PRIMITIVE-DATA-TYPE>
+                    <APPLICATION-PRIMITIVE-DATA-TYPE>
+                    <SHORT-NAME>RxPDUGroups</SHORT-NAME>
+                    <CATEGORY>VALUE</CATEGORY>
+                    <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                        <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-CALIBRATION-ACCESS>NOT-ACCESSIBLE</SW-CALIBRATION-ACCESS>
+                            <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                        </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                    </SW-DATA-DEF-PROPS>
+                    </APPLICATION-PRIMITIVE-DATA-TYPE>
+                </ELEMENTS>
+                </AR-PACKAGE>
+                <AR-PACKAGE>
+                <SHORT-NAME>ImplementationDatatype</SHORT-NAME>
+                <ELEMENTS>
+                    <IMPLEMENTATION-DATA-TYPE>
+                    <SHORT-NAME>PDUgroup</SHORT-NAME>
+                    <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                    <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                        <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/boolean</IMPLEMENTATION-DATA-TYPE-REF>
+                        </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                    </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE>
+                    <IMPLEMENTATION-DATA-TYPE>
+                    <SHORT-NAME>PNC_State</SHORT-NAME>
+                    <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                    <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                        <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                        </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                    </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE>
+                    <IMPLEMENTATION-DATA-TYPE>
+                    <SHORT-NAME>Criteria_Struct</SHORT-NAME>
+                    <CATEGORY>STRUCTURE</CATEGORY>
+                    <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                        <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                        </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                    </SW-DATA-DEF-PROPS>
+                    <SUB-ELEMENTS>
+                        <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                        <SHORT-NAME>ActCriteria_local</SHORT-NAME>
+                        <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                        <SW-DATA-DEF-PROPS>
+                            <SW-DATA-DEF-PROPS-VARIANTS>
+                            <SW-DATA-DEF-PROPS-CONDITIONAL>
+                                <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/boolean</IMPLEMENTATION-DATA-TYPE-REF>
+                            </SW-DATA-DEF-PROPS-CONDITIONAL>
+                            </SW-DATA-DEF-PROPS-VARIANTS>
+                        </SW-DATA-DEF-PROPS>
+                        </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                        <IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                        <SHORT-NAME>ActCriteria_SigStat</SHORT-NAME>
+                        <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                        <SW-DATA-DEF-PROPS>
+                            <SW-DATA-DEF-PROPS-VARIANTS>
+                            <SW-DATA-DEF-PROPS-CONDITIONAL>
+                                <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/boolean</IMPLEMENTATION-DATA-TYPE-REF>
+                            </SW-DATA-DEF-PROPS-CONDITIONAL>
+                            </SW-DATA-DEF-PROPS-VARIANTS>
+                        </SW-DATA-DEF-PROPS>
+                        </IMPLEMENTATION-DATA-TYPE-ELEMENT>
+                    </SUB-ELEMENTS>
+                    </IMPLEMENTATION-DATA-TYPE>
+                    <IMPLEMENTATION-DATA-TYPE>
+                    <SHORT-NAME>PduGroup_State</SHORT-NAME>
+                    <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                    <SW-DATA-DEF-PROPS>
+                        <SW-DATA-DEF-PROPS-VARIANTS>
+                        <SW-DATA-DEF-PROPS-CONDITIONAL>
+                            <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                        </SW-DATA-DEF-PROPS-CONDITIONAL>
+                        </SW-DATA-DEF-PROPS-VARIANTS>
+                    </SW-DATA-DEF-PROPS>
+                    </IMPLEMENTATION-DATA-TYPE>
+                <IMPLEMENTATION-DATA-TYPE>
+                  <SHORT-NAME>ComMChannel_State</SHORT-NAME>
+                  <CATEGORY>TYPE_REFERENCE</CATEGORY>
+                  <SW-DATA-DEF-PROPS>
+                    <SW-DATA-DEF-PROPS-VARIANTS>
+                      <SW-DATA-DEF-PROPS-CONDITIONAL>
+                        <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+                      </SW-DATA-DEF-PROPS-CONDITIONAL>
+                    </SW-DATA-DEF-PROPS-VARIANTS>
+                  </SW-DATA-DEF-PROPS>
+                </IMPLEMENTATION-DATA-TYPE>
+                </ELEMENTS>
+                </AR-PACKAGE>
+                <AR-PACKAGE>
+                <SHORT-NAME>Infrastructure</SHORT-NAME>
+                <ELEMENTS>
+                    <DATA-TYPE-MAPPING-SET>
+                    <SHORT-NAME>DTMS_PNC</SHORT-NAME>
+                    <DATA-TYPE-MAPS>
+                        <DATA-TYPE-MAP>
+                        <APPLICATION-DATA-TYPE-REF DEST="APPLICATION-PRIMITIVE-DATA-TYPE">/RB/GM_SUM/ApplicationDatatypes/TxPDUGroups</APPLICATION-DATA-TYPE-REF>
+                        <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/RB/GM_SUM/ImplementationDatatype/PDUgroup</IMPLEMENTATION-DATA-TYPE-REF>
+                        </DATA-TYPE-MAP>
+                        <DATA-TYPE-MAP>
+                        <APPLICATION-DATA-TYPE-REF DEST="APPLICATION-PRIMITIVE-DATA-TYPE">/RB/GM_SUM/ApplicationDatatypes/RxPDUGroups</APPLICATION-DATA-TYPE-REF>
+                        <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/RB/GM_SUM/ImplementationDatatype/PDUgroup</IMPLEMENTATION-DATA-TYPE-REF>
+                        </DATA-TYPE-MAP>
+                    </DATA-TYPE-MAPS>
+                    <MODE-REQUEST-TYPE-MAPS>
+                        <MODE-REQUEST-TYPE-MAP>
+                        	<IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/RB/GM_SUM/ImplementationDatatype/PNC_State</IMPLEMENTATION-DATA-TYPE-REF>
+                        	<MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/PNC_State</MODE-GROUP-REF>
+                        </MODE-REQUEST-TYPE-MAP>
+                        <MODE-REQUEST-TYPE-MAP>
+                        	<IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/RB/GM_SUM/ImplementationDatatype/PduGroup_State</IMPLEMENTATION-DATA-TYPE-REF>
+                        	<MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/PduGroup_State</MODE-GROUP-REF>
+                        </MODE-REQUEST-TYPE-MAP>
+                        <MODE-REQUEST-TYPE-MAP>
+	                        <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/RB/GM_SUM/ImplementationDatatype/ComMChannel_State</IMPLEMENTATION-DATA-TYPE-REF>
+	                        <MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/ComMChannel_State</MODE-GROUP-REF>
+	                        </MODE-REQUEST-TYPE-MAP>
+                        <MODE-REQUEST-TYPE-MAP>
+	                        <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+	                        <MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/MDG_PNC</MODE-GROUP-REF>
+	                        </MODE-REQUEST-TYPE-MAP>
+                        <MODE-REQUEST-TYPE-MAP>
+	                        <IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+	                        <MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/MDG_GM_PNC_ComM</MODE-GROUP-REF>
+                        </MODE-REQUEST-TYPE-MAP>
+                        <MODE-REQUEST-TYPE-MAP>
+                        	<IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+	                        <MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP">/Interfaces/MDG_PNC_DM</MODE-GROUP-REF>
+                        </MODE-REQUEST-TYPE-MAP>
+                        «IF IsPDUDisableFeatureEnabled(pNCGeneral.parent)-»
+                        <MODE-REQUEST-TYPE-MAP>
+							<IMPLEMENTATION-DATA-TYPE-REF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/uint8</IMPLEMENTATION-DATA-TYPE-REF>
+							<MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/MDG_DisablePdu</MODE-GROUP-REF>
+	                    </MODE-REQUEST-TYPE-MAP>
+	                    «ENDIF-»
+                    </MODE-REQUEST-TYPE-MAPS>
+                    </DATA-TYPE-MAPPING-SET>
+                    <CONSTANT-SPECIFICATION>
+                    <SHORT-NAME>ConstantSpecification_init</SHORT-NAME>
+                    <VALUE-SPEC>
+                        <NUMERICAL-VALUE-SPECIFICATION>
+                        <VALUE SHORT-LABEL="constatnt_specification_init">0</VALUE>
+                        </NUMERICAL-VALUE-SPECIFICATION>
+                    </VALUE-SPEC>
+                    </CONSTANT-SPECIFICATION>
+                    <UNIT>
+                    <SHORT-NAME>No_Unit</SHORT-NAME>
+                    <DISPLAY-NAME>[]</DISPLAY-NAME>
+                    </UNIT>
+
+                </ELEMENTS>
+                </AR-PACKAGE>
+            <AR-PACKAGE>
+              <SHORT-NAME>Components</SHORT-NAME>
+              <ELEMENTS>
+                <APPLICATION-SW-COMPONENT-TYPE>
+                  <SHORT-NAME>SUM_PNC</SHORT-NAME>
+                  <PORTS>
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Sensors - 1) AS k ITERATOR j»
+                     <R-PORT-PROTOTYPE>
+                      <SHORT-NAME>RP_Act_Sensor_CS«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                      <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/Interfaces/PNC_Activation_sensor_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</REQUIRED-INTERFACE-TREF>
+                    </R-PORT-PROTOTYPE>
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Signals - 1) AS k ITERATOR j»
+                    <R-PORT-PROTOTYPE>
+                      <SHORT-NAME>RP_Act_Signal_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                      <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/Interfaces/PNC_Activation_signal_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</REQUIRED-INTERFACE-TREF>
+                    </R-PORT-PROTOTYPE>
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Signals - 1) AS k ITERATOR j»
+                    <R-PORT-PROTOTYPE>
+                      <SHORT-NAME>RP_Act_Signals_Status_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                      <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/Interfaces/PNC_Activation_Signals_Status_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</REQUIRED-INTERFACE-TREF>
+                    </R-PORT-PROTOTYPE>
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+                    <!--[$Satisfies $SDD_PNC 043]-->
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    <R-PORT-PROTOTYPE>
+                        <SHORT-NAME>RP_Bswm_ComM_Current_PNC_ModeUser_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                        <REQUIRED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/RB/GM_SUM/Interfaces/PNC_BswM_ComM_CurrentPNCModeUser_«PartialNWPara.comM_PNC_Ref.shortName -»</REQUIRED-INTERFACE-TREF>
+                    </R-PORT-PROTOTYPE>
+                    «ENDFOREACH-»
+
+                    «FOREACH pNCGeneral.comM_PNC_Channel.comM_Channel_Ref AS network ITERATOR k-»
+                    <R-PORT-PROTOTYPE>
+                        <SHORT-NAME>RP_ComM_Current_ModeUser_Ch«network.comMChannelId-»</SHORT-NAME>
+                        <REQUIRED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/RB/GM_SUM/Interfaces/PNC_ComM_CurrentModeUser_«network.comMChannelId-»</REQUIRED-INTERFACE-TREF>
+                     </R-PORT-PROTOTYPE>
+                     «ENDFOREACH-»
+
+
+
+					 «FOREACH pNCGeneral.comM_PNC_Channel.comM_Channel_Ref AS network ITERATOR k-»
+           <!--[$Satisfies $SDD_PNC 115] [$Satisfies $SDD_PNC 116]-->
+						<R-PORT-PROTOTYPE>
+						<SHORT-NAME>RP_DIAG_DisableNormalComm_Ch«network.comMChannelId-»</SHORT-NAME>
+						  <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/DIAG_DisableNormalComm</REQUIRED-INTERFACE-TREF>
+						</R-PORT-PROTOTYPE>
+					«ENDFOREACH-»
+
+
+                     <R-PORT-PROTOTYPE>
+                        <SHORT-NAME>RP_PermitExecution</SHORT-NAME>
+                        <REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SUSD_PermitExecution</REQUIRED-INTERFACE-TREF>
+                     </R-PORT-PROTOTYPE>
+
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    <!--[$Satisfies $SDD_PNC 107] [$Satisfies $SDD_PNC 108]-->
+                    <P-PORT-PROTOTYPE>
+                        <SHORT-NAME>PP_Active_TxPDU_Enable_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                        <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/PNC_ActiveTxPDUEnable</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+                     «ENDFOREACH-»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    <!--[$Satisfies $SDD_PNC 109] [$Satisfies $SDD_PNC 110]-->
+                    <P-PORT-PROTOTYPE>
+                        <SHORT-NAME>PP_Active_RxPDU_Enable_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                        <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/PNC_ActiveRxPDUEnable</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+                    «ENDFOREACH-»
+                    <!--[$Satisfies $SDD_PNC 113]-->
+                    <P-PORT-PROTOTYPE>
+                    <SHORT-NAME>PP_ShutdownPermission</SHORT-NAME>
+                    <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/PNC_ShutdownPermission</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+                    «IF isUsingUDP(pNCConfigSet) == false -»
+                    «IF pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Sensors.exists(e| e > 0) || pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Signals.exists(e| e > 0)-»
+                    <!--[$Satisfies $SDD_PNC 058]-->
+                    <P-PORT-PROTOTYPE>
+                      <SHORT-NAME>PP_PNC_DataServicesPN_DID_F08B_Info_Local</SHORT-NAME>
+                      <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«Pnc_DID_F08B_Data_ShortName(pNCGeneral.parent)»</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+                    «ENDIF -»
+                    <!--[$Satisfies $SDD_PNC 060]-->
+                    <P-PORT-PROTOTYPE>
+                      <SHORT-NAME>PP_PNC_DataServicesPN_DID_F08D_Info_Remote</SHORT-NAME>
+                      <PROVIDED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/AUTOSAR_Dcm/PortInterfaces/DataServices_«Pnc_DID_F08D_Data_ShortName(pNCGeneral.parent)»</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+                    «ENDIF-»
+
+                    <!--[$Satisfies $SDD_PNC 043]-->
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                    «FOREACH PartialNWPara.comM_PNC_Ref.comMChannelPerPnc AS ChannelSize ITERATOR i -»
+                    «IF PartialNWPara.isTxEnabled == true-»
+                    <P-PORT-PROTOTYPE>
+                        <SHORT-NAME>PP_Pdugroupswitch_TxReq_BswM_«PartialNWPara.comM_PNC_Ref.shortName -»_Ch«ChannelSize.comMChannelId-»</SHORT-NAME>
+                        <PROVIDED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/RB/GM_SUM/Interfaces/PNC_BswMPduGroupSwitchTxReq_Interface</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+                    «ENDIF-»
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                    «FOREACH PartialNWPara.comM_PNC_Ref.comMChannelPerPnc AS ChannelSize ITERATOR i -»
+                     «IF PartialNWPara.isRxEnabled == true-»
+                    <P-PORT-PROTOTYPE>
+                        <SHORT-NAME>PP_Pdugroupswitch_RxReq_BswM_«PartialNWPara.comM_PNC_Ref.shortName »_Ch«ChannelSize.comMChannelId-»</SHORT-NAME>
+                        <PROVIDED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/RB/GM_SUM/Interfaces/PNC_BswMPduGroupSwitchRxReq_Interface</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+                    «ENDIF»
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                        <P-PORT-PROTOTYPE>
+                        <SHORT-NAME>PP_PNC_BswM_ComM_CurrentPNCMode_Req_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                        <PROVIDED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/RB/GM_SUM/Interfaces/PNC_BswM_ComM_CurrentPNCModeReq_«PartialNWPara.comM_PNC_Ref.shortName »</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+
+                    <P-PORT-PROTOTYPE>
+                      <SHORT-NAME>PP_PNC_BswM_PDUGroup_DM_Switch_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                      <PROVIDED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/Interfaces/PNC_«PartialNWPara.comM_PNC_Ref.shortName -»_Group_DM_Switch</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+                    «ENDFOREACH-»
+«REM»[$Satisfies $SDD_PNC 090]«ENDREM»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                    <!--[$Satisfies $SDD_PNC 111] [$Satisfies $SDD_PNC 112]-->
+                    <P-PORT-PROTOTYPE>
+                        <SHORT-NAME>PP_PNC_PN_DTC_Allowed_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                        <PROVIDED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/PN_DTC_Allowed</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+                    «ENDFOREACH-»
+
+					«IF IsPDUDisableFeatureEnabled(pNCGeneral.parent)»
+					«FOREACH pNCGeneral.sSFMConfigSet_Ref.sum_Ssfm_C_SsmDisable_Tx_PDU AS txMessage-»
+          <!--[$Satisfies $SDD_PNC 117] [$Satisfies $SDD_PNC 118] [$Satisfies $SDD_PNC 119]-->
+					<R-PORT-PROTOTYPE>
+						<SHORT-NAME>RP_PNC_C_Disable_Tx_«txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName-»</SHORT-NAME>
+						<REQUIRED-INTERFACE-TREF DEST="SENDER-RECEIVER-INTERFACE">/GM_SUM/Interfaces/SUM_C_Disable_Tx</REQUIRED-INTERFACE-TREF>
+					</R-PORT-PROTOTYPE>
+					<P-PORT-PROTOTYPE>
+	                    <SHORT-NAME>PP_PNC_BswM_DisablePdu_«txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName-»</SHORT-NAME>
+	                    <PROVIDED-INTERFACE-TREF DEST="MODE-SWITCH-INTERFACE">/GM_SUM/Interfaces/SUM_BswM_DisablePdu</PROVIDED-INTERFACE-TREF>
+                    </P-PORT-PROTOTYPE>
+                    «ENDFOREACH-»
+					«ENDIF»
+		  			<R-PORT-PROTOTYPE>
+                      <SHORT-NAME>RP_PNC_SUSD_RecordInfo</SHORT-NAME>
+                      <REQUIRED-INTERFACE-TREF DEST="CLIENT-SERVER-INTERFACE">/GM_SUM/Interfaces/SUSD_PNC_UpdateRecord</REQUIRED-INTERFACE-TREF>
+                    </R-PORT-PROTOTYPE>
+                  </PORTS>
+                  <INTERNAL-BEHAVIORS>
+                    <SWC-INTERNAL-BEHAVIOR>
+                      <SHORT-NAME>IB_PNC</SHORT-NAME>
+                      <DATA-TYPE-MAPPING-REFS>
+                            <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/RB/GM_SUM/Infrastructure/DTMS_PNC</DATA-TYPE-MAPPING-REF>
+                            «IF IsPDUDisableFeatureEnabled(pNCGeneral.parent)-»
+                            <DATA-TYPE-MAPPING-REF DEST="DATA-TYPE-MAPPING-SET">/GM_SUM/Infrastructure/DTMS_DisablePDU</DATA-TYPE-MAPPING-REF>
+                    		«ENDIF-»
+                    	</DATA-TYPE-MAPPING-REFS>
+                        <EVENTS>
+                            «REM»[$Satisfies $SDD_PNC 102]«ENDREM»
+                            <TIMING-EVENT>
+                          <SHORT-NAME>TE_SUM_PNC_Mainfunction</SHORT-NAME>
+                            <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/SUM_PNC_Mainfunction</START-ON-EVENT-REF>
+                            <PERIOD>«performFloatDivision((Real)(pNCGeneral.pNC_t_MainFunction_Periodicity),1000)»</PERIOD>
+                            </TIMING-EVENT>
+                            <TIMING-EVENT>
+                            <SHORT-NAME>TE_Activation_Signal_In</SHORT-NAME>
+                            <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/Activation_Signal_In</START-ON-EVENT-REF>
+                            <PERIOD>«performFloatDivision((Real)(pNCGeneral.pNC_t_RemoteSignals_Periodicity),1000)»</PERIOD>
+                            </TIMING-EVENT>
+                            <TIMING-EVENT>
+                            <SHORT-NAME>TE_Shutdown_permission_SUSD</SHORT-NAME>
+                            <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/Shutdown_permission_SUSD</START-ON-EVENT-REF>
+                            <PERIOD>«pNCGeneral.shutdown_permission_SUSD_Periodicity / 1000.0 -»</PERIOD>
+                            </TIMING-EVENT>
+
+                            «IF pNCGeneral.pncGenerateInitRunnable == true-»
+                            <TIMING-EVENT>
+	                          <SHORT-NAME>TE_Runnable_Pnc_Init</SHORT-NAME>
+	                          <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/Runnable_Pnc_Init</START-ON-EVENT-REF>
+	                          <PERIOD>«pNCGeneral.pncInitFuncPeriodicity / 1000-»</PERIOD>
+	                        </TIMING-EVENT>
+                            «ENDIF-»
+                            «IF isUsingUDP(pNCConfigSet) == false -»
+                            <!--[$Satisfies $SDD_PNC 058] [$Satisfies $SDD_PNC 059] [$Satisfies $SDD_PNC 060] [$Satisfies $SDD_PNC 061]-->
+                            «IF pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Sensors.exists(e| e > 0) || pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Signals.exists(e| e > 0)-»
+                            <OPERATION-INVOKED-EVENT>
+                              <SHORT-NAME>OIE_DID_F08B_Info_Local</SHORT-NAME>
+                              <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/PNC_DataServicesPN_DID_F08B_Info_Local</START-ON-EVENT-REF>
+                              <OPERATION-IREF>
+                                <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_DataServicesPN_DID_F08B_Info_Local</CONTEXT-P-PORT-REF>
+                                <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«Pnc_DID_F08B_Data_ShortName(pNCGeneral.parent)»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+                              </OPERATION-IREF>
+                            </OPERATION-INVOKED-EVENT>
+                            <OPERATION-INVOKED-EVENT>
+                              <SHORT-NAME>OIE_DID_F08B_Info_Local_CheckRead</SHORT-NAME>
+                              <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/PNC_DataServicesPN_DID_F08B_Info_Local_CheckRead</START-ON-EVENT-REF>
+                              <OPERATION-IREF>
+                                <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_DataServicesPN_DID_F08B_Info_Local</CONTEXT-P-PORT-REF>
+                                <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«Pnc_DID_F08B_Data_ShortName(pNCGeneral.parent)»/ConditionCheckRead</TARGET-PROVIDED-OPERATION-REF>
+                              </OPERATION-IREF>
+                            </OPERATION-INVOKED-EVENT>
+                            «ENDIF -»
+                            <OPERATION-INVOKED-EVENT>
+                              <SHORT-NAME>OIE_DID_F08D_Info_Remote</SHORT-NAME>
+                              <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/PNC_DataServicesPN_DID_F08D_Info_Remote</START-ON-EVENT-REF>
+                              <OPERATION-IREF>
+                                <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_DataServicesPN_DID_F08D_Info_Remote</CONTEXT-P-PORT-REF>
+                                <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«Pnc_DID_F08D_Data_ShortName(pNCGeneral.parent)»/ReadData</TARGET-PROVIDED-OPERATION-REF>
+                              </OPERATION-IREF>
+                            </OPERATION-INVOKED-EVENT>
+                            <OPERATION-INVOKED-EVENT>
+                              <SHORT-NAME>OIE_DID_F08D_Info_Remote_CheckRead</SHORT-NAME>
+                              <START-ON-EVENT-REF DEST="RUNNABLE-ENTITY">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/PNC_DataServicesPN_DID_F08D_Info_Remote_CheckRead</START-ON-EVENT-REF>
+                              <OPERATION-IREF>
+                                <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_DataServicesPN_DID_F08D_Info_Remote</CONTEXT-P-PORT-REF>
+                                <TARGET-PROVIDED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/AUTOSAR_Dcm/PortInterfaces/DataServices_«Pnc_DID_F08D_Data_ShortName(pNCGeneral.parent)»/ConditionCheckRead</TARGET-PROVIDED-OPERATION-REF>
+                              </OPERATION-IREF>
+                            </OPERATION-INVOKED-EVENT>
+                            «ENDIF-»
+                        </EVENTS>
+                        <PORT-API-OPTIONS>
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_Active_TxPDU_Enable_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-REF>
+                        </PORT-API-OPTION>
+                    «ENDFOREACH-»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_Active_RxPDU_Enable_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-REF>
+                        </PORT-API-OPTION>
+                    «ENDFOREACH-»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_ShutdownPermission</PORT-REF>
+                        </PORT-API-OPTION>
+                «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                 «FOREACH PartialNWPara.comM_PNC_Ref.comMChannelPerPnc AS ChannelSize ITERATOR i -»
+                 «IF PartialNWPara.isTxEnabled == true-»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_Pdugroupswitch_TxReq_BswM_«PartialNWPara.comM_PNC_Ref.shortName -»_Ch«ChannelSize.comMChannelId -»</PORT-REF>
+                        </PORT-API-OPTION>
+                         «ENDIF-»
+                         «ENDFOREACH-»
+                «ENDFOREACH-»
+                «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                 «FOREACH PartialNWPara.comM_PNC_Ref.comMChannelPerPnc AS ChannelSize ITERATOR i -»
+                       «IF PartialNWPara.isRxEnabled == true-»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_Pdugroupswitch_RxReq_BswM_«PartialNWPara.comM_PNC_Ref.shortName -»_Ch«ChannelSize.comMChannelId -»</PORT-REF>
+                        </PORT-API-OPTION>
+                         «ENDIF-»
+                «ENDFOREACH-»
+                 «ENDFOREACH-»
+                «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_BswM_ComM_CurrentPNCMode_Req_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-REF>
+                        </PORT-API-OPTION>
+               «ENDFOREACH-»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Sensors - 1) AS k ITERATOR j»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_Act_Sensor_CS«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-REF>
+                        </PORT-API-OPTION>
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Signals - 1) AS k ITERATOR j»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_Act_Signal_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-REF>
+                        </PORT-API-OPTION>
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Signals - 1) AS k ITERATOR j»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_Act_Signals_Status_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-REF>
+                        </PORT-API-OPTION>
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_Bswm_ComM_Current_PNC_ModeUser_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-REF>
+                        </PORT-API-OPTION>
+                    «ENDFOREACH-»
+
+                    «FOREACH pNCGeneral.comM_PNC_Channel.comM_Channel_Ref AS network ITERATOR k-»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_ComM_Current_ModeUser_Ch«network.comMChannelId-»</PORT-REF>
+                        </PORT-API-OPTION>
+
+                    «ENDFOREACH-»
+
+
+                    «FOREACH pNCGeneral.comM_PNC_Channel.comM_Channel_Ref AS network ITERATOR k-»
+              <PORT-API-OPTION>
+                <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                <INDIRECT-API>false</INDIRECT-API>
+                <PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_DIAG_DisableNormalComm_Ch«network.comMChannelId-»</PORT-REF>
+              </PORT-API-OPTION>
+              «ENDFOREACH-»
+                      <!--[$Satisfies $SDD_PNC 114]-->
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_PermitExecution</PORT-REF>
+                        </PORT-API-OPTION>
+
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                        <PORT-API-OPTION>
+                          <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                          <INDIRECT-API>false</INDIRECT-API>
+                          <PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_BswM_PDUGroup_DM_Switch_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-REF>
+                        </PORT-API-OPTION>
+                    «ENDFOREACH-»
+					  «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                         <PORT-API-OPTION>
+                           <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+                           <INDIRECT-API>false</INDIRECT-API>
+                           <PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_PN_DTC_Allowed_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-REF>
+                         </PORT-API-OPTION>
+                      «ENDFOREACH-»
+
+					«IF IsPDUDisableFeatureEnabled(pNCGeneral.parent)»
+					«FOREACH pNCGeneral.sSFMConfigSet_Ref.sum_Ssfm_C_SsmDisable_Tx_PDU AS txMessage-»
+					<PORT-API-OPTION>
+						<ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+						<INDIRECT-API>false</INDIRECT-API>
+						<PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_PNC_C_Disable_Tx_«txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName-»</PORT-REF>
+					</PORT-API-OPTION>
+					<PORT-API-OPTION>
+						<ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+						<INDIRECT-API>false</INDIRECT-API>
+						<PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_BswM_DisablePdu_«txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName-»</PORT-REF>
+					</PORT-API-OPTION>
+					«ENDFOREACH-»
+					«ENDIF»
+					 <PORT-API-OPTION>
+	                      <ENABLE-TAKE-ADDRESS>true</ENABLE-TAKE-ADDRESS>
+	                      <PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_PNC_SUSD_RecordInfo</PORT-REF>
+	                    </PORT-API-OPTION>
+	                  </PORT-API-OPTIONS>
+                     <RUNNABLES>
+                        <RUNNABLE-ENTITY>
+                            <SHORT-NAME>Shutdown_permission_SUSD</SHORT-NAME>
+                            <DATA-SEND-POINTS>
+                                <VARIABLE-ACCESS>
+                                <SHORT-NAME>DSP_SUSD_ShutDown</SHORT-NAME>
+                                <ACCESSED-VARIABLE>
+                                    <AUTOSAR-VARIABLE-IREF>
+                                    <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_ShutdownPermission</PORT-PROTOTYPE-REF>
+                                    <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/PNC_ShutdownPermission/SUSD_UserRequest</TARGET-DATA-PROTOTYPE-REF>
+                                    </AUTOSAR-VARIABLE-IREF>
+                                </ACCESSED-VARIABLE>
+                                </VARIABLE-ACCESS>
+                            </DATA-SEND-POINTS>
+                            <SYMBOL>Shutdown_permission_SUSD</SYMBOL>
+                            </RUNNABLE-ENTITY>
+                        «IF isUsingUDP(pNCConfigSet) == false -»
+                        <!--[$Satisfies $SDD_PNC 058] [$Satisfies $SDD_PNC 059] [$Satisfies $SDD_PNC 060] [$Satisfies $SDD_PNC 061]-->
+                        «IF pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Sensors.exists(e| e > 0) || pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Signals.exists(e| e > 0)-»
+                        <RUNNABLE-ENTITY>
+                          <SHORT-NAME>PNC_DataServicesPN_DID_F08B_Info_Local</SHORT-NAME>
+                          <SYMBOL>PNC_DataServicesPN_DID_F08B_Info_Local</SYMBOL>
+                        </RUNNABLE-ENTITY>
+                        <RUNNABLE-ENTITY>
+                          <SHORT-NAME>PNC_DataServicesPN_DID_F08B_Info_Local_CheckRead</SHORT-NAME>
+                          <SYMBOL>PNC_DataServicesPN_DID_F08B_Info_Local_CheckRead</SYMBOL>
+                        </RUNNABLE-ENTITY>
+                        «ENDIF»
+                        <RUNNABLE-ENTITY>
+                          <SHORT-NAME>PNC_DataServicesPN_DID_F08D_Info_Remote</SHORT-NAME>
+                          <SYMBOL>PNC_DataServicesPN_DID_F08D_Info_Remote</SYMBOL>
+                        </RUNNABLE-ENTITY>
+                        <RUNNABLE-ENTITY>
+                          <SHORT-NAME>PNC_DataServicesPN_DID_F08D_Info_Remote_CheckRead</SHORT-NAME>
+                          <SYMBOL>PNC_DataServicesPN_DID_F08D_Info_Remote_CheckRead</SYMBOL>
+                        </RUNNABLE-ENTITY>
+                        «ENDIF»
+                        «IF pNCGeneral.pncGenerateInitRunnable == true»
+                        <!--[$Satisfies $SDD_PNC 100]-->
+                        <RUNNABLE-ENTITY>
+                          <SHORT-NAME>Runnable_Pnc_Init</SHORT-NAME>
+                          <DATA-SEND-POINTS>
+                          «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                          	<VARIABLE-ACCESS>
+                          		<SHORT-NAME>DSP_PN_DTC_Allowed_«PartialNWPara.comM_PNC_Ref.shortName-»</SHORT-NAME>
+                          		<ACCESSED-VARIABLE>
+                          			<AUTOSAR-VARIABLE-IREF>
+                          				<PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_PN_DTC_Allowed_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-PROTOTYPE-REF>
+                          				<TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/PN_DTC_Allowed/DTC_Allowed</TARGET-DATA-PROTOTYPE-REF>
+                          			</AUTOSAR-VARIABLE-IREF>
+                          		</ACCESSED-VARIABLE>
+                          	</VARIABLE-ACCESS>
+                          «ENDFOREACH»
+                          </DATA-SEND-POINTS>
+                          <PARAMETER-ACCESSS>
+                          «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                          	<PARAMETER-ACCESS>
+                          		<SHORT-NAME>ParameterAccess_SUM_PN_DTC_TIMER_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                          		<ACCESSED-PARAMETER>
+                                	<LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/SUM_PN_DTC_TIMER_«PartialNWPara.comM_PNC_Ref.shortName -»</LOCAL-PARAMETER-REF>
+                              	</ACCESSED-PARAMETER>
+                          	</PARAMETER-ACCESS>
+                          «ENDFOREACH»
+                          </PARAMETER-ACCESSS>
+                          <SYMBOL>RE_PNC_Init</SYMBOL>
+                        </RUNNABLE-ENTITY>
+                        «ENDIF»
+                        <RUNNABLE-ENTITY>
+                          <SHORT-NAME>Activation_Signal_In</SHORT-NAME>
+                          <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Signals - 1) AS k ITERATOR j-»
+                                <VARIABLE-ACCESS>
+                                <SHORT-NAME>DRPBA_Act_Sig_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                                <ACCESSED-VARIABLE>
+                                    <AUTOSAR-VARIABLE-IREF>
+                                    <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_Act_Signal_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-PROTOTYPE-REF>
+                                    <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/Interfaces/PNC_Activation_signal_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»/Act_Sig_«j.counter0-»</TARGET-DATA-PROTOTYPE-REF>
+                                    </AUTOSAR-VARIABLE-IREF>
+                                </ACCESSED-VARIABLE>
+                                </VARIABLE-ACCESS>
+                                <VARIABLE-ACCESS>
+                                <SHORT-NAME>DRBPA_VA_Ac_Sig_Stat_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                                <ACCESSED-VARIABLE>
+                                    <AUTOSAR-VARIABLE-IREF>
+                                    <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_Act_Signals_Status_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-PROTOTYPE-REF>
+                                    <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/Interfaces/PNC_Activation_Signals_Status_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»/Act_Sig_Stat_«j.counter0-»</TARGET-DATA-PROTOTYPE-REF>
+                                    </AUTOSAR-VARIABLE-IREF>
+                                </ACCESSED-VARIABLE>
+                                </VARIABLE-ACCESS>				
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+		    
+                            </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                          <SYMBOL>Activation_Signal_In</SYMBOL>
+                        </RUNNABLE-ENTITY>
+                        <RUNNABLE-ENTITY>
+                          <SHORT-NAME>SUM_PNC_Mainfunction</SHORT-NAME>
+                          <DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                                <VARIABLE-ACCESS>
+                                <SHORT-NAME>DRPBA_VA_PermitExecution</SHORT-NAME>
+                                <ACCESSED-VARIABLE>
+                                    <AUTOSAR-VARIABLE-IREF>
+                                    <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_PermitExecution</PORT-PROTOTYPE-REF>
+                                    <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUSD_PermitExecution/SUSD_SWC_ExecutionStatus</TARGET-DATA-PROTOTYPE-REF>
+                                    </AUTOSAR-VARIABLE-IREF>
+                                </ACCESSED-VARIABLE>
+                                </VARIABLE-ACCESS>
+
+                 «FOREACH pNCGeneral.comM_PNC_Channel.comM_Channel_Ref AS network ITERATOR k-»
+                    <VARIABLE-ACCESS>
+                      <SHORT-NAME>DRPA_VariableAccess_DisableNormalCommMode_Ch«network.comMChannelId-»</SHORT-NAME>
+                      <ACCESSED-VARIABLE>
+                        <AUTOSAR-VARIABLE-IREF>
+                          <PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_DIAG_DisableNormalComm_Ch«network.comMChannelId-»</PORT-PROTOTYPE-REF>
+                          <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/DIAG_DisableNormalComm/NormalComMode</TARGET-DATA-PROTOTYPE-REF>
+                        </AUTOSAR-VARIABLE-IREF>
+                      </ACCESSED-VARIABLE>
+                    </VARIABLE-ACCESS>
+                    «ENDFOREACH-»
+								«IF IsPDUDisableFeatureEnabled(pNCGeneral.parent)»
+								«FOREACH pNCGeneral.sSFMConfigSet_Ref.sum_Ssfm_C_SsmDisable_Tx_PDU AS txMessage-»
+								<VARIABLE-ACCESS>
+									<SHORT-NAME>DRPBA_SUM_C_Disable_Tx«txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName-»</SHORT-NAME>
+									<ACCESSED-VARIABLE>
+										<AUTOSAR-VARIABLE-IREF>
+											<PORT-PROTOTYPE-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_PNC_C_Disable_Tx_«txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName-»</PORT-PROTOTYPE-REF>
+											<TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/SUM_C_Disable_Tx/C_Disable</TARGET-DATA-PROTOTYPE-REF>
+										</AUTOSAR-VARIABLE-IREF>
+									</ACCESSED-VARIABLE>
+								</VARIABLE-ACCESS>
+								«ENDFOREACH-»
+								«ENDIF»
+                  </DATA-RECEIVE-POINT-BY-ARGUMENTS>
+                          <DATA-SEND-POINTS>
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                                <VARIABLE-ACCESS>
+                                <SHORT-NAME>DSP_Active_TxPDU_Enable_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                                <ACCESSED-VARIABLE>
+                                    <AUTOSAR-VARIABLE-IREF>
+                                    <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_Active_TxPDU_Enable_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-PROTOTYPE-REF>
+                                    <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/PNC_ActiveTxPDUEnable/TxPDUGroups</TARGET-DATA-PROTOTYPE-REF>
+                                    </AUTOSAR-VARIABLE-IREF>
+                                </ACCESSED-VARIABLE>
+                                </VARIABLE-ACCESS>
+                    «ENDFOREACH-»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+
+                                <VARIABLE-ACCESS>
+                                <SHORT-NAME>DSPVA_VA_ActiveRxPDU_Enable_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                                <ACCESSED-VARIABLE>
+                                    <AUTOSAR-VARIABLE-IREF>
+                                    <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_Active_RxPDU_Enable_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-PROTOTYPE-REF>
+                                    <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/PNC_ActiveRxPDUEnable/RxPDUGroups</TARGET-DATA-PROTOTYPE-REF>
+                                    </AUTOSAR-VARIABLE-IREF>
+                                </ACCESSED-VARIABLE>
+                                </VARIABLE-ACCESS>
+
+                    «ENDFOREACH-»
+
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                                <VARIABLE-ACCESS>
+                                <SHORT-NAME>DSPVA_VA_DTC_Allowed_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                                <ACCESSED-VARIABLE>
+                                    <AUTOSAR-VARIABLE-IREF>
+                                    <PORT-PROTOTYPE-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_PN_DTC_Allowed_«PartialNWPara.comM_PNC_Ref.shortName -»</PORT-PROTOTYPE-REF>
+                                    <TARGET-DATA-PROTOTYPE-REF DEST="VARIABLE-DATA-PROTOTYPE">/GM_SUM/Interfaces/PN_DTC_Allowed/DTC_Allowed</TARGET-DATA-PROTOTYPE-REF>
+                                    </AUTOSAR-VARIABLE-IREF>
+                                </ACCESSED-VARIABLE>
+                                </VARIABLE-ACCESS>
+                    «ENDFOREACH-»
+                           </DATA-SEND-POINTS>
+                          <MODE-ACCESS-POINTS>
+                          «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                                <MODE-ACCESS-POINT>
+                                <MODE-GROUP-IREF>
+                                    <R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                                    <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_Bswm_ComM_Current_PNC_ModeUser_«PartialNWPara.comM_PNC_Ref.shortName -»</CONTEXT-R-PORT-REF>
+                                    <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/RB/GM_SUM/Interfaces/PNC_BswM_ComM_CurrentPNCModeUser_«PartialNWPara.comM_PNC_Ref.shortName -»/MDGP_PNCState</TARGET-MODE-GROUP-REF>
+                                    </R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                                </MODE-GROUP-IREF>
+                                </MODE-ACCESS-POINT>
+                          «ENDFOREACH»
+                          «FOREACH pNCGeneral.comM_PNC_Channel.comM_Channel_Ref AS network ITERATOR k-»
+
+                                <MODE-ACCESS-POINT>
+                                <MODE-GROUP-IREF>
+                                    <R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                                    <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_ComM_Current_ModeUser_Ch«network.comMChannelId-»</CONTEXT-R-PORT-REF>
+                                    <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/RB/GM_SUM/Interfaces/PNC_ComM_CurrentModeUser_«network.comMChannelId-»/ComMChannel_State</TARGET-MODE-GROUP-REF>
+                                    </R-MODE-GROUP-IN-ATOMIC-SWC-INSTANCE-REF>
+                                </MODE-GROUP-IREF>
+                                </MODE-ACCESS-POINT>
+
+                          «ENDFOREACH-»
+                          </MODE-ACCESS-POINTS>
+                          <MODE-SWITCH-POINTS>
+  							«IF IsPDUDisableFeatureEnabled(pNCGeneral.parent)»
+								«FOREACH pNCGeneral.sSFMConfigSet_Ref.sum_Ssfm_C_SsmDisable_Tx_PDU AS txMessage-»
+                                <MODE-SWITCH-POINT>
+	                                <SHORT-NAME>MSP_SUM_DisablePDU_«txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName-»</SHORT-NAME>
+	                                <MODE-GROUP-IREF>
+	                                    <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_BswM_DisablePdu_«txMessage.sum_Ssfm_C_SsmDisable_Tx_PDURef.shortName-»</CONTEXT-P-PORT-REF>
+	                                    <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/GM_SUM/Interfaces/SUM_BswM_DisablePdu/DisablePDUState</TARGET-MODE-GROUP-REF>
+	                                </MODE-GROUP-IREF>
+                                </MODE-SWITCH-POINT>
+								«ENDFOREACH-»
+							«ENDIF»
+                          «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                           «FOREACH PartialNWPara.comM_PNC_Ref.comMChannelPerPnc AS ChannelSize ITERATOR i -»
+                                «IF PartialNWPara.isRxEnabled == true-»
+                                <MODE-SWITCH-POINT>
+                                <SHORT-NAME>MSP_PduGrpSwitch_Rx_Req_«PartialNWPara.comM_PNC_Ref.shortName -»_Ch«ChannelSize.comMChannelId -»</SHORT-NAME>
+                                <MODE-GROUP-IREF>
+                                    <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_Pdugroupswitch_RxReq_BswM_«PartialNWPara.comM_PNC_Ref.shortName -»_Ch«ChannelSize.comMChannelId -»</CONTEXT-P-PORT-REF>
+                                    <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/RB/GM_SUM/Interfaces/PNC_BswMPduGroupSwitchRxReq_Interface/MDG_PduGroup_State_Rx</TARGET-MODE-GROUP-REF>
+                                </MODE-GROUP-IREF>
+                                </MODE-SWITCH-POINT>
+                                «ENDIF-»
+                          «ENDFOREACH»
+                          «ENDFOREACH»
+                          «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                           «FOREACH PartialNWPara.comM_PNC_Ref.comMChannelPerPnc AS ChannelSize ITERATOR i -»
+                           «IF PartialNWPara.isTxEnabled == true-»
+                                <MODE-SWITCH-POINT>
+                                <SHORT-NAME>MSP_PduGrpSwitch_Tx_Req_«PartialNWPara.comM_PNC_Ref.shortName -»_Ch«ChannelSize.comMChannelId -»</SHORT-NAME>
+                                <MODE-GROUP-IREF>
+                                    <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_Pdugroupswitch_TxReq_BswM_«PartialNWPara.comM_PNC_Ref.shortName -»_Ch«ChannelSize.comMChannelId -»</CONTEXT-P-PORT-REF>
+                                    <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/RB/GM_SUM/Interfaces/PNC_BswMPduGroupSwitchTxReq_Interface/MDG_PduGroup_State_Tx</TARGET-MODE-GROUP-REF>
+                                </MODE-GROUP-IREF>
+                                </MODE-SWITCH-POINT>
+                                 «ENDIF-»
+                        «ENDFOREACH»
+                         «ENDFOREACH»
+
+						 «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+								<MODE-SWITCH-POINT>
+                                <SHORT-NAME>MSP_BswM_ComM_CurrentPNCModeReq_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                                <MODE-GROUP-IREF>
+                                    <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_BswM_ComM_CurrentPNCMode_Req_«PartialNWPara.comM_PNC_Ref.shortName -»</CONTEXT-P-PORT-REF>
+                                    <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/RB/GM_SUM/Interfaces/PNC_BswM_ComM_CurrentPNCModeReq_«PartialNWPara.comM_PNC_Ref.shortName -»/MDG_REQ_PNC_State</TARGET-MODE-GROUP-REF>
+                                </MODE-GROUP-IREF>
+                                </MODE-SWITCH-POINT>
+                                <MODE-SWITCH-POINT>
+                                <SHORT-NAME>MSP_PNC_DM_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                                <MODE-GROUP-IREF>
+                                  <CONTEXT-P-PORT-REF DEST="P-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/PP_PNC_BswM_PDUGroup_DM_Switch_«PartialNWPara.comM_PNC_Ref.shortName -»</CONTEXT-P-PORT-REF>
+                                  <TARGET-MODE-GROUP-REF DEST="MODE-DECLARATION-GROUP-PROTOTYPE">/Interfaces/PNC_«PartialNWPara.comM_PNC_Ref.shortName -»_Group_DM_Switch/PNC_DM</TARGET-MODE-GROUP-REF>
+                                </MODE-GROUP-IREF>
+                                </MODE-SWITCH-POINT>
+						«ENDFOREACH»
+
+                          </MODE-SWITCH-POINTS>
+
+						  <PARAMETER-ACCESSS>
+						  «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                            <PARAMETER-ACCESS>
+                              <SHORT-NAME>ParameterAccess_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                              <ACCESSED-PARAMETER>
+                                <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/PNC_C_ProcessPN_«PartialNWPara.comM_PNC_Ref.shortName -»</LOCAL-PARAMETER-REF>
+                              </ACCESSED-PARAMETER>
+                            </PARAMETER-ACCESS>
+							«ENDFOREACH»
+							«FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                            <PARAMETER-ACCESS>
+                              <SHORT-NAME>ParameterAccess_SUM_PN_DTC_TIMER_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                              <ACCESSED-PARAMETER>
+                                <LOCAL-PARAMETER-REF DEST="PARAMETER-DATA-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/IB_PNC/SUM_PN_DTC_TIMER_«PartialNWPara.comM_PNC_Ref.shortName -»</LOCAL-PARAMETER-REF>
+                              </ACCESSED-PARAMETER>
+                            </PARAMETER-ACCESS>
+                           «ENDFOREACH»
+                          </PARAMETER-ACCESSS>
+
+                          <SERVER-CALL-POINTS>
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Sensors - 1) AS k ITERATOR j»
+                                <SYNCHRONOUS-SERVER-CALL-POINT>
+                                <SHORT-NAME>SynchronousServerCallPoint_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                                <OPERATION-IREF>
+                                    <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_Act_Sensor_CS«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</CONTEXT-R-PORT-REF>
+                                    <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/Interfaces/PNC_Activation_sensor_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»/Activationsensor«j.counter0-»_op</TARGET-REQUIRED-OPERATION-REF>
+                                </OPERATION-IREF>
+                                </SYNCHRONOUS-SERVER-CALL-POINT>
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+                			 <SYNCHRONOUS-SERVER-CALL-POINT>
+                              <SHORT-NAME>SynchronousServerCallPoint_SusdPncUpdateRecord</SHORT-NAME>
+                              <OPERATION-IREF>
+                                <CONTEXT-R-PORT-REF DEST="R-PORT-PROTOTYPE">/RB/GM_SUM/Components/SUM_PNC/RP_PNC_SUSD_RecordInfo</CONTEXT-R-PORT-REF>
+                                <TARGET-REQUIRED-OPERATION-REF DEST="CLIENT-SERVER-OPERATION">/GM_SUM/Interfaces/SUSD_PNC_UpdateRecord/UpdateRecord</TARGET-REQUIRED-OPERATION-REF>
+                              </OPERATION-IREF>
+                            </SYNCHRONOUS-SERVER-CALL-POINT>
+                    	 </SERVER-CALL-POINTS>
+                          <SYMBOL>SUM_PNC_Mainfunction</SYMBOL>
+                        </RUNNABLE-ENTITY>
+                      </RUNNABLES>
+                      <SHARED-PARAMETERS>
+«FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                      <PARAMETER-DATA-PROTOTYPE>
+                          <SHORT-NAME>PNC_C_ProcessPN_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+						   <SW-DATA-DEF-PROPS>
+						  <SW-DATA-DEF-PROPS-VARIANTS>
+                              <SW-DATA-DEF-PROPS-CONDITIONAL>
+                                <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                                <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                              </SW-DATA-DEF-PROPS-CONDITIONAL>
+                            </SW-DATA-DEF-PROPS-VARIANTS>
+							</SW-DATA-DEF-PROPS>
+                          <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/boolean</TYPE-TREF>
+						  <INIT-VALUE>
+                            <NUMERICAL-VALUE-SPECIFICATION>
+                              <VALUE>1</VALUE>
+                            </NUMERICAL-VALUE-SPECIFICATION>
+                          </INIT-VALUE>
+                        </PARAMETER-DATA-PROTOTYPE>
+ «ENDFOREACH-»
+«REM»[$Satisfies $SDD_PNC 086]«ENDREM-»
+ «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                      <PARAMETER-DATA-PROTOTYPE>
+                          <SHORT-NAME>SUM_PN_DTC_TIMER_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+						   <SW-DATA-DEF-PROPS>
+						  <SW-DATA-DEF-PROPS-VARIANTS>
+                              <SW-DATA-DEF-PROPS-CONDITIONAL>
+                                <SW-CALIBRATION-ACCESS>READ-WRITE</SW-CALIBRATION-ACCESS>
+                                <SW-IMPL-POLICY>STANDARD</SW-IMPL-POLICY>
+                              </SW-DATA-DEF-PROPS-CONDITIONAL>
+                            </SW-DATA-DEF-PROPS-VARIANTS>
+							</SW-DATA-DEF-PROPS>
+                          <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/uint32</TYPE-TREF>
+«REM»[$Satisfies $SDD_PNC 094]«ENDREM-»
+						  <INIT-VALUE>
+                            <NUMERICAL-VALUE-SPECIFICATION>
+                              <VALUE>«PartialNWPara.sUM_PN_DTC_TIMER»</VALUE>
+                            </NUMERICAL-VALUE-SPECIFICATION>
+                          </INIT-VALUE>
+                        </PARAMETER-DATA-PROTOTYPE>
+ «ENDFOREACH-»
+                        </SHARED-PARAMETERS>
+                    </SWC-INTERNAL-BEHAVIOR>
+                  </INTERNAL-BEHAVIORS>
+                </APPLICATION-SW-COMPONENT-TYPE>
+                    <SWC-IMPLEMENTATION>
+                    <SHORT-NAME>SwcImplementation_IB_PNC</SHORT-NAME>
+                    <CODE-DESCRIPTORS>
+                    <CODE>
+                      <SHORT-NAME>Code_0_0</SHORT-NAME>
+                      <ARTIFACT-DESCRIPTORS>
+                        <AUTOSAR-ENGINEERING-OBJECT>
+                          <SHORT-LABEL>AEO0</SHORT-LABEL>
+                          <CATEGORY>SWSRC</CATEGORY>
+                        </AUTOSAR-ENGINEERING-OBJECT>
+                      </ARTIFACT-DESCRIPTORS>
+                    </CODE>
+                    </CODE-DESCRIPTORS>
+                    <PROGRAMMING-LANGUAGE>C</PROGRAMMING-LANGUAGE>
+                    <RESOURCE-CONSUMPTION>
+       					<SHORT-NAME>Pnc_ResourceConsumption_0</SHORT-NAME>
+        				 <MEMORY-SECTIONS>
+         				 <MEMORY-SECTION>
+            			  <SHORT-NAME>CODE</SHORT-NAME>
+          			     </MEMORY-SECTION>
+        		         <MEMORY-SECTION>
+            			  <SHORT-NAME>VAR_CLEARED_8</SHORT-NAME>
+          			     </MEMORY-SECTION>
+          			    </MEMORY-SECTIONS>
+      				</RESOURCE-CONSUMPTION>
+                    <BEHAVIOR-REF DEST="SWC-INTERNAL-BEHAVIOR">/RB/GM_SUM/Components/SUM_PNC/IB_PNC</BEHAVIOR-REF>
+                    </SWC-IMPLEMENTATION>
+              </ELEMENTS>
+            </AR-PACKAGE>
+            <AR-PACKAGE>
+                <SHORT-NAME>Interfaces</SHORT-NAME>
+                <ELEMENTS>
+                 «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                    <MODE-SWITCH-INTERFACE>
+                    <SHORT-NAME>PNC_BswM_ComM_CurrentPNCModeUser_«PartialNWPara.comM_PNC_Ref.shortName »</SHORT-NAME>
+                    <IS-SERVICE>false</IS-SERVICE>
+                    <MODE-GROUP>
+                        <SHORT-NAME>MDGP_PNCState</SHORT-NAME>
+                        <TYPE-TREF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/PNC_State</TYPE-TREF>
+                    </MODE-GROUP>
+                    </MODE-SWITCH-INTERFACE>
+               «ENDFOREACH»
+                «FOREACH pNCGeneral.comM_PNC_Channel.comM_Channel_Ref AS network ITERATOR k-»
+                    <MODE-SWITCH-INTERFACE>
+                    <SHORT-NAME>PNC_ComM_CurrentModeUser_«network.comMChannelId»</SHORT-NAME>
+                    <IS-SERVICE>false</IS-SERVICE>
+                    <MODE-GROUP>
+                        <SHORT-NAME>ComMChannel_State</SHORT-NAME>
+                        <TYPE-TREF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/ComMChannel_State</TYPE-TREF>
+                    </MODE-GROUP>
+                    </MODE-SWITCH-INTERFACE>
+                «ENDFOREACH»
+              «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                    <MODE-SWITCH-INTERFACE>
+                    <SHORT-NAME>PNC_BswM_ComM_CurrentPNCModeReq_«PartialNWPara.comM_PNC_Ref.shortName »</SHORT-NAME>
+                    <IS-SERVICE>false</IS-SERVICE>
+                    <MODE-GROUP>
+                      <SHORT-NAME>MDG_REQ_PNC_State</SHORT-NAME>
+                      <TYPE-TREF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/PNC_State</TYPE-TREF>
+                    </MODE-GROUP>
+                    </MODE-SWITCH-INTERFACE>
+                 «ENDFOREACH»
+
+                    <MODE-SWITCH-INTERFACE>
+                    <SHORT-NAME>PNC_BswMPduGroupSwitchRxReq_Interface</SHORT-NAME>
+                    <IS-SERVICE>false</IS-SERVICE>
+                    <MODE-GROUP>
+                        <SHORT-NAME>MDG_PduGroup_State_Rx</SHORT-NAME>
+                        <TYPE-TREF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/PduGroup_State</TYPE-TREF>
+                    </MODE-GROUP>
+                    </MODE-SWITCH-INTERFACE>
+
+
+                    <MODE-SWITCH-INTERFACE>
+                    <SHORT-NAME>PNC_BswMPduGroupSwitchTxReq_Interface</SHORT-NAME>
+                    <IS-SERVICE>false</IS-SERVICE>
+                    <MODE-GROUP>
+                        <SHORT-NAME>MDG_PduGroup_State_Tx</SHORT-NAME>
+                        <TYPE-TREF DEST="MODE-DECLARATION-GROUP">/GM_SUM/Infrastructure/PduGroup_State</TYPE-TREF>
+                    </MODE-GROUP>
+                    </MODE-SWITCH-INTERFACE>
+
+                    </ELEMENTS>
+                  </AR-PACKAGE>
+                </AR-PACKAGES>
+              </AR-PACKAGE>
+            </AR-PACKAGES>
+           </AR-PACKAGE>
+          <AR-PACKAGE>
+          <SHORT-NAME>Interfaces</SHORT-NAME>
+            <ELEMENTS>
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Sensors - 1) AS k ITERATOR j»
+                    <CLIENT-SERVER-INTERFACE>
+                      <SHORT-NAME>PNC_Activation_sensor_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                      <IS-SERVICE>false</IS-SERVICE>
+                      <OPERATIONS>
+                        <CLIENT-SERVER-OPERATION>
+                          <SHORT-NAME>Activationsensor«j.counter0-»_op</SHORT-NAME>
+                          <ARGUMENTS>
+                            <ARGUMENT-DATA-PROTOTYPE>
+                              <SHORT-NAME>Arg_Activation_criteria_out</SHORT-NAME>
+                              <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/RB/GM_SUM/ImplementationDatatype/Criteria_Struct</TYPE-TREF>
+                              <DIRECTION>OUT</DIRECTION>
+                            </ARGUMENT-DATA-PROTOTYPE>
+                          </ARGUMENTS>
+                         <POSSIBLE-ERROR-REFS>
+                         <POSSIBLE-ERROR-REF DEST="APPLICATION-ERROR">/Interfaces/PNC_Activation_sensor_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»/E_NOT_OK</POSSIBLE-ERROR-REF>
+                        </POSSIBLE-ERROR-REFS>
+                        </CLIENT-SERVER-OPERATION>
+                      </OPERATIONS>
+                   <POSSIBLE-ERRORS>
+                     <APPLICATION-ERROR>
+                      <SHORT-NAME>E_NOT_OK</SHORT-NAME>
+                      <ERROR-CODE>1</ERROR-CODE>
+                    </APPLICATION-ERROR>
+                  </POSSIBLE-ERRORS>
+                    </CLIENT-SERVER-INTERFACE>
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Signals - 1) AS k ITERATOR j»
+                    <SENDER-RECEIVER-INTERFACE>
+                      <SHORT-NAME>PNC_Activation_signal_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                      <IS-SERVICE>false</IS-SERVICE>
+                      <DATA-ELEMENTS>
+                        <VARIABLE-DATA-PROTOTYPE>
+                          <SHORT-NAME>Act_Sig_«j.counter0-»</SHORT-NAME>
+                          <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/RB/GM_SUM/ImplementationDatatype/Criteria_Struct</TYPE-TREF>
+                        </VARIABLE-DATA-PROTOTYPE>
+                      </DATA-ELEMENTS>
+                    </SENDER-RECEIVER-INTERFACE>
+                    «ENDFOREACH-»
+                    «ENDFOREACH-»
+                    «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+                    «FOREACH 0.upTo(PartialNWPara.number_of_PNC_Activation_Signals - 1) AS k ITERATOR j»
+                  <SENDER-RECEIVER-INTERFACE>
+                    <SHORT-NAME>PNC_Activation_Signals_Status_«j.counter0-»_«PartialNWPara.comM_PNC_Ref.shortName -»</SHORT-NAME>
+                    <IS-SERVICE>false</IS-SERVICE>
+                    <DATA-ELEMENTS>
+                      <VARIABLE-DATA-PROTOTYPE>
+                        <SHORT-NAME>Act_Sig_Stat_«j.counter0-»</SHORT-NAME>
+                        <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/RB/GM_SUM/ImplementationDatatype/Criteria_Struct</TYPE-TREF>
+                      </VARIABLE-DATA-PROTOTYPE>
+                    </DATA-ELEMENTS>
+                  </SENDER-RECEIVER-INTERFACE>
+                  «ENDFOREACH-»
+                  «ENDFOREACH-»
+                  <SENDER-RECEIVER-INTERFACE>
+                    <SHORT-NAME>PNC_SUSD_PermitExecution</SHORT-NAME>
+                    <IS-SERVICE>false</IS-SERVICE>
+                    <DATA-ELEMENTS>
+                      <VARIABLE-DATA-PROTOTYPE>
+                        <SHORT-NAME>SUSD_SWC_ExecutionStatus</SHORT-NAME>
+                        <TYPE-TREF DEST="IMPLEMENTATION-DATA-TYPE">/AUTOSAR_PlatformTypes/ImplementationDataTypes/uint8</TYPE-TREF>
+                      </VARIABLE-DATA-PROTOTYPE>
+                    </DATA-ELEMENTS>
+                  </SENDER-RECEIVER-INTERFACE>
+                  <MODE-DECLARATION-GROUP>
+                    <SHORT-NAME>MDG_PNC_DM</SHORT-NAME>
+                    <CATEGORY>EXPLICIT_ORDER</CATEGORY>
+                    <INITIAL-MODE-REF DEST="MODE-DECLARATION">/Interfaces/MDG_PNC_DM/PN_DM_ENABLE</INITIAL-MODE-REF>
+                    <MODE-DECLARATIONS>
+                      <MODE-DECLARATION>
+                        <SHORT-NAME>PN_DM_ENABLE</SHORT-NAME>
+                        <VALUE>1</VALUE>
+                      </MODE-DECLARATION>
+                      <MODE-DECLARATION>
+                        <SHORT-NAME>PN_DM_DISABLE</SHORT-NAME>
+                        <VALUE>0</VALUE>
+                      </MODE-DECLARATION>
+                    </MODE-DECLARATIONS>
+                  </MODE-DECLARATION-GROUP>
+                  «FOREACH pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara-»
+                  <MODE-SWITCH-INTERFACE>
+                    <SHORT-NAME>PNC_«PartialNWPara.comM_PNC_Ref.shortName -»_Group_DM_Switch</SHORT-NAME>
+                    <IS-SERVICE>false</IS-SERVICE>
+                    <MODE-GROUP>
+                      <SHORT-NAME>PNC_DM</SHORT-NAME>
+                      <TYPE-TREF DEST="MODE-DECLARATION-GROUP">/Interfaces/MDG_PNC_DM</TYPE-TREF>
+                    </MODE-GROUP>
+                  </MODE-SWITCH-INTERFACE>
+				«ENDFOREACH»
+            </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>
+«ENDFILE»
+«ENDDEFINE»

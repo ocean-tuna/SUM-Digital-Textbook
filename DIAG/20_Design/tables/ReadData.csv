@@ -1,0 +1,9 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};ReadData
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};N\/A
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Parameters};Dcm_OpStatusType OpStatus \newline const uint8 * Data
+\cellcolor{ETASlightgray}\textbf{Return};Std_ReturnType (E_OK, E_NOT_OK)
+\cellcolor{ETASlightgray}\textbf{Description};This routine is responsible for: \newline Reading the updated MEC data from MEC RAM mirror block

@@ -1,0 +1,64 @@
+@startuml sd_TimeSyncMsgSync
+skinparam ParticipantPadding 10
+
+mainframe SUM_TCS Synchronization with Master
+
+participant Com
+participant NvM
+
+participant SUM_SUSD as susd
+participant SUM_SSM as ssm
+
+
+box SUM_TCS
+    participant IRVs as RTE
+    participant Runnable_TCS_PermitExecutionShutdown as shutter
+    participant Runnable_TCS_MasterClockPolling as poll
+end box
+
+== Pre-condition (COMMON TO ALL SCENARIOS) ==
+
+note over RTE, manager
+    SUM_TCS has been initialized. Nv block default value are aligned to TCS NvM block.
+    SUM_TCS operating mode don't care
+end note
+
+susd -> shutter: request SUM_TCS functionalties from interface //SUSD_PermitExecution//
+activate shutter
+shutter -> RTE: set TCS_permit_execution = TRUE
+deactivate shutter
+
+== Scenario 1: Synchronization with Master Clock ==
+
+group Periodic [MasterClockPollingPeriodicity]
+    RTE -> poll: read TCS_permit_execution
+    activate poll
+    ssm -> poll: //RxMonitoredSignal_Av// = AVAILABLE
+    Com -> poll: TimeSync message receiving on interface TimeSyncMessage
+    poll -> poll: enter in EA_Clock_Update
+    activate poll
+    poll -> NvM: set TCS_LocalTime_Value with value of message received
+    poll -> poll: exit from EA_Clock_Update
+    deactivate poll
+    alt RxMonitoredSignal_Av contains AVAILABLE
+        poll -> NvM: TCS_TotalVehicleTimeValue + 1
+    end
+    poll -> NvM: //NvM_SetRamBlockStatus(...,) passes TRUE//
+    activate NvM
+    NvM --> poll
+    deactivate NvM
+    poll -> RTE: reset TCS_LocalTimeCounter
+    deactivate poll
+end group
+
+== Scenario 2: Missing Synchronization withy Master clock ==
+
+group Periodic [MasterClockPollingPeriodicity]
+    RTE -> poll: read TCS_permit_execution
+    activate poll
+    ssm -> poll: //RxMonitoredSignal_Av// = NOT_AVAILABLE
+    Com -->x poll: TimeSync message receiving on interface TimeSyncMessage
+    deactivate poll
+end group
+
+@enduml

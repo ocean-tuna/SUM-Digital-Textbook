@@ -1,0 +1,197 @@
+«IMPORT bsw»
+«IMPORT bsw::SrvcMgrModule»
+«IMPORT bsw::Sd»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND SrvcMgr FOR ecu»
+«ENDDEFINE»
+
+«DEFINE SrvcMgr FOR Ecu»
+
+«FILE "Sum_SrvcMgr_Cfg.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Banner
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SrvcMgr
+ * Date        : Apr 20, 2026
+ * Revision    : 8.0.1_Pr16
+ * Description : Header file for Service Manager Config
+ ***************************************************************************************************
+ * END:Banner
+ ***************************************************************************************************
+*/
+
+#ifndef SUM_SRVCMGR_CFG_H
+#define SUM_SRVCMGR_CFG_H
+
+/*
+ ***************************************************************************************************
+ * Includes
+ ***************************************************************************************************
+ */
+#include "Sum_SrvcMgr_Prv.h"
+#include "Rte_SUM_SrvcMgr_Type.h"
+#pragma PRQA_NO_SIDE_EFFECTS Sum_SrvcMgr_pub_HasServiceConsumedEventGroup
+/*
+ ***************************************************************************************************
+ * Defines
+ ***************************************************************************************************
+ */
+
+«IF srvcMgr.sum_SrvcMgr_General.sum_SrvcMgr_PermitExecutionMask != null »
+#define SUM_SRVCMGR_PERMITEXECUTION_MASK (uint8)«srvcMgr.sum_SrvcMgr_General.sum_SrvcMgr_PermitExecutionMask -»
+«ELSE-»
+#define SUM_SRVCMGR_PERMITEXECUTION_MASK (uint8)0xFE
+«ENDIF-»
+
+
+«IF sd.sdConfig.sdServiceGroup.size > 0 -»
+/** Number of Service Group configured inside the Sd/SdConfig container */
+#define SUM_SRVCMGR_NUMBER_OF_SRVCGRP_CONFIGURED «sd.sdConfig.sdServiceGroup.size»u
+«ENDIF-»
+/** Number of Service (either Client or Service) configured inside each Sd/SdInstance container */
+#define SUM_SRVCMGR_NUMBER_OF_SRVC_CONFIGURED «sd.sdConfig.sdInstance.sdClientService.size + sd.sdConfig.sdInstance.sdServerService.size»u
+
+ /**************************************************************************************************
+ * Type definitions
+ ***************************************************************************************************
+ */
+
+«IF srvcMgr.sum_SrvcMgr_ConfigSet.sum_SrvcMgr_DcmReferences.sum_SrvcMgr_Rid_0612_Ref != null -»
+typedef enum Sum_SrvcMgr_ControlOptionByteOneRid0x0612Type
+{
+	SUM_SrvcMgr_Retrieve_Range_of_Service_Ids = 0x00u ,
+	SUM_SrvcMgr_Report_Number_of_Client_Service_Ids = 0x01u,
+	SUM_SrvcMgr_Report_Number_of_Server_Service_Ids = 0x02u
+} Sum_SrvcMgr_ControlOptionByteOneRid0x0612;
+
+typedef enum Sum_SrvcMgr_ControlOptionByteTwoRid0x0612Type
+{
+	SUM_SrvcMgr_Report_Learning_Table_Information = 0x00u ,
+	SUM_SrvcMgr_Client_Table = 0x01u,
+	SUM_SrvcMgr_Server_Table = 0x02u
+} Sum_SrvcMgr_ControlOptionByteTwoRid0x0612;
+«ENDIF-»
+/*
+ ******************************************************************************
+ * Externed DataStructures - For SrvMgr Internal Use
+ ******************************************************************************
+ */
+
+ /**************************************************************************************************
+ * Type definitions
+ ***************************************************************************************************
+ */
+
+/*
+ ******************************************************************************
+ * Externed DataStructures - For SrvMgr Internal Use
+ ******************************************************************************
+ */
+
+typedef enum Sum_SrvcMgr_CalibrationStateType{
+    SUM_SrvcMgr_CalibrationON = 0x00u,
+	SUM_SrvcMgr_CalibrationOFF
+}Sum_SrvcMgr_CalibrationState;
+
+/**
+ * @brief Enum used to indicate to the function Sum_SrvcMgr_pub_isIdConfigured if the search shall be done for a Service or a Service Group.
+ *
+ */
+typedef enum Sum_SrvcMgr_SearchCommandType{
+	SUM_SrvcMgr_SearchServiceGroup = 0x01u,
+	SUM_SrvcMgr_SearchService
+}Sum_SrvcMgr_SearchCommand;
+
+/**
+ * @brief Store the information of the SdConsumedEventGroups of a Client Service.
+ *
+ * Store the information of the SdConsumedEventGroups of a Client Service: in the population of the struct the information
+ * are directly retrieved from the Sd module.
+ */
+typedef struct{
+	const uint16 SrvcMgr_NumberOfSdConsumedEventGroup; /** Number of SdConsumedEventGroups associated to a Client Service */
+	const uint16 *SrvcMgr_ListOfSdConsumedEventGroup;  /** List of SdConsumedEventGroupId of SdConsumedEventGroups associated to a Client Service */
+}SrvcMgr_SrvcClientSdConsumedEventGroupInfoType;
+
+/**
+ * @brief Store the information for every Service Group.
+ *
+ * Store the information for every Service Group: in the population of the struct the information
+ * are directly retrieved from the Sd module.
+ */
+typedef struct{
+	const uint16   SrvcMgr_SrvcGrpId; 			/** Id of the Service Group */
+	const uint16  *SrvcMgr_ListOfSrvcs;		    /** List of Id of the Service associated to this Service Group */
+	const uint16   SrvcMgr_NumberOfSrvcs; 		/** Number of Service associated to this Service Group */
+}SUM_SrvcMgr_SrvcGrpType;
+
+/**
+ * @brief Store the information of the Services Group to which this Service is associated.
+ *
+ * Store the information of the Services Group to which this Service is associated: in the population of the struct the information
+ * are directly retrieved from the Sd module.
+ */
+typedef struct{
+	const uint16 SrvcMgr_NumberOfSrvcGrps; /** Number of Service Group to which this Service is associated. */
+	const uint16 *SrvcMgr_ListOfSrvcGrps;  /** List of Id of Service Group to which this Service is associated. */
+}SrvcMgr_SrvcsGrpAssociatedToSrvcInfoType;
+
+/**
+ * @brief Store the information for every Service.
+ *
+ * Store the information for every Service: in the population of the struct the information
+ * are directly retrieved from the Sd module.
+ */
+typedef struct{
+	const uint16 SrvcMgr_SrvcId;                                                                        /** Id of the Service */
+	uint16 SrvcMgr_SrvcInstanceId;																	    /** Instance ID of the Service */
+	uint8 SrvcMgr_SrvcMajorVersion;																	    /** Major version number of the Service*/
+	const uint16 SrvcMgr_HandleId;                                                                     	/** HandleId of the Service */
+	const SrvcMgr_SrvcsGrpAssociatedToSrvcInfoType *SrvcMgr_SrvcsGrpAssociatedInfo;                     /** Store the information of the Services Group to which this Service is associated. */
+	const SrvcMgr_SrvcClientSdConsumedEventGroupInfoType *SrvcMgr_SrvcClientSdConsumedEventGroupInfo;  	/** Store the information of the SdConsumedEventGroups of a Client Service. */
+	const boolean SrvcMgr_isClientSrvc;                                                                 /** This flag represents if the Service is a Client or a Server Service */
+	Sum_SrvcMgr_CalibrationState SrvcMgr_CalibrationState;                                              /** This flag represents the calibration state of the Service */
+	}SUM_SrvcMgr_SrvcInfoType;
+
+/*
+ ******************************************************************************
+ * Declarations
+ ******************************************************************************
+ */
+
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_IsClientSrvc(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index);
+FUNC(uint16, SUM_SrvcMgr_CODE) Sum_SrvcMgr_prv_GetSrvcHandleId(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index);
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_SetSrvcCalibrationState(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index, CONST(Sum_SrvcMgr_CalibrationState, AUTOMATIC) Sum_SrvcMgr_prv_State);
+FUNC(Sum_SrvcMgr_CalibrationState, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetSrvcCalibrationState(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray);
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_isIdConfigured(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_IndexTarget, CONST(Sum_SrvcMgr_SearchCommand, AUTOMATIC) Sum_SrvcMgr_prv_CommandSearch, P2VAR(uint16, TYPEDEF, RTE_APPL_DATA)Sum_SrvcMgr_prv_IndexSrvcInTheArray);
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_HasServiceConsumedEventGroup(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray);
+FUNC(P2CONST(SrvcMgr_SrvcClientSdConsumedEventGroupInfoType, AUTOMATIC, RTE_APPL_DATA), SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetSrvcClientSdConsumedEventGroupInfo(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_SrvcIndexInTheConfArray);
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_ConfigureServiceGroupActivation(CONST(uint16, AUTOMATIC) Index_of_SrvID, CONST(boolean, AUTOMATIC) Sum_SrvcMgr_prv_ActivationCommand);
+«IF sd.sdConfig.sdServiceGroup.size > 0 -»
+FUNC(uint16, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetNumberofSrvcsInsideSrvcGrp(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index);
+FUNC(P2CONST(uint16, AUTOMATIC, RTE_APPL_DATA), SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetListofSrvcsInsideSrvcGrp(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index);
+«ENDIF-»
+FUNC(boolean, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetSdEnableExtendedLearningTableFormat(void);
+FUNC(Std_ReturnType, SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_RetrieveDtcIdValue (CONST(uint16, AUTOMATIC) serviceId, P2VAR(uint16, AUTOMATIC, RTE_APPL_DATA) dtcValue);
+FUNC(uint8,SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetSrvcMajorVersion(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index);
+FUNC(uint16,SUM_SrvcMgr_CODE) Sum_SrvcMgr_pub_GetSrvcInstanceId(CONST(uint16, AUTOMATIC) Sum_SrvcMgr_prv_Index);
+FUNC(void, SUM_SrvcMgr_CODE) Sum_SrvcMgr_UpdateMajorVersionAndInstanceId(void);
+
+#endif /* SUM_SRVCMGR_CFG_H */
+«ENDFILE-»
+«ENDDEFINE»

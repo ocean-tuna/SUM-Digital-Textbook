@@ -1,0 +1,5 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};setOtaPsf
+\cellcolor{ETASlightgray}\textbf{Parameters};boolean OTA_PSF_Value (OTA PSF value)
+\cellcolor{ETASlightgray}\textbf{Return};void
+\cellcolor{ETASlightgray}\textbf{Description};Stores OTA_PSF_Value in NvM

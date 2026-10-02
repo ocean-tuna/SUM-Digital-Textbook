@@ -1,0 +1,58 @@
+[
+   {
+      "Name": "DataServices_\\textit{Configurable}",
+      "Interface_Type": "C/S",
+      "Src": "SUM_TCS",
+      "Dst": "Dcm,\\\\Dem",
+      "Description": "\\begin{itemize}\\item Interface to manage request from Dcm for DID.\\item Interface to manage request from DTC for obtaining timestamp\\end{itemize}"
+   },
+   {
+      "Name": "TCS_SWC_Clock",
+      "Interface_Type": "S/R",
+      "Src": "SUM_TCS",
+      "Dst": "SWC",
+      "Description": "Interfaces to provide the timestamp to generic SWC"
+   },
+   {
+      "Name": "TimeSyncMessage",
+      "Interface_Type": "S/R",
+      "Src": "Com",
+      "Dst": "SUM_TCS",
+      "Description": "Interface to manage the Master Clock signal receiving from TCS Master"
+   },
+   {
+      "Name": "RxMonitoredSignal_Av",
+      "Interface_Type": "S/R",
+      "Src": "SUM_SSM",
+      "Dst": "SUM_TCS",
+      "Description": "Interface to manage the availability of the Master Cock Signal"
+   },
+   {
+      "Name": "SUSD_PermitExecution",
+      "Interface_Type": "S/R",
+      "Src": "SUM_SUSD",
+      "Dst": "SUM_TCS",
+      "Description": "Interface to manage permission to SUM\\_TCS pfor executing its functionality"
+   },
+   {
+      "Name": "TCS_SUSD_ShutdownPermission",
+      "Interface_Type": "S/R",
+      "Src": "SUM_TCS",
+      "Dst": "SUM_SUSD",
+      "Description": "Interface to manage status of SUM\\_TCS for going to shutdown."
+   },
+   {
+      "Name": "NvMService",
+      "Interface_Type": "C/S",
+      "Src": "NvM",
+      "Dst": "SUM_TCS",
+      "Description": "Interface to manage the NvM services"
+   },
+   {
+      "Name": "BatteryVoltage_DisableNVMWrite",
+      "Interface_Type": "S/R",
+      "Src": "SUSD",
+      "Dst": "TCS",
+      "Description": "Add Description..."
+   }
+]

@@ -1,0 +1,67 @@
+«IMPORT bsw»
+«IMPORT bsw::TcsModule»
+«EXTENSION templates::mathlib»
+«EXTENSION templates::TCS_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND TCS FOR ecu»
+«ENDDEFINE»
+
+«DEFINE TCS FOR Ecu»
+
+«FILE "SUM_TCS.h" -»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_TCS
+ * Date        : Mar 31, 2026
+ * Revision    : 8.0.1_Pr10
+ * Description : TCS Header
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef SUM_TCS_H
+#define SUM_TCS_H
+
+/* TimeSyncMessage reception mode indicators - used by unit tests to select the correct isolate stub */
+«IF Tcs_IsTimeSyncServiceBased(tcs.tcsGeneral)-»
+#define TCS_TIMESYNC_SERVICE_BASED_ENABLED (STD_ON)
+«ELSE-»
+#define TCS_TIMESYNC_SERVICE_BASED_ENABLED (STD_OFF)
+«ENDIF-»
+«IF Tcs_IsTimeSyncGroupSignal(tcs.tcsGeneral)-»
+#define TCS_TIMESYNC_GROUP_SIGNAL_ENABLED (STD_ON)
+«ELSE-»
+#define TCS_TIMESYNC_GROUP_SIGNAL_ENABLED (STD_OFF)
+«ENDIF-»
+«IF Tcs_IsE2EConfigured(tcs.tcsGeneral, "TimeSyncMessage")-»
+#define TCS_TIMESYNC_E2E_ENABLED (STD_ON)
+«ELSE-»
+#define TCS_TIMESYNC_E2E_ENABLED (STD_OFF)
+«ENDIF-»
+
+/* Public function prototypes*/
+«IF tcs.tcsGeneral.tcsGenerateInitRunnable == false-»
+#define TCS_RUNNABLE_INIT_ENABLED (STD_OFF)
+extern void TCS_Init(void);
+«ELSE-»
+#define TCS_RUNNABLE_INIT_ENABLED (STD_ON)
+«ENDIF-»
+
+#endif  /* SUM_TCS_H */
+«ENDFILE-»
+«ENDDEFINE»

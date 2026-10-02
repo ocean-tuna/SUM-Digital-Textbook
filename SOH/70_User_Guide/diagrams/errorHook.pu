@@ -1,0 +1,26 @@
+@startuml errorHook
+
+box "Integrator/User Responsibility"
+    participant "AR-OS"
+    participant "ErrorHook / ProtectionHook" as ErrorHook
+    note over ErrorHook: ErrorHook shall include //SUM_SOH.h//
+end box
+
+box "ETAS Responsibility"
+    participant SUM_SOH
+end box
+
+activate "AR-OS"
+"AR-OS" -> ErrorHook: ErrorHook_CallBack()
+destroy "AR-OS"
+
+activate ErrorHook
+ErrorHook -> SUM_SOH: //SOH_OS_Protection_ErrorHook_Callback()// 
+
+ErrorHook-->"AR-OS"
+deactivate ErrorHook
+
+legend
+**legend**: CallBack that are in //italic// are reponsibility of ETAS
+end legend
+@enduml

@@ -1,0 +1,199 @@
+@startyaml
+SpmConfigSet:
+SpmGeneral:
+  - Name: SpmSMMainFuncPeriodicity
+    Multiplicity: 1 .. 1
+    Type: FLOAT
+    Min: 5.0
+    Default: 10.0
+  - Name: SpmPMMainFuncPeriodicity
+    Multiplicity: 1 .. 1
+    Type: FLOAT
+    Min: 5.0
+    Default: 5.0
+  - Name: SpmBurstPhsPeriodicity
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 5
+    Default: 5
+  - Name: SpmPermitExecutionMask
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 255
+    Default: 254
+  - Name: SpmWkUpHelperFunction
+    Multiplicity: 0 .. 1
+    Type: STRING
+SpmETHWkUpFrmRef:
+  - Name: SpmETHSwitchNetwork
+    Multiplicity: 0 .. 0
+    Type: REFERENCE
+  - Name: SpmETHWkUpFrmTxRef
+    Multiplicity: 0 .. 0
+    Type: REFERENCE
+  - Name: SpmETHWkUpFrmRxRef
+    Multiplicity: 0 .. 0
+    Type: REFERENCE
+SpmCANWkUpFrmRef:
+  - Name: SpmCANWkUpFrmTxRef
+    Multiplicity: 0 .. 2
+    Type: REFERENCE
+  - Name: SpmCANWkUpFrmRxRef
+    Multiplicity: 0 .. Inf
+    Type: REFERENCE
+SpmVLANCom:
+  - Name: SpmVLANId
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 255
+SpmPowPrf:
+  - Name: SpmSrvcAndInstID
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Max: 4294967291
+  - Name: SpmProfNumber
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 255
+  - Name: SpmProfileIsLocal
+    Multiplicity: 1 .. 1
+    Type: BOOLEAN
+    Default: False
+  - Name: SpmLocActivationAllowed
+    Multiplicity: 1 .. 1
+    Type: BOOLEAN
+    Default: False
+  - Name: SpmApplIntfID
+    Multiplicity: 0 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 65535
+  - Name: SpmProfBitMapIndex
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 255
+  - Name: SpmProfActivationTimeOut
+    Multiplicity: 0 .. 0
+    Type: INTEGER
+    Min: 0
+    Max: 255
+  - Name: SpmProfActivationTimeOutVehOff
+    Multiplicity: 0 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 255
+  - Name: SpmVehONDefActPriorON
+    Multiplicity: 0 .. 0
+    Type: ENUMERATION
+    Range: <ol><li>SPM_PRF_AP_NOTAPP</li><li>SPM_PRF_AP_LOW</li><li>SPM_PRF_AP_MEDIUM_LOW</li><li>SPM_PRF_AP_MEDIUM</li><li>SPM_PRF_AP_MEDIUM_HIGH</li><li>SPM_PRF_AP_HIGH</li><li>SPM_PRF_AP_CRITICAL</li><li>SPM_PRF_AP_EMERGENCY</li><li>SPM_PRF_AP_ACCESS</li></ol>
+  - Name: SpmVehDefActPriorON
+    Multiplicity: 0 .. 1
+    Type: ENUMERATION
+    Default: SPM_PRF_AP_NOTAPP
+    Range: <ol><li>SPM_PRF_AP_NOTAPP</li><li>SPM_PRF_AP_LOW</li><li>SPM_PRF_AP_MEDIUM_LOW</li><li>SPM_PRF_AP_MEDIUM</li><li>SPM_PRF_AP_MEDIUM_HIGH</li><li>SPM_PRF_AP_HIGH</li><li>SPM_PRF_AP_CRITICAL</li><li>SPM_PRF_AP_EMERGENCY</li><li>SPM_PRF_AP_ACCESS</li></ol>
+  - Name: SpmVehDefActPriorOFF
+    Multiplicity: 0 .. 1
+    Type: ENUMERATION
+    Default: SPM_PRF_AP_NOTAPP
+    Range: <ol><li>SPM_PRF_AP_NOTAPP</li><li>SPM_PRF_AP_LOW</li><li>SPM_PRF_AP_MEDIUM</li><li>SPM_PRF_AP_HIGH</li><li>SPM_PRF_AP_CRITICAL</li><li>SPM_PRF_AP_EMERGENCY</li></ol>
+  - Name: SpmComIPduGroupEvnt_Tx
+    Multiplicity: 0 .. Inf
+    Type: REFERENCE
+  - Name: SpmComIPduGroupEvnt_Rx
+    Multiplicity: 0 .. Inf
+    Type: REFERENCE
+SpmProfileSwDep:
+  - Name: SpmProfDepType
+    Multiplicity: 1 .. 1
+    Type: ENUMERATION
+    Default: SPM_PRF_DEP_ACT_AND_CONS
+    Range: <ol><li>SPM_PRF_DEP_ACT_AND_CONS</li><li>SPM_PRF_ACTIVATED</li><li>SPM_PRF_CONSUMED</li></ol>
+  - Name: SpmProfRef
+    Multiplicity: 1 .. 1
+    Type: REFERENCE
+SpmPgttEntries:
+SpmTrgDvc:
+  - Name: SpmTrgDvcID
+    Multiplicity: 1 .. Inf
+    Type: STRING
+  - Name: SpmTrgDvcDtcBaseID
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 65535
+  - Name: SpmTrgDvcDtcTimeOut
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 65535
+  - Name: SpmTrgDvcDiagAddr
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 255
+    Default: 0
+SpmTrgDvcHndlngInfo:
+  - Name: SpmTrgAssocWkUpFrm
+    Multiplicity: 1 .. 1
+    Type: ENUMERATION
+    Range: <ol><li>WKUP_FRM_A</li><li>WKUP_FRM_B</li></ol>
+  - Name: SpmTrgAssocWkupBit
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 63
+SpmWkngDvc:
+  - Name: SpmNodeType
+    Multiplicity: 1 .. 1
+    Type: ENUMERATION
+    Default: SPM_NODE_INTERMEDIATE
+    Range: <ol><li>SPM_NODE_EDGE</li><li>SPM_NODE_INTERMEDIATE</li></ol>
+  - Name: SpmIntermediateDstAddrs
+    Multiplicity: 0 .. 1
+    Type: STRING
+  - Name: SpmSrcIp
+    Multiplicity: 1 .. Inf
+    Type: STRING
+  - Name: SpmDstIp
+    Multiplicity: 1 .. Inf
+    Type: STRING
+SpmTrgDvcInfo:
+  - Name: SpmTrgDvcRef
+    Multiplicity: 1 .. 1
+    Type: REFERENCE
+  - Name: SpmWkUpSeqRef
+    Multiplicity: 0 .. 1
+    Type: REFERENCE
+SpmWkUpSeq:
+  - Name: SpmComStepSeparatPeridoForShutDownInit (OBSOLETE - NOT SUPPORTED ANYMORE)
+    Multiplicity: 0 .. 0
+    Type: INTEGER
+    Min: 1
+    Max: 65535
+    Default: 1
+SpmWkUpStep:
+  - Name: SpmStepID
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 1
+    Max: 255
+  - Name: SpmCommandType
+    Multiplicity: 1 .. 1
+    Type: ENUMERATION
+    Range: <ol><li>SEND_TC10_SWTCH_1</li><li>SEND_TC10_SWTCH_2</li><li>SEND_ETH_WKUP_FRM_A</li><li>SEND_ETH_WKUP_FRM_B</li><li>SEND_CAN_WKUP_FRM_A</li><li>SEND_CAN_WKUP_FRM_B</li><li>SEND_BOARD_LV_WKUP_GPIO</li></ol>
+  - Name: SpmCommandValue
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 255
+  - Name: SpmSeqStepDly
+    Multiplicity: 1 .. 1
+    Type: INTEGER
+    Min: 0
+    Max: 65535
+    Default: 0
+@endyaml

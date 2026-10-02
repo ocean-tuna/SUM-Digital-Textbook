@@ -1,0 +1,9 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};WriteData
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};N\/A
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};BatteryVoltage_DisableNVMWrite and NvMService
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};DIAG_GetMEC and NvMService
+\cellcolor{ETASlightgray}\textbf{Parameters};const uint8 * Data \newline Dcm_OpStatusType OpStatus \newline Dcm_NegativeResponseCodeType * const ErrorCode
+\cellcolor{ETASlightgray}\textbf{Return};Std_ReturnType (E_OK, E_NOT_OK, or E_PENDING)
+\cellcolor{ETASlightgray}\textbf{Description};This routine is responsible for: \newline Writing the updated MEC data \newline Writing the updated MEC value to output port \newline Once the MEC value reaches 0 it shall be ignored and not be written to the NvM

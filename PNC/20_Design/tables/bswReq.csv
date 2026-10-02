@@ -1,0 +1,6 @@
+5;5;2
+Mode Requester interface (PNC-BSWM);Description; Info obtained via
+PNC_BswM_CurrentPNCModeReq;PNC_BswM_CurrentPNCModeReq to request the appropriate PN(s) to be activated / deactivated;ComM
+PNC_BswMPduGroupSwitchTxReq; To request enabling / disabling relevant Tx PDU groups;Com
+PNC_BswMPduGroupSwitchRxReq; To request enabling / disabling relevant Rx PDU groups;Com
+PNC_BswM_PDUGroup_DM_Switch; To request enabling / disabling of Rx PDU Group deadline monitoring;Com

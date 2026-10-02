@@ -1,0 +1,206 @@
+import bsw;
+import bsw::SSFMModule;
+import bsw::ComModule;
+import bsw::SdModule;
+import bsw::DemModule;
+
+extension templates::mathlib;
+extension org::eclipse::xtend::util::stdlib::elementprops;
+extension org::eclipse::xtend::util::stdlib::io;
+extension org::eclipse::xtend::util::stdlib::counter;
+extension org::eclipse::xtend::util::stdlib::cloning;
+extension Util::SSFM_Utils;
+
+////////////////////////////// E0B9 //////////////////////////////
+// Returns True if the DID_E0B9 is configured in Dcm
+Boolean Ssfm_DID_E0B9_IsConfigured(SSFM cfg):
+    cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.exists(e|e.dcmDspDidIdentifier == 57529) == true // 0xE0B9
+;
+
+// Returns the short name of the configured DID_E0B9 in the Dcm
+String Ssfm_DID_E0B9_ShortName(SSFM cfg):
+    if Ssfm_DID_E0B9_IsConfigured(cfg) then (
+        cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.select(e|e.dcmDspDidIdentifier == 57529).first().shortName // 0xE0B9
+    )
+    else (
+        throwError("DID_E0B9 is not configured in Dcm.")
+    )
+;
+
+// Returns the short name of the configured DID_E0B9 data type in the Dcm
+String Ssfm_DID_E0B9_Data_ShortName(SSFM cfg):
+    if Ssfm_DID_E0B9_IsConfigured(cfg) then (
+        cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid
+        .select(e|e.dcmDspDidIdentifier == 57529).first() // 0xE0B9
+        .dcmDspDidSignal.dcmDspDidDataRef.shortName.first()
+    )
+    else (
+        throwError("DID_E0B9 is not configured in Dcm.")
+    )
+;
+
+////////////////////////////// E0B8 //////////////////////////////
+// Returns True if the DID_E0B8 is configured in Dcm
+Boolean Ssfm_DID_E0B8_IsConfigured(SSFM cfg):
+    cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.exists(e|e.dcmDspDidIdentifier == 57528) == true // 0xE0B8
+;
+
+// Returns the short name of the configured DID_E0B8 in the Dcm
+String Ssfm_DID_E0B8_ShortName(SSFM cfg):
+    if Ssfm_DID_E0B8_IsConfigured(cfg) then (
+        cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.select(e|e.dcmDspDidIdentifier == 57528).first().shortName // E0B8
+    )
+    else (
+        throwError("DID_E0B8 is not configured in Dcm.")
+    )
+;
+
+// Returns the short name of the configured DID_E0B8 data type in the Dcm
+String Ssfm_DID_E0B8_Data_ShortName(SSFM cfg):
+    if Ssfm_DID_E0B8_IsConfigured(cfg) then (
+        cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid
+        .select(e|e.dcmDspDidIdentifier == 57528).first() // E0B8
+        .dcmDspDidSignal.dcmDspDidDataRef.shortName.first()
+    )
+    else (
+        throwError("DID_E0B8 is not configured in Dcm.")
+    )
+;
+
+
+// Returns the DCM DcmDspDataByteSize (max buffer length) for DID 0xE0B8
+Integer Ssfm_DID_E0B8_DcmByteSize(SSFM cfg):
+    cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid
+    .select(e|e.dcmDspDidIdentifier == 57528).first() // 0xE0B8
+    .dcmDspDidSignal.first().dcmDspDidDataRef.dcmDspDataByteSize
+;
+
+// Returns max_msgs = (DCM_E0B8_length - 1) / 10. Validated by Sum_Ssfm.chk.
+Integer Ssfm_DID_E0B8_CalcMaxMsgs(SSFM cfg):
+    (Ssfm_DID_E0B8_DcmByteSize(cfg) - 1) / 10
+;
+
+
+// Returns true if DCM DcmDspDataByteSize for E0B8 satisfies format 1 + N*10
+Boolean Ssfm_DID_E0B8_IsDcmLengthFormatValid(SSFM cfg):
+    let payload = Ssfm_DID_E0B8_DcmByteSize(cfg) - 1 :
+    (payload - ((payload / 10) * 10)) == 0
+;
+
+// Returns true if N = (dcm_length - 1) / 10 is within supported range [1, 255]
+Boolean Ssfm_DID_E0B8_IsDcmLengthRangeValid(SSFM cfg):
+    let n = (Ssfm_DID_E0B8_DcmByteSize(cfg) - 1) / 10 :
+    (n >= 1 && n <= 255)
+;
+
+// Returns true if NvM NvMNvBlockLength matches DCM DcmDspDataByteSize for E0B8
+Boolean Ssfm_DID_E0B8_IsNvmLengthConsistent(SSFM cfg):
+    cfg.sum_Ssfm_Errh_DID.sum_Ssfm_NvM_References.sum_Ssfm_CommFigureOfMeritNvmRef.nvMNvBlockLength == Ssfm_DID_E0B8_DcmByteSize(cfg)
+;
+
+////////////////////////////// E0BA //////////////////////////////
+// Returns True if the DID_E0BA is configured in Dcm
+Boolean Ssfm_DID_E0BA_IsConfigured(SSFM cfg):
+    cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.exists(e|e.dcmDspDidIdentifier == 57530) == true // 0xE0BA
+;
+
+// Returns the short name of the configured DID_E0BA in the Dcm
+String Ssfm_DID_E0BA_ShortName(SSFM cfg):
+    if Ssfm_DID_E0BA_IsConfigured(cfg) then (
+        cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.select(e|e.dcmDspDidIdentifier == 57530).first().shortName // E0BA
+    )
+    else (
+        throwError("DID_E0BA is not configured in Dcm.")
+    )
+;
+
+// Returns the short name of the configured DID_E0BA data type in the Dcm
+String Ssfm_DID_E0BA_Data_ShortName(SSFM cfg):
+    if Ssfm_DID_E0BA_IsConfigured(cfg) then (
+        cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid
+        .select(e|e.dcmDspDidIdentifier == 57530).first() // E0BA
+        .dcmDspDidSignal.dcmDspDidDataRef.shortName.first()
+    )
+    else (
+        throwError("DID_E0BA is not configured in Dcm.")
+    )
+;
+
+////////////////////////////// DID E0BB //////////////////////////////
+// Returns True if the DID_E0BB is configured in Dcm
+Boolean Ssfm_DID_E0BB_IsConfigured(SSFM cfg):
+    cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.exists(e|e.dcmDspDidIdentifier == 57531) == true // 0xE0BB
+;
+
+// Returns the short name of the configured DID_E0BB in the Dcm
+String Ssfm_DID_E0BB_ShortName(SSFM cfg):
+    if Ssfm_DID_E0BB_IsConfigured(cfg) then (
+        cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.select(e|e.dcmDspDidIdentifier == 57531).first().shortName // E0BB
+    )
+    else (
+        throwError("DID 0xE0BB is not configured in AUTOSAR Dcm!")
+    )
+;
+
+// Returns the short name of the configured DID_E0BB data type in the Dcm
+String Ssfm_DID_E0BB_Data_ShortName(SSFM cfg):
+    if Ssfm_DID_E0BB_IsConfigured(cfg) then (
+        cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid
+        .select(e|e.dcmDspDidIdentifier == 57531).first() // E0BB
+        .dcmDspDidSignal.dcmDspDidDataRef.shortName.first()
+    )
+    else (
+        throwError("DID 0xE0BB is not configured in AUTOSAR Dcm!")
+    )
+;
+
+
+// Returns the number of supported key slot for DID_E0BB based on configured key slot number
+Integer Ssfm_DID_E0BB_SupportedKeySlotSize(Integer keySlotErrorSize):
+	if (keySlotErrorSize == 0) then (0)
+	else if (keySlotErrorSize <= 10) then (10)
+	else if (keySlotErrorSize <= 20) then (20)
+	else if (keySlotErrorSize <= 50) then (50)
+	else if (keySlotErrorSize <= 100) then (100)
+	else if (keySlotErrorSize <= 150) then (150)
+	else if (keySlotErrorSize <= 200) then (200)
+	else (255)
+;
+
+// Returns DID_E0BB length based on configured key slot number
+Integer Ssfm_DID_E0BB_Length(Sum_Ssfm_ConfigSet cfg):
+    let supportedKeySlotSize = Ssfm_DID_E0BB_SupportedKeySlotSize(Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(cfg)):
+	if (supportedKeySlotSize > 0) then ((supportedKeySlotSize - 1) * 3 + 1)
+	else (1)
+;
+
+
+////////////////////////////// DID E0CD //////////////////////////////
+// Returns True if the DID_E0CD is configured in Dcm
+Boolean Ssfm_DID_E0CD_IsConfigured(SSFM cfg):
+    cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.exists(e|e.dcmDspDidIdentifier == 57549) == true // 0xE0CD
+;
+
+
+/* Returns true or false according to the parameter ERRHLocalSupervision*/
+Boolean Ssfm_isEnableERRHLocalSupervision(Sum_Ssfm_General general_cfg):
+ 	((general_cfg.eRootContainer.sOH != null) && (general_cfg.eRootContainer.sOH.sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled != null) && (general_cfg.eRootContainer.sOH.sOHGeneral.sOH_ERRHLocalSupervision_SupportEnabled == true)) ? true : false
+ ;
+
+/**
+ * Returns true if the given DID (by dcmDspDidIdentifier) is configured for async client-server port usage.
+ * Requires an SSFM config object as first parameter for context.
+ */
+boolean Get_DID_UsePortAsync(SSFM cfg, int dcmDspDidIdentifier):
+    /* List of supported DIDs */
+    let supportedDids = {57528, 57529, 57530, 57531}:
+    
+    /* Check if DID is supported and configured for async */
+    supportedDids.contains(dcmDspDidIdentifier) &&
+    cfg.eRootContainer.dcm.dcmConfigSet.dcmDsp.dcmDspDid.exists(e |
+        e.dcmDspDidIdentifier == dcmDspDidIdentifier &&
+        e.dcmDspDidSignal.exists(s | true) &&
+        e.dcmDspDidSignal.first().dcmDspDidDataRef != null &&
+        e.dcmDspDidSignal.first().dcmDspDidDataRef.dcmDspDataUsePort == "USE_DATA_ASYNCH_CLIENT_SERVER"
+    )
+;

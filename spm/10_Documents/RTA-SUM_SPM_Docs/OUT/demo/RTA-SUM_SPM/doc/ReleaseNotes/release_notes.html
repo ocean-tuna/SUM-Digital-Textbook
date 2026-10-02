@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RTA-SUM SPM Release Notes &mdash; RTA-SUM SPM 8.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/assets/jsonview.bundle.css?v=f6ef2277" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/common.css?v=bd9ab754" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/layouts.css?v=448c382f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/modern.css?v=ffa536d2" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/styles.css?v=6c8eb985" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=e1f95d0e" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=87b6a113"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/assets/jsonview.bundle.js?v=18cd53c5"></script>
+        <script src="../../_static/assets/jsonview_loader.js?v=f7ff7e7d"></script>
+        <script src="../../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+        <script src="../../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+        <script src="../../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=f783d6a5"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="RTA-SUM SPM User Guide" href="../UserGuide/user_guide.html" />
+    <link rel="prev" title="RTA-SUM SPM Design Notes" href="../DesignNotes/design_notes.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(to right, #164293, #89037A)" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            RTA-SUM SPM
+              <img src="../../_static/ETAS_Logo_White.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Software Requirements Specification:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Requirements/10_Requirements.html">RTA-SUM SPM Software Requirements Specification Document</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Detailed Requirements Paramdef:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../DesignNotes/25_Detailed_Req_Paramdef.html">Detailed Requirements Paramdef</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Design Document:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../DesignNotes/design_notes.html">RTA-SUM SPM Design Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM Release Notes:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RTA-SUM SPM Release Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#definitions-and-abbreviations">Definitions and Abbreviations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#release-notes-revision-history">Release Notes Revision History</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-description">Release Description</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#intended-use">Intended Use</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#functions-implemented-in-this-release">Functions implemented in this release</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#external-references">External References</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#implementation-description">Implementation Description</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#etas-rta-sum-spm-related-software">ETAS RTA-SUM SPM Related Software</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-management-items-documents-only">Configuration Management Items (Documents Only)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#target-environment-description">Target Environment Description</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installation-instruction">Installation Instruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#licensing">Licensing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#change-in-this-version">Change in This version</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#change-requests">Change Requests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fixed-in-this-version">Fixed in This Version</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#contacts-support-and-problem-reporting">Contacts, Support and Problem Reporting</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM User Guide:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../UserGuide/user_guide.html">RTA-SUM SPM User Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(to right, #164293, #89037A)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">RTA-SUM SPM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">RTA-SUM SPM Release Notes</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/doc/ReleaseNotes/release_notes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <a class="reference internal image-reference" href="../../_images/logo.png"><img alt="Company Logo" class="align-right" src="../../_images/logo.png" style="width: 200px;" /></a>
+<section id="rta-sum-spm-release-notes">
+<h1>RTA-SUM SPM Release Notes<a class="headerlink" href="#rta-sum-spm-release-notes" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>This document describes release specific details and notes related to RTA-SUM SPM.</p>
+<section id="definitions-and-abbreviations">
+<h3>Definitions and Abbreviations<a class="headerlink" href="#definitions-and-abbreviations" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Terms and Abbreviations</p></th>
+<th class="head"><p>Definitions</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AUTOSAR</p></td>
+<td><p>AUTOmotive Open System ARchitecture</p></td>
+</tr>
+<tr class="row-odd"><td><p>BSW</p></td>
+<td><p>Basic Software</p></td>
+</tr>
+<tr class="row-even"><td><p>CAN</p></td>
+<td><p>Controlled Area Network</p></td>
+</tr>
+<tr class="row-odd"><td><p>CDD</p></td>
+<td><p>Complex-Device Driver</p></td>
+</tr>
+<tr class="row-even"><td><p>CanIf</p></td>
+<td><p>Can Interface AUTOSAR BSW Module</p></td>
+</tr>
+<tr class="row-odd"><td><p>PGTT</p></td>
+<td><p>Power Graph Traversal Table</p></td>
+</tr>
+<tr class="row-even"><td><p>PM</p></td>
+<td><p>Power Manager</p></td>
+</tr>
+<tr class="row-odd"><td><p>RTE</p></td>
+<td><p>Run-Time environment AUTOSAR middleware between Application Software and Basic Software</p></td>
+</tr>
+<tr class="row-even"><td><p>SE</p></td>
+<td><p>Software Entity (Assume it as generic software module/function or Software Service)</p></td>
+</tr>
+<tr class="row-odd"><td><p>SM</p></td>
+<td><p>Software Manager</p></td>
+</tr>
+<tr class="row-even"><td><p>SPM</p></td>
+<td><p>Software/Power manager</p></td>
+</tr>
+<tr class="row-odd"><td><p>SUM</p></td>
+<td><p>Standardized Utility Module</p></td>
+</tr>
+<tr class="row-even"><td><p>SWCD</p></td>
+<td><p>Software Component Description</p></td>
+</tr>
+<tr class="row-odd"><td><p>SoAd</p></td>
+<td><p>Socket Adaptor AUTOSAR BSW Module</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="release-notes-revision-history">
+<h3>Release Notes Revision History<a class="headerlink" href="#release-notes-revision-history" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Version</p></th>
+<th class="head"><p>Description of Changes</p></th>
+<th class="head"><p>Author</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0.0.1</p></td>
+<td><ul class="simple">
+<li><p>Initial Version - First Release</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.2</p></td>
+<td><ul class="simple">
+<li><p>Removed Sum_Spm_SmPmIf.</p></li>
+<li><p>Added Software for coordination of wake-up on CAN.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.3</p></td>
+<td><ul class="simple">
+<li><p>Added support for Can wake-up frames.</p></li>
+<li><p>First integration in RTA-SUM plugin</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.3_1</p></td>
+<td><ul class="simple">
+<li><p>Added header <code class="code docutils literal notranslate"><span class="pre">Cdd_SPM</span></code></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.3_2</p></td>
+<td><ul class="simple">
+<li><dl class="simple">
+<dt>Added scripts</dt><dd><ul>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Sum_Spm_Requester_Queue_*.xpt</span></code>,</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Sum_Spm_Header_h.xpt</span></code>,</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Sum_Spm_SM_Req_EthIf_*.xpt</span></code>,</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Sum_Spm_SoftwMgr.h</span></code></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.3_3</p></td>
+<td><ul class="simple">
+<li><p>Added scripts <code class="code docutils literal notranslate"><span class="pre">Sum_Spm_ComCbk_*.xpt</span></code></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.4.4</p></td>
+<td><ul class="simple">
+<li><p>Added scripts <code class="code docutils literal notranslate"><span class="pre">Sum_Spm_Cbk_*.xpt</span></code>:</p></li>
+<li><p>Support of Etherent Wake-up Frame and CAN Wake-up frame.</p></li>
+<li><dl class="simple">
+<dt>Removed</dt><dd><ul>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Sum_Spm_WakeUpOnCan_*.xpt</span></code>,</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Sum_Spm_CanTransmit_*.xpt</span></code>,</p></li>
+<li><p><code class="code docutils literal notranslate"><span class="pre">Sum_Spm_CanIf_Cbk_*.xpt</span></code> scripts.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Renamed <code class="code docutils literal notranslate"><span class="pre">Cdd_SPM.h</span></code> in <code class="code docutils literal notranslate"><span class="pre">Cdd.h</span></code></p></li>
+<li><p>Support of Helper Function as Optional Parameter</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.5</p></td>
+<td><ul class="simple">
+<li><p>Support of PDU handling: SPM can request to the BswM</p></li>
+<li><p>the switch of the PDU modes in order to activate a Power Profile.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.5_1</p></td>
+<td><ul class="simple">
+<li><p>RTE supports the metadata by SENDER-RECEIVER interface.</p></li>
+<li><p>Modules <code class="code docutils literal notranslate"><span class="pre">Sum_Spm_ComCbk_*.xpt</span></code> not supported
+anymore and replaced by <code class="code docutils literal notranslate"><span class="pre">Sum_Spm_MetaData_*.xpt</span></code></p></li>
+<li><p>Bugfixes</p></li>
+<li><p>Fixed Issue in the generation script
+Sum_Spm_Cfg_h.xpt for macro SPM_REQER_LST_SIZE.</p></li>
+<li><p>Fixed Issue Power profile status is sent several times.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.6</p></td>
+<td><ul class="simple">
+<li><p>Support of TC10 wake up frame.</p></li>
+<li><p>Bugfixes</p></li>
+<li><p>Heartbeat and WkUp frame periodicities are calibratable.</p></li>
+<li><p>SPM Incorrect rolling counter for ShutdownPermission is fixed.
+It will be rolling from 0 to 3.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.7</p></td>
+<td><ul class="simple">
+<li><p>Support of Metadata handling in Rx through RTE (GMSUM-8365)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.8</p></td>
+<td><ul class="simple">
+<li><p>Added Detailed Requirements and update traceabilty (GMSUM-8459)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr1</p></td>
+<td><ul class="simple">
+<li><p>First prototype release of RTA-SUM SPM 8.1.0 (RTA-SUM 3.1.0)
+for SDV 2.0.</p></li>
+<li><p>Implemented the PermitExecution and ShutdownPermission
+port interfaces that SUSD employs. (GMSUM-8747)</p></li>
+<li><p>Checked compatibility with RTA-BSW 12.3.3pr1.</p></li>
+<li><p>The tools version have been Updated.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr2</p></td>
+<td><ul class="simple">
+<li><p>Power Profile (De)Activation re-design. (GMSUM-8774)</p></li>
+<li><p>Add call to C/S SrvcMgr_SPM_ActivateServices to remote
+power profiles.(GMSUM-8837)</p></li>
+<li><p>Update signature and logic of C/S operation
+SPM_ActivateProfile/SPM_DeactivateProfile (GMSUM-8869)</p></li>
+<li><p>Update logic of HearBeat counter (GMSUM-8922)</p></li>
+<li><p>Update PGTT paramdef and related scripts (GMSUM-8870)</p></li>
+<li><p>Update SM and PM Frame (GMSUM-8811)</p></li>
+<li><p>Support ETH WUF as SOME/IP frame (GMSUM-8928)</p></li>
+<li><p>Support of WUF A and B (GMSUM-9022)</p></li>
+<li><p>Update paramdef multiplicity and parameters (GMSUM-8998)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr3</p></td>
+<td><ul class="simple">
+<li><p>Alignment of init function and runnable. (GMSUM-8896)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr4</p></td>
+<td><ul class="simple">
+<li><p>Make use of SpmProfDepType parameter. (GMSUM-9113)</p></li>
+<li><p>Multi VLAN support for SM and WUF frame (GMSUM-8925)</p></li>
+<li><p>Multiple TrgDvcID support. (GMSUM-9117)</p></li>
+<li><p>Support WakeUp Commands. (GMSUM-9116)</p></li>
+<li><p>Fix definition structure SpmConfPowPrf. (GMSUM-9227)</p></li>
+<li><p>Updated traceability for SRS_SPM 0063 requirement. (GMSUM-9109)</p></li>
+<li><p>Update logic of transmission of CAN wake-up
+frame periodically. (GMSUM-9114)</p></li>
+<li><p>Support the configuration and the execution routine for waking
+an edge node that SPM node can directly hanlde when it is
+intermediate      (GMSUM-9143)</p></li>
+<li><p>Update SRS. (GMSUM-9311)</p></li>
+<li><p>Multi SpmIntermediateDstAddrs support. (GMSUM-9176)</p></li>
+<li><p>Fix validation check script for spmApplIntfID parameter (GMSUM-9303)</p></li>
+<li><p>Support the sending of TC10 command over different VLANs by
+SPM interfacing with EthSM (GMSUM-9125)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr5</p></td>
+<td><ul class="simple">
+<li><p>Fixed issue GMSUM-9351</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr6</p></td>
+<td><ul class="simple">
+<li><p>Low Voltage Battery Priority handling. (GMSUM-9078)</p></li>
+<li><p>Support SPM error handling to resend  (GMSUM-9074)
+its activate profile request when a remote node
+is in shutdown pending status</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr7</p></td>
+<td><ul class="simple">
+<li><p>Update SPM-SUSD interaction (GMSUM-9076)</p></li>
+<li><p>Fix Size_Indicator in SM frame. (GMSUM-9376)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr8</p></td>
+<td><ul class="simple">
+<li><p>Fix Component Description for correct XML structure. (GMSUM-9444)</p></li>
+<li><p>Change the define values, in SPM Types header,
+without SPM prefix. (GMSUM-9040)</p></li>
+<li><p>Use AUTOSAR_Platform instead of AUTOSAR_PlatformTypes
+in SWCD. (GMSUM-9442)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr9</p></td>
+<td><ul class="simple">
+<li><p>Support SPM Error Handling - LossOfCom with Requesting SM
+(GMSUM-9072)</p></li>
+<li><p>Implement notification of service activation to SUMs for Remote
+Power Profiles. (GMSUM-9578)</p></li>
+<li><p>Support of Memory Mapping using RTA-CAR MemMap Tool (GMSUM-9449)
+all status flag before shutting-down (GMSUM-9068)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr10</p></td>
+<td><ul class="simple">
+<li><p>Support debounce of multiple requests from the same requester
+via requester list handling (GMSUM-9069)</p></li>
+<li><p>Complete support of Device Power State (GMSUM-9548)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr11</p></td>
+<td><ul class="simple">
+<li><p>Support of Activation retries (GMSUM-9547)</p></li>
+<li><p>Add error handling for missing request status message from
+requested SM (GMSUM-9067)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr12</p></td>
+<td><ul class="simple">
+<li><p>Response to conflicting request for the same profile (GMSUM-9071)</p></li>
+<li><p>PowerOnDevice Retry: add PowerOff sequence (GMSUM-9556)</p></li>
+<li><p>PowerOnDevice Retry: add complete support (GMSUM-9555)</p></li>
+<li><p>Resuming Activation Requests for Recovered Nodes (GMSUM-9073)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr13</p></td>
+<td><ul class="simple">
+<li><p>Implement the interface SPM_GetProfileState (GMSUM-9560)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr14</p></td>
+<td><ul class="simple">
+<li><p>Add support to DID 0xE0D7 (GMSUM-9537)</p></li>
+<li><p>Documentation improvement (GMSUM-9800)</p></li>
+<li><p>Sending feedback only for the power profile requested
+without dependencies. (GMSUM-9377)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p>
+<p>RTA-SUM Development Team</p>
+</td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr15</p></td>
+<td><ul class="simple">
+<li><p>Add support to DID 0xE0DD (GMSUM-9061)</p></li>
+<li><p>Add support to Common queue (GMSUM-9079)</p></li>
+<li><p>Add support to Population of common queue for DID 0xE0DE/0xE0DF
+(GMSUM-9063)</p></li>
+<li><p>Paramdef support the PDU nomenclature for Multi-VAL communication
+as per SDV-8217 requirements SPM_0053 and SPM_0054</p></li>
+<li><p>Implement the C/S interface SPM_SUSD_ActivityRecordCmd (GMSUM-9060)</p></li>
+<li><p>Fix service list is not updated to SSFM when software dependency
+type is 3 (consumed only) (GMSUM-9965)</p></li>
+<li><p>Add the wake up frame info and bit parameters and corresponding
+calibration parameters. (GMSUM-9888)</p></li>
+<li><p>Add support to DID 0xE0DE (GMSUM-9062)</p></li>
+<li><p>Add support to DID 0xE0DF (GMSUM-9063)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr16</p></td>
+<td><ul class="simple">
+<li><p>Add support PDUs nomenclature in Tx (GMSUM-9874)</p></li>
+<li><p>Add support PDUs nomenclature in Rx (GMSUM-9875)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr17</p></td>
+<td><ul class="simple">
+<li><p>Implement the calibratable Keep Awake (GMSUM-9858)</p></li>
+<li><p>Removed local Rx CAN frame copy, extended
+Sum_Spm_WkupEdgeNode to support type C (GMSUM-9877)</p></li>
+<li><p>Add support for remaining awake if ECU’s own WUF bit is set
+(GMSUM-9878)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr18</p></td>
+<td><ul class="simple">
+<li><p>Calibration parameter access generated without dependencies
+(GMSUM-10152)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr19</p></td>
+<td><ul class="simple">
+<li><p>Receive multicast frame on edge and intermediate (GMSUM-9879).</p></li>
+<li><p>Send the HB in full scale, without waiting the expiration of the
+HB timer (GMSUM-9884).</p></li>
+<li><p>Update the wrong path for implementation data type (GMSUM-10063).</p></li>
+<li><p>Extend the use-case to support the usage of Sd_GetNodeAddress API
+in case the parameter <cite>SdEnableExtendedLearningTableFormat</cite> is true
+(GMSUM-10078).</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr20</p></td>
+<td><ul class="simple">
+<li><p>ETH WUF Unicast Support for Intermediate Nodes (GMSUM-9880)</p></li>
+<li><p>Update deactivation requests handling (GMSUM-10217).</p></li>
+<li><p>Added support for C Frame and relative command (GMSUM-9898).</p></li>
+<li><p>Aligned WakeupStepDelay in PowerOff sequence as described in
+(GMSUM-10229)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr21</p></td>
+<td><ul class="simple">
+<li><p>Added support for getting profile activation permission (GMSUM-10207)</p></li>
+<li><p>Fixed inclusion issue is Sum_Spm_SoftwMgr.h (GMSUM-10061)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr22</p></td>
+<td><ul class="simple">
+<li><p>Aligned DID 0xE0DE/0xE0DF to handle multiple entry (GMSUM-10260)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr23</p></td>
+<td><ul class="simple">
+<li><p>Replacing memset / memcopy with the one in Sum_Common  (GMSUM-10415).</p></li>
+<li><p>Added NvM block references for DID 0xE0DE/0xE0DF (GMSUM-10387).</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr24</p></td>
+<td><ul class="simple">
+<li><p>Extend pmVehDefActPriorON and SpmVehDefActPriorOFF</p></li>
+<li><p>with values MediumLow, MediumHigh and Access (GMSUM-10208).</p></li>
+<li><p>Added QUEUE length calibration parameters (GMSUM-10378).</p></li>
+<li><p>Fixed issue in generate_paramdef.bat and add a filter for parameters
+with multiplicity 0..0 (GMSUM-10496).</p></li>
+<li><p>Filtered out duplicate ComIpduGroup references to generate univoke
+port definition for SpmPwrProfile (GMSUM-10253).</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr25</p></td>
+<td><ul class="simple">
+<li><p>Handling a remote requester in FAULTED or REBOOT status
+(GMSUM-10221).</p></li>
+<li><p>Remove variable definitions from header files (GMSUM-10560)</p></li>
+<li><p>Align multiplicity in paramdef (GMSUM-10595)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr26</p></td>
+<td><ul class="simple">
+<li><p>Extend size of Requester List and added feedback for each remote
+requester (GMSUM-10519).</p></li>
+<li><p>Removing attender/commander topic so that each target device is
+capable to send and receive profile request (GMSUM-10434).</p></li>
+<li><p>Added Monitor Device functionality, which allows to set a Target
+device as Requester, Requested, or both, depending on the requests
+made/received (GMSUM-10520).</p></li>
+<li><p>Simplified logic for Heartbeat management: now the HB is processed
+even if the target device is not monitored (GMSUM-10531).</p></li>
+<li><p>Refactor function Spm_TrgDvcFSMManager (GMSUM-10533).</p></li>
+<li><p>Refactor PowerOn/OffDevice and PowerOnDevice retry (GMSUM-10532).</p></li>
+<li><p>Added LowVoltageSoftwareActivationPriorityRequest message in the SPM
+System Extract (GMSUM-10431)</p></li>
+<li><p>Update strategy for SPM HB transmission at startup
+(GMSUM-9889).</p></li>
+<li><p>Shutdown coordination for SPM has been updated to include a flag that
+determines if target devices are being requested remotely
+(GMSUM-10364).</p></li>
+<li><p>Fixed Wrong configuration and check of the PduId for
+CAN WUF from CanIf (GMSUM-10600)</p></li>
+<li><p>Extended size of requester list (GMSUM-10718)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr27</p></td>
+<td><ul class="simple">
+<li><p>Merged Reset and NvMStore operations in SPM_ActivityRecordCmd to
+ensure DID 0xE0DE/0xE0DF data is saved to NvM when cleared
+(RH-14995, GMSUM-10658).</p></li>
+<li><p>Fixed Wrong the multiplicity of the Rx part of
+SpmVLANComPwrMgrWakeupFrames parameter (RH-14897, GMSUM-10537).</p></li>
+<li><p>Added support for LowVoltageSoftwareActivationPriorityRequest
+service-based information (GMSUM-10432).</p></li>
+<li><p>Added activation/deactivation logic for profile
+with Application Interface ID: LVOptmzerChk (GMSUM-10433).</p></li>
+<li><p>Update WakeUp Frame calibration support (GMSUM-9872).</p></li>
+<li><p>Updated SPM Shutdown coordination with last heartbeat (GMSUM-10363).</p></li>
+<li><p>Added Learning Session status management logic (GMSUM-10551).</p></li>
+<li><p>Implementation of profile activation response with error code
+REJECTED_PROFILE_UNKNOWN (GMSUM-10705).</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr28</p></td>
+<td><ul class="simple">
+<li><p>Updated HB reception traceability for:
+SDVA-7482, SDVA-7474, SDVA-4221 (GMSUM-9859).</p></li>
+<li><p>Update RN known issue Table (RH-15354, GMSUM-10723).</p></li>
+<li><p>Align concepts of Remote and Local Requests for DID E0D7
+(GMSUM-10514).</p></li>
+<li><p>Added RID 0x26 for handling DID 0xE0D7 (GMSUM-10365).</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr29</p></td>
+<td><ul class="simple">
+<li><p>Fixed missing SPM_START_SEC_CODE/SPM_STOP_SEC_CODE memory
+mapping sections in Sum_Spm_SoftwMgr template (GMSUM-10862).</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="release-description">
+<h2>Release Description<a class="headerlink" href="#release-description" title="Link to this heading"></a></h2>
+<section id="intended-use">
+<h3>Intended Use<a class="headerlink" href="#intended-use" title="Link to this heading"></a></h3>
+<p>This version of RTA-SUM SPM is recommended for SDV 2.0 programs and is <strong>NOT</strong> qualified for use in
+production/series releases.</p>
+</section>
+<section id="functions-implemented-in-this-release">
+<h3>Functions implemented in this release<a class="headerlink" href="#functions-implemented-in-this-release" title="Link to this heading"></a></h3>
+<section id="external-references">
+<h4>External References<a class="headerlink" href="#external-references" title="Link to this heading"></a></h4>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Document Version</p></th>
+<th class="head"><p>Version</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SDV-2017 2.0 Vehicle Power Management Architecture</p></td>
+<td><p>3.2 - 27.181.2p0</p></td>
+</tr>
+<tr class="row-odd"><td><p>SDV-8217 Mechatronic Power Manager Infrastructure Specification</p></td>
+<td><p>27.181.2p1</p></td>
+</tr>
+<tr class="row-even"><td><p>SDV-8201 Service Discovery Extension Specification</p></td>
+<td><p>27.27.175.2p0</p></td>
+</tr>
+<tr class="row-odd"><td><p>SDV-6001 Diagnostic Infrastructure Specification</p></td>
+<td><p>27.27.184.1p0</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="implementation-description">
+<h4>Implementation Description<a class="headerlink" href="#implementation-description" title="Link to this heading"></a></h4>
+<p>This version of RTA-SUM SPM implements the following functions:</p>
+<ul>
+<li><p>Configuration of:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Power Profile</p></li>
+<li><p>Power Graph Traversal Table initial values</p></li>
+<li><p>General Parameters (refer to <a class="reference internal" href="../UserGuide/user_guide.html#module-configuration-overview"><span class="std std-ref">Module Configuration Overview</span></a> in the user Guide)</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>RTE ports to/from RTE for:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Sending a SM control message</p></li>
+<li><p>Sending periodically current instance heartbeat</p></li>
+<li><p>Receiving a SM control message</p></li>
+<li><p>Receiving a Remote Host heartbeat</p></li>
+<li><p>Sending a PM Ethernet wake-up frame message (<em>according to configuration values</em>)</p></li>
+<li><p>Receiving a PM Ethernet Wake-up frame message (<em>according to configuration values</em>)</p></li>
+<li><p>Sending the Shutdown permission to the RTA-SUM SUSD</p></li>
+<li><p>Receiving the permit execution value from the RTA-SUM SUSD</p></li>
+<li><p>Receiving the Activity Record command from the RTA-SUM SUSD</p></li>
+<li><p>Publish the list of available services</p></li>
+<li><p>Publish the list of Lost Nodes with the DTC status (Lost/Recover)</p></li>
+<li><p>Publish the list of Services to be Activated/Deactivated</p></li>
+<li><p>Receive a local request for activating/deactivating a Power Profile (<em>Profile locally activated</em>)</p></li>
+<li><p>Receive a query for current state of a Power Profile</p></li>
+<li><p>Receive a query for activation permission for a Power Profile</p></li>
+<li><p>Provide the DTC number for a Target device</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Two Periodic Runnables:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>To coordinate the Power Manager features as per SDV-8217 and SDV-2017 specifications (<em>Fixed periodicity to 5ms</em>)</p></li>
+<li><p>To coordinate the Software Manager features as per SDV-8217 and SDV-2017 specifications (<em>Configurable periodicity</em>)</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Per-Instance parameters to calibrate the value of the Heartbeat monitoring timing counter initialization value</p></li>
+<li><p>An Initialization function</p></li>
+<li><p>Object’s attributes and functions for aggregating the request/response to send to remote host</p></li>
+<li><p>Object’s attributes and functions to build the message to a remote host.</p></li>
+<li><p>Functions to coordinate the Transmission and Reception of Wake-up frames on CAN (<em>According to configuration values</em>).</p></li>
+</ul>
+</section>
+</section>
+<section id="etas-rta-sum-spm-related-software">
+<h3>ETAS RTA-SUM SPM Related Software<a class="headerlink" href="#etas-rta-sum-spm-related-software" title="Link to this heading"></a></h3>
+<p>All the release software is below folder <em>20_Implementation/</em>.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>scripts/paramdef/Spm_EcucParamDef.arxml</p></td>
+<td><p>Parameter Definition schema.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Spm_workflow.properties</p></td>
+<td><p>SPM Code generation Properties.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_bamf.arxml</p></td>
+<td><p>SPM build action manifest.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_Generate.oaw</p></td>
+<td><p>SPM generation action file.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_Validate.oaw</p></td>
+<td><p>SPM Validation action file.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm.chk</p></td>
+<td><p>SPM configuration validation script.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Spm_Utils.ext</p></td>
+<td><p>SPM extensions scripts.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_Cfg_CDD_arxml.xpt</p></td>
+<td><p>Generation script for Complex Device Driver Software Component Description.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_SpmTypes_h.xpt</p></td>
+<td><p>Generation script of Header for SPM Data types</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_Cbk_c.xpt</p></td>
+<td><p>Generation script of Source for managing Wake-up Frames on CAN and Ethernet.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_Cbk_h.xpt</p></td>
+<td><p>Generation script of Header for managing Wake-up Frames on CAN and Ethernet.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_Cfg_c.xpt</p></td>
+<td><p>Generation script of Source for Configuration dependent file.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_Cfg_h.xpt</p></td>
+<td><p>Generation script of Header for Configuration dependent file.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_Diagnostic_c.xpt</p></td>
+<td><p>Generation script of Source for The DID API implementation.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_Diagnostic_h.xpt</p></td>
+<td><p>Generation script of Header for The DID API implementation.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_DevicePowerState_c.xpt</p></td>
+<td><p>Generation script of Source for The Device Power state API implementation.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_DevicePowerState_h.xpt</p></td>
+<td><p>Generation script of Header for The Device Power state API implementation.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_MetaData_c.xpt</p></td>
+<td><p>Generation script of Source for MetaData handling API implementation.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_MetaData_h.xpt</p></td>
+<td><p>Generation script of Header for MetaData handling API implementation.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_PBCfg_c.xpt</p></td>
+<td><p>Generation script of Source for Post-Build data generated.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_PBCfg_h.xpt</p></td>
+<td><p>Generation script of Header for Post-Build data generated.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_PowerOnDevice_c.xpt</p></td>
+<td><p>Generation script of Source for PowerOnDevice API implementation.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_PowerOnDevice_h.xpt</p></td>
+<td><p>Generation script of Header for PowerOnDevice API implementation.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_PowerProfileStateMachine_c.xpt</p></td>
+<td><p>Generation script of Source for Power Profile Finite State Machine management.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_PowerProfileStateMachine_h.xpt</p></td>
+<td><p>Generation script of Header for Power Profile Finite State Machine management.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_PwrMgr_c.xpt</p></td>
+<td><p>Generation script of Source for Power Manager functionalities and coordination.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_PwrMgr_h.xpt</p></td>
+<td><p>Generation script of Header for Power Manager functionalities and coordination.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_RequesterLst_c.xpt</p></td>
+<td><p>Generation script of Source for Requester list for power profile.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_RequesterLst_h.xpt</p></td>
+<td><p>Generation script of Header for Requester list for power profile.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_Requester_Queue_c.xpt</p></td>
+<td><p>Generation script of Source for Requester Queue for power profile.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_Requester_Queue_h.xpt</p></td>
+<td><p>Generation script of Header for Requester Queue for power profile.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_Services_c.xpt</p></td>
+<td><p>Generation script of Source for SPM implementing services.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_Services_h.xpt</p></td>
+<td><p>Generation script of Header for SPM implementing services.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_SM_Req_EthIf.c</p></td>
+<td><p>Generation script of Source for SPM builder of SM frames.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_SM_Req_EthIf.h</p></td>
+<td><p>Generation script of Header for SPM builder of SM frames.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_SoftwMgr_c.xpt</p></td>
+<td><p>Generation script of Source for Software Manager functionalities and coordination.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_SoftwMgr_h.xpt</p></td>
+<td><p>Generation script of Header for Software Manager functionalities and coordination.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_SrvcMgrIf_c.xpt</p></td>
+<td><p>Generation script of Source for interfacing with Service Manager.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_SrvcMgrIf_h.xpt</p></td>
+<td><p>Generation script of Header for interfacing with Service Manager.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_WakeUp_c.xpt</p></td>
+<td><p>Generation script of source for Wake-up function.</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_WakeUp_h.xpt</p></td>
+<td><p>Generation script of Header for Wake-up.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scripts/templates/Sum_Spm_WakeUpHelperFunction_h.xpt</p></td>
+<td><p>Generation script of Header for external Helper Function (Project Specific).</p></td>
+</tr>
+<tr class="row-even"><td><p>scripts/templates/Sum_Spm_h.xpt</p></td>
+<td><p>Generation script of Header for SPM</p></td>
+</tr>
+<tr class="row-odd"><td><p>api/Sum_Spm_CanIfDispatchUL.h</p></td>
+<td><p>Header for defining all the function to control the State of CAN bus.</p></td>
+</tr>
+<tr class="row-even"><td><p>api/Cdd.h</p></td>
+<td><p>Header Dummy generated by BSW Code (Added only for compilation).</p></td>
+</tr>
+<tr class="row-odd"><td><p>api/Sum_Spm_Integration.h</p></td>
+<td><p>Header for Sum_Spm_Integration.</p></td>
+</tr>
+<tr class="row-even"><td><p>api/Sum_Spm_PowerProfileStateMachineEventsCode.h</p></td>
+<td><p>Header that contains event codes for the updating of the power profile state machine.</p></td>
+</tr>
+<tr class="row-odd"><td><p>api/Sum_Spm_SrvLstInfoItm.h</p></td>
+<td><p>Header that contains the structure definition for service item.</p></td>
+</tr>
+<tr class="row-even"><td><p>scr/Sum_Spm_CanIfDispatchUL.c</p></td>
+<td><p>Source file that contains all functions to set the state of the CAN Bus (Integrator scope).</p></td>
+</tr>
+<tr class="row-odd"><td><p>scr/Sum_Spm_CommErrHndlr.c</p></td>
+<td><p>Source file to handle an error on CAN wake-up transmission frame and takes the countermeasures (Integrator scope).</p></td>
+</tr>
+<tr class="row-even"><td><p>scr/Sum_Spm_Integration.c</p></td>
+<td><p>Source for Sum_Spm_Integration.</p></td>
+</tr>
+</tbody>
+</table>
+<p>As additional work products, the current release includes some configuration arxml files to configure the involved modules of the CAN stack in the SPM feature.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>IO_Aggregator2_Project_Can_EcucValues.arxml</p></td>
+<td><p>Configuration of the CAN module.</p></td>
+</tr>
+<tr class="row-odd"><td><p>EcuC_DummyPduTx_Rx_SPM_WkonCan.arxml</p></td>
+<td><p>Configuration of the PduRef for Pdu Length.</p></td>
+</tr>
+<tr class="row-even"><td><p>Cdd.arxml</p></td>
+<td><p>Configuration of the Cdd for addressing
+communication between SPM and CanIf.</p></td>
+</tr>
+<tr class="row-odd"><td><p>CanIf.arxml</p></td>
+<td><p>Configuration of the CanIf.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="configuration-management-items-documents-only">
+<h3>Configuration Management Items (Documents Only)<a class="headerlink" href="#configuration-management-items-documents-only" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File name</p></th>
+<th class="head"><p>Version</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Author</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>user_guide.html</p></td>
+<td><p>8.1.0_Pr28</p></td>
+<td><p>RTA-SUM SPM User Guide</p></td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <em>user_guide.html</em> file can be found under the path <em>RTA-SUM_SPM_Docs/doc/UserGuide</em>.</p>
+</div>
+</section>
+<section id="target-environment-description">
+<h3>Target Environment Description<a class="headerlink" href="#target-environment-description" title="Link to this heading"></a></h3>
+<p>N/A</p>
+</section>
+<section id="installation-instruction">
+<h3>Installation Instruction<a class="headerlink" href="#installation-instruction" title="Link to this heading"></a></h3>
+<p><em>N/A</em></p>
+</section>
+<section id="licensing">
+<h3>Licensing<a class="headerlink" href="#licensing" title="Link to this heading"></a></h3>
+<p>Please review to the Statement of Work for specific licensing information.</p>
+</section>
+</section>
+<section id="change-in-this-version">
+<h2>Change in This version<a class="headerlink" href="#change-in-this-version" title="Link to this heading"></a></h2>
+<section id="change-requests">
+<h3>Change Requests<a class="headerlink" href="#change-requests" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Jira Ticket</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Implementation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="fixed-in-this-version">
+<h3>Fixed in This Version<a class="headerlink" href="#fixed-in-this-version" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Jira Ticket</p></th>
+<th class="head"><p>Hotline ticket</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Implementation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>GMSUM-10862</p></td>
+<td><p>RH-14067</p></td>
+<td><p>Missing SPM_START_SEC_CODE/SPM_STOP_SEC_CODE memory mapping sections
+in Sum_Spm_SoftwMgr.</p></td>
+<td><p>Fixed missing memory mapping section pairs in Sum_Spm_SoftwMgr template.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="contacts-support-and-problem-reporting">
+<h2>Contacts, Support and Problem Reporting<a class="headerlink" href="#contacts-support-and-problem-reporting" title="Link to this heading"></a></h2>
+<p>Contact details for your local sales office and local technical support team (where available) can be found on the ETAS web site:</p>
+<ul class="simple">
+<li><p>ETAS subsidiaries: <a class="reference external" href="https://www.etas.com/en/contact.php">https://www.etas.com/en/contact.php</a></p></li>
+<li><p>ETAS technical support: <a class="reference external" href="https://www.etas.com/en/hotlines.php">https://www.etas.com/en/hotlines.php</a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../DesignNotes/design_notes.html" class="btn btn-neutral float-left" title="RTA-SUM SPM Design Notes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../UserGuide/user_guide.html" class="btn btn-neutral float-right" title="RTA-SUM SPM User Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, ETAS GmbH.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

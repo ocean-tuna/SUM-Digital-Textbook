@@ -1,0 +1,42 @@
+@startuml Sum_SrvcMgr_Execution_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_SrvcMgr_Execution_Manager"
+
+**Interfaces Legend**
+	//ri01 //: SUSD_PermitExecution
+	//pi01 //: SrvcMgr_ShutdownPermission
+	//II01 //: Sum_SrvcMgr_FuncPermitExec
+
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+
+    interface ri01
+	interface pi01
+	interface II01
+
+
+component [Sum_SrvcMgr_Execution_Manager] as E{
+	portin pri01
+	portout ppi01	
+}
+
+
+	ri01 )--- pri01
+	
+	ppi01 ---0 pi01
+	
+	E ---0 II01
+
+
+@enduml
+
+

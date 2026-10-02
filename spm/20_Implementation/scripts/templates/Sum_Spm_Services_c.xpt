@@ -1,0 +1,631 @@
+
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Services.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for SPM implemented Services
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+/* PRQA S 3469 EOF # Following macro are used to access data structure */
+/* PRQA S 3472 EOF # Following macro are used to access data structure */
+/* PRQA S 5087 EOF # Used for Memory Mapping Reason */
+/* PRQA S 3214 EOF # Used for Memory Mapping Reason */
+
+/* Include own function */
+#include "Sum_Spm_Services.h"
+/* Include PowerOn device functionalities */
+#include "Sum_Spm_PowerOnDevice.h"
+/* Include Service Discovery extension */
+#include "rba_SdLrng_Cfg.h"
+#include "Sum_Spm_SM_Req_EthIf.h"
+#include "Sum_Spm_PBCfg.h"
+#include "Sum_SpmTypes.h"
+#include "Sum_Spm_ErrorHandler.h"
+#include "Sum_Spm_Diagnostic.h"
+#include "Sum_Spm_SoftwMgr.h"
+#include "Sum_Spm_WakeUp.h"
+#include "Sum_Spm_VariantManagement.h"
+
+struct SPM_ProfileReqFIFO_Queue	Sum_Spm_RequestQueue;
+
+/**
+ * @brief The function populates the Record struct to forward to the SUSD.
+ *
+ * @param[in]  recordId	enum that describes the RxID value.
+ * @param[in]  lastByteVal	value of the last byte  CanId or SrcIp address. (Valid only for RID 0x26)
+ * @param[out] current_status	Boolean indicating the:
+ *                           	*   status of the local or remote requests for RID 0x02 and 0x20
+ *						   		*  Spm_OwnWakeUpBit status, TRUE if the bit in the WUF is asserted, FALSE otherwise; for RID 0x26
+ */
+static void Spm_E0D7_Sender(boolean current_status, RID_Enum recordId, uint8 lastByteVal)
+{
+	RecordIdType record;
+
+	/* [$Satisfies $DDS_SPM 0605] *//* [$Satisfies $DDS_SPM 0606] */
+	record.RID = recordId;
+	record.state = current_status;
+	/* The record wake-up reason field contains a valid value for RID 0x26. For the other RIDs, set to 0, as it is not used */
+	record.RWR = lastByteVal;
+
+	/* [$Satisfies $DDS_SPM 0600] *//* [$Satisfies $DDS_SPM 0601] *//* [$Satisfies $DDS_SPM 0603]*//* [$Satisfies $DDS_SPM 0602] *//* [$Satisfies $DDS_SPM 0604] */
+	/* Forward the necessary information, for the DID 0xE0D7, to the SUSD */
+	(void)Rte_Call_RP_SUSD_SPM_UpdateRecord_UpdateRecord(&record);
+}
+
+/**
+ * @brief Check if the presence of local/remote request has changed since last
+ * 		   time, as part of DID E0D7; if so, notify SUSD with the new status.
+ */
+static void Spm_E0D7_Checker(boolean(*get_status)(void), boolean* last_status, RID_Enum recordId, uint8 lastByteVal)
+{
+	boolean current_status;
+
+	current_status = get_status();
+	if (current_status != *last_status)
+	{
+		Spm_E0D7_Sender(current_status, recordId, lastByteVal);
+		*last_status = current_status;
+	}
+}
+
+/**
+ * @brief Handles part of DID E0D7: communicating to the SUSD the presence of
+ *        any local/remote requests.
+ *        The Requester Lists of each Power Profile are the sole source of truth
+ *        for this DID, so all handlers that modify them must come first.
+ */
+/* PRQA S 1532 1 # Defined here for modularity reason */
+void Spm_E0D7_RequestsHandler(void)
+{
+	/* [$Satisfies $DDS_SPM 0605] */
+	static boolean Is0x20Sent = FALSE;
+	static boolean Is0x02Sent = FALSE;
+
+	/* Manage the status of Local Requests. */
+	Spm_E0D7_Checker(Spm_CheckLocalRequestPresence, &Is0x20Sent, LOCALLY_ACTIVE_AP, 0u);
+
+	/* Manage the status of Remote Requests. */
+	Spm_E0D7_Checker(Spm_CheckRemoteRequestPresence, &Is0x02Sent, REMOTE_PN_AP_ACTIVE_NO_LOCAL_PN_AP_ACTIVE, 0u);
+
+}
+
+
+/**
+ * @brief Handles 0x26 of DID E0D7: communicating to the SUSD the status of the own wakeup frame bit.
+ *
+ * @param[in] lastRequesterId: uint8: value of the last byte CanId or SrcIp address.
+ */
+/* PRQA S 1532 1 # Defined here for modularity reason */
+void Spm_E0D7_LastRequesterIdHandler(uint8 lastRequesterId)
+{
+    /* [$Satisfies $DDS_SPM 0605] */
+    /* static variables updated used as gatekeepers to evaluate whether the RID (0x26)
+       needs to be updated or not. */
+    static boolean Is0x26Sent = FALSE;
+    static uint8 last_lastRequesterId = 0u;
+    boolean current_status = Spm_GetOwnwakeUpBit();
+    if ((current_status != Is0x26Sent) || (lastRequesterId != last_lastRequesterId))
+    {
+        Spm_E0D7_Sender(current_status, WUF_RECEIVED_NO_PN_ACTIVE, lastRequesterId);
+        Is0x26Sent = current_status;
+        last_lastRequesterId = lastRequesterId;
+    }
+}
+
+/**
+ * @brief Retrieves the SrcIP w.r.t. the VLAN id.
+ *
+ * This function return the value of the SrcIP corresponding to the input VLAN id.
+ * It is assumed that the VLAN id is present since it is checked at configuration time.
+ *
+ * @return The value of the SrcIP.
+ */
+/* [$Satisfies $DDS_SPM 0047] */
+/* PRQA S 1532 1 # Defined here for modularity reason						                    */
+uint32 Spm_Get_SrcIpFromVLANId(const uint32 VlanID){
+
+	uint32 ret_SrcIp = 0u;
+	uint8 i;
+
+	/* PRQA S 2877 1 # This loop will never be executed more than once for configuration reason. */
+	for(i = 0u; i < (uint8)SUM_SPM_NUMBER_OF_NET_CONF; i++){
+		if(SPM_NetworkInfo_Wrap[i].SPM_NetInfo->VlanID == VlanID){
+			ret_SrcIp = SPM_NetworkInfo_Wrap[i].SPM_NetInfo->SrcIP;
+		}
+	}
+	return ret_SrcIp;
+}
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief Retrieves the DTC (Diagnostic Trouble Code) identifier for a given IP address.
+ *
+ * This function iterates through the configured working devices and uses a binary search algorithm
+ * to find the corresponding DTC code value for a device with the specified IP address.
+ * The DTC code is then stored in the provided output parameter `dtcCodeValue`.
+ *
+ * @param[in]  ipAddress     The IP address of the device for which the DTC identifier is to be retrieved.
+ * @param[out] dtcCodeValue  Pointer to a variable where the function will store the DTC code value if found.
+ *
+ * @note The binary search is performed within each row entry of this configuration table.
+ *
+ */
+/* [$Satisfies $DDS_SPM 0413] */
+ /*PRQA S 1503 1*/ //This function will be called by an extern module.
+void SPM_GetDTCIdentifier(uint32 ipAddress,
+                          uint16 * dtcCodeValue)
+{
+	sint16 indexTrgDvc;
+	*dtcCodeValue = 0x00u;
+
+	indexTrgDvc = Spm_GetIndexTrgDvcFromIP(ipAddress);
+
+	if(indexTrgDvc != SPM_INVALID){
+		*dtcCodeValue = SPM_GET_PGTT_INST_TRGDVC_DTCID(indexTrgDvc);
+	}
+}
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+/**
+ * @brief Function needed to retrieve the index of the PowerProfile corresponding to that SoftwID and ProfileNumber.
+ *
+ * @param[in] SoftwareID SoftwareID to find.
+ * @param[in] ProfileNumber ProfileNumber to find.
+ *
+ * @return -1: ApplicationInterfaceID not found
+ *         indexOfThePowerProfile: Otherwise
+ */
+/* PRQA S 1532 2 # Defined here for modularity reason						                    */
+/* [$Satisfies $DDS_SPM 0025] */
+sint16 Spm_GetPowProfIndexFromSwIDProfNumber(const uint32 SoftwareID, const uint8 ProfileNumber){
+
+	uint8 i;
+	sint16 ret = SPM_INVALID;
+
+	for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++){
+		if( (SPM_GET_SW_ID_FROM_CONF(i) == SoftwareID) && (SPM_GET_POW_PROF_NUMBER_FROM_CONF(i) == ProfileNumber) ){
+			ret = (sint16)i;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Function needed to retrieve the index of the PowerProfile corresponding to that ServiceID and ProfileNumber.
+ *
+ * @param[in] ServiceID ServiceID to find.
+ * @param[in] ProfileNumber ProfileNumber to find.
+ *
+ * @return index of the profile. This function can not fail since it is called after pre-check over the existence of the profile.
+ */
+/* PRQA S 1532 2 # Defined here for modularity reason						                    */
+boolean Spm_GetPowProfIndexFromProfIDProfNumber(const uint16 ServiceID, const uint8 ProfileNumber, uint16* index){
+
+	uint8 i;
+	boolean ret = FALSE;
+
+	for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++){
+		/* ServiceID are the 16 MSB of the ID stored.*/
+		if( ((SPM_GET_SW_ID_FROM_CONF(i) >> 16u) == ServiceID) && (SPM_GET_POW_PROF_NUMBER_FROM_CONF(i) == ProfileNumber) ){
+			ret = TRUE;
+			*index = i;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Function needed to retrieve the index of the PowerProfile corresponding to that AppApplicationInterfaceID
+ *
+ * @param  ApplicationInterfaceID: ID corresponding to a particular profile
+ *
+ * @return -1: ApplicationInterfaceID not found
+ *         indexOfThePowerProfile: Otherwise
+ */
+sint16 Spm_GetPowProfIndexFromAppID( /* IN */const uint16 ApplicationInterfaceID ) {
+	uint8 i = 0u;
+	sint16 ret_s16 = SPM_INVALID;
+	boolean p_hasAppIfId_b;
+
+	do {
+
+		p_hasAppIfId_b = (SPM_GET_APP_ID_FROM_CONF(i) != NULL_PTR) && (*SPM_GET_APP_ID_FROM_CONF(i) == ApplicationInterfaceID);
+
+		if( p_hasAppIfId_b == TRUE ) {
+			ret_s16 = (sint16)i;
+		}
+
+		i += 1u;
+
+	} while( (i < SPM_CONF_POW_PRF_NUM) && (ret_s16 == SPM_INVALID) );
+
+	return ret_s16;
+}
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief Function to perform the validation and triggering of the selective wake-up
+ *		  after an activation request
+ *
+ * @param  ApplicationInterfaceID: ID corresponding to a particular profile
+ *
+ *
+ * @return E_OK     : request accepted after validation
+ * @return E_NOT_OK : request don't accepted after the validation
+ */
+/*PRQA S 1503 3 */ //This function will be called by an extern module.
+/* [$Satisfies $DDS_SPM 0012] *//* [$Satisfies $DDS_SPM 0024] *//* [$Satisfies $DDS_SPM 0540] */
+FUNC(Std_ReturnType, SPM_CODE)
+SPM_ActivateProfile(VAR(uint16, AUTOMATIC) ApplicationInterfaceID) {
+	Std_ReturnType retVal = E_NOT_OK;
+
+/* Corner Case handling: SPM without profile configuration */
+#if SPM_CONTAINS_PP
+
+	sint16 PowProfIndex;
+
+	/* Check if last deactivation request were for the current ApplicationInterfaceID. */
+	if(
+		(Rte_IrvRead_RE_SPM_ActivateProfile_Spm_LastDeactReqFlag() == FALSE) ||
+		/* Reaching the bellow condition implicitly indicates the LastDeactReqFlag is TRUE */
+		(Rte_IrvRead_RE_SPM_ActivateProfile_Spm_LastDeactReqID() != ApplicationInterfaceID)
+	){
+		/* Record the latest ApplicationInterfaceID requested. */
+		Rte_IrvWrite_RE_SPM_ActivateProfile_Spm_LastActReqID((ApplicationInterfaceID));
+		Rte_IrvWrite_RE_SPM_ActivateProfile_Spm_LastActReqFlag((TRUE));
+		{
+			/* Get pointer to the ProfileID of the corresponding Application Interface ID. */
+			PowProfIndex = Spm_GetPowProfIndexFromAppID(ApplicationInterfaceID);
+
+			/* [$Satisfies $DDS_SPM 0037] */
+			/* PRQA S 3415 1 # No side effect since it is a getter function. */
+			if ((PowProfIndex != SPM_INVALID) && (Spm_Get_ActivationAvailabilityForLocalRequest((uint8)PowProfIndex) == TRUE)) {
+«IF GetDIDE0DEIsConfigured(spm.spmGeneral)-»
+				/* Service ID needed are the 16 MSB of the ID received. */
+				(void)Spm_HandleLocalActivationRequest((uint16)(SPM_GET_SW_ID_FROM_CONF(PowProfIndex) >> 16u), SPM_GET_POW_PROF_NUMBER_FROM_CONF(PowProfIndex) );
+«ENDIF-»
+				Spm_prv_prfReqDispatcher((uint8)PowProfIndex, 0u, SPM_ACT_REQ, &retVal);
+			}
+		}
+		/* Clear the latest ApplicationInterfaceID requested. */
+		Rte_IrvWrite_RE_SPM_ActivateProfile_Spm_LastActReqFlag((FALSE));
+	}
+	#else
+	((void)ApplicationInterfaceID);
+
+	#endif
+
+	return retVal;
+}
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief Function to perform the validation and triggering of the selective wake-up
+ *		  after an deactivation request
+ *
+ * @param  ApplicationInterfaceID: ID corresponding to a particular profile
+ *
+ *
+ * @return E_OK     : request accepted after validation
+ * @return E_NOT_OK : request don't accepted after the validation
+ */
+/* [$Satisfies $DDS_SPM 0034] *//* [$Satisfies $DDS_SPM 0031] *//* [$Satisfies $DDS_SPM 0540] *//* [$Satisfies $DDS_SPM 0652] */
+/*PRQA S 1503 2 # This function will be called by an extern module. */
+FUNC(Std_ReturnType, SPM_CODE)
+SPM_DeactivateProfile(VAR(uint16, AUTOMATIC) ApplicationInterfaceID) {
+	Std_ReturnType retVal = E_NOT_OK;
+
+/* Corner Case handling: SPM without profile configuration */
+#if SPM_CONTAINS_PP
+
+	sint16 PowProfIndex;
+
+	/* Check if last activation request were for the current ApplicationInterfaceID. */
+	if(
+		(Rte_IrvRead_RE_SPM_DeactivateProfile_Spm_LastActReqFlag() == FALSE) ||
+		/* Reaching the bellow condition implicitly indicates the LastActReqFlag is TRUE */
+		(Rte_IrvRead_RE_SPM_DeactivateProfile_Spm_LastActReqID() != ApplicationInterfaceID)
+	)
+	{
+		/* Reject request if SPM is not in running state */
+		if (Spm_GetState() != Spm_Running) {
+			retVal = E_NOT_OK;
+		}
+		else
+		{
+			/* Record the latest ApplicationInterfaceID requested. */
+			Rte_IrvWrite_RE_SPM_DeactivateProfile_Spm_LastDeactReqID((ApplicationInterfaceID));
+			Rte_IrvWrite_RE_SPM_DeactivateProfile_Spm_LastDeactReqFlag((TRUE));
+			{
+				/* Get pointer to the ProfileID of the corresponding Application Interface ID. */
+				PowProfIndex = Spm_GetPowProfIndexFromAppID(ApplicationInterfaceID);
+
+				if ((PowProfIndex != SPM_INVALID) && (SPM_GET_LOC_ACT_ALLOWED_FROM_CONF(PowProfIndex) == TRUE)) {
+					Spm_prv_prfReqDispatcher((uint8)PowProfIndex, 0u, SPM_DEA_REQ, &retVal);
+				}
+			}
+			/* Clear the latest ApplicationInterfaceID requested. */
+			Rte_IrvWrite_RE_SPM_DeactivateProfile_Spm_LastDeactReqFlag((FALSE));
+		}
+	}
+	#else
+	((void)ApplicationInterfaceID);
+
+	#endif
+
+	return retVal;
+
+}
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief Function to perform the validation and triggering of the selective wake-up
+ *		  after an deactivation request
+ *
+ * @param[in]  ApplicationInterfaceID: ID corresponding to a particular profile
+ * @param[out] ProfileState: The state of the requested profile
+ *
+ * @return E_OK     : Profile has been found and the state is retrieved
+ * @return E_NOT_OK : The profile could not be found
+ */
+/* [$Satisfies $DDS_SPM 0541] */
+/*PRQA S 1503 2 # This function will be called by an extern module. */
+FUNC(Std_ReturnType, SPM_CODE) SPM_GetProfileState(uint16 ApplicationInterfaceID,
+                                                   uint8 * ProfileState){
+	Std_ReturnType retVal = E_NOT_OK;
+/* Corner Case handling: SPM without profile configuration */
+#if SPM_CONTAINS_PP
+	sint16 profileIndex;
+
+	profileIndex = Spm_GetPowProfIndexFromAppID(ApplicationInterfaceID);
+	if(profileIndex != SPM_INVALID){
+		*ProfileState = SPM_PrfStsMgr_RAM[(uint8)profileIndex].sm;
+		retVal = E_OK;
+	}
+#else
+	((void)ApplicationInterfaceID);
+
+#endif
+
+	return retVal;
+}
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief Function to read current status of the profile activation permission
+ *
+ * This function allows SWCs to check if a power profile can be activated locally
+ * based on its ApplicationInterfaceID.
+ *
+ * @param[in]  ApplicationInterfaceID: ID corresponding to a particular profile
+ * @param[out] PermissionStatus: TRUE - Activation allowed, FALSE - Activation not allowed
+ *
+ * @return E_OK     : Profile has been found and permission status is retrieved
+ * @return E_NOT_OK : The profile could not be found
+ */
+/* [$Satisfies $DDS_SPM 0542] */
+/*PRQA S 1503 2 # This function will be called by an extern module. */
+FUNC(Std_ReturnType, SPM_CODE) SPM_GetProfileActivationPermission(uint16 ApplicationInterfaceID,
+                                                                  boolean *PermissionStatus){
+	Std_ReturnType retVal = E_NOT_OK;
+
+/* Corner Case handling: SPM without profile configuration */
+#if SPM_CONTAINS_PP
+	sint16 profileIndex;
+
+	profileIndex = Spm_GetPowProfIndexFromAppID(ApplicationInterfaceID);
+	if(profileIndex != SPM_INVALID){
+		*PermissionStatus = Spm_Get_ActivationAvailabilityForLocalRequest((uint8)profileIndex);
+		retVal = E_OK;
+	} else {
+		*PermissionStatus = FALSE;
+	}
+#else
+	*PermissionStatus = FALSE;
+	((void)ApplicationInterfaceID);
+#endif
+
+	return retVal;
+}
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief Function to allow SM to inhibit activation of Power Profile during an active Learning Session.
+ *        This is needed in order to reduce the traffic over the ETH network when a new learning session start.
+ *
+ * @param  learningStatus: ID referring to the current Learning Session status
+ *
+ *
+ * @return E_OK     : request accepted after validation
+ * @return E_NOT_OK : request not accepted after the validation
+ */
+/* [$Satisfies $DDS_SPM 0653] */
+/*PRQA S 1503 2 # This function will be called by an extern module. */
+FUNC(Std_ReturnType, SPM_CODE)
+Runnable_SPM_SdLearningStatusIndication(VAR(SPM_SDLearningStatus, AUTOMATIC) learningStatus) {
+	Std_ReturnType retVal = E_OK;
+    uint8 i;
+	SPM_SDLearningStatus previousLearningStatus = Rte_IrvRead_RE_SPM_SrvcMgr_SdLearningStatusIndication_Spm_Learning_Status();
+
+    /* If receive a new Learning Session status == SUM_LRNG_PENDING while before we were on a state
+	 * != SUM_LRNG_PENDING, then it means a new Learning Session has started and we have to reject Activations.
+	 */
+	if( (SUM_LRNG_PENDING == learningStatus) && (SUM_LRNG_PENDING != previousLearningStatus) )
+	{
+		/* If status is SUM_LRNG_PENDING we set the IRV immediately to avoid Activations from concurrent thread */
+		/* [$Satisfies $DDS_SPM 0654] */
+		Rte_IrvWrite_RE_SPM_SrvcMgr_SdLearningStatusIndication_Spm_Learning_Status((learningStatus));
+		for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++){
+			Spm_SendDeactivationRequestForEachRequester(i, (uint8)Spm_REJECTED_PROFILE_BLOCKED);
+		}
+
+		/*  HNLDR: Update Profile Status by Profile Status Manager. */
+		Spm_DequeueReqActionHandler();
+
+		/* HNDLR: Start Deactivation Path. */
+		Spm_FSMManger();
+
+		/* Handler function for sending the Req Prof Activation Packet; */
+		Spm_SoftwMgr_PopulateSMFrame();
+	}
+	/* The new Learning Session status is != SUM_LRNG_PENDING, but before we were in a SUM_LRNG_PENDING state,
+	 * it means the Learning session has ended.
+	 */
+	else if( (SUM_LRNG_PENDING == previousLearningStatus) && (SUM_LRNG_PENDING != learningStatus) ) {
+		/*
+		 * This transition means that a running Learning Session has completed, therefore we ask SD for remote TargetDevices IPs
+		 * in case they got updated.
+		 */
+		SPM_PM_Init_ProfilesStructs();
+		/* If we are transitioning from SUM_LRNG_PENDING to any other state that allows PwrPrf Activation,
+		 * then we have to wait until we updated TargetDevices IPs before updating the IRV. This is
+		 * because we want to avoid dealing with Activations until TrgDevIPs have been updated.
+		*/
+		Rte_IrvWrite_RE_SPM_SrvcMgr_SdLearningStatusIndication_Spm_Learning_Status((learningStatus));
+	}
+	else {
+		/* We just update the Learning Session status for consistency but is not a critical transition*/
+		Rte_IrvWrite_RE_SPM_SrvcMgr_SdLearningStatusIndication_Spm_Learning_Status((learningStatus));
+	}
+
+	return retVal;
+}
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+/**
+ * @brief Dispatches a power profile request to the software manager and manages its dependencies.
+ *
+ * This function uses a Breadth-First Search (BFS) algorithm to traverse and enqueue power profile
+ * requests and their dependencies to the software manager's queue. It starts from the root power
+ * profile specified by the profileID and traverses through its dependencies, enqueuing each one.
+ * It also updates the request status based on the success of the enqueue operation.
+ *
+ * @param[in] profileID   The ID of the power profile for which the request is being made.
+ * @param[in] TrgDvcIP    The IP address of the target device making the request.
+ * @param[in] reqCode     The request code specifying the type of power profile request.
+ * @param[out] retVal     Pointer to a variable where the function will store the result of the request
+ *                        dispatch operation (E_OK for success, E_NOT_OK for failure).
+ *
+ * @note The `visited` array is used to prevent cycles in the graph traversal, and the `queue` is used
+ * 		 to manage the BFS algorithm. The function modifies the pointed `retVal` to reflect the success
+ * 		 or failure of the request dispatch.
+ *
+ * @retval None This function does not have a return value; it communicates the result through the
+ *              `retVal` output parameter.
+ */
+void Spm_prv_prfReqDispatcher(
+    /* IN  */ uint8  profileIndx,
+    /* IN  */ uint32 TrgDvcIP,
+    /* IN  */ uint8 reqCode,
+    /* OUT */ Std_ReturnType * const retVal
+) {
+    Std_ReturnType retVal_loc = E_OK;
+    uint16 i;
+    boolean visited[SPM_CONF_POW_PRF_NUM];
+
+    /* Create a queue used by the BFS. */
+    SpmPrfDepLstType queue[SPM_CONF_POW_PRF_NUM];
+    uint32 front = 0u;
+    uint32 rear = 0u;
+    uint32 indexDep;
+    struct SPM_ProfileReqItm Sum_Spm_PwrPrf_Item;
+
+    for (i = 0u; i < SPM_CONF_POW_PRF_NUM; i++) {
+        visited[i] = FALSE;
+    }
+
+    /* Set the Root PowProf index as visited and enqueue its index. */
+    visited[profileIndx] = TRUE;
+    queue[rear].prfDepType = SPM_PRF_DEP_ACT_AND_CONS;
+    queue[rear].prfIndex = profileIndx;
+    rear++;
+
+    while (front != rear) {
+
+        /* Add the TrgDvcIP as requester. */
+        Sum_Spm_PwrPrf_Item.TrgDvcIpRequester = TrgDvcIP;
+        Sum_Spm_PwrPrf_Item.reqDependencyType = queue[front].prfDepType;
+        /* Update Profile Map. Reduce amount of cyclic research for the current profile. */
+        Sum_Spm_PwrPrf_Item.posOfPrfInCfgArray = queue[front].prfIndex;
+        /* If the first Power Profile is the root (front == 0), set the MSB to 1. Otherwise, keep only the request type (LSB), since going to extrapolate informations about the Power Profile dependencies. */
+		Sum_Spm_PwrPrf_Item.reqCode = reqCode | (uint8)(((front == 0u) ? 1u : 0u) << 7u);
+
+        /* IF enqueue operation to Software Manager fail, THEN it cannot tale in charge the request. Reply with a fail */
+        if( !SPM_EnqueueRequest(&Sum_Spm_RequestQueue, Sum_Spm_PwrPrf_Item) ) {
+            retVal_loc = E_NOT_OK;
+            break;
+        }
+
+        /* Iterate over all the PowProf dependencies of this PowProf and enqueue them. */
+        for (indexDep = 0; indexDep < SpmPowPrf_Cfg_WrpTable[queue[front].prfIndex].powPrf_data->PrfDepLstSize; indexDep++) {
+
+            if (!visited[SpmPowPrf_Cfg_WrpTable[queue[front].prfIndex].powPrf_data->PrfDepLst[indexDep].prfIndex]) {
+                visited[SpmPowPrf_Cfg_WrpTable[queue[front].prfIndex].powPrf_data->PrfDepLst[indexDep].prfIndex] = TRUE;
+                queue[rear].prfIndex = (SpmPowPrf_Cfg_WrpTable[queue[front].prfIndex].powPrf_data->PrfDepLst[indexDep]).prfIndex;
+                queue[rear].prfDepType = (SpmPowPrf_Cfg_WrpTable[queue[front].prfIndex].powPrf_data->PrfDepLst[indexDep]).prfDepType;
+                rear++;
+            }
+        }
+
+        /* Enqueue a PowProf Index */
+        front++;
+    }
+
+    *(retVal) = retVal_loc;
+}
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

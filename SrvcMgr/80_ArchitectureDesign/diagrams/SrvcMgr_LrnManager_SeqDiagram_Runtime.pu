@@ -1,0 +1,101 @@
+@startuml SrvcMgr_LrnManager_SeqDiagram_Runtime
+
+actor tester
+participant Dcm
+participant SrvcMgr
+participant Sd
+participant SdExt
+participant NVRAM
+participant RemoteEcu
+
+
+tester -> Dcm: RID 0x0612
+Dcm -> SrvcMgr: SrvcMgr_Read_RID_0x0612_Data()
+SrvcMgr -> Sd: Sd_RetrieveLearningTable(&TableContent)
+Sd -> SdExt: SdExt_RetrieveLearningTable(&TableContent)
+note right: SD_SWSEXT_0010, SD_GM_0026, RID 0x0612
+
+tester -> Dcm: DID 0xE0CC
+Dcm -> SrvcMgr: SrvcMgr_DID_E0CC_ReadData()
+SrvcMgr -> Sd: Sd_GetLearningTableState(&LearningState)
+Sd -> SdExt: SdExt_GetLearningTableState(&LearningState)
+note right: SD_GM_0018, SD_SWSEXT_0005
+
+tester -> Dcm: DID 0xE0CD
+Dcm -> SrvcMgr: SrvcMgr_DID_E0CD_ConditionCheckRead()
+SrvcMgr -> Sd:Sd_GetLearningTableState(&LearningState)
+Sd -> SdExt: SdExt_GetLearningTableState(&LearningState)
+note right
+If the LearningState is LEARNING_INCOMPLETE
+SrvcMgr will check if the number of missing services
+(client section) excedes the maximum number 
+specified in SDV-6001
+endnote
+SrvcMgr -> Sd: Sd_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+Sd -> SdExt: SdExt_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+note right
+SD_SWSEXT_0015, SD_GM_0027
+If IncompleteLrng.Num_Of_Missing_Services <= 400, SrvcMgr
+returns E_OK to Dcm and then ReadDataLength is triggered.
+endnote
+
+Dcm -> SrvcMgr: SrvcMgr_DID_E0CD_ReadDataLength()
+SrvcMgr -> Sd: Sd_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+Sd -> SdExt: SdExt_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+note right
+SD_SWSEXT_0015, SD_GM_0027, SD_GM_0015
+If IncompleteLrng.Num_Of_Missing_Services <= 400, SrvcMgr
+returns E_OK to Dcm together with the length of the DID data (missing services IDs
+from the incomplete learning table and sd missing from ssfm - via s/r port).
+endnote
+
+Dcm -> SrvcMgr: SrvcMgr_DID_E0CD_ReadData()
+SrvcMgr -> Sd: Sd_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+Sd -> SdExt: SdExt_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+note right
+SD_SWSEXT_0015, SD_GM_0027, SD_GM_0015
+If IncompleteLrng.Num_Of_Missing_Services <= 400, SrvcMgr
+returns E_OK to Dcm together with the missing services IDs
+read from the client section of the incomplete learning table 
+and sd missing from ssfm - via s/r port.
+endnote
+
+tester -> Dcm: DID 0xE0CE
+Dcm -> SrvcMgr: SrvcMgr_DID_E0CE_ConditionCheckRead()
+SrvcMgr -> Sd:Sd_GetLearningTableState(&LearningState)
+Sd -> SdExt: SdExt_GetLearningTableState(&LearningState)
+note right
+If the LearningState is LEARNING_INCOMPLETE
+SrvcMgr will check if the number of missing services
+(server section) excedes the maximum number 
+specified in SDV-6001
+endnote
+SrvcMgr -> Sd: Sd_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+Sd -> SdExt: SdExt_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+note right
+SD_SWSEXT_0015, SD_GM_0027
+If IncompleteLrng.Num_Of_Missing_EventGroups <= 400, SrvcMgr
+returns E_OK to Dcm and then ReadDataLength is triggered.
+endnote
+
+Dcm -> SrvcMgr: SrvcMgr_DID_E0CD_ReadDataLength()
+SrvcMgr -> Sd: Sd_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+Sd -> SdExt: SdExt_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+note right
+SD_SWSEXT_0015, SD_GM_0027
+If IncompleteLrng.Num_Of_Missing_Services <= 400, SrvcMgr
+returns E_OK to Dcm together with the length of the DID data (missing services IDs
+from the incomplete learning table).
+endnote
+
+Dcm -> SrvcMgr: SrvcMgr_DID_E0CE_ReadData()
+SrvcMgr -> Sd: Sd_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+Sd -> SdExt: SdExt_RetrieveIncompleteLearningReasons(&IncompleteLrng)
+note right
+SD_SWSEXT_0015, SD_GM_0027
+If IncompleteLrng.Num_Of_Missing_EventGroups <= 400, SrvcMgr
+returns E_OK to Dcm together with the missing event groups IDs
+read from the server section of the incomplete learning table.
+endnote
+
+@enduml

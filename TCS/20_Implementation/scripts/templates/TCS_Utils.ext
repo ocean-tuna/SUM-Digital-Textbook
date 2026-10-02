@@ -1,0 +1,72 @@
+import bsw;
+import bsw::TcsModule;
+
+/* Check if TCS TimeSyncMessage is via ComGroupSignal */
+Boolean Tcs_IsTimeSyncGroupSignal(TcsGeneral gen):
+    gen.tCS_TimeSyncMessageSignalRef != null &&
+    gen.tCS_TimeSyncMessageSignalRef.metaType.toString().contains("ComGroupSignal")
+;
+
+/* Check if TCS TimeSyncMessage is service-based (UINT8_N ComSignal + ServiceBased_Ref configured) */
+Boolean Tcs_IsTimeSyncServiceBased(TcsGeneral gen):
+    gen.tCS_TimeSyncMessageSignalRef != null &&
+    gen.tCS_ServiceBased_TimeSyncMessage_Ref != null &&
+    gen.tCS_TimeSyncMessageSignalRef.comSignalType == "UINT8_N"
+;
+
+/* Check if E2E is configured for a given signal type */
+Boolean Tcs_IsE2EConfigured(TcsGeneral gen, String signalType):
+    let signalRef = (
+        if signalType == "TimeSyncMessage" then
+            gen.tCS_TimeSyncMessageSignalRef
+        else
+            null
+    ):
+    let isGroupSignal = (
+        if signalType == "TimeSyncMessage" then
+            Tcs_IsTimeSyncGroupSignal(gen)
+        else
+            false
+    ):
+    let e2exf = gen.eRootContainer.xfrm.select(e | e.shortName.toLowerCase() == "e2exf"):
+        if e2exf != null then (
+            if signalRef != null then (
+                if isGroupSignal then (
+                    e2exf.xfrmImplementationMapping.xfrmSignal
+                    .xfrmSignalChoice.select(e | e.xfrmISignalGroupRefChoice != null)
+                    .xfrmISignalGroupRefChoice.xfrmISignalGroupRef
+                    .exists(e | signalRef.eContainer.shortName.contains(e.split("/").last()))
+                )
+                else (
+                    e2exf.xfrmImplementationMapping.xfrmSignal
+                    .xfrmSignalChoice.select(e | e.xfrmISignalRefChoice != null)
+                    .xfrmISignalRefChoice.xfrmISignalRef
+                    .exists(e | signalRef.shortName.contains(e.split("/").last()))
+                )
+            )
+            else
+                false
+        )
+        else
+            false
+;
+
+/* Extract implementation data type element name from path */
+String Tcs_GetImplementationDataTypeElementName(String path):
+    path.split("/").last()
+;
+
+/* Extract implementation data type path (without element name) */
+String Tcs_GetImplementationDataTypePath(String path):
+    path.replaceAll("/"+path.split("/").last(), "")
+;
+
+/* Extract implementation data type name */
+String Tcs_GetImplementationDataTypeName(String path):
+    Tcs_GetImplementationDataTypePath(path).split("/").last()
+;
+
+/* Obtain the Signal length for types that are not present as Base Type */
+List[Integer] Tcs_SignalLengthList(List[ComGroupSignal] signals):
+    signals.select(e|e.comSignalType == "UINT8_N").comSignalLength.toSet()
+;

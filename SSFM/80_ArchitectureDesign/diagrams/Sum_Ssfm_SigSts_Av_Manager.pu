@@ -1,0 +1,46 @@
+@startuml Sum_Ssfm_SigSts_Av_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_SigSts_Av_Manager"
+
+**Interfaces Legend**
+	//pi401 //: RxMonitoredSignal<n>_Av
+	//II307 //: Sum_Ssfm_Is_SecOC_VerificationSts_Failure()
+	//II308 :// Sum_Ssfm_Is_DisablePdu_Rx()
+	//II303 //: Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive()
+	//II304 //: Sum_Ssfm_Is_DisableNormalComm()
+	//ri402 //: SPM_ServiceActivationStatusNotification
+
+endlegend
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+	interface pi401
+	interface ri402
+	interface II307
+	interface II308
+	interface II303
+	interface II304
+
+component [Sum_Ssfm_SigStat_Av_Manager] as ST{
+	portin pri402
+
+component [SSFM::Sum_Ssfm_CANETH_Av_Manager]  as CA{
+	portout ppi401
+}	
+	
+} 
+	pri402  --up0 ri402
+    ppi401 --down0 pi401
+	CA --up-( II307
+	CA --up-( II308
+	CA --up-( II303
+	CA --up-( II304
+
+@enduml

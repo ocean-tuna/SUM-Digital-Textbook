@@ -1,0 +1,70 @@
+@startuml Srvcmgr_LearningSession_RID_0612
+start
+if (OpStatus == DCM_INITIAL) then (yes)
+    :Read PropSysActv from RTE port;
+    if (RTE Read == E_OK) then (yes)
+        :Read Vehicle Speed from RTE port;
+        if (RTE Read == E_OK AND PropSysActv == FALSE AND Vehicle Speed <= 3 km/h) then (yes)
+        :ret = Sd_RetrieveLearningTable(&TableContent);
+        if (ret == E_OK) then (yes)
+            if (Are Control Option1 and 2 consistent?
+            (Control_Option1 == 0x00 && Control_Option2== 0x01) || 
+            (Control_Option1 == 0x00 && Control_Option2== 0x02) ||
+            (Control_Option1 == 0x01 && Control_Option2== 0x00) || 
+            (Control_Option1 == 0x02 && Control_Option2== 0x00)) then (yes)
+                if (Report service Ids specified by range?
+                 (Control Option1 == 0)) then (yes)
+                    if (End of range >= Start of range) then (yes)
+                        :Retrieve_Range_of_ServiceIds_Requested;
+                        #palegreen:E_OK;
+                    else (no)
+                        : *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+                        #pink:E_NOK;
+                    endif 
+                else (no)
+                    if (Control_Option3 == 0) then (yes)
+                        :Retrieve_NumberofServices_Table_Section_Requested;
+                        note left
+                            According to 
+                            Control_Option1 
+                            (Number of services in Client 
+                            or Server section)
+                            :StatusRecord4to7 = 0;
+                            :StatusRecord8 not returned;
+                        end note                        
+                        #palegreen:E_OK; 
+                    else (no)
+                        : *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+                        #pink:E_NOK;
+                    endif                                        
+                endif
+            else (no)
+                : *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+                #pink:E_NOK;
+            endif            
+        else (no)
+            : *ErrorCode = DCM_E_GENERALREJECT;
+            #pink:E_NOK;
+        endif
+    else (no)
+        : *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+        note right
+            RTE Read failed
+            Condition not met
+        end note
+        #pink:E_NOK;
+    endif
+else (no)
+    : *ErrorCode = DCM_E_CONDITIONSNOTCORRECT;
+    note right
+        PropSysActv != FALSE or
+        Vehicle Speed > 3 km/h
+        Condition not met
+    end note
+    #pink:E_NOK;
+endif        
+else (no)        
+    #pink:E_NOK;         
+endif    
+stop
+@enduml

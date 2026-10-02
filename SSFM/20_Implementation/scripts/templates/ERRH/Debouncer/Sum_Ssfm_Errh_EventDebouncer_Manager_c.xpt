@@ -1,0 +1,310 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Errh_EventDebouncer_Manager.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : source file for SSFM Event Debouncer Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/* PRQA S 1503 EOF # Functions are public and can be used in other TU and by OS */
+/* PRQA S 1505 EOF # Functions are public and can be used in other TU and by OS */
+/* PRQA S 1531, 1532 EOF # Functions, objects are public and can be used in other modules */
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_ErrhDebouncerMovingWindow(Sum_Ssfm_Debouncer * const self, Sum_Ssfm_EventStatus new_event_notification);
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+Sum_Ssfm_Debouncer* Sum_Ssfm_Debouncer_Lists[SSFM_DEBOUNCING_FEATURES] = {
+«IF (Ssfm_NumOfRunCrankDebouncers(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) != 0)-»
+	Sum_Ssfm_RunCrank_Debouncers,
+«ENDIF-»
+	Sum_Ssfm_NodeLoss_Debouncers,
+«IF Ssfm_IsAnyAuthenticated(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+	Sum_Ssfm_FIM_Authenticated_Debouncers,
+«ENDIF-»
+«IF Ssfm_IsAnyContOp(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+	Sum_Ssfm_FIM_ContOp_Debouncers,
+«ENDIF-»
+«IF Ssfm_IsAnyProtected(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+	Sum_Ssfm_FIM_Protected_Debouncers,
+«ENDIF-»
+«IF Ssfm_IsAnySafety(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+	Sum_Ssfm_FIM_Safety_Debouncers,
+«ENDIF-»
+«IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.size > 0-»
+	Sum_Ssfm_BswError_Debouncers,
+«ENDIF-»
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0-»
+	Sum_Ssfm_Ief_LNMError_Debouncers,
+«ENDIF-»
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+	Sum_Ssfm_MissingMsg_LNMError_Debouncers,
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U198C_49_IsValid(sSFM.sum_Ssfm_ConfigSet) -»
+	Sum_Ssfm_U198C_49Error_Debouncer,
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U198C_54_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+	Sum_Ssfm_U198C_54Error_Debouncer,
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U19A6_57_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+	Sum_Ssfm_U19A6_57Error_Debouncer,
+«ENDIF-»	
+«IF Sum_Ssfm_Errh_U198C_8A_IsValid(sSFM.sum_Ssfm_ConfigSet)-»
+	Sum_Ssfm_U198C_8AError_Debouncer,
+«ENDIF-»	
+};
+
+uint16 Sum_Ssfm_Debouncer_Sizes[SSFM_DEBOUNCING_FEATURES] = {
+«IF (Ssfm_NumOfRunCrankDebouncers(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) != 0)-»
+	SSFM_ERRH_NUM_OF_CFG_ERROR_SUSD,
+«ENDIF-»
+	SSFM_NUM_OF_SIGNALBASED_CONTROLLERS + SSFM_NUM_OF_SERVICEBASED_TARGETDEVICES,
+«IF Ssfm_IsAnyAuthenticated(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+	SSFM_SSM_NUM_OF_AUTHENTICATED_SERIALDATAS,
+«ENDIF-»
+«IF Ssfm_IsAnyContOp(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+	SSFM_SSM_NUM_OF_CONTOP_SERIALDATAS,
+«ENDIF-»
+«IF Ssfm_IsAnyProtected(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+	SSFM_SSM_NUM_OF_PROTECTED_SERIALDATAS,
+«ENDIF-»
+«IF Ssfm_IsAnySafety(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+	SSFM_SSM_NUM_OF_SAFETY_SERIALDATAS,
+«ENDIF-»
+«IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.size > 0-»
+	SSFM_NUM_OF_BSW_ERRORS,
+«ENDIF-»
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0-»
+	SSFM_NUM_OF_IEF_LNMERROR,
+«ENDIF-»
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+	SSFM_NUM_OF_MISSING_MSG_LNMERROR,
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U198C_49_IsValid(sSFM.sum_Ssfm_ConfigSet) -»
+	SSFM_NUM_OF_U198C49_ERROR,
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U198C_54_IsValid(sSFM.sum_Ssfm_ConfigSet) -»
+	SSFM_NUM_OF_U198C_54_ERROR,
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U19A6_57_IsValid(sSFM.sum_Ssfm_ConfigSet) -»
+	SSFM_NUM_OF_U19A6_57_ERROR,
+«ENDIF-»
+«IF Sum_Ssfm_Errh_U198C_8A_IsValid(sSFM.sum_Ssfm_ConfigSet) -»
+	SSFM_NUM_OF_U198C_8A_ERROR,
+«ENDIF-»
+};
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+ /**
+ * @brief			SSFM/ERRH function to perform debouncing moving window event based X of Y
+ *
+ * @param[in]		self - Sum_Ssfm_Debouncer * const: Sum_Ssfm_Debouncer structure to access the configured instance
+ * @param[in]		new_event_notification - Sum_Ssfm_EventStatus: Sum_Ssfm_EventStatus enum type for new event notification input
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			Sum_Ssfm_EvaluationStatus- evaluation status is Passed, Failed, InDebouncing, Unknown
+ */
+static Sum_Ssfm_EvaluationStatus Sum_Ssfm_ErrhDebouncerMovingWindow(Sum_Ssfm_Debouncer * const self, Sum_Ssfm_EventStatus new_event_notification)
+{
+	/*[$Satisfies $DDS_SSFM 054]*/
+    Sum_Ssfm_EvaluationStatus ret_val = SUM_SSFM_EvaluationSts_InDebouncing;
+    uint16 X_Threshold = self->FP_SSFM_pCdata_X_Threshold();
+	uint16 Y_Threshold = self->FP_SSFM_pCdata_Y_Threshold();
+    if (new_event_notification == SUM_SSFM_EventSts_Failed){
+        self->X++;
+
+        // The window should be reset upon the first reception of a failed status
+        if (self->first_failed_event == FALSE){
+            self->Y = 0u;
+            self->first_failed_event = TRUE;
+        }
+    }
+    if(self->error_filter_type == SUM_SSFM_ErrorFilter_MovingWindow_EventBased){
+    	self->Y++;
+    }
+    if(self->X == X_Threshold){
+        ret_val = SUM_SSFM_EvaluationSts_Failed;
+        self->Y = 0u;
+        self->X = 0u;
+    }
+    else if (self->Y >= Y_Threshold){
+        ret_val = SUM_SSFM_EvaluationSts_Passed;
+        self->Y = 0u;
+        self->X = 0u;
+    }
+    else{
+    	// Do nothing
+    }
+
+	return ret_val;
+}
+
+
+«IF (sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_GeneralEventsFilter.exists(e|e.sum_Ssfm_FilterType == "X_OF_Y_MOVING_WINDOW_TIMEBASED"))-»
+/**
+ * @brief			Runnable function for SUM SSFM Error Debouncer for moving window X of Y Timebased
+ *
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+FUNC(void, SUM_SSFM_CODE) Runnable_SSFM_Debouncer_MovingWindow_TimeBased(void)
+{
+	/*[$Satisfies $DDS_SSFM 056]*/
+	uint16 i, feature_i;
+
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	if (dtcs_are_disabled == FALSE){
+
+		for (feature_i = 0u; feature_i < SSFM_DEBOUNCING_FEATURES; feature_i++){
+			for (i = 0u; i < Sum_Ssfm_Debouncer_Sizes[feature_i]; i++){
+				if (Sum_Ssfm_Debouncer_Lists[feature_i][i].error_filter_type == SUM_SSFM_ErrorFilter_MovingWindow_TimeBased){
+					Sum_Ssfm_Debouncer_Lists[feature_i][i].Y++;
+					/* Check for the case current window not met the X threshold, if the timer exceeded the configured time threshold */
+					if  (Sum_Ssfm_Debouncer_Lists[feature_i][i].Y >= Sum_Ssfm_Debouncer_Lists[feature_i][i].FP_SSFM_pCdata_Y_Threshold()){
+						// Reset Window
+						Sum_Ssfm_Debouncer_Lists[feature_i][i].Y = 0u;
+						Sum_Ssfm_Debouncer_Lists[feature_i][i].X = 0u;
+						Sum_Ssfm_Debouncer_Lists[feature_i][i].LastEvalStatus = SUM_SSFM_EvaluationSts_Passed;
+						/* Callback function for user defined */
+						Sum_Ssfm_Debouncer_Lists[feature_i][i].FP_SSFM_CbkWindowMoving(&(Sum_Ssfm_Debouncer_Lists[feature_i][i]));
+					}
+					else
+					{
+						/* do nothing */
+					}
+				}
+			}
+		}
+	}
+}
+«ENDIF-»
+/**
+ * @brief			SSFM/ERRH function to execute debouncer
+ *
+ * @param[in]		self - Sum_Ssfm_Debouncer * const: Sum_Ssfm_Debouncer structure to access the configured instance
+ * @param[in]		new_event_notification - Sum_Ssfm_EventStatus: Sum_Ssfm_EventStatus enum type for new event notification input
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			Sum_Ssfm_EvaluationStatus- evaluation status is Passed, Failed, InDebouncing, Unknown
+ */
+Sum_Ssfm_EvaluationStatus Sum_Ssfm_ErrhDebouncerExecution(Sum_Ssfm_Debouncer * const self, Sum_Ssfm_EventStatus new_event_notification)
+{
+	/*[$Satisfies $DDS_SSFM 047]*/
+	Sum_Ssfm_EvaluationStatus ret_val;
+	switch (self->error_filter_type)
+	{
+		case SUM_SSFM_ErrorFilter_None:
+			ret_val = (new_event_notification == SUM_SSFM_EventSts_Passed) ? SUM_SSFM_EvaluationSts_Passed : SUM_SSFM_EvaluationSts_Failed;
+			break;
+		case SUM_SSFM_ErrorFilter_Block:
+			ret_val = SUM_SSFM_EvaluationSts_Passed;
+			break;
+		case SUM_SSFM_ErrorFilter_MovingWindow_TimeBased:
+			ret_val = Sum_Ssfm_ErrhDebouncerMovingWindow(self, new_event_notification);
+			break;
+		case SUM_SSFM_ErrorFilter_MovingWindow_EventBased:
+			ret_val = Sum_Ssfm_ErrhDebouncerMovingWindow(self, new_event_notification);
+			break;
+		case SUM_SSFM_ErrorFilter_NodeLoss_Timeout:
+			ret_val = Sum_Ssfm_NodeLossError_Manager(self);
+			break;
+«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0-»
+		case SUM_SSFM_ErrorFilter_LinResp_MissingMsg_Timeout:
+			ret_val = Sum_Ssfm_LinResponder_MissingMsg_Handler(self);
+			break;
+«ENDIF-»
+		default:
+			ret_val = SUM_SSFM_EvaluationSts_Unknown;
+			break;
+	}
+	self->LastEvalStatus = ret_val;
+	return ret_val;
+}
+
+
+void Ssfm_Dem_CB_DTCStatusChanged(uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew) {
+	// Call handlers of features communicating with Dem
+	Sum_Ssfm_FIM_Dem_CB_DTCStatusChanged(DTC, DTCStatusOld, DTCStatusNew);
+	Sum_Ssfm_LoC_Dem_CB_DTCStatusChanged(DTC, DTCStatusOld, DTCStatusNew);
+	«IF Ssfm_NumOfLNMSlaveInfoError(sSFM.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0-»
+	Sum_Ssfm_IeF_Dem_CB_DTCStatusChanged(DTC, DTCStatusOld, DTCStatusNew);
+	«ENDIF-»
+	«IF (sSFM.sum_Ssfm_General.sum_Ssfm_DtcTriggerMessageSupport == true)-»
+	Sum_Ssfm_Errh_CheckDTCStatus_And_Enqueue(DTC, DTCStatusOld, DTCStatusNew);
+	«ENDIF-»
+	«IF (Ssfm_IsRunCrankLowDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet) || Ssfm_IsRunCrankHighDiagStatus_Configured(sSFM.sum_Ssfm_ConfigSet)) -»
+	Sum_Ssfm_RunCrank_DTCStatusChanged(DTC, DTCStatusOld, DTCStatusNew);
+	«ENDIF-»
+	«IF ((Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true) && (Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0))-»
+	Sum_Ssfm_KeySlotNumber_DTCStatusChanged(DTC, DTCStatusOld, DTCStatusNew);
+	«ENDIF-»
+}
+
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE-»
+«ENDDEFINE»
+

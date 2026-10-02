@@ -1,0 +1,2511 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00049.xsd">
+  <!--
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : ECU Configuration Parameter Definition
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+-->
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>AUTOSAR_SSFM</SHORT-NAME>
+      <AR-PACKAGES>
+        <AR-PACKAGE>
+          <SHORT-NAME>EcucModuleDefs</SHORT-NAME>
+          <ELEMENTS>
+            <ECUC-MODULE-DEF UUID="ECUC:a2cd582b-3dfc-5ed4-a2e2-2689961a7bd6">
+              <SHORT-NAME>SSFM</SHORT-NAME>
+              <DESC>
+                <L-2 L="EN">Configuration of the SSFM module.</L-2>
+              </DESC>
+              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+              <REFINED-MODULE-DEF-REF DEST="ECUC-MODULE-DEF">/AUTOSAR/EcucDefs/SSFM</REFINED-MODULE-DEF-REF>
+              <SUPPORTED-CONFIG-VARIANTS>
+                <SUPPORTED-CONFIG-VARIANT>VARIANT-POST-BUILD</SUPPORTED-CONFIG-VARIANT>
+              </SUPPORTED-CONFIG-VARIANTS>
+              <CONTAINERS>
+                <ECUC-PARAM-CONF-CONTAINER-DEF>
+                  <SHORT-NAME>Sum_Ssfm_General</SHORT-NAME>
+                  <DESC>
+                    <L-2 L="EN">General configuration parameters of the SSFM.</L-2>
+                  </DESC>
+                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+
+                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                  <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                  <PARAMETERS>
+                    <ECUC-INTEGER-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_SsmPermitExecutionMask</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">Sum_Ssfm_SsmPermitExecutionMask</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">PermitExecution mask to start execution of the SSM sub-module.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>254</DEFAULT-VALUE>
+                      <MAX>255</MAX>
+                      <MIN>0</MIN>
+                    </ECUC-INTEGER-PARAM-DEF>
+                    <ECUC-INTEGER-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_ErrhPermitExecutionMask</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">Sum_Ssfm_ErrhPermitExecutionMask</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">PermitExecution mask to start execution of the Errh sub-module.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>254</DEFAULT-VALUE>
+                      <MAX>255</MAX>
+                      <MIN>0</MIN>
+                    </ECUC-INTEGER-PARAM-DEF>
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_ExecutionManagerPeriodicity</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">SsfmMainFunctionPeriod</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Period (ms) of the Main Function Runnables. Handling internal modes and shutdown procedure.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>100</DEFAULT-VALUE>
+                      <MAX>65535</MAX>
+                      <MIN>1</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_DTCTriggeredRunnablePeriodicity</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">SsfmDTCTriggeredFunctionPeriod</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">The period (milliseconds) of the Sum_Ssfm_DTCTriggeredMessageHandler Runnables handles notify other ECUs or Test Devices that a fault has been detected .</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>100</DEFAULT-VALUE>
+                      <MAX>65535</MAX>
+                      <MIN>1</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_KeySlotVerify_RunnablePeriodicity</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">The period (milliseconds) of the KeySlotVerifyErrors_Time_Management Runnable handles KeySlot verification errors.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>1.0</DEFAULT-VALUE>
+                      <MAX>65535.0</MAX>
+                      <MIN>1.0</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_NodeLossError_RunnablePeriodicity</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">The period (milliseconds) of the SSFM_NodeLossError_Time_Management Runnable handles NodeLoss errors.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>1.0</DEFAULT-VALUE>
+                      <MAX>65535.0</MAX>
+                      <MIN>1.0</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+                    <ECUC-FLOAT-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_MissingMsg_Periodicity</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">SsfmMissingMsgFunctionPeriod</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Period (ms) of the Lin Responder Missing Message Runnables. Handling internal logic to check for test enable condition for missing message error.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>100</DEFAULT-VALUE>
+                      <MAX>65535</MAX>
+                      <MIN>1</MIN>
+                    </ECUC-FLOAT-PARAM-DEF>
+                    <ECUC-INTEGER-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_MissingMsg_CalibratableTime</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">SsfmMissingMsgCalibrateTime</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">The period timer in seconds of the Sum_Ssfm_MissingMsg_CalibrateTime handles the test enable for Lin Responder missing message error type .</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>5</DEFAULT-VALUE>
+                      <MAX>65535</MAX>
+                      <MIN>1</MIN>
+                    </ECUC-INTEGER-PARAM-DEF>
+                    <ECUC-BOOLEAN-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_FxI_FxFA_SinglePortsSupport</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">Setting this parameter to True provides the support for the single port indication of FxI/FxFA</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                    </ECUC-BOOLEAN-PARAM-DEF>
+                    <ECUC-BOOLEAN-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_IsThisECUGateway</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">Setting this parameter to True indicates that the current ECU will act as a gateway</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                    </ECUC-BOOLEAN-PARAM-DEF>
+                    <ECUC-BOOLEAN-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_DtcTriggerMessageSupport</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">Enables/Disables the DTCTrigger Message function</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                    </ECUC-BOOLEAN-PARAM-DEF>
+                    <ECUC-INTEGER-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_DTCNotificationQueueSize</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">Sum_Ssfm_DTCNotificationQueueSize</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">When Sum_Ssfm_DtcTriggerMessageSupport is enabled, this parameter shall be configured. Size of the DTC queue used for the DTC_Triggered signal. The final queue size will be equal to this parameter value plus the 22 reserved cells for DTC U007x information.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                      <DEFAULT-VALUE>32</DEFAULT-VALUE>
+                      <MAX>32767</MAX>
+                      <MIN>0</MIN>
+                    </ECUC-INTEGER-PARAM-DEF>
+
+					<ECUC-BOOLEAN-PARAM-DEF>
+                  <SHORT-NAME>SsfmGenerateInitRunnable</SHORT-NAME>
+                  <LONG-NAME>
+                    <L-4 L="EN">SsfmGenerateInitRunnable</L-4>
+                  </LONG-NAME>
+                  <DESC>
+                    <L-2 L="EN">Configuration parameter SsfmGenerateInitRunnable is used to allow the generation of a periodic runnable to run function Runnable_SSFM_Init one time. If TRUE the SSFM module should generate the periodic runnable to execute init() function one time otherwise, the init() function is called by a BswM action list during startup.</L-2>
+                  </DESC>
+                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                  <IMPLEMENTATION-CONFIG-CLASSES>
+                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                  </IMPLEMENTATION-CONFIG-CLASSES>
+                  <ORIGIN>RB:0.1.0:2015-12-05</ORIGIN>
+                  <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                  <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                </ECUC-BOOLEAN-PARAM-DEF>
+                <ECUC-FLOAT-PARAM-DEF>
+                  <SHORT-NAME>SsfmInitFuncPeriodicity</SHORT-NAME>
+                  <LONG-NAME>
+                    <L-4 L="EN">SsfmInitFuncPeriodicity</L-4>
+                  </LONG-NAME>
+                  <DESC>
+                    <L-2 L="EN">Specifies time in milisecond, for the periodicity of the runnable RE_SSFM_Init. Float values are supported. This parameter is required when SsfmGenerateInitRunnable is set to TRUE</L-2>
+                  </DESC>
+                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                  <IMPLEMENTATION-CONFIG-CLASSES>
+                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                  </IMPLEMENTATION-CONFIG-CLASSES>
+                  <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                  <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                  <DEFAULT-VALUE>1000.0</DEFAULT-VALUE>
+                  <MAX>5000.0</MAX>
+                  <MIN>1.0</MIN>
+                </ECUC-FLOAT-PARAM-DEF>
+                    <ECUC-BOOLEAN-PARAM-DEF>
+                      <SHORT-NAME>SSFM_QoS_Enabled</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">Enable consolidated QoS indication interfaces. If disabled, no QoS-related ports or code will be generated.</L-2>
+                      </DESC>
+                      <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                    </ECUC-BOOLEAN-PARAM-DEF>
+                  </PARAMETERS>
+                  <REFERENCES>
+                    <ECUC-REFERENCE-DEF>
+                      <SHORT-NAME>Sum_Ssfm_Os_Counter_1ms_Ref</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">Reference to the SSFM specific 1ms Os Counter.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Os/EcucModuleDefs/Os/OsCounter</DESTINATION-REF>
+                    </ECUC-REFERENCE-DEF>
+                    <ECUC-REFERENCE-DEF>
+                      <SHORT-NAME>Sum_Ssfm_ComMPNCRef</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">Configure all references to PNC that the ECU participates in that are enabled for TX. The references must be configured when the Sum_Ssfm_DtcTriggerMessageSupport parameter is enabled.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <ORIGIN>AUTOSAR_ECUC</ORIGIN>
+                      <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_ComM/EcucModuleDefs/ComM/ComMConfigSet/ComMPnc</DESTINATION-REF>
+                    </ECUC-REFERENCE-DEF>
+                    <ECUC-FOREIGN-REFERENCE-DEF>
+                      <SHORT-NAME>Sum_Ssfm_QoS_DataTypeMappingSet</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">Sum_Ssfm_QoS_DataTypeMappingSet</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Foreign reference to the DATA-TYPE-MAPPING-SET in the system extract used for QoS operations. This parameter is used to resolve the implementation data type for the QoS interface.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <DESTINATION-TYPE>DATA-TYPE-MAPPING-SET</DESTINATION-TYPE>
+                    </ECUC-FOREIGN-REFERENCE-DEF>
+                  </REFERENCES>
+                </ECUC-PARAM-CONF-CONTAINER-DEF>
+                <ECUC-PARAM-CONF-CONTAINER-DEF>
+                  <SHORT-NAME>Sum_Ssfm_Channel</SHORT-NAME>
+                  <DESC>
+                    <L-2 L="EN">This container contains the list of Channels used by the SUM_SSFM module.</L-2>
+                  </DESC>
+                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                  <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                  <PARAMETERS>
+                    <ECUC-BOOLEAN-PARAM-DEF>
+                      <SHORT-NAME>Sum_Ssfm_Ssm_C_UsageOfCanBusOffDTC</SHORT-NAME>
+                      <LONG-NAME/>
+                      <DESC>
+                        <L-2 L="EN">Calibration parameter indicates usage of CAN BUS OFF DTC. When it is set to true Loss of Com indications will be set based on CAN BUS OFF DTC.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <IMPLEMENTATION-CONFIG-CLASSES>
+                        <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                          <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                        </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                      </IMPLEMENTATION-CONFIG-CLASSES>
+                      <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                    </ECUC-BOOLEAN-PARAM-DEF>
+                  </PARAMETERS>
+                  <REFERENCES>
+                    <ECUC-REFERENCE-DEF>
+                      <SHORT-NAME>Sum_Ssfm_Channel_ID_Ref</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">Reference to the ComM Channel which will be used to detect the Disable Normal Comm request from SUM_DIAG.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_ComM/EcucModuleDefs/ComM/ComMConfigSet/ComMChannel</DESTINATION-REF>
+                    </ECUC-REFERENCE-DEF>
+                  </REFERENCES>
+                </ECUC-PARAM-CONF-CONTAINER-DEF>
+                <ECUC-PARAM-CONF-CONTAINER-DEF>
+                  <SHORT-NAME>Sum_Ssfm_ConfigSet</SHORT-NAME>
+                  <DESC>
+                    <L-2 L="EN">SSFMConfigSet subcontainer.</L-2>
+                  </DESC>
+                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                  <SUB-CONTAINERS>
+                    <ECUC-PARAM-CONF-CONTAINER-DEF>
+                      <SHORT-NAME>Sum_Ssfm_C_SsmDisable_Tx_PDU</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">This sub container contains the information for controlling whether to process this Pdu or not</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                      <PARAMETERS>
+                        <ECUC-BOOLEAN-PARAM-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Ssm_C_DisablePDU</SHORT-NAME>
+                          <LONG-NAME/>
+                          <DESC>
+                            <L-2 L="EN">Calibration parameter disable PDU. When it is set to True the PDU will be disabled. Instead, the False will keep the PDU Enabled.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <IMPLEMENTATION-CONFIG-CLASSES>
+                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                              <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          </IMPLEMENTATION-CONFIG-CLASSES>
+                          <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                          <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                        </ECUC-BOOLEAN-PARAM-DEF>
+                      </PARAMETERS>
+                      <REFERENCES>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_C_SsmDisable_Tx_PDURef</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to Com Ipdu. This is used for calibration of disabling the PDUs for transmit where SSM requests BswM during Init to disable the PDU</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Com/EcucModuleDefs/Com/ComConfig/ComIPdu</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                      </REFERENCES>
+                    </ECUC-PARAM-CONF-CONTAINER-DEF>
+                    <ECUC-PARAM-CONF-CONTAINER-DEF>
+                      <SHORT-NAME>Sum_Ssfm_SerialData</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">It contains the parameters related to the Ethernet/CAN SerialData.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                      <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                      <PARAMETERS>
+                        <ECUC-BOOLEAN-PARAM-DEF>
+                          <SHORT-NAME>Sum_Ssfm_IsNonDiscoverable</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Identifies if this SerialData represents a non-discoverable SOME/IP service (signal-based PDU using SOME/IP transformer). Non-discoverable services are always available, bypass partial network conditions, and only report Security and Safety diagnostics.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <IMPLEMENTATION-CONFIG-CLASSES>
+                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                              <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                              <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          </IMPLEMENTATION-CONFIG-CLASSES>
+                          <ORIGIN>ETAS:8.0.1:2025-01-15</ORIGIN>
+                          <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                          <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                        </ECUC-BOOLEAN-PARAM-DEF>
+                      </PARAMETERS>
+                      <REFERENCES>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_RteSerialData_Ref</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the RteSerialData</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/RteSerialData</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_SecOCRxPdu_Ref</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the SecOC RxPdu</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR/EcucDefs/SecOC/SecOCRxPduProcessing</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Channel_Ref</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to Sum_Ssfm_Channel</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_Channel</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Partial_Network_Ref</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the Partial Network</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_ComM/EcucModuleDefs/ComM/ComMConfigSet/ComMPnc</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                        <ECUC-CHOICE-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_SDService_Ref</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the SD Client or Server Service instance to which this SerialData belongs. This should be added when the SerialData is dedicated to the SD traffic.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REFS>
+                            <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Sd/EcucModuleDefs/Sd/SdConfig/SdInstance/SdClientService</DESTINATION-REF>
+                            <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Sd/EcucModuleDefs/Sd/SdConfig/SdInstance/SdServerService</DESTINATION-REF>
+                          </DESTINATION-REFS>
+                        </ECUC-CHOICE-REFERENCE-DEF>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_C_SsmDisable_Rx_PDURef</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to Com Ipdu to which the CAN SerialData belongs to. This is used for checking if the calibration of disabling the PDUs for SerialDatas is enabled. Based on the calibration value for this PDU, SerialData status shall be monitored</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Com/EcucModuleDefs/Com/ComConfig/ComIPdu</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                        <ECUC-CHOICE-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_MessageID_Ref</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to either SoAdSocketRoute or CanIfRxPduCfg to indicate the message id.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REFS>
+                            <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_CanIf/EcucModuleDefs/CanIf/CanIfInitCfg/CanIfRxPduCfg</DESTINATION-REF>
+                            <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SoAd/EcucModuleDefs/SoAd/SoAdConfig/SoAdSocketRoute</DESTINATION-REF>
+                          </DESTINATION-REFS>
+                        </ECUC-CHOICE-REFERENCE-DEF>
+                        <ECUC-FOREIGN-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_QoS_Ref</SHORT-NAME>
+                          <LONG-NAME>
+                            <L-4 L="EN">Sum_Ssfm_QoS_Ref</L-4>
+                          </LONG-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the signal or service event member containing this payload.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                          <IMPLEMENTATION-CONFIG-CLASSES>
+                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                              <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          </IMPLEMENTATION-CONFIG-CLASSES>
+                          <ORIGIN>RB</ORIGIN>
+                          <DESTINATION-TYPE>IMPLEMENTATION-DATA-TYPE-ELEMENT</DESTINATION-TYPE>
+                        </ECUC-FOREIGN-REFERENCE-DEF>
+                      </REFERENCES>
+                      <SUB-CONTAINERS>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_FcI_Debouncer</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">This sub container contains the information for the debouncing of FcI</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <REFERENCES>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_EventFilter_Ref</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to the General Event Filter.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                          </REFERENCES>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_FoI_Debouncer</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">This sub container contains the information for the debouncing of FoI</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <REFERENCES>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_EventFilter_Ref</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to the General Event Filter.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                          </REFERENCES>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_FpI_Debouncer</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">This sub container contains the information for the debouncing of FpI</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <REFERENCES>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_EventFilter_Ref</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to the General Event Filter.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                          </REFERENCES>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_FsI_Debouncer</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">This sub container contains the information for the debouncing of FsI</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <REFERENCES>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_EventFilter_Ref</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to the General Event Filter.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                          </REFERENCES>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                      </SUB-CONTAINERS>
+                    </ECUC-PARAM-CONF-CONTAINER-DEF>
+        			<ECUC-PARAM-CONF-CONTAINER-DEF>
+        			  <SHORT-NAME>RteSerialData</SHORT-NAME>
+        				<DESC>
+        				  <L-2 L="EN">Configuration of an individual serial data corresponding to a protected signal/signalGroup.</L-2>
+        				</DESC>
+        				<LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+        				<UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+        				<DESTINATION-URI-REFS>
+        				  <DESTINATION-URI-REF DEST="ECUC-DESTINATION-URI-DEF">/AUTOSAR_Rte/EcucDestinationUriDefSets/RteUriDefSet/RteSerialData</DESTINATION-URI-REF>
+        				 </DESTINATION-URI-REFS>
+        				<ORIGIN>ETAS</ORIGIN>
+        				<PARAMETERS>
+        				  <!-- PARAMETER DEFINITION: RteSerialDataE2EInTransformerChain -->
+        				  <ECUC-BOOLEAN-PARAM-DEF>
+        					<SHORT-NAME>RteSerialDataE2EInTransformerChain</SHORT-NAME>
+        					<DESC>
+        					  <L-2 L='EN'> If the E2E transformer is configured, this parameter must be set to True, otherwise to False. If True, the Rte will pass the transformerError to the RteSerialData.RteCallBackFunction.</L-2>
+        					</DESC>
+        					<LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+        					<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+        					<SCOPE>LOCAL</SCOPE>
+        					<ORIGIN>ETAS</ORIGIN>
+        					<VALUE-CONFIG-CLASSES>
+        					<ECUC-VALUE-CONFIGURATION-CLASS>
+        					  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        					  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+        					</ECUC-VALUE-CONFIGURATION-CLASS>
+        					</VALUE-CONFIG-CLASSES>
+        					<SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+        					<DEFAULT-VALUE>false</DEFAULT-VALUE>
+        				  </ECUC-BOOLEAN-PARAM-DEF>
+        				  <!-- PARAMETER DEFINITION: RteSerialDataHeaderInclude -->
+        				  <ECUC-STRING-PARAM-DEF>
+        					<SHORT-NAME>RteSerialDataHeaderInclude</SHORT-NAME>
+        					<DESC>
+        					  <L-2 L="EN">Defines the header file where the serial data provides the function declarations for configured callbacks.</L-2>
+        					</DESC>
+        					<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+        					<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+        					<SCOPE>LOCAL</SCOPE>
+        					<MULTIPLICITY-CONFIG-CLASSES>
+        					  <ECUC-MULTIPLICITY-CONFIGURATION-CLASS>
+        						<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        						<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+        					  </ECUC-MULTIPLICITY-CONFIGURATION-CLASS>
+        					  <ECUC-MULTIPLICITY-CONFIGURATION-CLASS>
+        						<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        						<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+        					  </ECUC-MULTIPLICITY-CONFIGURATION-CLASS>
+        					</MULTIPLICITY-CONFIG-CLASSES>
+        					<ORIGIN>ETAS</ORIGIN>
+        					<POST-BUILD-VARIANT-VALUE>false</POST-BUILD-VARIANT-VALUE>
+        					<VALUE-CONFIG-CLASSES>
+        					  <ECUC-VALUE-CONFIGURATION-CLASS>
+        						<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        						<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+        					  </ECUC-VALUE-CONFIGURATION-CLASS>
+        					  <ECUC-VALUE-CONFIGURATION-CLASS>
+        						<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        						<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+        					  </ECUC-VALUE-CONFIGURATION-CLASS>
+        					</VALUE-CONFIG-CLASSES>
+        					<SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+        					<ECUC-STRING-PARAM-DEF-VARIANTS>
+        					  <ECUC-STRING-PARAM-DEF-CONDITIONAL/>
+        					</ECUC-STRING-PARAM-DEF-VARIANTS>
+        				  </ECUC-STRING-PARAM-DEF>
+        				  <!-- PARAMETER DEFINITION: RteCallBackFunction -->
+        				  <ECUC-FUNCTION-NAME-DEF>
+        					<SHORT-NAME>RteCallBackFunction</SHORT-NAME>
+        					<DESC>
+        					  <L-2 L="EN">Definition of the Callback function provided by module which is interested in the serial data.</L-2>
+        					</DESC>
+        					<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+        					<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+        					<SCOPE>LOCAL</SCOPE>
+        					<MULTIPLICITY-CONFIG-CLASSES>
+        					  <ECUC-MULTIPLICITY-CONFIGURATION-CLASS>
+        						<CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+        						<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+        					  </ECUC-MULTIPLICITY-CONFIGURATION-CLASS>
+        					  <ECUC-MULTIPLICITY-CONFIGURATION-CLASS>
+        						<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        						<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+        					  </ECUC-MULTIPLICITY-CONFIGURATION-CLASS>
+        					</MULTIPLICITY-CONFIG-CLASSES>
+        					<ORIGIN>ETAS</ORIGIN>
+        					<POST-BUILD-VARIANT-MULTIPLICITY>true</POST-BUILD-VARIANT-MULTIPLICITY>
+        					<POST-BUILD-VARIANT-VALUE>true</POST-BUILD-VARIANT-VALUE>
+        					<VALUE-CONFIG-CLASSES>
+        					  <ECUC-VALUE-CONFIGURATION-CLASS>
+        						<CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+        						<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+        					  </ECUC-VALUE-CONFIGURATION-CLASS>
+        					  <ECUC-VALUE-CONFIGURATION-CLASS>
+        						<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        						<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+        					  </ECUC-VALUE-CONFIGURATION-CLASS>
+        					</VALUE-CONFIG-CLASSES>
+        					<SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+        					<ECUC-FUNCTION-NAME-DEF-VARIANTS>
+        					  <ECUC-FUNCTION-NAME-DEF-CONDITIONAL>
+        						<DEFAULT-VALUE>"NULL"</DEFAULT-VALUE>
+        					  </ECUC-FUNCTION-NAME-DEF-CONDITIONAL>
+        					</ECUC-FUNCTION-NAME-DEF-VARIANTS>
+        				  </ECUC-FUNCTION-NAME-DEF>
+        				</PARAMETERS>
+        				<SUB-CONTAINERS>
+        				  <!-- Container Definition: RteSignal -->
+        				  <ECUC-PARAM-CONF-CONTAINER-DEF>
+        					<SHORT-NAME>RteSignal</SHORT-NAME>
+        					<DESC>
+        					  <L-2 L="EN">Reference to the signal in the system description.</L-2>
+        					</DESC>
+        					<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+        					<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+        					<SUB-CONTAINERS>
+        					  <!-- Choice Container Definition: RteSignalChoice -->
+        					  <ECUC-CHOICE-CONTAINER-DEF>
+        						<SHORT-NAME>RteSignalChoice</SHORT-NAME>
+        						<DESC>
+        						  <L-2 L="EN">Choice whether an ISignal or an ISignalGroup shall be referenced.</L-2>
+        						</DESC>
+        						<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+        						<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+        						<CHOICES>
+        						  <!-- Container Definition: RteISignalRefChoice -->
+        						  <ECUC-PARAM-CONF-CONTAINER-DEF>
+        							<SHORT-NAME>RteISignalRefChoice</SHORT-NAME>
+        							<DESC>
+        							  <L-2 L="EN">Reference to the ISignal in the system description.</L-2>
+        							</DESC>
+        							<LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+        							<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+        							<REFERENCES>
+        							  <!-- Foreign Reference Definition: RteISignalRef -->
+        							  <ECUC-FOREIGN-REFERENCE-DEF>
+        								<SHORT-NAME>RteISignalRef</SHORT-NAME>
+        								<DESC>
+        								  <L-2 L="EN">Reference to the ISignal in the system description.</L-2>
+        								</DESC>
+        								<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+        								<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+        								<SCOPE>LOCAL</SCOPE>
+        								<ORIGIN>ETAS</ORIGIN>
+        								<POST-BUILD-VARIANT-VALUE>false</POST-BUILD-VARIANT-VALUE>
+        								<VALUE-CONFIG-CLASSES>
+        								  <ECUC-VALUE-CONFIGURATION-CLASS>
+        									<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        									<CONFIG-VARIANT>VARIANT-LINK-TIME</CONFIG-VARIANT>
+        								  </ECUC-VALUE-CONFIGURATION-CLASS>
+        								  <ECUC-VALUE-CONFIGURATION-CLASS>
+        									<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        									<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+        								  </ECUC-VALUE-CONFIGURATION-CLASS>
+        								  <ECUC-VALUE-CONFIGURATION-CLASS>
+        									<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        									<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+        								  </ECUC-VALUE-CONFIGURATION-CLASS>
+        								</VALUE-CONFIG-CLASSES>
+        								<DESTINATION-TYPE>I-SIGNAL</DESTINATION-TYPE>
+        							  </ECUC-FOREIGN-REFERENCE-DEF>
+        							</REFERENCES>
+        						  </ECUC-PARAM-CONF-CONTAINER-DEF>
+        						  <!-- Container Definition: RteISignalGroupRefChoice -->
+        						  <ECUC-PARAM-CONF-CONTAINER-DEF>
+        							<SHORT-NAME>RteISignalGroupRefChoice</SHORT-NAME>
+        							<DESC>
+        							  <L-2 L="EN">Reference to the ISignalGroup in the system description.</L-2>
+        							</DESC>
+        							<LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+        							<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+        							<REFERENCES>
+        							  <!-- Foreign Reference Definition: RteISignalGroupRef -->
+        							  <ECUC-FOREIGN-REFERENCE-DEF>
+        								<SHORT-NAME>RteISignalGroupRef</SHORT-NAME>
+        								<DESC>
+        								  <L-2 L="EN">Reference to the ISignalGroup in the system description.</L-2>
+        								</DESC>
+        								<LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+        								<UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+        								<SCOPE>LOCAL</SCOPE>
+        								<ORIGIN>ETAS</ORIGIN>
+        								<POST-BUILD-VARIANT-VALUE>false</POST-BUILD-VARIANT-VALUE>
+        								<VALUE-CONFIG-CLASSES>
+        								  <ECUC-VALUE-CONFIGURATION-CLASS>
+        									<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        									<CONFIG-VARIANT>VARIANT-LINK-TIME</CONFIG-VARIANT>
+        								  </ECUC-VALUE-CONFIGURATION-CLASS>
+        								  <ECUC-VALUE-CONFIGURATION-CLASS>
+        									<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        									<CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+        								  </ECUC-VALUE-CONFIGURATION-CLASS>
+        								  <ECUC-VALUE-CONFIGURATION-CLASS>
+        									<CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+        									<CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+        								  </ECUC-VALUE-CONFIGURATION-CLASS>
+        								</VALUE-CONFIG-CLASSES>
+        								<DESTINATION-TYPE>I-SIGNAL-GROUP</DESTINATION-TYPE>
+        							  </ECUC-FOREIGN-REFERENCE-DEF>
+        							</REFERENCES>
+        						  </ECUC-PARAM-CONF-CONTAINER-DEF>
+        						</CHOICES>
+        					  </ECUC-CHOICE-CONTAINER-DEF>
+        					</SUB-CONTAINERS>
+        				  </ECUC-PARAM-CONF-CONTAINER-DEF>
+        				</SUB-CONTAINERS>
+        			</ECUC-PARAM-CONF-CONTAINER-DEF>
+                    <ECUC-PARAM-CONF-CONTAINER-DEF>
+                      <SHORT-NAME>Sum_Ssfm_GroupInfo</SHORT-NAME>
+                      <LONG-NAME/>
+                      <DESC>
+                        <L-2 L="EN">It contains group of the parameters related to the Ethernet/CAN serialData(s) ECUs and LIN serialData(s).</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <REFERENCES>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_DemDataElementClass_XXXX87_Ref</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the Dem Data Element Class associated to the Freeze Frame of the DTC UXXXX_87.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemGeneral/DemDataElementClass</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                      </REFERENCES> 
+                      <SUB-CONTAINERS>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_ECUInfo</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">It contains the parameters related to the ECUs</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                          <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                          <PARAMETERS>
+                            <ECUC-BOOLEAN-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_C_DTCProcess_SsmNodeLoss</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Boolean flag for controlling whether to process DTC for Ssm Node Loss Error</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>GM_ECUC</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                            </ECUC-BOOLEAN-PARAM-DEF>
+                            <ECUC-INTEGER-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_LossCommID</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">The ECU ID for the Loss of Communication functionality</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <MAX>255</MAX>
+                              <MIN>0</MIN>
+                            </ECUC-INTEGER-PARAM-DEF>
+                            <ECUC-INTEGER-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_LC_ECU_Timer_Ref</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Time in msec, for reference ECU Node Lost Communication debounce timer.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                              <MAX>12000</MAX>
+                              <MIN>0</MIN>
+                            </ECUC-INTEGER-PARAM-DEF>
+                            <ECUC-BOOLEAN-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_IsGateway</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">This parameter indicates if the ECU will act as a gateway or not.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                            </ECUC-BOOLEAN-PARAM-DEF>
+                          </PARAMETERS>
+                          <SUB-CONTAINERS>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_ECUInfo_SerialData</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">This sub container contains the information for SerialDatas belong to an ECU</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                              <PARAMETERS>
+                                <ECUC-ENUMERATION-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_FaultDetectionUsage</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Indicates if the SerialData will be used for Lost Communication fault and recovery detection, or only recovery detection, or neither of them.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DEFAULT-VALUE>None</DEFAULT-VALUE>
+                                  <LITERALS>
+                                    <ECUC-ENUMERATION-LITERAL-DEF>
+                                      <SHORT-NAME>None</SHORT-NAME>
+                                    </ECUC-ENUMERATION-LITERAL-DEF>
+                                    <ECUC-ENUMERATION-LITERAL-DEF>
+                                      <SHORT-NAME>FaultAndRecovery</SHORT-NAME>
+                                    </ECUC-ENUMERATION-LITERAL-DEF>
+                                    <ECUC-ENUMERATION-LITERAL-DEF>
+                                      <SHORT-NAME>RecoveryOnly</SHORT-NAME>
+                                    </ECUC-ENUMERATION-LITERAL-DEF>
+                                  </LITERALS>
+                                </ECUC-ENUMERATION-PARAM-DEF>
+                                <ECUC-ENUMERATION-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_RoutingMethod</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Describes the routing method of the SerialData to the receiver ECU.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <LITERALS>
+                                    <ECUC-ENUMERATION-LITERAL-DEF>
+                                      <SHORT-NAME>Direct</SHORT-NAME>
+                                    </ECUC-ENUMERATION-LITERAL-DEF>
+                                    <ECUC-ENUMERATION-LITERAL-DEF>
+                                      <SHORT-NAME>PDURouted</SHORT-NAME>
+                                    </ECUC-ENUMERATION-LITERAL-DEF>
+                                    <ECUC-ENUMERATION-LITERAL-DEF>
+                                      <SHORT-NAME>SignalRouted</SHORT-NAME>
+                                    </ECUC-ENUMERATION-LITERAL-DEF>
+                                  </LITERALS>
+                                </ECUC-ENUMERATION-PARAM-DEF>
+                              </PARAMETERS>
+                              <REFERENCES>
+                                <ECUC-CHOICE-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_SerialData_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the SerialData</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REFS>
+                                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_SerialData</DESTINATION-REF>
+                                  </DESTINATION-REFS>
+                                </ECUC-CHOICE-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_ECUInfo_Event</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">This sub container contains mappings between channels of serial datas and Dem events for LossOfCommunication and signaling invalid data on the same serial datas.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                              <REFERENCES>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Channel_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to a channel used by one or more SerialData</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_Channel</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_LossOfComm_DemEvent_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the Dem LossOfCommunication event for the referenced SerialData channel .</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemConfigSet/DemEventParameter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_InvalidData_DemEvent_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the Dem InvalidData event for the referenced SerialData channel .</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemConfigSet/DemEventParameter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                          </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_TrgDvcInfo</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">It contains the parameters related to a Service Based Target Device</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                          <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                          <PARAMETERS>
+                            <ECUC-BOOLEAN-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_C_DTCProcess_TrgDvc_SsmNodeLoss</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Boolean flag for controlling whether to process DTC for Ssm Node Loss Error</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>GM_ECUC</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                            </ECUC-BOOLEAN-PARAM-DEF>
+                            <ECUC-INTEGER-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_LF_TrgDvc_Timer</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Time in msec, for TrgDvc Loss of Function (LoF) debounce timer.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                              <MAX>12000</MAX>
+                              <MIN>0</MIN>
+                            </ECUC-INTEGER-PARAM-DEF>
+                          </PARAMETERS>
+                          <REFERENCES>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_SpmTargetDevice_Ref</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Reference to the SPM target device.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Spm/EcucModuleDefs/Spm/SpmConfigSet/SpmPgttEntries/SpmTrgDvc</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                          </REFERENCES>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_LINInfo</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">It contains the reference parameters related to LIN serialData(s)</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                          <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                          <PARAMETERS>
+                            <ECUC-BOOLEAN-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_LINResponderOBD_Supported</SHORT-NAME>
+                              <LONG-NAME>
+                                <L-4 L="EN">Sum_Ssfm_LINResponderOBD_Supported</L-4>
+                              </LONG-NAME>
+                              <DESC>
+                                <L-2 L="EN">Boolean flag for defining if OBD is supported by LIN Responder</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>false</DEFAULT-VALUE>
+                            </ECUC-BOOLEAN-PARAM-DEF>
+                          </PARAMETERS>
+                          <REFERENCES>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_LNM_ResponderInfo_Ref</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to the LIN Responder of a LIN network.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/ASW_SUM_LNM/LNM/LNM_Networks/LNMNetwork/LNM_Responders</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Channel_Ref</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to a LIN channel of a LIN Responder</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_Channel</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                          </REFERENCES>
+                          <SUB-CONTAINERS>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_LINInfo_SerialData</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">This sub container contains the information for SerialDatas belong to a LIN Responder</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                              <REFERENCES>
+                                <ECUC-CHOICE-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_SerialData_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the LIN SerialData</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REFS>
+                                    <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_SerialData</DESTINATION-REF>
+                                  </DESTINATION-REFS>
+                                </ECUC-CHOICE-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_LINInfo_Event</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">This sub container contains Dem event for Internal Electronic Fault and signaling invalid data of a LIN Responder.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <REFERENCES>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_IeF_DemEvent_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the Dem event that should keep track of the Internal Electronic Fault Error Code for the referenced LIN Responder.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemConfigSet/DemEventParameter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_MissingMsg_DemEvent_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the Dem event that should keep track of the Missing Message Error Code for the referenced LIN Responder.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemConfigSet/DemEventParameter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_InvalidData_DemEvent_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the Dem event that should keep track of invalid data event for the referenced LIN SerialData channel.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemConfigSet/DemEventParameter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                          </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                      </SUB-CONTAINERS>
+                    </ECUC-PARAM-CONF-CONTAINER-DEF>
+                    <ECUC-PARAM-CONF-CONTAINER-DEF>
+                      <SHORT-NAME>Sum_Ssfm_ErrorsHandlers</SHORT-NAME>
+                      <LONG-NAME/>
+                      <DESC>
+                        <L-2 L="EN">List of all configured errors that are handled by Errh submodule of SSFM.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <SUB-CONTAINERS>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Errh_BswError</SHORT-NAME>
+                          <LONG-NAME/>
+                          <DESC>
+                            <L-2 L="EN">List all configured BSW events that shall be debounced by Errh as possible errors.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                          <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                          <PARAMETERS>
+                            <ECUC-BOOLEAN-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_C_BswDTCProcess</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Boolean flag for controlling whether to process DTC</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>GM_ECUC</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                            </ECUC-BOOLEAN-PARAM-DEF>
+                            <ECUC-ENUMERATION-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_BswEventType</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Describes BswEvent/bitmap which are routed from SSFM-ERRH to the SUM_SOH for processing.
+
+											Bit 0 == NVM_E_HARDWARE,
+											Bit 1 == NVM_E_INTEGRITY_FAILED,
+											Bit 2 == NVM_E_REQ_FAILED,
+											Bit 3 == NVM_E_WRONG_BLOCK_ID,
+											Bit 4 == NVM_E_VERIFY_FAILED,
+											Bit 5== NVM_E_LOSS_OF_REDUNDANCY,
+											Bit 6 == NVM_E_QUEUE_OVERFLOW,
+											Bit 7 == NVM_E_WRITE_PROTECTED,
+											Bit 8 == WDGM_E_SUPERVISION,
+											Bit 9 == WDGM_E_SET_MODE,
+											Bit 10 till Bit 31== Reserved.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <LITERALS>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>NVM_E_HARDWARE</SHORT-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>NVM_E_INTEGRITY_FAILED</SHORT-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>NVM_E_REQ_FAILED</SHORT-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>NVM_E_WRONG_BLOCK_ID</SHORT-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>NVM_E_VERIFY_FAILED</SHORT-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>NVM_E_LOSS_OF_REDUNDANCY</SHORT-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>NVM_E_QUEUE_OVERFLOW</SHORT-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>NVM_E_WRITE_PROTECTED</SHORT-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>WDGM_E_SUPERVISION</SHORT-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>WDGM_E_SET_MODE</SHORT-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                              </LITERALS>
+                            </ECUC-ENUMERATION-PARAM-DEF>
+                          </PARAMETERS>
+                          <REFERENCES>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_BSWErr_EventFilter_Ref</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Reference to the SSFM associated error filter.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_EventIdToUpdateError_ref</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Reference to the associated DEM event for filtering.(I/P)</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemConfigSet/DemEventParameter</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_EventIdForSettingDTC_ref</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Reference for the associated DEM event that sets the DTC for this relevant error(O/P).</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemConfigSet/DemEventParameter</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Channel_Ref</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to Sum_Ssfm_Channel, Needed to publish Bus off errors</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_Channel</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                          </REFERENCES>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Errh_LNMErrors</SHORT-NAME>
+                          <LONG-NAME/>
+                          <DESC>
+                            <L-2 L="EN">List all configured LNM events that shall be debounced by Errh as possible errors.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                          <SUB-CONTAINERS>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_LNM_ResponderInfoError</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">List of all LNM reported errors of Network Responder(s) information type</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                              <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                              <PARAMETERS>
+                                <ECUC-ENUMERATION-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_LNM_ResponderInfoErrorType</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2>Enumerative value to specify the type of LNM Network Responder Information Error Type:
+													- SSFM_LNM_RESPONDER_IEF 		    = Internal Electronic Fault;
+													- SSFM_LNM_RESPONDER_MISSING_MSG    = Missing Message Error;
+													- SSFM_LNM_RESPONDER_MISSING_CAL    = Missing Calibration Error;
+													- SSFM_LNM_RESPONDER_NOT_CONFIGURED = Not Configured Sensor;</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                  <LITERALS>
+                                    <ECUC-ENUMERATION-LITERAL-DEF>
+                                      <SHORT-NAME>SSFM_LNM_RESPONDER_IEF</SHORT-NAME>
+                                      <LONG-NAME/>
+                                    </ECUC-ENUMERATION-LITERAL-DEF>
+                                    <ECUC-ENUMERATION-LITERAL-DEF>
+                                      <SHORT-NAME>SSFM_LNM_RESPONDER_MISSING_MSG</SHORT-NAME>
+                                      <LONG-NAME/>
+                                    </ECUC-ENUMERATION-LITERAL-DEF>
+                                    <ECUC-ENUMERATION-LITERAL-DEF>
+                                      <SHORT-NAME>SSFM_LNM_RESPONDER_MISSING_CAL</SHORT-NAME>
+                                      <LONG-NAME/>
+                                    </ECUC-ENUMERATION-LITERAL-DEF>
+                                    <ECUC-ENUMERATION-LITERAL-DEF>
+                                      <SHORT-NAME>SSFM_LNM_RESPONDER_NOT_CONFIGURED</SHORT-NAME>
+                                      <LONG-NAME/>
+                                    </ECUC-ENUMERATION-LITERAL-DEF>
+                                  </LITERALS>
+                                </ECUC-ENUMERATION-PARAM-DEF>
+                              </PARAMETERS>
+                              <REFERENCES>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_LNMResponderErr_EventFilter_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to Sum_Ssfm_Errh_GeneralEventsFilter.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_LINInfo_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the Sum_Ssfm_LINInfo associated to LIN Responder</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_GroupInfo/Sum_Ssfm_LINInfo</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                          </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Errh_SUSDErrors</SHORT-NAME>
+                          <LONG-NAME/>
+                          <DESC>
+                            <L-2 L="EN">List all configured SUSD events that shall be debounced by Errh as possible errors.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <SUB-CONTAINERS>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Diagnostic status error for Run Crank stuck-at HIGH level.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_DTCProcess_RCHigh</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to process DTC for Run Crank High Diagnostic Status</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <ORIGIN>GM_ECUC</ORIGIN>
+                                  <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                              <REFERENCES>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to Sum_Ssfm_FilterType which is the filter type of SUSD error event for Run Crank Input Stuck High Diagnostic Status.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_GetDTCStatus_DemEvent_Ref</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the Dem event for the for Run Crank High Diagnostic Status</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemConfigSet/DemEventParameter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Diagnostic status error for Run Crank stuck-at LOW level</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_DTCProcess_RCLow</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to process DTC Run Crank Low Diagnostic Status</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <ORIGIN>GM_ECUC</ORIGIN>
+                                  <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                              <REFERENCES>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to Sum_Ssfm_FilterType which is the filter type of SUSD error event for Run Crank Input Stuck Low Diagnostic Status.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_GetDTCStatus_DemEvent_Ref</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the Dem event for the for Run Crank Low Diagnostic Status</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemConfigSet/DemEventParameter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                          </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Errh_SSCError</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">List of all possible DTC Errors.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <SUB-CONTAINERS>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_U19A3_57_InvIncCfg</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC  U19A3 57.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_CodeGen_Enabled</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag that enables/disables the generation of the DTC U19A3 57 handler code.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_DTC_U19A3_57_InvIncCfg</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to enable the aggregation of DTC U19A3 57.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_U19A3_92_SecPer_PerIncOp</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC  U19A3 92.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_CodeGen_Enabled</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag that enables/disables the generation of the DTC U19A3 92 handler code.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_DTC_U19A3_92_SecPer_PerIncOp</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to enable the DTC U19A3 92.</L-2>
+                                    <L-2 L="EN">Setting this parameter to true will let SSFM to aggregate U19A3 57 DTC.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_U19A3_8A_CntrlModSecPer_AuthFailure</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC  U19A3 8A.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_CodeGen_Enabled</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag that enables/disables the generation of the DTC U19A3 8A handler code.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_U19A3_54_SecPer_MissSetup</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC  U19A3 54.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_DTC_U19A3_54_SecPer_MissSetup</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to enable the DTC U19A3 54. Setting this parameter to true will let SSFM to aggregate DTC U19A3 54 DTC.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_U198C_8A_FailedAuth</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC U198C_8A.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_CodeGen_Enabled</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag that enables/disables the generation of the DTC U198C_8A handler code.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                              <REFERENCES>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_VehicleRegion_SerialData_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to the Serial Data of the vehicle region signal</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_SerialData</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_SSC_U198C_8A_EventFilter_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to Sum_Ssfm_FilterType which is the filter type of SSC error event for U198C_8A status</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_U198C_54_MissSetup</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC U198C_54.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_CodeGen_Enabled</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag that enables/disables the generation of the DTC U198C_54 handler code.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_DTC_U198C_54_MissSetup</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to enable the DTC U198C_54. Setting this parameter to true will let SSFM to aggregate DTC U198C_54 DTC.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+			                        <REFERENCES>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_SSC_U198C_54_EventFilter_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to Sum_Ssfm_FilterType which is the filter type of SSC error event for U198C_54 status</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>				
+						                <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_U198C_49_PrimSec_IntElecFail</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC U198C_49 a primary security internal electronic failure.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_U198C_49_DTCProcess</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to process DTC U198C 49 Status</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                              <REFERENCES>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_SSC_U198C_49_Filter_Ref</SHORT-NAME>
+                                  <LONG-NAME/>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to Sum_Ssfm_FilterType which is the filter type of SSC error event for U198C_49 Status.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>								
+                          </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Errh_SrvcMgrErrors</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">List of all possible DTC Errors for SrvcMgr.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <SUB-CONTAINERS>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_U19A6_54_MissSetup</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC U19A6 54 - Service Discovery Failure ? Missing Setup/Learn.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_DTC_U19A6_54_MissSetup</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to enable the DTC U19A6 54. Setting this parameter to true will let SSFM to aggregate DTC U19A6 54 DTC.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+							              <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_U19A6_57_PhyECUInvIncComp</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC U19A6_57 and confirms that DID E0CE is to be read.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_U19A6_57_DTCProcess</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to enable the DTC U19A6_57.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+			                        <REFERENCES>
+                                <ECUC-REFERENCE-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_SrvcMgr_U19A6_57_Filter_Ref</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Reference to Sum_Ssfm_FilterType which is the filter type for U19A6_57 status</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_SSFM/EcucModuleDefs/SSFM/Sum_Ssfm_ConfigSet/Sum_Ssfm_ErrorFilter/Sum_Ssfm_Errh_GeneralEventsFilter</DESTINATION-REF>
+                                </ECUC-REFERENCE-DEF>
+                              </REFERENCES>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_U19A6_87_MissingMessage</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC U19A6 87 - Service Discovery Missing Message.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_DTC_U19A6_87_MissingMessage</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to enable the DTC U19A6 87. Setting this parameter to true will let SSFM to aggregate DTC U19A6 87 DTC.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                          </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Errh_SafetySecurityErrors</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">List of all possible DTC Errors for Safety and Security.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <SUB-CONTAINERS>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_UXXXX_83_SignalProtectionIncorrect</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning safety and security errors' DTCs - Value of Signal Protection Calculation Incorrect.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_DTC_UXXXX_83_SignalProtectionIncorrect</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to enable the DTC UXXXX 81. Setting this parameter to true will let SSFM to aggregate  Signal Protection Calculation DTCs.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_UXXXX_87_MissingMessage</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">It contains the parameters concerning the DTC UXXXX 87 - Missing Message. Controls whether missing message DTC test enable condition is active.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <PARAMETERS>
+                                <ECUC-BOOLEAN-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_DTC_UXXXX_87_MissingMessage</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Boolean flag for controlling whether to enable the DTC UXXXX 87. Setting this parameter to true will let SSFM to aggregate Missing Message DTCs.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                                </ECUC-BOOLEAN-PARAM-DEF>
+                              </PARAMETERS>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                          </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                      </SUB-CONTAINERS>
+                    </ECUC-PARAM-CONF-CONTAINER-DEF>
+                    <ECUC-PARAM-CONF-CONTAINER-DEF>
+                      <SHORT-NAME>Sum_Ssfm_ErrorFilter</SHORT-NAME>
+                      <LONG-NAME/>
+                      <DESC>
+                        <L-2 L="EN">List of all Filtering methods for Error handler</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                      <PARAMETERS>
+                        <ECUC-FLOAT-PARAM-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Errh_MovingWindow_XofY_Periodicity</SHORT-NAME>
+                          <LONG-NAME>
+                            <L-4 L="EN">SsfmRunMovWndTimBasedFunctionPeriod</L-4>
+                          </LONG-NAME>
+                          <DESC>
+                            <L-2 L="EN">Period (ms) of the Moving Window Time based Function Runnables. Counting the counter runnable to track the time interval compared to configured threshold for debouncer X of Y moving window time based .</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <IMPLEMENTATION-CONFIG-CLASSES>
+                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                              <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                            <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                              <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                            </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                          </IMPLEMENTATION-CONFIG-CLASSES>
+                          <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                          <MAX>65535</MAX>
+                          <MIN>1</MIN>
+                        </ECUC-FLOAT-PARAM-DEF>
+                      </PARAMETERS>
+                      <SUB-CONTAINERS>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Errh_GeneralEventsFilter</SHORT-NAME>
+                          <LONG-NAME/>
+                          <DESC>
+                            <L-2 L="EN">Definition of main error filters as X_OF_Y, BLOCK and, NONE.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                          <PARAMETERS>
+                            <ECUC-ENUMERATION-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_FilterType</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Configure the error filtering type</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>NONE</DEFAULT-VALUE>
+                              <LITERALS>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>NONE</SHORT-NAME>
+                                  <LONG-NAME>
+                                    <L-4 L="EN">NONE</L-4>
+                                  </LONG-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>BLOCK</SHORT-NAME>
+                                  <LONG-NAME>
+                                    <L-4 L="EN">BLOCK</L-4>
+                                  </LONG-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>X_OF_Y_MOVING_WINDOW_TIMEBASED</SHORT-NAME>
+                                  <LONG-NAME>
+                                    <L-4 L="EN">X_OF_Y_MOVING_WINDOW_TIMEBASED</L-4>
+                                  </LONG-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                                <ECUC-ENUMERATION-LITERAL-DEF>
+                                  <SHORT-NAME>X_OF_Y_MOVING_WINDOW_EVENTBASED</SHORT-NAME>
+                                  <LONG-NAME>
+                                    <L-4 L="EN">X_OF_Y_MOVING_WINDOW_EVENTBASED</L-4>
+                                  </LONG-NAME>
+                                </ECUC-ENUMERATION-LITERAL-DEF>
+                              </LITERALS>
+                            </ECUC-ENUMERATION-PARAM-DEF>
+                            <ECUC-INTEGER-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_C_ThrX</SHORT-NAME>
+                              <LONG-NAME>
+                                <L-4 L="EN">Sum_Ssfm_Errh_C_ThrX</L-4>
+                              </LONG-NAME>
+                              <DESC>
+                                <L-2 L="EN">Threshold for errors (X). Only applicable in the case of X_OF_Y filter type is selected.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <MAX>65535</MAX>
+                              <MIN>1</MIN>
+                            </ECUC-INTEGER-PARAM-DEF>
+                            <ECUC-INTEGER-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_C_ThrY</SHORT-NAME>
+                              <LONG-NAME/>
+                              <DESC>
+                                <L-2 L="EN">Period in milliseconds or Number of events in which X threshold counter is valid. Only applicable in the case of X_OF_Y_TIME_BASED or X_OF_Y_TIME_COUNTER filter type is selected.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <MAX>65535</MAX>
+                              <MIN>1</MIN>
+                            </ECUC-INTEGER-PARAM-DEF>
+                          </PARAMETERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                        <ECUC-PARAM-CONF-CONTAINER-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Errh_KeySlotVerifyFilter</SHORT-NAME>
+                          <LONG-NAME>
+                            <L-4 L="EN">Sum_Ssfm_Errh_KeySlotVerifyFilter</L-4>
+                          </LONG-NAME>
+                          <DESC>
+                            <L-2 L="EN">The possible filter type values of SSC Key Slot Verify error properties</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <PARAMETERS>
+                            <ECUC-BOOLEAN-PARAM-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_C_DTC_KeySlotVerify</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Boolean flag for controlling whether to process DTC. If yes, the DTC shall be processed.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <IMPLEMENTATION-CONFIG-CLASSES>
+                                <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                  <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                              </IMPLEMENTATION-CONFIG-CLASSES>
+                              <ORIGIN>GM_ECUC</ORIGIN>
+                              <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                              <DEFAULT-VALUE>true</DEFAULT-VALUE>
+                            </ECUC-BOOLEAN-PARAM-DEF>
+                          </PARAMETERS>
+                          <REFERENCES>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_GetDTCStatus_DemEvent_Ref</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to the DEM event associated for KeySlot Verify Error.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemConfigSet/DemEventParameter</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                          </REFERENCES>
+                          <REFERENCES>
+                            <ECUC-REFERENCE-DEF>
+                              <SHORT-NAME>Sum_Ssfm_DemDataElementClass_U19A3_8A_Ref</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Reference to the Dem Data Element Class associated to the Freeze Frame of the DTC U19A3_8A.</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                              <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dem/EcucModuleDefs/Dem/DemGeneral/DemDataElementClass</DESTINATION-REF>
+                            </ECUC-REFERENCE-DEF>
+                          </REFERENCES> 
+                          <SUB-CONTAINERS>
+                            <ECUC-PARAM-CONF-CONTAINER-DEF>
+                              <SHORT-NAME>Sum_Ssfm_Errh_KeySlotNumber</SHORT-NAME>
+                              <DESC>
+                                <L-2 L="EN">Container that defines KeySlots</L-2>
+                              </DESC>
+                              <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                              <UPPER-MULTIPLICITY-INFINITE>true</UPPER-MULTIPLICITY-INFINITE>
+                              <PARAMETERS>
+                                <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_KeySlotVerify_QueueLength</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Parameter that defines the queue length for KeySlotVerify to support multiple message authentications. Hint: set the parameter at least the number of authenticated messages per KeySlot</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <ORIGIN>GM_ECUC</ORIGIN>
+                                  <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                  <DEFAULT-VALUE>5</DEFAULT-VALUE>
+                                  <MAX>100</MAX>
+                                  <MIN>1</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_SlowestPDU_RateTimer</SHORT-NAME>
+                                  <LONG-NAME>
+                                    <L-4 L="EN">Sum_Ssfm_Errh_C_SlowestPDU_RateTimer</L-4>
+                                  </LONG-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Timer in millisecond (ms) for determining when frames are not being received in this keyslot. This calibration shall be set equal to or greater than the periodic rate of the slowest PDU received on this keyslot.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                  <DEFAULT-VALUE>1000</DEFAULT-VALUE>
+                                  <MAX>12750</MAX>
+                                  <MIN>50</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_KeySlotProviderDTCId</SHORT-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">DTC ID of the ECU that provides messages using this KeySlot for MAC verification.</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <ORIGIN>GM_ECUC</ORIGIN>
+                                  <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                  <DEFAULT-VALUE>0</DEFAULT-VALUE>
+                                  <MAX>65535</MAX>
+                                  <MIN>0</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                                <ECUC-INTEGER-PARAM-DEF>
+                                  <SHORT-NAME>Sum_Ssfm_Errh_C_FailedAuthenticationTimer</SHORT-NAME>
+                                  <LONG-NAME>
+                                    <L-4 L="EN">Sum_Ssfm_Errh_C_FailedAuthenticationTimer</L-4>
+                                  </LONG-NAME>
+                                  <DESC>
+                                    <L-2 L="EN">Timer in seconds for setting the threshold to report a "test failed".</L-2>
+                                  </DESC>
+                                  <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                                  <IMPLEMENTATION-CONFIG-CLASSES>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>PRE-COMPILE</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-PRE-COMPILE</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                    <ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                      <CONFIG-CLASS>POST-BUILD</CONFIG-CLASS>
+                                      <CONFIG-VARIANT>VARIANT-POST-BUILD</CONFIG-VARIANT>
+                                    </ECUC-IMPLEMENTATION-CONFIGURATION-CLASS>
+                                  </IMPLEMENTATION-CONFIG-CLASSES>
+                                  <ORIGIN>ETAS:1.0.0:2015-05-04</ORIGIN>
+                                  <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                                  <DEFAULT-VALUE>59</DEFAULT-VALUE>
+                                  <MAX>255</MAX>
+                                  <MIN>0</MIN>
+                                </ECUC-INTEGER-PARAM-DEF>
+                              </PARAMETERS>
+                            </ECUC-PARAM-CONF-CONTAINER-DEF>
+                          </SUB-CONTAINERS>
+                        </ECUC-PARAM-CONF-CONTAINER-DEF>
+                      </SUB-CONTAINERS>
+                    </ECUC-PARAM-CONF-CONTAINER-DEF>
+                  </SUB-CONTAINERS>
+                </ECUC-PARAM-CONF-CONTAINER-DEF>
+                <ECUC-PARAM-CONF-CONTAINER-DEF>
+                  <SHORT-NAME>Sum_Ssfm_Errh_DID</SHORT-NAME>
+                  <DESC>
+                    <L-2 L="EN">It contains the parameters related to the DID supported.</L-2>
+                  </DESC>
+                  <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                  <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                  <SUB-CONTAINERS>
+                    <ECUC-PARAM-CONF-CONTAINER-DEF>
+                      <SHORT-NAME>Sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH</SHORT-NAME>
+                      <DESC>
+                        <L-2 L="EN">It contains the parameters to configure initial values of threshole and Time Window of filter and refer to the DcmDspDid for supporting DID 0xF094 Local Supervised WdgM Status Of SUM_SOH.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <PARAMETERS>
+                        <ECUC-INTEGER-PARAM-DEF>
+                          <SHORT-NAME>SUM_ERRH_SOHSupFail_Thresh_Init</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Configure the Failed Local Supervision Threshold init value.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <ORIGIN>GM_ECUC</ORIGIN>
+                          <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                          <DEFAULT-VALUE>1</DEFAULT-VALUE>
+                          <MAX>65535</MAX>
+                          <MIN>0</MIN>
+                        </ECUC-INTEGER-PARAM-DEF>
+                        <ECUC-INTEGER-PARAM-DEF>
+                          <SHORT-NAME>SUM_ERRH_SOHSupFail_TW_Thresh_Init</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Failed Local Supervision TW Threshold init.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <ORIGIN>GM_ECUC</ORIGIN>
+                          <SYMBOLIC-NAME-VALUE>false</SYMBOLIC-NAME-VALUE>
+                          <DEFAULT-VALUE>10</DEFAULT-VALUE>
+                          <MAX>16777215</MAX>
+                          <MIN>0</MIN>
+                        </ECUC-INTEGER-PARAM-DEF>
+                      </PARAMETERS>
+                      <REFERENCES>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_Errh_F094_Ref</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to DcmDspDid of SUM_SOH Local Supervision Failures DID 0XF094 in DCM.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/DcmDspDid</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                      </REFERENCES>
+                    </ECUC-PARAM-CONF-CONTAINER-DEF>
+                    <ECUC-PARAM-CONF-CONTAINER-DEF>
+                      <SHORT-NAME>Sum_Ssfm_NvM_References</SHORT-NAME>
+                      <LONG-NAME>
+                        <L-4 L="EN">Sum_Ssfm_NvM_References</L-4>
+                      </LONG-NAME>
+                      <DESC>
+                        <L-2 L="EN">Container for specifying the references to NvM blocks required by SUM_SFFM.</L-2>
+                      </DESC>
+                      <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                      <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                      <POST-BUILD-CHANGEABLE>false</POST-BUILD-CHANGEABLE>
+                      <MULTIPLE-CONFIGURATION-CONTAINER>false</MULTIPLE-CONFIGURATION-CONTAINER>
+                      <REFERENCES>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_CommFigureOfMeritNvmRef</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the NvM block for DID 0xE0B8.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_SigStsInfoLossOfCommNvmRef</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the NvM block for DID 0xE0B9.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_SigProtectionCalcIncorrectNvmRef</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the NvM block for DID 0xE0BA.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>1</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_MACVerPerKSNvmRef</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the NvM block for DID 0xE0BB - MAC Verification Status Per Key Slot. This parameter shall be configured when key slot verification is enabled; otherwise, it does not need to be.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                        <ECUC-REFERENCE-DEF>
+                          <SHORT-NAME>Sum_Ssfm_LocalSupWdgMStsOfSOHNvmRef</SHORT-NAME>
+                          <DESC>
+                            <L-2 L="EN">Reference to the NvM block for DID 0xF094. This parameter shall be configured when the SOH_ERRHLocalSupervision_SupportEnabled is True; otherwise, it does not need to be.</L-2>
+                          </DESC>
+                          <LOWER-MULTIPLICITY>0</LOWER-MULTIPLICITY>
+                          <UPPER-MULTIPLICITY>1</UPPER-MULTIPLICITY>
+                          <DESTINATION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor</DESTINATION-REF>
+                        </ECUC-REFERENCE-DEF>
+                      </REFERENCES>
+                    </ECUC-PARAM-CONF-CONTAINER-DEF>
+                  </SUB-CONTAINERS>
+                </ECUC-PARAM-CONF-CONTAINER-DEF>
+              </CONTAINERS>
+            </ECUC-MODULE-DEF>
+          </ELEMENTS>
+        </AR-PACKAGE>
+      </AR-PACKAGES>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>

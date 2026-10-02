@@ -1,0 +1,33 @@
+4;8
+Definition; Description
+Activating ECU; ECU assigned to monitor and process PN Activation Criteria. At least one ECU per PN is an Activating ECU, but there may be others (depends on the architecture deployment)
+Activated ECU; ECU is a member of an activated PN. All members of networks supporting PNs are capable of being Activated ECUs
+Activation Criteria;A set of conditions that result in the activation of a PN. These conditions are typically a combination of local inputs and / or serial data signals
+API; Application Program Interface
+AMM; Application Mode Manager
+BSW; Basic Software
+BswM; Basic Software Mode Manager
+CAN; Controller Area Network
+Com; Communication Module
+Dcm; Diagnostic Communication Module
+Deactivation Criteria; A set of conditions that result in the deactivation of a PN
+DTC; Diagnostic Trouble Code
+DIAG; Diagnostic Application Services
+DFD; Data Flow Diagram
+ECU; Electronic Control Unit
+Ecuc; ECU Configuration File
+ERRH; Error Handling Module
+FSM; Finite State Machine
+GM; General Motors
+Locally Active PN; PN that is activated from within the ECU because its PN Activation Criteria was met
+PNC; Partial Network Coordinator
+Remotely Active PN; PN that is activated from outside the ECU
+SOH; State Of Health Manager
+SSFM; Signal Status adn Fault Monitor
+SSC; Security Service Coordinator
+SUM; Standard Utility Module
+SUSD; Startup Shut down Coordinator
+SW-C; Software Component
+SW or S/W; Software
+VMM; Vehicle Mode Manager
+WRT/wrt; With respect to 

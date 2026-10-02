@@ -1,0 +1,82 @@
+@startuml Spm_ComCdd_tx
+participant Spm
+participant RTE
+participant LdCom
+participant PduR
+participant SecOC
+participant SoAd
+participant TcpIp
+
+Spm -> Spm : message Ready
+activate Spm
+
+note left
+Transmission path
+end note
+
+Spm -> RTE: **Rte_Write_SumSpm_PP_Spm_Msg_SPM_dt(...)**
+activate RTE
+
+RTE -> LdCom : **LdCom_Transmit()**
+activate LdCom
+
+LdCom -> PduR: **PduR_LdComTransmit()**
+activate PduR
+
+PduR -> Spm: **SpmLo_Transmit()**
+activate Spm
+activate PduR
+
+Spm -> Spm: Add metadata to PDU
+
+Spm -> PduR: **PduR_SpmUpTransmit()**
+activate Spm
+activate PduR
+
+PduR -> SecOC: **SecOC_Transmit()**
+activate SecOC
+activate PduR
+
+SecOC -> PduR: **PduR_SecOCTransmit()**
+activate PduR
+activate SecOC
+
+PduR -> SoAd: **SoAd_IfTransmit()**
+activate SoAd
+
+SoAd -> TcpIp: **TcpIp_UdpTrasmit()**
+activate TcpIp
+
+TcpIp --> SoAd 
+deactivate TcpIp
+
+SoAd --> PduR
+deactivate SoAd
+
+PduR --> SecOC
+deactivate SecOC
+deactivate PduR
+
+SecOC --> PduR
+deactivate SecOC
+deactivate PduR
+
+PduR --> Spm
+deactivate PduR
+deactivate Spm
+
+Spm --> PduR
+deactivate Spm
+deactivate PduR
+
+PduR --> LdCom
+deactivate PduR
+
+LdCom --> RTE
+deactivate LdCom
+
+RTE --> Spm
+deactivate RTE
+deactivate Spm
+
+@enduml

@@ -1,0 +1,2513 @@
+«IMPORT bsw»
+«IMPORT bsw::PNCModule»
+«EXTENSION templates::mathlib»
+«EXTENSION templates::Sum_Pnc_General»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+
+
+«DEFINE Root FOR Autosar»
+    «EXPAND Expand FOR ecu»
+«ENDDEFINE»
+
+
+«DEFINE Expand FOR Ecu»
+«FILE "Sum_Pnc_Main.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_PNC
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : Module source file
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/*
+ *******************************************************************************
+ * Includes
+ *******************************************************************************
+ */
+ #include "Sum_Pnc.h"
+ #include "Rte_SUM_PNC.h"
+
+#if (PNC_ETHERNET_SUPPORT == STD_ON)
+#include "UdpNm.h"
+#else
+#include "CanNm.h"
+#endif
+
+/*
+ *******************************************************************************
+ * Variables
+ *******************************************************************************
+ */
+ /* Global variable containing current PNC state*/
+/* PRQA S 3432 EOF # The violation is due to Compiler.h file that is external to the released code */
+uint8 SUM_PNC_PNC_Number; /* PRQA S 1504 EOF */ /* This object might be used by another files */
+
+«IF isUsingUDP(pNC.pNCConfigSet) == false -»
+/* [$Satisfies $SDD_PNC 058] [$Satisfies $SDD_PNC 060] */
+static uint8 SUM_PNC_DID_INFO_Local[DID_INFO];
+static uint8 SUM_PNC_DID_INFO_Remote[DID_INFO];
+«ENDIF-»
+
+PNC_Struct SUM_GaaPNC[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+uint8 SUM_PNC_Shutdown_Permission[NUMBER_OF_PNC_PARTIAL_NETWORKS]; /* PRQA S 3408 EOF */
+/*[$Satisfies $SDD_PNC 122]*/
+static uint8 SUM_PNC_Local_WR[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+«IF (GetPN_RecordID_Type(pNC)== 1) -»
+/* Unified local activation history (sensors + signals with offset) */
+static uint8 SUM_PNC_LocalActReason[NUMBER_OF_PNC_PARTIAL_NETWORKS][SUM_PNC_MAX_SENSORS];
+static uint8 SUM_PNC_LocalActReasonCount[NUMBER_OF_PNC_PARTIAL_NETWORKS]; /* Counts per PN */
+«ENDIF-»
+boolean SUM_PNC_Criteria_Sensor_Act[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+boolean SUM_PNC_Criteria_Signal_Act[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+boolean SUM_PNC_Criteria_NM_Act_Remote[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+static boolean SUM_PNC_NM_NewActivation[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+static boolean SUM_PNC_DM_Timer_Elapsed[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+/* NM remote activation history list (Enumerated Last Active Reason) */
+static uint8 SUM_PNC_NM_ActReason[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+static uint8 SUM_PNC_NM_ActReasonCount;
+static uint8 SUM_PNC_NM_WR;
+static boolean SUM_PNC_RemoteSUSDPending;
+
+ /*
+ *******************************************************************************
+ * Local Function Prototypes
+ *******************************************************************************
+ */
+static FUNC(void, PNC_CODE)Set_Alarm(VAR(uint8, AUTOMATIC) Alarm_Value,
+									 VAR(uint8, AUTOMATIC) PNC_Number);
+static FUNC(boolean, PNC_CODE)Get_DIAG_DisableNormalCommunicationMode(void);
+
+«IF isUsingUDP(pNC.pNCConfigSet) == false -»
+static FUNC(void, PNC_CODE)PNC_Update_Local_DID_Bit(void);
+static FUNC(void, PNC_CODE)PNC_Update_Remote_DID_Bit(void);
+«ENDIF -»
+
+static FUNC(void, PNC_CODE) Status_PNC_Enable_Check(void);
+static FUNC(void, PNC_CODE) Status_PNC_Monitor_Activation(void);
+static FUNC(void, PNC_CODE) Status_PNC_Ack_Activation(void);
+static FUNC(void, PNC_CODE) Status_PNC_Tx_Enable(void);
+static FUNC(void, PNC_CODE) Status_PNC_Locally_Active(void);
+static FUNC(void, PNC_CODE) Status_PNC_Remotely_Active(void);
+static FUNC(void, PNC_CODE) UpdateCountersActiveTimer(uint8 PN_Index);
+static FUNC(void, PNC_CODE) UpdateCountersPassiveTimer(uint8 PN_Index);
+static FUNC(void, PNC_CODE) UpdateCountersActivationRegTimer(uint8 PN_Index);
+static FUNC(void, PNC_CODE) Handling_PNC_State(uint8 PNC_Number);
+static FUNC(void, PNC_CODE) SUM_PNC_SUSD_RecordInfo_Update(VAR(RID_Enum, AUTOMATIC) RID,
+											VAR(uint8, AUTOMATIC) WakeupReason);
+
+static FUNC(void, PNC_CODE) SUM_PNC_Update_LocalActivation_History(
+    P2VAR(uint8,AUTOMATIC,AUTOMATIC) TempActivationBuffer,
+    VAR(uint8, AUTOMATIC) TempActivationCount,
+    VAR(uint8, AUTOMATIC) PN_Index);
+static FUNC(void, PNC_CODE) SUM_PNC_Update_LocalDeactivation_History(
+    P2CONST(uint8,AUTOMATIC,AUTOMATIC) TempDeactivationBuffer,
+    VAR(uint8, AUTOMATIC) TempDeactivationCount,
+    VAR(uint8, AUTOMATIC) PN_Index);
+static FUNC(void, PNC_CODE) SUM_PNC_Update_NM_Activation_History(
+    P2CONST(uint8, AUTOMATIC, AUTOMATIC) NewReasons,
+    VAR(uint8, AUTOMATIC) Count);
+static FUNC(void, PNC_CODE) SUM_PNC_Update_NM_Deactivation_History(
+    P2CONST(uint8, AUTOMATIC, AUTOMATIC) RemovedReasons,
+    VAR(uint8, AUTOMATIC) Count);
+static FUNC(void, PNC_CODE) SUM_PNC_SortReasonBuffer(
+    P2VAR(uint8, AUTOMATIC, AUTOMATIC) Buffer,
+    VAR(uint8, AUTOMATIC) Count);
+static FUNC(void, PNC_CODE) SUM_PNC_MergeReasonIntoNMList(
+    VAR(uint8, AUTOMATIC) Reason);
+«IF IsPDUDisableFeatureEnabled(pNC)-»
+static FUNC(void, PNC_CODE) PNC_BswM_DisableSinglePDU_TxReq(void);
+«ENDIF-»
+static FUNC(void, PNC_CODE) SUM_PNC_Handle_RecordInfo_Update(
+    P2CONST(RecordIdType, AUTOMATIC, AUTOMATIC) RecordIdInfo,
+    P2VAR(RecordIdType, AUTOMATIC, AUTOMATIC) PreviousRecordIdInfo);
+static FUNC(void, PNC_CODE) SUM_PNC_Handle_Generic_RID_Logic(VAR(RID_Enum, AUTOMATIC) RID,
+                                                             VAR(PNC_Modes, AUTOMATIC) ActiveMode,
+                                                             P2VAR(RecordIdType, AUTOMATIC, AUTOMATIC) RecordIdInfo);
+static FUNC(void, PNC_CODE) SUM_PNC_AnyPnActive_Update(VAR(RID_Enum, AUTOMATIC) RID,
+                                                              VAR(boolean, AUTOMATIC) AnyPnActive,
+                                                              VAR(boolean, AUTOMATIC) NewActivationDetected,
+                                                              VAR(uint8, AUTOMATIC) NewlyActivatedWakeupReason,
+                                                              VAR(uint8, AUTOMATIC) FirstActiveWakeupReason,
+                                                              P2VAR(RecordIdType, AUTOMATIC, AUTOMATIC) RecordIdInfo,
+                                                              P2VAR(boolean, AUTOMATIC, AUTOMATIC) Previous_PN_Active_State);
+ /*
+ *******************************************************************************
+ * Local Function
+ *******************************************************************************
+ */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason */
+#define SUM_PNC_START_SEC_CODE /* PRQA S 3614 EOF */ /* Memmap code inclusion*/
+#include "SUM_PNC_MemMap.h" /* PRQA S 5087 EOF */
+/*******************************************************************************
+ * Function name    : SUM_PNC_Init
+ * Description      : Initialization function for PNC module
+ * Parameter in     : PNC_ConfigPtr
+ * Parameter out    : None
+ * Return value     : void
+ [$Satisfies $SDD_PNC 020] [$Satisfies $SDD_PNC 041]
+ ******************************************************************************/
+/* PRQA S 1503 EOF # Functions/runnables to be called by external modules */
+FUNC(void, PNC_CODE) SUM_PNC_Init(void) /* PRQA S 1532 */ /* This function might be called by another modules */
+{
+    /* Local variables declaration */
+    uint8 Loc_Index;
+
+    /* Looping for all partial networks */
+    for (Loc_Index = 0; Loc_Index < NUMBER_OF_PNC_PARTIAL_NETWORKS; Loc_Index++)
+    {
+        /* Initialization of counter arrays and flag arrays for timers */
+        SUM_GaaPNC[Loc_Index].Counter_Sum_Active = 0;
+        SUM_GaaPNC[Loc_Index].Counter_Sum_Passive = 0;
+        SUM_GaaPNC[Loc_Index].Counter_PNC_t_Activation_Req_Timer = 0;
+        SUM_GaaPNC[Loc_Index].Counter_Repeat_Msg_Time_Timer = 0;
+        SUM_GaaPNC[Loc_Index].Flag_Counter_Sum_Active = PNC_TIMER_INVALID;
+        SUM_GaaPNC[Loc_Index].Flag_Counter_Sum_Passive = PNC_TIMER_INVALID;
+        SUM_GaaPNC[Loc_Index].Flag_Counter_PNC_t_Activation_Req_Timer = PNC_TIMER_INVALID;
+        SUM_GaaPNC[Loc_Index].PN_DeActState = 0;
+        /* The initial mode for all SUM_PNC shall assume no active PN, and stopped PDU groups */
+        SUM_GaaPNC[Loc_Index].Current_PNC_State = SUM_PNC_NO_COMMUNICATION;
+        SUM_GaaPNC[Loc_Index].Requested_PNC_State = SUM_PNC_INVALID;
+        SUM_GaaPNC[Loc_Index].Current_ComMChannel_State = SUM_COMM_NO_COMMUNICATION;
+        SUM_GaaPNC[Loc_Index].Current_PduGroupTX_State = SUM_PDUGRP_STOP;
+        SUM_GaaPNC[Loc_Index].Current_PduGroupRX_State = SUM_PDUGRP_STOP;
+        SUM_GaaPNC[Loc_Index].Current_PNC_Mode = PNC_ENABLE_CHECK;
+        /* [$Satisfies $SDD_PNC 070] */
+        SUM_GaaPNC[Loc_Index].DM_Timer = SUM_PNC_Cfg[Loc_Index].DM_Max_Timer;
+        SUM_GaaPNC[Loc_Index].DM_Status = PNC_DM_ACTIVE;
+        /* [$Satisfies $SDD_PNC 087] */
+        SUM_GaaPNC[Loc_Index].PN_DTC_Timer = SUM_PNC_Cfg[Loc_Index].ptr_SUM_PN_DTC_TIMER_Default_Value();
+        /* [$Satisfies $SDD_PNC 092] */
+        SUM_PNC_Cfg[Loc_Index].ptr_SUM_PN_DTC_Allowed(DTC_Not_Allowed);
+
+		«IF (GetPN_RecordID_Type(pNC)== 1) -»
+		SUM_PNC_Local_WR[Loc_Index] = 0xFFu;
+		«ENDIF»
+         SUM_PNC_Criteria_NM_Act_Remote[Loc_Index] = FALSE;
+         SUM_PNC_NM_NewActivation[Loc_Index] = FALSE;
+         SUM_PNC_DM_Timer_Elapsed[Loc_Index] = FALSE;
+
+    }
+
+	/* Initialize NM activation history list */
+	SUM_PNC_NM_ActReasonCount = 0U;
+	SUM_PNC_NM_WR = 0xFFu;
+	SUM_PNC_RemoteSUSDPending = FALSE;
+
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : Set_Alarm
+ * Description      : Timer
+ * Parameter in     : Alarm_Value,SUM_PNC_PNC_Number
+ * Parameter out    : None
+ * Return value     : void
+ [$Satisfies $SDD_PNC 004] [$Satisfies $SDD_PNC 036]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) Set_Alarm(VAR(uint8, AUTOMATIC) Alarm_Value, VAR(uint8, AUTOMATIC) PNC_Number)
+{
+    if (Alarm_Value == PNC_ALARM_ACTIVE)
+    {
+        SUM_GaaPNC[PNC_Number].Flag_Counter_Sum_Active = PNC_TIMER_INIT;
+    }
+    else if (Alarm_Value == PNC_ALARM_PASSIVE)
+    {
+        SUM_GaaPNC[PNC_Number].Flag_Counter_Sum_Passive = PNC_TIMER_INIT;
+    }
+    else if (Alarm_Value == PNC_ALARM_ACT_REQ)
+    {
+        SUM_GaaPNC[PNC_Number].Flag_Counter_PNC_t_Activation_Req_Timer = PNC_TIMER_INIT;
+    }
+    else if (Alarm_Value == PNC_REPEAT_MESSAGE_TIME)
+    {
+        SUM_GaaPNC[PNC_Number].Counter_Repeat_Msg_Time_Timer = (uint16)((SUM_PNC_Cfg[PNC_Number].Repeat_Message_Time) / PNC_T_PNsPNsSTATUSMONITORING_PERIODICITY);
+    }
+    else
+    {
+        /* error */
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : Activation_Sensor
+ * Description      : Updates the Activation_criteria i.e True/False
+ * Parameter in     : None
+ * Parameter out    : None
+ * Return value     : void
+ [$Satisfies $SDD_PNC 011]
+ ******************************************************************************/
+/* PRQA S 1505 EOF # Functions are public and can be used in external modules */
+FUNC(void, PNC_CODE) Activation_Sensor(void)
+{
+    VAR(Criteria_Struct, AUTOMATIC) Activation_Criteria_out = {FALSE, FALSE};
+    VAR(uint8, AUTOMATIC) Loc_Index;
+    /* Activation criteria */
+    VAR(boolean, AUTOMATIC) AtLeastOneActivated = FALSE;
+    /* Temporary buffers for activation and deactivation */
+    VAR(uint8, AUTOMATIC) TempActivationBuffer[SUM_PNC_MAX_SENSORS];
+    VAR(uint8, AUTOMATIC) TempDeactivationBuffer[SUM_PNC_MAX_SENSORS];
+    VAR(uint8, AUTOMATIC) TempActivationCount = 0U;
+    VAR(uint8, AUTOMATIC) TempDeactivationCount = 0U;
+
+    /* Process each sensor in the Partial Network */
+    for (Loc_Index = 0U; Loc_Index < SUM_PNC_Cfg[SUM_PNC_PNC_Number].Number_of_PNC_Activation_Sensors; Loc_Index++)
+    {
+        /* Check if the sensor is successfully processed */
+        if (PNC_GaaPNC_C_ProcessPN[Loc_Index]() == TRUE)
+        {
+            /* Fetch the activation and deactivation criteria for this sensor */
+            SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_PNC_GaaSUM_Activation_sensor_Rte_Call_Interface[Loc_Index](&Activation_Criteria_out);
+
+            /* Activation Criteria */
+            if (Activation_Criteria_out.ActCriteria_local == TRUE)
+            {
+                TempActivationBuffer[TempActivationCount] = Loc_Index;
+                TempActivationCount++;
+                AtLeastOneActivated = TRUE; /* At least one sensor is activated */
+            }
+            else
+            {
+                /* Sensor not active - mark for removal from history */
+                TempDeactivationBuffer[TempDeactivationCount] = Loc_Index;
+                TempDeactivationCount++;
+            }
+        }
+    }
+
+    SUM_PNC_Criteria_Sensor_Act[SUM_PNC_PNC_Number] = AtLeastOneActivated;
+
+    /* Update the main buffer for activation */
+    if (TempActivationCount > 0U)
+    {
+        SUM_PNC_Update_LocalActivation_History(TempActivationBuffer, TempActivationCount, SUM_PNC_PNC_Number);
+    }
+
+    /* Remove the sensors for deactivation */
+    if (TempDeactivationCount > 0U)
+    {
+        SUM_PNC_Update_LocalDeactivation_History(TempDeactivationBuffer, TempDeactivationCount, SUM_PNC_PNC_Number);
+    }
+
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : Permit_Execution_SUSD
+ * Description      : Receives response from SUSD regarding whether to shutdown
+ *                    a partial network or not
+ * Parameter in     : void
+ * Parameter out    : void
+ * Return value     : boolean
+  [$Satisfies $SDD_PNC 002] [$Satisfies $SDD_PNC 007] [$Satisfies $SDD_PNC 040]
+  [$Satisfies $SDD_PNC 021]
+ ******************************************************************************/
+FUNC(boolean, PNC_CODE) Permit_Execution_SUSD(void)
+{
+  static uint8 SUM_PNC_PermitExecution_state;
+  boolean RetVal_PermitExecution = FALSE;
+
+ /* Invoke RTE Read call to get the permit execution status*/
+  (void)Rte_Read_RP_PermitExecution_SUSD_SWC_ExecutionStatus(&SUM_PNC_PermitExecution_state);
+
+  /*Verify WakeUp bit by comparing SUM_PNC_PermitExecution_state with Mask value*/
+  if((SUM_PNC_PermitExecution_state | PNC_PermitExecution_Mask )==0xFFu)
+  {
+    RetVal_PermitExecution = TRUE;
+  }
+  return RetVal_PermitExecution;
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : Get_DIAG_DisableNormalCommunicationMode
+ * Description      : Returns Enable/Disable normal Communcaion mode from DIAG
+ * Parameter in     : void
+ * Parameter out    : None
+ * Return value     : None
+ [$Satisfies $SDD_PNC 003] [$Satisfies $SDD_PNC 022] [$Satisfies $SDD_PNC 115]
+ [$Satisfies $SDD_PNC 116]
+ ******************************************************************************/
+static FUNC(boolean, PNC_CODE)Get_DIAG_DisableNormalCommunicationMode(void)
+{
+  static uint8 SUM_PNC_DisableNormalComm;
+  uint8 Loc_Index;
+  /* update channel status as 0x00 Normal Communications Mode Enabled */
+  boolean Ret_Val_NormalMode = FALSE;
+
+  for(Loc_Index = 0; Loc_Index < NUMBER_OF_PNC_TOTAL_CHANNELS; Loc_Index++)
+  {
+	(void)PNC_GaaSUM_PNC_DisableNormalComm_Interface[Loc_Index](&SUM_PNC_DisableNormalComm);
+	if(SUM_PNC_DisableNormalComm == SUM_DiagNormalCom_Disable)
+	{
+	/* update channel status as 0x01 Normal Communications Mode Disabled, if ANY of the channels is disabled */
+		Ret_Val_NormalMode = TRUE;
+	}
+  }
+
+  return Ret_Val_NormalMode;
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : PNC_Enable_Check
+ * Description      : Function to
+ * Parameter in     : void
+ * Parameter out    : None
+ * Return value     : None
+ [$Satisfies $SDD_PNC 023] [$Satisfies $SDD_PNC 051]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) Status_PNC_Enable_Check(void)
+{
+
+	/*Criteria_Struct to store result */
+	boolean Loc_Activation_criteria;
+    boolean Remote_Activation_criteria;
+    /*Flag to store if mode request is in progress for NO_COMMUNICATION */
+    boolean Waiting_Loc_No_Comm;
+	/*Current PNC Mode User*/
+    uint8 Loc_PNC_ComM_Current_PNC_ModeUSer;
+    boolean ARxPDUEnable;
+
+	 /*Activation criteria for sensor signals for current partial network is fetched by calling Activation_Sensor API*/
+	  Activation_Sensor();
+	 /* PRQA S 4558 EOF */
+
+	if((SUM_PNC_Criteria_Sensor_Act[SUM_PNC_PNC_Number] == TRUE) ||
+       (SUM_PNC_Criteria_Signal_Act[SUM_PNC_PNC_Number] == TRUE))
+    {
+	   Loc_Activation_criteria = TRUE;
+	   Remote_Activation_criteria = FALSE;
+    }
+	else if(SUM_PNC_Criteria_NM_Act_Remote[SUM_PNC_PNC_Number] == TRUE)
+	{
+	  Loc_Activation_criteria = FALSE;
+	  Remote_Activation_criteria = TRUE;
+	}
+	else
+	{
+	  Loc_Activation_criteria = FALSE;
+      Remote_Activation_criteria = FALSE;
+	}
+
+	Loc_PNC_ComM_Current_PNC_ModeUSer = PNC_BswM_ComM_Current_PNC_ModeUSer();
+
+    /* Checking if Mode request is in progress for NO_COMMUNICATION. */
+    /* [$Satisfies $SDD_PNC 029] */
+	if(SUM_GaaPNC[SUM_PNC_PNC_Number].Requested_PNC_State == SUM_PNC_NO_COMMUNICATION)
+    {
+        if((Loc_PNC_ComM_Current_PNC_ModeUSer == SUM_PNC_NO_COMMUNICATION) ||
+           (Remote_Activation_criteria == TRUE))
+        {
+            /* Reset the requested state in order to remove the block for transition
+               to PNC_TX_ENABLE to remotely activate the PN */
+            SUM_GaaPNC[SUM_PNC_PNC_Number].Requested_PNC_State = SUM_PNC_INVALID;
+            Waiting_Loc_No_Comm = FALSE;
+        }
+        else
+        {
+            Waiting_Loc_No_Comm = TRUE;
+        }
+    }
+    else
+    {
+        Waiting_Loc_No_Comm = FALSE;
+    }
+
+
+
+	/* PRQA S 3415 EOF */
+	/* [$Satisfies $SDD_PNC 030] [$Satisfies $SDD_PNC 052] */
+    if((Loc_Activation_criteria == FALSE) &&
+       (Waiting_Loc_No_Comm == FALSE) &&
+       ((Loc_PNC_ComM_Current_PNC_ModeUSer != SUM_PNC_NO_COMMUNICATION) &&
+        (Loc_PNC_ComM_Current_PNC_ModeUSer != SUM_PNC_PREPARE_SLEEP)) &&
+       (Get_DIAG_DisableNormalCommunicationMode()== FALSE))
+    {
+      SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_TX_ENABLE;
+
+	  SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupRX_State = SUM_PDUGRP_START;
+	  SUM_GaaPNC[SUM_PNC_PNC_Number].RxPDUgroup = START;
+
+	  (void)PNC_BswM_ComM_Pdugroupswitch_RxReq(SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupRX_State);
+      ARxPDUEnable = (SUM_PNC_Cfg[SUM_PNC_PNC_Number].IsRxEnabled == FALSE) ? (STOP) : (SUM_GaaPNC[SUM_PNC_PNC_Number].RxPDUgroup);
+	  (void)PNC_Active_RxPDU_Enable(ARxPDUEnable);
+	  Set_Alarm(PNC_ALARM_PASSIVE , SUM_PNC_PNC_Number);
+	  /* Clear the Shut down permission */
+	  SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+    }
+    /* [$Satisfies $SDD_PNC 029] [$Satisfies $SDD_PNC 054] */
+    else if((Loc_Activation_criteria == TRUE) &&
+            (PNC_BswM_Current_PNC_Mode_Req(SUM_PNC_REQUESTED) == E_OK))
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Requested_PNC_State = SUM_PNC_REQUESTED;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_MONITOR_ACTIVATION;
+        /* Clear the Shut down permission */
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+   }
+   else
+   {
+       SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_ENABLE_CHECK;
+   }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : PNC_Monitor_Activation
+ * Description      : Function to
+ * Parameter in     : void
+ * Parameter out    : None
+ * Return value     : None
+ [$Satisfies $SDD_PNC 024]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) Status_PNC_Monitor_Activation(void)
+{
+	/*Criteria_Struct to store result */
+	boolean Loc_Activation_criteria;
+
+/*Activation criteria for sensor signals for current partial network is fetched by calling Activation_Sensor API*/
+    Activation_Sensor();
+
+    if((SUM_PNC_Criteria_Sensor_Act[SUM_PNC_PNC_Number] == TRUE) ||
+       (SUM_PNC_Criteria_Signal_Act[SUM_PNC_PNC_Number] == TRUE))
+	{
+		Loc_Activation_criteria = TRUE;
+	}
+	else
+	{
+		Loc_Activation_criteria = FALSE;
+	}
+
+    /* [$Satisfies $SDD_PNC 029] */
+    if((Loc_Activation_criteria == FALSE) &&
+       (PNC_BswM_Current_PNC_Mode_Req(SUM_PNC_NO_COMMUNICATION) == E_OK))
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Requested_PNC_State = SUM_PNC_NO_COMMUNICATION;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_ENABLE_CHECK;
+    }
+    /* [$Satisfies $SDD_PNC 029] */
+    else if(PNC_BswM_Current_PNC_Mode_Req(SUM_PNC_REQUESTED) == E_OK)
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Requested_PNC_State = SUM_PNC_REQUESTED;
+        Set_Alarm(PNC_ALARM_ACT_REQ,SUM_PNC_PNC_Number);
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_ACK_ACTIVATION;
+		/* Clear the Shut down permission */
+		SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+    }
+    else
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_MONITOR_ACTIVATION;
+	    /* Clear the Shut down permission */
+	    SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : PNC_Ack_Activation
+ * Description      : Function to
+ * Parameter in     : void
+ * Parameter out    : None
+ * Return value     : None
+ [$Satisfies $SDD_PNC 025]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) Status_PNC_Ack_Activation(void)
+{
+   /*Criteria_Struct to store result */
+   boolean Loc_Activation_criteria;
+   boolean ARxPDUEnable;
+
+   /*Activation criteria for sensor signals for current partial network is fetched by calling Activation_Sensor API*/
+    Activation_Sensor();
+
+
+    if((SUM_PNC_Criteria_Sensor_Act[SUM_PNC_PNC_Number] == TRUE) ||
+       (SUM_PNC_Criteria_Signal_Act[SUM_PNC_PNC_Number] == TRUE))
+	{
+		Loc_Activation_criteria = TRUE;
+	}
+	else
+	{
+		Loc_Activation_criteria = FALSE;
+	}
+    /* [$Satisfies $SDD_PNC 029] */
+    if((SUM_COMM_FULL_COMMUNICATION == PNC_ComM_Current_ModeUSer()) &&
+       ((  PNC_BswM_ComM_Current_PNC_ModeUSer() != SUM_PNC_NO_COMMUNICATION )) &&
+       ((  PNC_BswM_ComM_Current_PNC_ModeUSer() != SUM_PNC_PREPARE_SLEEP )) &&
+       (Loc_Activation_criteria == TRUE))
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupRX_State = SUM_PDUGRP_START;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].RxPDUgroup = START;
+
+        (void)PNC_BswM_ComM_Pdugroupswitch_RxReq(SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupRX_State);
+        Set_Alarm(PNC_ALARM_ACTIVE,SUM_PNC_PNC_Number);
+        ARxPDUEnable = (SUM_PNC_Cfg[SUM_PNC_PNC_Number].IsRxEnabled == FALSE) ? (STOP) : (SUM_GaaPNC[SUM_PNC_PNC_Number].RxPDUgroup);
+        (void)PNC_Active_RxPDU_Enable(ARxPDUEnable);
+
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_TX_ENABLE;
+	    /* Clear the Shut down permission */
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+    }
+    else if(((PNC_BswM_ComM_Current_PNC_ModeUSer() == SUM_PNC_NO_COMMUNICATION)||(PNC_BswM_ComM_Current_PNC_ModeUSer() == SUM_PNC_PREPARE_SLEEP) ) && ( SUM_GaaPNC[SUM_PNC_PNC_Number].Flag_Counter_PNC_t_Activation_Req_Timer == PNC_TIMER_EXPIRED))
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Flag_Counter_PNC_t_Activation_Req_Timer = PNC_TIMER_INVALID;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_MONITOR_ACTIVATION;
+    }
+    /* [$Satisfies $SDD_PNC 029] */
+    else if((Loc_Activation_criteria == FALSE) &&
+            (PNC_BswM_Current_PNC_Mode_Req(SUM_PNC_NO_COMMUNICATION) == E_OK))
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Requested_PNC_State = SUM_PNC_NO_COMMUNICATION;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_ENABLE_CHECK;
+    }
+    else
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_ACK_ACTIVATION;
+		/* Clear the Shut down permission */
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : Status_PNC_Tx_Enable
+ * Description      : Function to
+ * Parameter in     : void
+ * Parameter out    : None
+ * Return value     : None
+ [$Satisfies $SDD_PNC 026]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) Status_PNC_Tx_Enable(void)
+{
+    boolean ATxPDUEnable;
+	/* [$Satisfies $SDD_PNC 029] */
+    if(SUM_GaaPNC[SUM_PNC_PNC_Number].Flag_Counter_Sum_Active == PNC_TIMER_EXPIRED)
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Flag_Counter_Sum_Active = PNC_TIMER_INVALID;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupTX_State = SUM_PDUGRP_START;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].TxPDUgroup = START;
+        Set_Alarm(PNC_REPEAT_MESSAGE_TIME , SUM_PNC_PNC_Number);
+
+        (void)PNC_BswM_ComM_Pdugroupswitch_TxReq(SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupTX_State);
+        ATxPDUEnable = (SUM_PNC_Cfg[SUM_PNC_PNC_Number].IsTxEnabled == FALSE) ? (STOP) : (SUM_GaaPNC[SUM_PNC_PNC_Number].TxPDUgroup);
+        (void)PNC_Active_TxPDU_Enable(ATxPDUEnable);
+
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_LOCALLY_ACTIVE;
+
+«IF isUsingUDP(pNC.pNCConfigSet) == false -»
+		PNC_Update_Local_DID_Bit();
+«ENDIF -»
+		/* Clear the Shut down permission */
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = 0;
+
+«IF IsPDUDisableFeatureEnabled(pNC)-»
+        /* Since PNC_BswM_ComM_Pdugroupswitch_TxReq(SUM_PDUGRP_START) has been called, disable those PDUs of the group that are calibrated as disabled */
+        	 /* Those PDUs are known thanks to R-ports SUM_C_Disable_Tx */
+        PNC_BswM_DisableSinglePDU_TxReq();
+«ENDIF-»
+    }
+    /* [$Satisfies $SDD_PNC 030] [$Satisfies $SDD_PNC 052] */
+    else if(SUM_GaaPNC[SUM_PNC_PNC_Number].Flag_Counter_Sum_Passive == PNC_TIMER_EXPIRED)
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Flag_Counter_Sum_Passive = PNC_TIMER_INVALID;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupTX_State = SUM_PDUGRP_START;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].TxPDUgroup = START;
+
+        (void)PNC_BswM_ComM_Pdugroupswitch_TxReq(SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupTX_State);
+        ATxPDUEnable = (SUM_PNC_Cfg[SUM_PNC_PNC_Number].IsTxEnabled == FALSE) ? (STOP) : (SUM_GaaPNC[SUM_PNC_PNC_Number].TxPDUgroup);
+        (void)PNC_Active_TxPDU_Enable(ATxPDUEnable);
+
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_REMOTELY_ACTIVE;
+«IF isUsingUDP(pNC.pNCConfigSet) == false -»
+		PNC_Update_Remote_DID_Bit();
+«ENDIF -»
+		/* Clear the Shut down permission */
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+
+«IF IsPDUDisableFeatureEnabled(pNC)-»
+        /* Since PNC_BswM_ComM_Pdugroupswitch_TxReq(SUM_PDUGRP_START) has been called, disable those PDUs of the group that are calibrated as disabled */
+        	 /* Those PDUs are known thanks to R-ports SUM_C_Disable_Tx */
+        PNC_BswM_DisableSinglePDU_TxReq();
+«ENDIF-»
+    }
+    else
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_TX_ENABLE;
+	    /* Clear the Shut down permission */
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+«IF IsPDUDisableFeatureEnabled(pNC)-»
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : PNC_BswM_DisableSinglePDU_TxReq
+ * Description      : Function to...
+ * Parameter in     : void
+ * Parameter out    : None
+ * Return value     : None
+ * [$Satisfies $SDD_PNC 117] [$Satisfies $SDD_PNC 118] [$Satisfies $SDD_PNC 119]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) PNC_BswM_DisableSinglePDU_TxReq(void)
+{
+	uint8 i;
+    boolean pduDisabled = TRUE;
+    Std_ReturnType rteStatus;
+
+	/* Disable PDUs according to the infos from SSFM */
+	for (i=0u; i < PNC_SSFM_NO_OF_DISABLEPDUS; i++)
+	{
+		/* Read the status of the PDU from the SSFM */
+		rteStatus = Pnc_TxMessagePdu_Configuration[i].Pnc_RteReadSumCDisable_MessagePdu_fp(&pduDisabled);
+
+		/* If read ok and PDU disabled, invoke BswM to disable the PDU */
+		if((rteStatus==RTE_E_OK) && (pduDisabled))
+		{
+			/* Invoke BswM to disable PDUs */
+			(void) Pnc_TxMessagePdu_Configuration[i].FP_Rte_Switch_SUM_BswM_DisablePdu(RTE_MODE_MDG_DisablePdu_PDU_DISABLE_REQ);
+		}
+	}
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+«ENDIF-»
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : Status_PNC_Locally_Active
+ * Description      : Function to
+ * Parameter in     : void
+ * Parameter out    : None
+ * Return value     : None
+[$Satisfies $SDD_PNC 027] [$Satisfies $SDD_PNC 029] [$Satisfies $SDD_PNC 042]
+[$Satisfies $SDD_PNC 048]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) Status_PNC_Locally_Active(void)
+{
+	boolean Loc_Activation_criteria;
+	uint8 Loc_PNC_ComM_Current_PNC_ModeUSer;
+    boolean ARxPDUEnable;
+    boolean ATxPDUEnable;
+
+    /* Activation criteria for sensor signals for current partial network is fetched by calling Activation_Sensor API */
+    Activation_Sensor();
+
+    if ((SUM_PNC_Criteria_Sensor_Act[SUM_PNC_PNC_Number] == TRUE) ||
+        (SUM_PNC_Criteria_Signal_Act[SUM_PNC_PNC_Number] == TRUE))
+    {
+        Loc_Activation_criteria = TRUE;
+    }
+    else
+    {
+        Loc_Activation_criteria = FALSE;
+    }
+
+    Loc_PNC_ComM_Current_PNC_ModeUSer = PNC_BswM_ComM_Current_PNC_ModeUSer();
+
+    /* [$Satisfies $SDD_PNC 046] */
+    if ((Loc_Activation_criteria == FALSE)
+        && (SUM_GaaPNC[SUM_PNC_PNC_Number].Counter_Repeat_Msg_Time_Timer == 0u))
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_State = SUM_PNC_NO_COMMUNICATION;
+        (void) PNC_BswM_Current_PNC_Mode_Req(SUM_PNC_NO_COMMUNICATION);
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Requested_PNC_State = SUM_PNC_NO_COMMUNICATION;
+
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_REMOTELY_ACTIVE;
+«IF isUsingUDP(pNC.pNCConfigSet) == false -»
+		PNC_Update_Remote_DID_Bit();
+«ENDIF -»
+        /*Clear the Shut down permission */
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+    }
+    /* [$Satisfies $SDD_PNC 049] */
+    else if ((Loc_PNC_ComM_Current_PNC_ModeUSer == SUM_PNC_PREPARE_SLEEP)
+             || (Loc_PNC_ComM_Current_PNC_ModeUSer == SUM_PNC_NO_COMMUNICATION))
+    {
+
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupRX_State = SUM_PDUGRP_STOP;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].RxPDUgroup = STOP;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].TxPDUgroup = STOP;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupTX_State = SUM_PDUGRP_STOP;
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_ENABLE;
+
+        (void) PNC_BswM_ComM_Pdugroupswitch_RxReq(SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupRX_State); //com
+        (void) PNC_BswM_ComM_Pdugroupswitch_TxReq(SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupTX_State); //com
+        ARxPDUEnable = (SUM_PNC_Cfg[SUM_PNC_PNC_Number].IsRxEnabled == FALSE) ? (STOP) : (SUM_GaaPNC[SUM_PNC_PNC_Number].RxPDUgroup);
+        (void) PNC_Active_RxPDU_Enable(ARxPDUEnable); //ssfm
+        ATxPDUEnable = (SUM_PNC_Cfg[SUM_PNC_PNC_Number].IsTxEnabled == FALSE) ? (STOP) : (SUM_GaaPNC[SUM_PNC_PNC_Number].TxPDUgroup);
+        (void) PNC_Active_TxPDU_Enable(ATxPDUEnable); //SWCs
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_ENABLE_CHECK;
+        /* Update the DID bits as this PN is getting deactivated */
+        SUM_GaaPNC[SUM_PNC_PNC_Number].PN_DeActState = LOCAL_DEACTIVE;
+«IF isUsingUDP(pNC.pNCConfigSet) == false -»
+		PNC_Update_Local_DID_Bit();
+«ENDIF -»
+    }
+    else
+    {
+        /* Clear the Shut down permission */
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : Status_PNC_Remotely_Active
+ * Description      : Function to
+ * Parameter in     : void
+ * Parameter out    : None
+ * Return value     : None
+ [$Satisfies $SDD_PNC 028] [$Satisfies $SDD_PNC 030] [$Satisfies $SDD_PNC 042]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) Status_PNC_Remotely_Active(void)
+{
+    boolean Loc_Activation_criteria;
+    uint8 Loc_PNC_ComM_Current_PNC_ModeUSer;
+    boolean ARxPDUEnable;
+    boolean ATxPDUEnable;
+
+    /* [$Satisfies $SDD_PNC 081] Deadline monitoring management */
+    PNC_DeadlineMonitoring(SUM_PNC_PNC_Number);
+
+«IF isUsingUDP(pNC.pNCConfigSet) == false -»
+    /* Update remote DID bit if a new NM activation was received for this PN while already remotely active */
+    PNC_Update_Remote_DID_Bit();
+«ENDIF -»
+
+    /* Activation criteria for sensor signals for current partial network is fetched by calling Activation_Sensor API */
+    Activation_Sensor();
+    if ((SUM_PNC_Criteria_Sensor_Act[SUM_PNC_PNC_Number] == TRUE) ||
+        (SUM_PNC_Criteria_Signal_Act[SUM_PNC_PNC_Number] == TRUE))
+    {
+        Loc_Activation_criteria = TRUE;
+    }
+    else
+    {
+        Loc_Activation_criteria = FALSE;
+    }
+
+    Loc_PNC_ComM_Current_PNC_ModeUSer = PNC_BswM_ComM_Current_PNC_ModeUSer();
+
+    /* [$Satisfies $SDD_PNC 047] */
+    if (Loc_Activation_criteria == TRUE)
+    {
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_State = SUM_PNC_REQUESTED;
+        (void) PNC_BswM_Current_PNC_Mode_Req(SUM_PNC_REQUESTED);
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Requested_PNC_State = SUM_PNC_REQUESTED;
+
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_LOCALLY_ACTIVE;
+«IF isUsingUDP(pNC.pNCConfigSet) == false -»
+		PNC_Update_Local_DID_Bit();
+«ENDIF -»
+        /* Clear the Shut down permission */
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+
+        /* [$Satisfies $SDD_PNC 084] Request to BswM to enable Deadline Monitoring */
+        (void)SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_Switch_DM_Mode(PNC_DM_ENABLE);
+
+        /* [$Satisfies $SDD_PNC 071] Reset default state to DM_ACTIVE state */
+        SUM_GaaPNC[SUM_PNC_PNC_Number].DM_Status = PNC_DM_ACTIVE;
+    }
+    /* [$Satisfies $SDD_PNC 050] */
+    else if ((Loc_PNC_ComM_Current_PNC_ModeUSer == SUM_PNC_PREPARE_SLEEP)
+             || (Loc_PNC_ComM_Current_PNC_ModeUSer == SUM_PNC_NO_COMMUNICATION))
+    {
+
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupRX_State = SUM_PDUGRP_STOP;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].RxPDUgroup = STOP;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].TxPDUgroup = STOP;
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupTX_State = SUM_PDUGRP_STOP;
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_ENABLE;
+
+        (void) PNC_BswM_ComM_Pdugroupswitch_RxReq(SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupRX_State);
+        (void) PNC_BswM_ComM_Pdugroupswitch_TxReq(SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PduGroupTX_State);
+        ARxPDUEnable = (SUM_PNC_Cfg[SUM_PNC_PNC_Number].IsRxEnabled == FALSE) ? (STOP) : (SUM_GaaPNC[SUM_PNC_PNC_Number].RxPDUgroup);
+        (void) PNC_Active_RxPDU_Enable(ARxPDUEnable);
+
+        ATxPDUEnable = (SUM_PNC_Cfg[SUM_PNC_PNC_Number].IsTxEnabled == FALSE) ? (STOP) : (SUM_GaaPNC[SUM_PNC_PNC_Number].TxPDUgroup);
+        (void) PNC_Active_TxPDU_Enable(ATxPDUEnable);
+        SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode = PNC_ENABLE_CHECK;
+        /* Update the DID bits as this PN is getting deactivated */
+        SUM_GaaPNC[SUM_PNC_PNC_Number].PN_DeActState = REMOTE_DEACTIVE;
+«IF isUsingUDP(pNC.pNCConfigSet) == false -»
+		PNC_Update_Remote_DID_Bit();
+«ENDIF -»
+
+        /* [$Satisfies $SDD_PNC 084] Request to BswM to enable Deadline Monitoring */
+        (void)SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_Switch_DM_Mode(PNC_DM_ENABLE);
+
+        /* [$Satisfies $SDD_PNC 071] Reset default state to DM_ACTIVE state */
+        SUM_GaaPNC[SUM_PNC_PNC_Number].DM_Status = PNC_DM_ACTIVE;
+    }
+    else
+    {
+        /* Clear the Shut down permission */
+        SUM_PNC_Shutdown_Permission[SUM_PNC_PNC_Number] = SHUTDOWN_DISABLE;
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : Check_DTC_Allowed_Timer
+ * Description      : Function to
+ * Parameter in     : void
+ * Parameter out    : None
+ * Return value     : None
+ * [$Satisfies $SDD_PNC 111] [$Satisfies $SDD_PNC 112]
+ ******************************************************************************/
+FUNC(void, PNC_CODE) Check_DTC_Allowed_Timer(void)
+{
+    SUM_PNC_DTC_AllowedType dtc_allowed;
+
+	/* Transition from PN_IDLE to PN_ACTIVE or Staying in PN_ACTIVE *//* [$Satisfies $SDD_PNC 106] */
+	if(((SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode == PNC_LOCALLY_ACTIVE )||(SUM_GaaPNC[SUM_PNC_PNC_Number].DM_Status == PNC_DM_ACTIVE)))
+	{
+	    /* [$Satisfies $SDD_PNC 088] */
+		if(SUM_GaaPNC[SUM_PNC_PNC_Number].PN_DTC_Timer < PNC_MAIN_FUNCTION_PERIOD)
+		{
+		    /* [$Satisfies $SDD_PNC 091] */
+			dtc_allowed = DTC_Allowed;
+		}
+		else
+		{
+		    /* [$Satisfies $SDD_PNC 093] */
+			dtc_allowed = DTC_Might_Be_Allowed;
+			SUM_GaaPNC[SUM_PNC_PNC_Number].PN_DTC_Timer-=PNC_MAIN_FUNCTION_PERIOD;
+		}
+
+	}else /* Staying in PN_IDLE */
+	{
+	    /* [$Satisfies $SDD_PNC 087] [$Satisfies $SDD_PNC 089] */
+		SUM_GaaPNC[SUM_PNC_PNC_Number].PN_DTC_Timer = SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_SUM_PN_DTC_TIMER_Default_Value();
+		/* [$Satisfies $SDD_PNC 092] */
+		dtc_allowed = DTC_Not_Allowed;
+	}
+
+	SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_SUM_PN_DTC_Allowed(dtc_allowed);
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*
+ *******************************************************************************
+ * Runnable Functions
+ *******************************************************************************
+ */
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : Activation_Signal_In
+ * Description      : Updates Activation_criteria True/False
+ * Parameter in     : None
+ * Parameter out    : Activation_Criteria
+ * Return value     : void
+ [$Satisfies $SDD_PNC 009] [$Satisfies $SDD_PNC 053]
+ ******************************************************************************/
+FUNC(void, PNC_CODE) Activation_Signal_In(void)
+{
+    VAR(Criteria_Struct, AUTOMATIC) Activation_Criteria_out = {FALSE, FALSE};
+    VAR(Criteria_Struct, AUTOMATIC) Activation_SigStat_out = {FALSE, FALSE};
+    VAR(uint8, AUTOMATIC) Loc_Index;
+    VAR(uint8, AUTOMATIC) PN_Index;
+	/* Activation criteria */
+    VAR(boolean, AUTOMATIC) AtLeastOneActivated;
+
+    /* Temporary buffers for activation and deactivation */
+    uint8 TempActivationBuffer[SUM_PNC_MAX_SIGNALS];
+    uint8 TempDeactivationBuffer[SUM_PNC_MAX_SIGNALS];
+    uint8 TempActivationCount;
+    uint8 TempDeactivationCount;
+
+    /* Iterate through all Partial Networks */
+    for (PN_Index = 0U; PN_Index < NUMBER_OF_PNC_PARTIAL_NETWORKS; PN_Index++)
+    {
+        TempActivationCount = 0U; /* Reset activation buffer for each PN */
+        TempDeactivationCount = 0U; /* Reset deactivation buffer for each PN */
+        AtLeastOneActivated = FALSE;
+		if(PNC_GaaPNC_C_ProcessPN[PN_Index]() == TRUE)
+		{
+			/* Iterate through all signals in the current PN */
+			for (Loc_Index = 0U; Loc_Index < SUM_PNC_Cfg[PN_Index].Number_of_PNC_Activation_Signals; Loc_Index++)
+			{
+				/* Fetch activation and deactivation criteria for this signal */
+				SUM_PNC_Cfg[PN_Index].ptr_PNC_GaaSUM_Activation_Signals_Interface[Loc_Index](&Activation_Criteria_out);
+				/* Fetch signal status for the corresponding signal (same index) */
+				SUM_PNC_Cfg[PN_Index].ptr_PNC_GaaSUM_Activation_Signals_Status_Interface[Loc_Index](&Activation_SigStat_out);
+
+				/* Valid activation: both signal value AND its signal status must be TRUE */
+				if ((Activation_Criteria_out.ActCriteria_local == TRUE) &&
+				    (Activation_SigStat_out.ActCriteria_SigStat == TRUE))
+				{
+					TempActivationBuffer[TempActivationCount] =
+					    Loc_Index + SUM_PNC_Cfg[PN_Index].Number_of_PNC_Activation_Sensors;
+					TempActivationCount++;
+					AtLeastOneActivated = TRUE; /* At least one signal is activated */
+				}
+				else
+				{
+					/* Signal not active - mark for removal from history */
+					TempDeactivationBuffer[TempDeactivationCount] =
+					    Loc_Index + SUM_PNC_Cfg[PN_Index].Number_of_PNC_Activation_Sensors;
+					TempDeactivationCount++;
+				}
+			}
+			/* Update activation state */
+			SUM_PNC_Criteria_Signal_Act[PN_Index] = AtLeastOneActivated;
+		}
+        /*  Update the main buffer for activation to main buffer */
+        if (TempActivationCount > 0U)
+        {
+            SUM_PNC_Update_LocalActivation_History(TempActivationBuffer, TempActivationCount, PN_Index);
+        }
+
+        /*Remove the signals for deactivation from main buffer */
+        if (TempDeactivationCount > 0U)
+        {
+            SUM_PNC_Update_LocalDeactivation_History(TempDeactivationBuffer, TempDeactivationCount, PN_Index);
+        }
+    }
+
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    :  PNC_Active_RxPDU_Enable
+ * Description      :  Sends Notification from SUM_PNC that RxPDU groups for
+                       PN<n> are stopped or started.
+ * Parameter in     :  void
+ * Parameter out    :  RxPDUgroup
+ * Return value     :  Std_ReturnType
+ [$Satisfies $SDD_PNC 016] [$Satisfies $SDD_PNC 035]  [$Satisfies $SDD_PNC 109]
+[$Satisfies $SDD_PNC 110]
+ ******************************************************************************/
+FUNC(Std_ReturnType, PNC_CODE) PNC_Active_RxPDU_Enable
+(VAR(PDUgroup, AUTOMATIC) ARxPDUEnable)
+{
+    uint8 Loc_Retries_Idx;
+    Std_ReturnType RetVal;
+
+    RetVal = PNC_GaaSUM_PNC_Active_RxPDU_Enable[SUM_PNC_PNC_Number](ARxPDUEnable);
+    if(RetVal != RTE_E_OK)
+    {
+        for(Loc_Retries_Idx = 0; ((Loc_Retries_Idx < NO_OF_RETRIES)  && (RetVal != RTE_E_OK)); Loc_Retries_Idx++)
+        {
+            RetVal=PNC_GaaSUM_PNC_Active_RxPDU_Enable[SUM_PNC_PNC_Number](ARxPDUEnable);
+        }
+    }
+    return RetVal;
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : PNC_Active_TxPDU_Enable
+ * Description      : Sends Notification from SUM_PNC that RxPDU groups for
+                      PN<n> are stopped or started.
+ * Parameter in     : void
+ * Parameter out    : SUM_PNC.TxPDUgroup
+ * Return value     : Std_ReturnType
+ [$Satisfies $SDD_PNC  006] [$Satisfies $SDD_PNC 015] [$Satisfies $SDD_PNC 107]
+ [$Satisfies $SDD_PNC 108]
+ ******************************************************************************/
+FUNC(Std_ReturnType, PNC_CODE) PNC_Active_TxPDU_Enable
+(VAR(PDUgroup, AUTOMATIC) ATxPDUEnable)
+{
+    uint8 Loc_Retries_Idx;
+    Std_ReturnType RetVal;
+
+	RetVal = PNC_GaaSUM_PNC_Active_TxPDU_Enable[SUM_PNC_PNC_Number] (ATxPDUEnable);
+	if (RetVal != RTE_E_OK)
+	{
+		for(Loc_Retries_Idx = 0; ((Loc_Retries_Idx < NO_OF_RETRIES)  && (RetVal != RTE_E_OK)); Loc_Retries_Idx++)
+		{
+			RetVal = PNC_GaaSUM_PNC_Active_TxPDU_Enable[SUM_PNC_PNC_Number] (ATxPDUEnable);
+		}
+	}
+    return RetVal;
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : PNC_BswM_ComM_Current_PNC_ModeUSer
+ * Description      : Fetches current PNC Mode of the partial network
+ * Parameter in     : None
+ * Parameter out    : None
+ * Return value     : PNC_State SUM_PNC.Current_PNC_State
+ [$Satisfies $SDD_PNC 017] [$Satisfies $SDD_PNC 031]
+ ******************************************************************************/
+FUNC(PNC_State, PNC_CODE) PNC_BswM_ComM_Current_PNC_ModeUSer(void)
+{
+  SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_State =
+ PNC_GaaSUM_Bswm_ComM_Current_PNC_ModeUser_Interface[SUM_PNC_PNC_Number]();
+
+   return SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_State;
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : PNC_ComM_Current_ModeUSer
+ * Description      : Fetches current ComM mode from PNC BswM mode user
+ * Parameter in     : None
+ * Parameter out    : None
+ * Return value     : ComMChannel_State
+ [$Satisfies $SDD_PNC 018] [$Satisfies $SDD_PNC 032]
+ ******************************************************************************/
+FUNC(ComMChannel_State, PNC_CODE) PNC_ComM_Current_ModeUSer(void)
+{
+  uint8 Loc_Channels;
+  boolean Loc_Flag;
+  ComMChannel_State Loc_ComMChannel_State;
+  ComMChannel_State Loc_ComMChannel_State_old;
+  Loc_ComMChannel_State = SUM_COMM_NO_COMMUNICATION ;
+  Loc_ComMChannel_State_old = SUM_COMM_NO_COMMUNICATION ;
+
+  Loc_Flag = FALSE;
+  Loc_Channels = 0;
+
+
+  do{
+      if((Loc_Channels < SUM_PNC_Cfg[SUM_PNC_PNC_Number].Number_of_Channels))
+      {
+
+        Loc_ComMChannel_State  =SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_PNC_GaaSUM_Bswm_ComM_Current_ModeUser_Interface[Loc_Channels]();
+        if (Loc_Flag)
+        {
+        Loc_ComMChannel_State = ((Loc_ComMChannel_State > Loc_ComMChannel_State_old) ? (Loc_ComMChannel_State) : (Loc_ComMChannel_State_old));
+        }
+        else
+        {
+        Loc_ComMChannel_State_old = Loc_ComMChannel_State ;
+        }
+        Loc_Flag = TRUE;
+      }
+      Loc_Channels++;
+    }while(Loc_Channels < NUMBER_OF_PNC_TOTAL_CHANNELS);
+
+	SUM_GaaPNC[SUM_PNC_PNC_Number].Current_ComMChannel_State = Loc_ComMChannel_State;
+
+    return  SUM_GaaPNC[SUM_PNC_PNC_Number].Current_ComMChannel_State;
+
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/******************************************************************************
+ * Function name    : PNC_BswM_ComM_CurrentPNCMode_Req
+ * Description      : Requests ComM to switch PNC Mode to the provided one
+ * Parameter in     :  SUM_PNC.Current_PNC_State
+ * Parameter out    :  void
+ * Return value     :  Std_ReturnType
+ [$Satisfies $SDD_PNC 019] [$Satisfies $SDD_PNC 031]
+ ******************************************************************************/
+FUNC(Std_ReturnType, PNC_CODE) PNC_BswM_Current_PNC_Mode_Req
+(VAR(PNC_State, AUTOMATIC) Arg_Current_PNC_State)
+{
+  Std_ReturnType RetVal;
+
+  RetVal = PNC_GaaSUM_Bswm_ComM_Current_ModeReq_Interface[SUM_PNC_PNC_Number] (Arg_Current_PNC_State);
+
+  return RetVal;
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : PNC_BswM_ComM_Pdugroupswitch_RxReq
+ * Description      :  Writes Current_PduGroupRX_State to all SWCs
+ * Parameter in     :  void
+ * Parameter out    :  Current_PduGroupRX_State
+ * Return value     :  Std_ReturnType
+ [$Satisfies $SDD_PNC 014] [$Satisfies $SDD_PNC 033]
+ ******************************************************************************/
+FUNC(Std_ReturnType, PNC_CODE) PNC_BswM_ComM_Pdugroupswitch_RxReq
+(VAR(PduGroup_State, AUTOMATIC) Arg_PduGroup_State)
+{
+    Std_ReturnType RetVal;
+    uint8 Loc_Index;
+    RetVal = E_OK;
+
+    for(Loc_Index = 0; Loc_Index < SUM_PNC_Cfg[SUM_PNC_PNC_Number].Number_of_Channels; Loc_Index++)
+    {
+      if(SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_PNC_GaaSUM_BswM_ComM_Pdugroupswitch_RxReq[Loc_Index] != NULL_PTR) /* Call the PDU Group only if enabled */
+      {
+        RetVal = SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_PNC_GaaSUM_BswM_ComM_Pdugroupswitch_RxReq[Loc_Index](Arg_PduGroup_State);
+      }
+    }
+    return RetVal;
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : PNC_BswM_ComM_Pdugroupswitch_TxReq
+  * Description      : Writes Current_PduGroupTX_State to SSFM
+ * Parameter in     : void
+ * Parameter out    : Current_PduGroupTX_State
+ * Return value     : Std_ReturnType
+ [$Satisfies $SDD_PNC 013] [$Satisfies $SDD_PNC 033]
+ ******************************************************************************/
+FUNC(Std_ReturnType, PNC_CODE) PNC_BswM_ComM_Pdugroupswitch_TxReq
+(VAR(PduGroup_State, AUTOMATIC) Arg_PduGroup_State)
+{
+  Std_ReturnType RetVal;
+  uint8 Loc_Index;
+  RetVal = E_OK;
+
+  for(Loc_Index = 0; Loc_Index < SUM_PNC_Cfg[SUM_PNC_PNC_Number].Number_of_Channels; Loc_Index++)
+  {
+     if(SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_PNC_GaaSUM_BswM_ComM_Pdugroupswitch_TxReq[Loc_Index] != NULL_PTR) /* Call the PDU Group only if enabled */
+     {
+         RetVal =SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_PNC_GaaSUM_BswM_ComM_Pdugroupswitch_TxReq[Loc_Index](Arg_PduGroup_State);
+     }
+   }
+
+  return RetVal;
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+ * Function name    : Shutdown_permission_SUSD
+ * Description      : Requests SUSD for shutdown permission of a Partial Network
+ * Parameter in     : void
+ * Parameter out    : void
+ * Return value     : void
+  [$Satisfies $SDD_PNC 012] [$Satisfies $SDD_PNC 002] [$Satisfies $SDD_PNC 040]
+  [$Satisfies $SDD_PNC 007] [$Satisfies $SDD_PNC 113]
+ *******************************************************************************/
+FUNC(void, PNC_CODE) Shutdown_permission_SUSD(void)
+{
+   static uint8 PNC_Alive_count = SHUTDOWN_DISABLE;
+   uint8 Loc_Index;
+   uint8 Loc_ShutdownPermission_Flag = 0;
+
+   if(Permit_Execution_SUSD() == TRUE)
+   {
+	  /* Check shutdown for all the PNs */
+     for(Loc_Index = 0;Loc_Index < NUMBER_OF_PNC_PARTIAL_NETWORKS  ;Loc_Index++)
+     {
+	  if(PNC_GaaPNC_C_ProcessPN[Loc_Index]()== TRUE)
+	  {
+		  if ((SUM_PNC_Shutdown_Permission[Loc_Index] == SHUTDOWN_ENABLE))
+		  {
+			  Loc_ShutdownPermission_Flag++;
+		  }
+		  else
+		  {
+			  /* Do Nothing */
+		  }
+	  }
+	  else
+	  {
+	  Loc_ShutdownPermission_Flag++; /* Increment the Shutdown flag for all the disabled PN to have the proper shutdown of the PNC. If a PN is disabled, then SUM_PNC will not request shutdown at all */
+	  }
+	 }
+	 /* If all the Partial networks are updated with shutdown flag or Ecu reset bit is FALSE*/
+	 if((Loc_ShutdownPermission_Flag ==  NUMBER_OF_PNC_PARTIAL_NETWORKS))
+	 {
+	   Loc_ShutdownPermission_Flag = SHUTDOWN_ENABLE;
+	/* Invoke Shutdown permission to SUSD */
+	 (void)Rte_Write_PP_ShutdownPermission_SUSD_UserRequest(Loc_ShutdownPermission_Flag);
+	 }
+	 else
+	 {
+	   /* Invoke Shutdown permission to SUSD */
+	   (void)Rte_Write_PP_ShutdownPermission_SUSD_UserRequest(PNC_Alive_count);
+	   PNC_Alive_count ++;
+
+	   if(PNC_Alive_count > 3u)
+	   {
+	   /* Reset alive count value to 0 */
+	   PNC_Alive_count = SHUTDOWN_DISABLE;
+	   }
+     }
+
+   }
+   else
+   {
+		Loc_ShutdownPermission_Flag = SHUTDOWN_ENABLE;
+	    /* Invoke Shutdown permission to SUSD */
+	    (void)Rte_Write_PP_ShutdownPermission_SUSD_UserRequest(Loc_ShutdownPermission_Flag);
+	    /* Reset alive count value to 0 */
+	    PNC_Alive_count = SHUTDOWN_DISABLE;
+   }
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+«IF isUsingUDP(pNC.pNCConfigSet) == false -»
+/* [$Satisfies $SDD_PNC 058] [$Satisfies $SDD_PNC 059] [$Satisfies $SDD_PNC 060] [$Satisfies $SDD_PNC 061] */
+«IF pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Sensors.exists(e| e > 0) || pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Signals.exists(e| e > 0) -»
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+  Function name :   PNC_DataServicesPN_DID_F08B_Info_Local
+  Description   :   Function for ECU Operating State through DID
+  Parameter in  :   OpStatus
+  Parameter out :   Data
+  Return value  :   Std_ReturnType
+  Remarks       :   None
+  [$Satisfies $SDD_PNC 058]
+ ******************************************************************************/
+FUNC(Std_ReturnType, SUM_PNC_CODE)
+PNC_DataServicesPN_DID_F08B_Info_Local(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                 P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+{
+	switch (OpStatus)
+		{
+		case DCM_INITIAL:
+		case DCM_PENDING:
+			   Data[0] = SUM_PNC_DID_INFO_Local[0];
+			   Data[1] = SUM_PNC_DID_INFO_Local[1];
+			   Data[2] = SUM_PNC_DID_INFO_Local[2];
+			   Data[3] = SUM_PNC_DID_INFO_Local[3];
+			   Data[4] = SUM_PNC_DID_INFO_Local[4];
+			   Data[5] = SUM_PNC_DID_INFO_Local[5];
+			#if (DID_INFO == 0x07)
+			   Data[6] = SUM_PNC_DID_INFO_Local[6];
+			#endif
+
+	        break;
+	  	default:
+	  	    /* Nothing to do */
+	  		break;
+		}
+
+    return(E_OK);
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+
+  Function name :   PNC_DataServicesPN_DID_F08B_Info_Local_CheckRead
+  Description   :   Function for Condition Check Read of ECU Operating State
+				    through DID
+  Parameter in  :   OpStatus
+  Parameter out :   ErrorCode
+  Return value  :   Std_ReturnType
+  Remarks       :   None
+  [$Satisfies $SDD_PNC 059]
+ ******************************************************************************/
+FUNC(Std_ReturnType, SUM_PNC_CODE) PNC_DataServicesPN_DID_F08B_Info_Local_CheckRead
+(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+	switch (OpStatus)
+		{
+		case DCM_INITIAL:
+		case DCM_PENDING:
+			 *ErrorCode = PNC_ZERO;
+	        break;
+	  	default:
+            /* Nothing to do */
+	  		break;
+		}
+
+  return(E_OK);
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+«ENDIF -»
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+  Function name :   PNC_DataServicesPN_DID_F08D_Info_Remote
+  Description   :   Function for ECU Operating State through DID
+  Parameter in  :   OpStatus
+  Parameter out :   Data
+  Return value  :   Std_ReturnType
+  Remarks       :   None
+  [$Satisfies $SDD_PNC 060]
+ ******************************************************************************/
+FUNC(Std_ReturnType, SUM_PNC_CODE)
+PNC_DataServicesPN_DID_F08D_Info_Remote(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+                                   P2VAR(uint8, AUTOMATIC, RTE_APPL_DATA) Data)
+{
+	switch (OpStatus)
+		{
+		case DCM_INITIAL:
+		case DCM_PENDING:
+			   Data[0] = SUM_PNC_DID_INFO_Remote[0];
+			   Data[1] = SUM_PNC_DID_INFO_Remote[1];
+			   Data[2] = SUM_PNC_DID_INFO_Remote[2];
+			   Data[3] = SUM_PNC_DID_INFO_Remote[3];
+			   Data[4] = SUM_PNC_DID_INFO_Remote[4];
+			   Data[5] = SUM_PNC_DID_INFO_Remote[5];
+			#if(DID_INFO == 0x07)
+			   Data[6] = SUM_PNC_DID_INFO_Remote[6];
+			#endif
+
+	        break;
+	  	default:
+            /* Nothing to do */
+	  		break;
+		}
+   return(E_OK);
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+
+  Function name :   PNC_DataServicesPN_DID_F08D_Info_Remote_CheckRead
+  Description   :   Function for Condition Check Read of ECU Operating State
+  				    through DID
+  Parameter in  :   OpStatus
+  Parameter out :   ErrorCode
+  Return value  :   Std_ReturnType
+  Remarks       :   None
+  [$Satisfies $SDD_PNC 061]
+ ******************************************************************************/
+FUNC(Std_ReturnType, SUM_PNC_CODE) PNC_DataServicesPN_DID_F08D_Info_Remote_CheckRead
+(VAR(Dcm_OpStatusType, AUTOMATIC) OpStatus,
+P2VAR(Dcm_NegativeResponseCodeType, AUTOMATIC, RTE_APPL_DATA) ErrorCode)
+{
+	switch (OpStatus)
+			{
+			case DCM_INITIAL:
+			case DCM_PENDING:
+				 *ErrorCode = PNC_ZERO;
+		        break;
+		  	default:
+	            /* Nothing to do */
+		  		break;
+			}
+
+  return(E_OK);
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+
+  Function name :   PNC_Update_Local_DID_Bit
+  Description   :   Sets or clears the local DID bit for the current PN.
+                    Sets the local bit when the PN is in PNC_LOCALLY_ACTIVE mode;
+                    clears it when the PN deactivation state is LOCAL_DEACTIVE.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   void
+  Remarks       :   None
+  [$Satisfies $SDD_PNC 058]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) PNC_Update_Local_DID_Bit(void)
+{
+    uint8 BitPosition;
+    uint8 ByteIndex;
+
+    ByteIndex = SUM_PNC_Cfg[SUM_PNC_PNC_Number].DID_Bit_Position / 8u;
+    BitPosition = SUM_PNC_Cfg[SUM_PNC_PNC_Number].DID_Bit_Position % 8u;
+
+    if(SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode == PNC_LOCALLY_ACTIVE)
+    {
+        SUM_PNC_DID_INFO_Local[ByteIndex] |= (1U << BitPosition); /* PRQA S 4397 EOF */
+        SUM_PNC_DID_INFO_Remote[ByteIndex] &= (~(1U << BitPosition));
+    }
+    else if(SUM_GaaPNC[SUM_PNC_PNC_Number].PN_DeActState == LOCAL_DEACTIVE)
+    {
+        SUM_PNC_DID_INFO_Local[ByteIndex] &= (~(1U << BitPosition));
+        SUM_PNC_DID_INFO_Remote[ByteIndex] &= (~(1U << BitPosition));
+    }
+    else
+    {
+        /* Do Nothing */
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/*******************************************************************************
+
+  Function name :   PNC_Update_Remote_DID_Bit
+  Description   :   Sets or clears the remote DID bit for the current PN.
+                    Sets the remote bit when the PN is in PNC_REMOTELY_ACTIVE mode
+                    and a new NM activation with remote criteria is confirmed;
+                    clears it when the PN deactivation state is REMOTE_DEACTIVE.
+  Parameter in  :   None
+  Parameter out :   None
+  Return value  :   void
+  Remarks       :   None
+  [$Satisfies $SDD_PNC 060]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) PNC_Update_Remote_DID_Bit(void)
+{
+    uint8 i;
+    uint8 BitPosition;
+    uint8 ByteIndex;
+ 
+    for (i = 0u; i < NUMBER_OF_PNC_PARTIAL_NETWORKS; i++)
+    {
+        ByteIndex = SUM_PNC_Cfg[i].DID_Bit_Position / 8u;
+        BitPosition = SUM_PNC_Cfg[i].DID_Bit_Position % 8u;
+ 
+        if((SUM_GaaPNC[i].Current_PNC_Mode == PNC_REMOTELY_ACTIVE) &&
+           (SUM_PNC_NM_NewActivation[i] == TRUE) &&
+           (SUM_PNC_Criteria_NM_Act_Remote[i] == TRUE))
+        {
+            SUM_PNC_DID_INFO_Remote[ByteIndex] |= (1U << BitPosition); /* PRQA S 4397 EOF */
+            SUM_PNC_DID_INFO_Local[ByteIndex] &= (~(1U << BitPosition));
+        }
+    }
+    if(SUM_GaaPNC[SUM_PNC_PNC_Number].PN_DeActState == REMOTE_DEACTIVE)
+    {
+        ByteIndex = SUM_PNC_Cfg[SUM_PNC_PNC_Number].DID_Bit_Position / 8u;
+        BitPosition = SUM_PNC_Cfg[SUM_PNC_PNC_Number].DID_Bit_Position % 8u;
+
+        SUM_PNC_DID_INFO_Remote[ByteIndex] &= (~(1U << BitPosition));
+        SUM_PNC_DID_INFO_Local[ByteIndex] &= (~(1U << BitPosition));
+    }
+    else
+    {
+        /* Do Nothing */
+    }
+   
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+«ENDIF -»
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : SUM_PNC_Mainfunction
+ * Description      : Manages all the PNs which ECU is a part of, this API is
+					  cyclically invoked.
+ * Parameter in     : void
+ * Parameter out    : void
+ * Return value     : None
+ [$Satisfies $SDD_PNC 008] [$Satisfies $SDD_PNC 045] [$Satisfies $SDD_PNC 047]
+ [$Satisfies $SDD_PNC 048] [$Satisfies $SDD_PNC 049] [$Satisfies $SDD_PNC 034]
+ [$Satisfies $SDD_PNC 050] [$Satisfies $SDD_PNC 051] [$Satisfies $SDD_PNC 052]
+ [$Satisfies $SDD_PNC 053] [$Satisfies $SDD_PNC 054]
+ ******************************************************************************/
+ FUNC(void, PNC_CODE) SUM_PNC_Mainfunction (void)
+ {
+    /* Loc_PN_Index represents the partial network index */
+    uint8 Loc_PN_Index;
+
+	/* Variable to check permit execution */
+    boolean Permit_Exec;
+
+    Permit_Exec = Permit_Execution_SUSD();
+
+    if (Permit_Exec == TRUE) /* Permit execution has to be evaluated outside the loop as it is common to all PNs and to save run-time of the ECU */
+    {
+        /* Looping to get each partial network */
+        for (Loc_PN_Index = 0; Loc_PN_Index < NUMBER_OF_PNC_PARTIAL_NETWORKS; Loc_PN_Index++)
+        {
+            if (PNC_GaaPNC_C_ProcessPN[Loc_PN_Index]() == TRUE)
+            {
+                /* Start PN Processing */
+                SUM_PNC_PNC_Number = Loc_PN_Index;
+
+                /* Set the PNC Status */
+                Handling_PNC_State(SUM_PNC_PNC_Number);
+
+                /* Updating Counters for Sum Active Timer */
+                /* [$Satisfies $SDD_PNC 004] */
+                UpdateCountersActiveTimer(Loc_PN_Index);
+
+                /* Updating Counters for Sum Passive Timer */
+                /* [$Satisfies $SDD_PNC 036] [$Satisfies $SDD_PNC 038] */
+                UpdateCountersPassiveTimer(Loc_PN_Index);
+
+                /* Updating Counters for Activation Req timer */
+                /* [$Satisfies $SDD_PNC 038] [$Satisfies $SDD_PNC 039] */
+                UpdateCountersActivationRegTimer(Loc_PN_Index);
+
+                /* Updating Counters for Repeat Message Time Timer */
+                if (SUM_GaaPNC[Loc_PN_Index].Counter_Repeat_Msg_Time_Timer > 0u)
+                {
+                    SUM_GaaPNC[Loc_PN_Index].Counter_Repeat_Msg_Time_Timer--;
+                }
+                else
+                {
+                    SUM_GaaPNC[Loc_PN_Index].Counter_Repeat_Msg_Time_Timer = 0;
+                }
+            }
+            else
+            {
+                /* Do not process if PNC_ProcessPN is False*/
+            }
+        }/* End of For Looping for all PNs*/
+    if (SUM_PNC_RemoteSUSDPending == TRUE)
+    {
+        SUM_PNC_SUSD_RecordInfo_Update(SPM_PNC_REMOTE_RID, SUM_PNC_NM_WR);
+        SUM_PNC_RemoteSUSDPending = FALSE;
+    }
+    }
+    else
+    {
+        /* Do not process if Permit execution is False*/
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : Handling_PNC_State
+ * Description      : Set Shut down and PNC Status
+ * Parameter in     : PNC_Number
+ * Parameter out    : void
+ * Return value     : None
+ * [$Satisfies $SDD_PNC 004 [$Satisfies $SDD_PNC 120] [$Satisfies $SDD_PNC 121]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) Handling_PNC_State(uint8 PNC_Number)
+{
+    /* Shut down PN by default */
+    SUM_PNC_Shutdown_Permission[PNC_Number] = SHUTDOWN_ENABLE;
+
+    Check_DTC_Allowed_Timer();
+
+    switch (SUM_GaaPNC[PNC_Number].Current_PNC_Mode)
+    {
+        case PNC_ENABLE_CHECK:
+        {
+            Status_PNC_Enable_Check();
+            break;
+        }
+        case PNC_MONITOR_ACTIVATION:
+        {
+            Status_PNC_Monitor_Activation();
+            break;
+        }
+        case PNC_ACK_ACTIVATION:
+        {
+            Status_PNC_Ack_Activation();
+            break;
+        }
+        case PNC_TX_ENABLE:
+        {
+            Status_PNC_Tx_Enable();
+            break;
+        }
+        case PNC_LOCALLY_ACTIVE:
+        {
+            Status_PNC_Locally_Active();
+	        SUM_PNC_SUSD_RecordInfo_Update(SUM_PNC_Cfg[PNC_Number].PN_Name,SUM_PNC_Local_WR[PNC_Number]);
+            break;
+        }
+        case PNC_REMOTELY_ACTIVE:
+        {
+            Status_PNC_Remotely_Active();
+            if ((SUM_PNC_Cfg[PNC_Number].PN_Name != 0u) && ((SUM_PNC_NM_NewActivation[PNC_Number] == TRUE) || (SUM_PNC_DM_Timer_Elapsed[PNC_Number] == TRUE) || (SUM_GaaPNC[PNC_Number].Current_PNC_Mode != PNC_REMOTELY_ACTIVE)))
+            {
+               SUM_PNC_NM_NewActivation[PNC_Number] = FALSE;
+               SUM_PNC_DM_Timer_Elapsed[PNC_Number] = FALSE;
+               SUM_PNC_RemoteSUSDPending = TRUE;
+            }
+            break;
+        }
+        default:
+            /* Nothing to do */
+            break;
+    } /* End of Switch case */
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : UpdateCountersActiveTimer
+ * Description      : Updating Counters for Sum Active Timer
+ * Parameter in     : PN_Index
+ * Parameter out    : void
+ * Return value     : None
+ * [$Satisfies $SDD_PNC 004]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) UpdateCountersActiveTimer(uint8 PN_Index)
+{
+    if (SUM_GaaPNC[PN_Index].Flag_Counter_Sum_Active == PNC_TIMER_INIT)
+    {
+        if (((uint32)SUM_GaaPNC[PN_Index].Counter_Sum_Active) < (((uint32)SUM_PNC_ACTIVE_SYNCH_TIME) / PNC_T_PNsPNsSTATUSMONITORING_PERIODICITY))
+        {
+            SUM_GaaPNC[PN_Index].Counter_Sum_Active++;
+        }
+        else
+        {
+            SUM_GaaPNC[PN_Index].Counter_Sum_Active = 0;
+            SUM_GaaPNC[PN_Index].Flag_Counter_Sum_Active = PNC_TIMER_EXPIRED;
+        }
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : UpdateCountersPassiveTimer
+ * Description      : Updating Counters for Sum Passive Timer
+ * Parameter in     : PN_Index
+ * Parameter out    : void
+ * Return value     : None
+ * [$Satisfies $SDD_PNC 038]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) UpdateCountersPassiveTimer(uint8 PN_Index)
+{
+    if (SUM_GaaPNC[PN_Index].Flag_Counter_Sum_Passive == PNC_TIMER_INIT)
+    {
+        if (((uint32)SUM_GaaPNC[PN_Index].Counter_Sum_Passive) < (((uint32)SUM_PNC_PASSIVE_SYNCH_TIME) / PNC_T_PNsPNsSTATUSMONITORING_PERIODICITY))
+        {
+            SUM_GaaPNC[PN_Index].Counter_Sum_Passive++;
+        }
+        else
+        {
+            SUM_GaaPNC[PN_Index].Counter_Sum_Passive = 0;
+            SUM_GaaPNC[PN_Index].Flag_Counter_Sum_Passive = PNC_TIMER_EXPIRED;
+        }
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : UpdateCountersActivationRegTimer
+ * Description      : Updating Counters for Activation Req timer
+ * Parameter in     : PN_Index
+ * Parameter out    : void
+ * Return value     : None
+ * [$Satisfies $SDD_PNC 038] [$Satisfies $SDD_PNC 039]
+ ******************************************************************************/
+static FUNC(void, PNC_CODE) UpdateCountersActivationRegTimer(uint8 PN_Index)
+{
+    if (SUM_GaaPNC[PN_Index].Flag_Counter_PNC_t_Activation_Req_Timer == PNC_TIMER_INIT)
+    {
+        if (((uint32)SUM_GaaPNC[PN_Index].Counter_PNC_t_Activation_Req_Timer) < (((uint32)PNC_T_ACTIVATION_REQ_TIMER) / PNC_T_PNsPNsSTATUSMONITORING_PERIODICITY))
+        {
+            SUM_GaaPNC[PN_Index].Counter_PNC_t_Activation_Req_Timer++;
+        }
+        else
+        {
+            SUM_GaaPNC[PN_Index].Counter_PNC_t_Activation_Req_Timer = 0;
+            SUM_GaaPNC[PN_Index].Flag_Counter_PNC_t_Activation_Req_Timer = PNC_TIMER_EXPIRED;
+        }
+    }
+}
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+/* [$Satisfies $SDD_PNC  073] */
+/*******************************************************************************
+ * Function name    : PNC_NM_Frame_Indication
+ * Description      : This function implements the NM callback needed for deadline
+ *                    monitoring. Sets the timer of requested PN by the PN Coordinator ECU
+ * Parameter in     : NetworkHandle
+ * Parameter out    : void
+ * Return value     : None
+ ******************************************************************************/
+FUNC(void, NM_CODE) PNC_NM_Frame_Indication(CONST(NetworkHandleType, AUTOMATIC) NetworkHandle)
+{
+    VAR(uint8,AUTOMATIC) NM_Frame[PNC_NM_FRAME_LENGTH];
+    VAR(Std_ReturnType,AUTOMATIC) rv;
+    VAR(uint8,AUTOMATIC) i;
+    VAR(uint8,AUTOMATIC) byte_index, bit_index;
+    VAR(uint8,AUTOMATIC) NM_NewlyActivated[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+    VAR(uint8,AUTOMATIC) NM_NewlyActivatedCount = 0U;
+    VAR(uint8,AUTOMATIC) NM_Deactivated[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+    VAR(uint8,AUTOMATIC) NM_DeactivatedCount = 0U;
+
+
+    /* Read the content of the latest NM Frame received */
+#if(PNC_ETHERNET_SUPPORT == STD_OFF)
+    rv = CanNm_GetPduData(NetworkHandle, NM_Frame);
+#else
+    rv = UdpNm_GetPduData(NetworkHandle, NM_Frame);
+#endif
+
+    if(rv == E_OK)
+    {
+        /* [$Satisfies $SDD_PNC 074] Check PN Coordinator ID to process NM Frame */
+        if(NM_Frame[PNC_ECU_ID_BYTE_INDEX] == PNC_PN_COORDINATOR_ID)
+        {
+            for(i = 0; i < NUMBER_OF_PNC_PARTIAL_NETWORKS; i++)
+            {
+                /* Compute the corresponding NM frame bit */
+                byte_index = PNC_USER_DATA_INDEX_START + (SUM_PNC_Cfg[i].DID_Bit_Position / PNC_BYTE_LENGTH);
+                bit_index = SUM_PNC_Cfg[i].DID_Bit_Position % PNC_BYTE_LENGTH;
+
+                /* [$Satisfies $SDD_PNC 075] Check if the partial network has been requested remotely */
+                if(((NM_Frame[byte_index] >> bit_index) & (uint8)PNC_PN_REQUESTED) != 0u)
+                {
+                    /* [$Satisfies $SDD_PNC 076] Reset the timer for the PN */
+                    SUM_GaaPNC[i].DM_Timer = SUM_PNC_Cfg[i].DM_Max_Timer;
+                    /* Check if the PN Name is not configured as IDS to update the NM criteria and WR accordingly */
+                    if (SUM_PNC_Cfg[i].PN_Name != 0u)
+                    {
+                        if (SUM_PNC_Criteria_NM_Act_Remote[i] == FALSE)
+                        {
+                            NM_NewlyActivated[NM_NewlyActivatedCount] = SUM_PNC_Cfg[i].PN_Name;
+                            NM_NewlyActivatedCount++;
+                            SUM_PNC_NM_NewActivation[i] = TRUE;
+                        }
+                        SUM_PNC_Criteria_NM_Act_Remote[i] = TRUE;
+                    }
+                }
+                else
+                {
+                    if ((SUM_PNC_Cfg[i].PN_Name != 0u) && (SUM_PNC_Criteria_NM_Act_Remote[i] == TRUE))
+                    {
+                        NM_Deactivated[NM_DeactivatedCount] = SUM_PNC_Cfg[i].PN_Name;
+                        NM_DeactivatedCount++;
+                    }
+                    SUM_PNC_Criteria_NM_Act_Remote[i] = FALSE;
+                }
+            }
+            if (NM_DeactivatedCount > 0U)
+            {
+                SUM_PNC_Update_NM_Deactivation_History(NM_Deactivated, NM_DeactivatedCount);
+            }
+            if (NM_NewlyActivatedCount > 0U)
+            {
+                SUM_PNC_Update_NM_Activation_History(NM_NewlyActivated, NM_NewlyActivatedCount);
+            }
+        }
+    }
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+#define SUM_PNC_START_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/*******************************************************************************
+ * Function name    : PNC_DeadlineMonitoring
+ * Description      : Function that implements the deadline monitoring
+ *                    finite state machine.
+ * Parameter in     : PN_index
+ * Parameter out    : void
+ * Return value     : None
+ ******************************************************************************/
+/* [$Satisfies $SDD_PNC 081] */
+FUNC(void, PNC_CODE) PNC_DeadlineMonitoring(uint8 PN_index)
+{
+    /* Deadline Monitoring FSM */
+    if(SUM_GaaPNC[PN_index].DM_Status == PNC_DM_ACTIVE)
+    {
+        /* Check timer status */
+        if(SUM_GaaPNC[PN_index].DM_Timer < PNC_MAIN_FUNCTION_PERIOD)
+        {
+            /* [$Satisfies $SDD_PNC 077] Timer elapsed. Disable deadline monitoring */
+            SUM_GaaPNC[PN_index].DM_Status = PNC_DM_INACTIVE;
+
+            /* [$Satisfies $SDD_PNC 078] Request to BswM to disable Deadline Monitoring */
+            (void)SUM_PNC_Cfg[PN_index].ptr_Switch_DM_Mode(PNC_DM_DISABLE);
+			 /* [$Satisfies $SDD_PNC 105] */
+			SUM_GaaPNC[SUM_PNC_PNC_Number].PN_DTC_Timer = SUM_PNC_Cfg[SUM_PNC_PNC_Number].ptr_SUM_PN_DTC_TIMER_Default_Value();
+
+			SUM_PNC_Criteria_NM_Act_Remote[PN_index] = FALSE;
+			SUM_PNC_DM_Timer_Elapsed[PN_index] = TRUE;
+			if (SUM_PNC_Cfg[PN_index].PN_Name != 0u)
+			{
+				SUM_PNC_Update_NM_Deactivation_History(&SUM_PNC_Cfg[PN_index].PN_Name, 1U);
+			}
+
+        }
+        else
+        {
+            /* [$Satisfies $SDD_PNC 072] Update timers */
+            SUM_GaaPNC[PN_index].DM_Timer -= PNC_MAIN_FUNCTION_PERIOD;
+        }
+    }
+    else
+    {
+        /* PNC_DM_INACTIVE state */
+        if(SUM_GaaPNC[PN_index].DM_Timer >= PNC_MAIN_FUNCTION_PERIOD)
+        {
+            /* [$Satisfies $SDD_PNC 083] NM Frame notification arrived. Request to BswM to enable Deadline Monitoring */
+            (void)SUM_PNC_Cfg[PN_index].ptr_Switch_DM_Mode(PNC_DM_ENABLE);
+
+            /* [$Satisfies $SDD_PNC 082] Transition to DM_ACTIVE state */
+            SUM_GaaPNC[PN_index].DM_Status = PNC_DM_ACTIVE;
+        }
+    }
+}
+
+/*******************************************************************************
+ * Function name    : SUM_PNC_Handle_Generic_RID_Logic
+ * Description      : Generic function to handle both Diag PN and Remote PN RID logic
+ * Parameter in     : RID, ActiveMode
+ * Parameter out    : RecordIdInfo
+ * Return value     : None
+ ******************************************************************************/
+/*[$Satisfies $SDD_PNC 128]*/
+static FUNC(void, PNC_CODE) SUM_PNC_Handle_Generic_RID_Logic(VAR(RID_Enum, AUTOMATIC) RID,
+                                                             VAR(PNC_Modes, AUTOMATIC) ActiveMode,
+                                                             P2VAR(RecordIdType, AUTOMATIC, AUTOMATIC) RecordIdInfo)
+{
+    uint8 PN_Index;
+    boolean AnyPnActive = FALSE;
+    uint8 FirstActiveWakeupReason = 0x00U;
+    boolean FirstActiveFound = FALSE;
+
+    /* Static variables to track previous states for change detection */
+    static boolean Previous_PN_Active_State[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+    uint8 NewlyActivatedWakeupReason = 0x00U;
+    boolean NewActivationDetected = FALSE;
+    boolean CurrentPnActive;
+    uint8 CurrentPnWakeupReason = 0U;
+
+    /* Initialize output structure */
+    RecordIdInfo->RID = RID;
+    RecordIdInfo->RWR = 0x00U;
+    RecordIdInfo->state = FALSE;
+
+    /* Loop through all PNs to check if any with specified RID is active */
+    for (PN_Index = 0U; PN_Index < NUMBER_OF_PNC_PARTIAL_NETWORKS; PN_Index++)
+    {
+        if ((SUM_PNC_Cfg[PN_Index].PN_Name == SPM_PNC_LOC_DIAG_RID) ||
+            (RID == SPM_PNC_REMOTE_RID))
+        {
+            /* Check current state regardless of what it is */
+            if (ActiveMode == PNC_REMOTELY_ACTIVE)
+            {
+                /* Remote PN is only considered active when both
+                   mode is REMOTELY_ACTIVE AND the NM activation criterion is still TRUE.
+                   When DM timer elapses, criteria goes FALSE immediately so state=FALSE
+                   is correctly reported to SUSD even before mode transitions. */
+                CurrentPnActive = (SUM_GaaPNC[PN_Index].Current_PNC_Mode == ActiveMode)
+                                  && (SUM_PNC_Criteria_NM_Act_Remote[PN_Index] == TRUE);
+            }
+            else
+            {
+                CurrentPnActive = (SUM_GaaPNC[PN_Index].Current_PNC_Mode == ActiveMode);
+            }
+
+            /* Get the actual wakeup reason for this specific PN */
+            if (ActiveMode == PNC_LOCALLY_ACTIVE)
+            {
+                CurrentPnWakeupReason = SUM_PNC_Local_WR[PN_Index];
+            }
+            else
+            {
+                if (SUM_PNC_Cfg[PN_Index].PN_Name != 0u)
+                {
+                    CurrentPnWakeupReason = SUM_PNC_NM_WR;
+                }
+            }
+            if (CurrentPnActive == TRUE)
+            {
+                AnyPnActive = TRUE;
+
+                /* Check if this PN just became active (change from deactive to active) */
+                if (Previous_PN_Active_State[PN_Index] == FALSE)
+                {
+                    /* This PN just became active - use its wakeup reason (first newly activated found) */
+                    if (NewActivationDetected == FALSE)
+                    {
+                        NewlyActivatedWakeupReason = CurrentPnWakeupReason;
+                        NewActivationDetected = TRUE;
+                    }
+                }
+
+                /* Store first active wakeup reason as fallback (for multiple active simultaneously) */
+                if (FirstActiveFound == FALSE)
+                {
+                    FirstActiveWakeupReason = CurrentPnWakeupReason;
+                    FirstActiveFound = TRUE;
+                }
+
+            }
+
+            /* Always update previous state for ALL PNs with this RID */
+            Previous_PN_Active_State[PN_Index] = CurrentPnActive;
+        }
+    }
+
+	/* Handle result calculation and state management for RID processing */
+	SUM_PNC_AnyPnActive_Update(RID, AnyPnActive, NewActivationDetected, NewlyActivatedWakeupReason,
+	    FirstActiveWakeupReason, RecordIdInfo, Previous_PN_Active_State);
+}
+
+/*******************************************************************************
+ * Function name    : SUM_PNC_AnyPnActive_Update
+ * Description      : Helper function to handle result calculation and state management for RID processing
+ * Parameter in     : RID, AnyPnActive, NewActivationDetected, NewlyActivatedWakeupReason, FirstActiveWakeupReason, Previous_PN_Active_State
+ * Parameter out    : RecordIdInfo
+ * Return value     : None
+ ******************************************************************************/
+/*[$Satisfies $SDD_PNC 129]*/
+static FUNC(void, PNC_CODE) SUM_PNC_AnyPnActive_Update(VAR(RID_Enum, AUTOMATIC) RID,
+                                                       VAR(boolean, AUTOMATIC) AnyPnActive,
+                                                       VAR(boolean, AUTOMATIC) NewActivationDetected,
+                                                       VAR(uint8, AUTOMATIC) NewlyActivatedWakeupReason,
+                                                       VAR(uint8, AUTOMATIC) FirstActiveWakeupReason,
+                                                       P2VAR(RecordIdType, AUTOMATIC, AUTOMATIC) RecordIdInfo,
+                                                       P2VAR(boolean, AUTOMATIC, AUTOMATIC) Previous_PN_Active_State)
+{
+    uint8 PN_Index;
+
+    /* Set final result based on findings */
+    if (AnyPnActive == TRUE)
+    {
+        RecordIdInfo->state = TRUE;
+
+        /* Priority: Newly activated > First active */
+        if (NewActivationDetected == TRUE)
+        {
+            RecordIdInfo->RWR = NewlyActivatedWakeupReason;
+        }
+        else
+        {
+            RecordIdInfo->RWR = FirstActiveWakeupReason;
+        }
+    }
+    else
+    {
+        RecordIdInfo->state = FALSE;
+        RecordIdInfo->RWR = SUM_PNC_INVALID_REASON;
+
+        /* Reset all previous states when all are inactive */
+        for (PN_Index = 0U; PN_Index < NUMBER_OF_PNC_PARTIAL_NETWORKS; PN_Index++)
+        {
+            if (SUM_PNC_Cfg[PN_Index].PN_Name == RID)
+            {
+                Previous_PN_Active_State[PN_Index] = FALSE;
+            }
+        }
+    }
+}
+
+/*******************************************************************************
+ * Function name    : SUM_PNC_Handle_RecordInfo_Update
+ * Description      : Generic function to handle record info update with dedicated tracking
+ * Parameter in     : RecordIdInfo, PreviousRecordIdInfo
+ * Parameter out    : None
+ * Return value     : None
+ ******************************************************************************/
+/*[$Satisfies $SDD_PNC 127]*/
+static FUNC(void, PNC_CODE) SUM_PNC_Handle_RecordInfo_Update(
+    P2CONST(RecordIdType, AUTOMATIC, AUTOMATIC) RecordIdInfo,
+    P2VAR(RecordIdType, AUTOMATIC, AUTOMATIC) PreviousRecordIdInfo)
+{
+    /* Compare against dedicated variable to ensure consistent tracking */
+    if ((RecordIdInfo->RWR != PreviousRecordIdInfo->RWR) ||
+        (RecordIdInfo->state != PreviousRecordIdInfo->state))
+    {
+        /* Notify only if there's a change */
+        (void)Rte_Call_RP_PNC_SUSD_RecordInfo_UpdateRecord(RecordIdInfo);
+
+        /* Update the last notified state to the current state */
+        *PreviousRecordIdInfo = *RecordIdInfo;
+    }
+}
+
+/*******************************************************************************
+ * Function name    : SUM_PNC_SUSD_RecordInfo_Update
+ * Description      : Function to update record info to support DID E0D7
+ * Parameter in     : RID, Wakeup reason
+ * Parameter out    : None
+ * Return value     : None
+ ******************************************************************************/
+/*[$Satisfies $SDD_PNC 120] [$Satisfies $SDD_PNC 121] [$Satisfies $SDD_PNC 125] [$Satisfies $SDD_PNC 126]*/
+static FUNC(void, PNC_CODE) SUM_PNC_SUSD_RecordInfo_Update(VAR(RID_Enum, AUTOMATIC) RID,
+                                                       VAR(uint8, AUTOMATIC) WakeupReason)
+{
+    /* Static variable to store the last notified state for each PNC */
+    static RecordIdType Previous_RecordIdInfo[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+
+    /* Dedicated static variable for Diag PN (RID 0x25) state tracking */
+    static RecordIdType Previous_DiagPN_RecordIdInfo[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+
+    /* Dedicated static variable for Remote PN RID state tracking */
+    static RecordIdType Previous_RemotePN_RecordIdInfo[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+
+    /* Local variable to hold the current RecordInfo */
+    RecordIdType RecordIdInfo;
+
+    /* Initialize the RecordIdInfo structure */
+    RecordIdInfo.RID = RID;
+    RecordIdInfo.RWR = 0x0U;
+    RecordIdInfo.state = FALSE;
+
+    /* Check if the PN name is configured within range */
+    if (RID != SUM_PNC_LOCAL_NAME_OUTRANGE)
+    {
+        /* Special handling for RID 0x25 (Diag PN) */
+        if (RID == SPM_PNC_LOC_DIAG_RID)
+        {
+            /* Use generic function for Diag PN logic */
+            SUM_PNC_Handle_Generic_RID_Logic(RID, PNC_LOCALLY_ACTIVE, &RecordIdInfo);
+
+            /* Use generic function to handle update */
+            SUM_PNC_Handle_RecordInfo_Update(&RecordIdInfo, &Previous_DiagPN_RecordIdInfo[SUM_PNC_PNC_Number]);
+        }
+        /* Special handling for Remote PNC RID */
+        else if (RID == SPM_PNC_REMOTE_RID)
+        {
+            /* Use generic function for Remote PN RID logic */
+            SUM_PNC_Handle_Generic_RID_Logic(RID, PNC_REMOTELY_ACTIVE, &RecordIdInfo);
+
+            /* Use generic function to handle update */
+            SUM_PNC_Handle_RecordInfo_Update(&RecordIdInfo, &Previous_RemotePN_RecordIdInfo[SUM_PNC_PNC_Number]);
+        }
+        else
+        {
+            /* Regular PN handling (Local PN from 0x21 to 0x24) */
+
+            /* Check if the PNC is locally active */
+            if (SUM_GaaPNC[SUM_PNC_PNC_Number].Current_PNC_Mode == PNC_LOCALLY_ACTIVE)
+            {
+                /* If locally active, update the RecordInfo with the wakeup reason and active state */
+                RecordIdInfo.RWR = WakeupReason;
+                RecordIdInfo.state = TRUE;
+            }
+            else if (SUM_GaaPNC[SUM_PNC_PNC_Number].PN_DeActState == LOCAL_DEACTIVE)
+            {
+                /* If locally deactivated, reset the wakeup reason and state */
+                RecordIdInfo.RWR = 0x00U;
+                RecordIdInfo.state = FALSE;
+            }
+            else
+            {
+                /* do nothing */
+            }
+            /* Compare the current RecordInfo with the last notified state for regular PNs */
+            if ((RecordIdInfo.RID != Previous_RecordIdInfo[SUM_PNC_PNC_Number].RID) ||
+                (RecordIdInfo.RWR != Previous_RecordIdInfo[SUM_PNC_PNC_Number].RWR) ||
+                (RecordIdInfo.state != Previous_RecordIdInfo[SUM_PNC_PNC_Number].state))
+            {
+                /* Notify only if there's a change */
+                (void)Rte_Call_RP_PNC_SUSD_RecordInfo_UpdateRecord(&RecordIdInfo);
+
+                /* Update the last notified state to the current state */
+                Previous_RecordIdInfo[SUM_PNC_PNC_Number] = RecordIdInfo;
+            }
+        }
+    }
+}
+
+/*******************************************************************************
+ * Function name    : SUM_PNC_Update_LocalActivation_History
+ * Description      : Updates the unified local activation history for a Partial Network (PN).
+ *                    Handles activation by adding sensor/signal reason (with offset for signals).
+ *                    Also updates the last wake-up reason in SUM_PNC_Local_WR.
+ * Parameter in     : TempActivationBuffer, TempActivationCount, PN_Index
+ * Parameter out    : None
+ * Return value     : None
+ ******************************************************************************/
+/*[$Satisfies $SDD_PNC 002] [$Satisfies $SDD_PNC 120] [$Satisfies $SDD_PNC 121] [$Satisfies $SDD_PNC 123] [$Satisfies $SDD_PNC 130]*/
+/* PRQA S 3673 3 # can not be const because of generation depends on config   */
+static FUNC(void, PNC_CODE) SUM_PNC_Update_LocalActivation_History(P2VAR(uint8,AUTOMATIC,AUTOMATIC)TempActivationBuffer,
+								VAR(uint8, AUTOMATIC) TempActivationCount,
+								VAR(uint8, AUTOMATIC) PN_Index)
+{
+	«IF (GetPN_RecordID_Type(pNC)== 2) -»
+
+    VAR(uint8, AUTOMATIC) BitMask = 0U;
+	VAR(uint8, AUTOMATIC) ActivationIndex ;
+
+    /* Iterate through TempActivationBuffer and set the corresponding bits */
+    for (ActivationIndex = 0U; ActivationIndex < TempActivationCount; ActivationIndex++)
+    {
+        BitMask |= (1U << TempActivationBuffer[ActivationIndex]); /* Set the bit for the sensor/signal */
+    }
+
+    /* Update the global bit-mapped buffer */
+    SUM_PNC_Local_WR[PN_Index] |= BitMask; /* Combine with existing active sources */
+
+	«ELSEIF (GetPN_RecordID_Type(pNC)== 1) -»
+	VAR(uint8, AUTOMATIC) ActivationIndex1;
+	VAR(uint8, AUTOMATIC) ActivationIndex2;
+	VAR(boolean, AUTOMATIC) ReasonExists;
+	VAR(uint8, AUTOMATIC) MaxLocalSources;
+	MaxLocalSources =
+	    SUM_PNC_Cfg[PN_Index].Number_of_PNC_Activation_Sensors +
+	    SUM_PNC_Cfg[PN_Index].Number_of_PNC_Activation_Signals;
+
+    /*Add TempActivationBuffer entries to the main buffer */
+    for (ActivationIndex1 = 0U; ActivationIndex1 < TempActivationCount; ActivationIndex1++)
+    {
+		ReasonExists = FALSE;
+        /* Check if the entry already exists in the main buffer */
+        for (ActivationIndex2 = 0U; ActivationIndex2 < SUM_PNC_LocalActReasonCount[PN_Index]; ActivationIndex2++)
+        {
+            if (SUM_PNC_LocalActReason[PN_Index][ActivationIndex2] == TempActivationBuffer[ActivationIndex1])
+            {
+                ReasonExists = TRUE; /* Entry already exists, skip it */
+                break;
+            }
+        }
+
+        /* Append the entry if it does not exist */
+        if ((ReasonExists == FALSE) && (SUM_PNC_LocalActReasonCount[PN_Index] < MaxLocalSources))
+        {
+            SUM_PNC_LocalActReason[PN_Index][SUM_PNC_LocalActReasonCount[PN_Index]] = TempActivationBuffer[ActivationIndex1];
+            SUM_PNC_LocalActReasonCount[PN_Index]++;
+        }
+    }
+
+    /*Update the Last Active Source */
+    SUM_PNC_Local_WR[PN_Index] = SUM_PNC_LocalActReason[PN_Index][0U]; /* First entry in the main buffer */
+
+	«ELSE»
+	(void)TempActivationBuffer;
+	(void)TempActivationCount;
+	(void)PN_Index;
+	«ENDIF»
+}
+
+/*******************************************************************************
+ * Function name    : SUM_PNC_Update_LocalDeactivation_History
+ * Description      : Function to remove deactivated sensor/signal from unified local history
+ * Parameter in     : TempDeactivationBuffer, TempDeactivationCount and PN_Index
+ * Parameter out    : None
+ * Return value     : None
+ ******************************************************************************/
+/*[$Satisfies $SDD_PNC 123] [$Satisfies $SDD_PNC 131]*/
+static FUNC(void, PNC_CODE) SUM_PNC_Update_LocalDeactivation_History(P2CONST(uint8,AUTOMATIC,AUTOMATIC) TempDeactivationBuffer,
+									VAR(uint8, AUTOMATIC) TempDeactivationCount,
+									VAR(uint8, AUTOMATIC) PN_Index)
+{
+
+	«IF (GetPN_RecordID_Type(pNC)== 2) -»
+
+    VAR(uint8, AUTOMATIC) BitMask = 0U;
+	VAR(uint8, AUTOMATIC) DeactivationIndex;
+
+    /* Iterate through TempDeactivationBuffer and clear the corresponding bits */
+    for (DeactivationIndex = 0U; DeactivationIndex < TempDeactivationCount; DeactivationIndex++)
+    {
+        BitMask |= (1U << TempDeactivationBuffer[DeactivationIndex]); /* Create a mask for the deactivated sources */
+    }
+
+    /* Update the global bit-mapped buffer */
+    SUM_PNC_Local_WR[PN_Index] &= ~BitMask; /* Clear the bits for deactivated sources */
+
+	«ELSEIF (GetPN_RecordID_Type(pNC)== 1) -»
+    VAR(uint8, AUTOMATIC) MainIndex ;
+    VAR(uint8, AUTOMATIC) FillPosition = 0U;
+    VAR(uint8, AUTOMATIC) TempIndex ;
+	VAR(boolean, AUTOMATIC) IsDeactivated ;
+    /*  Remove TempDeactivationBuffer entries from the main buffer */
+    for (MainIndex = 0U; MainIndex < SUM_PNC_LocalActReasonCount[PN_Index]; MainIndex++)
+    {
+		IsDeactivated = FALSE;
+
+        /* Check if the current entry exists in TempDeactivationBuffer */
+        for (TempIndex = 0U; TempIndex < TempDeactivationCount; TempIndex++)
+        {
+            if (SUM_PNC_LocalActReason[PN_Index][MainIndex] == TempDeactivationBuffer[TempIndex])
+            {
+                IsDeactivated = TRUE;
+                break;
+            }
+        }
+
+        /* Retain entries not marked for deactivation */
+        if (IsDeactivated == FALSE)
+        {
+            SUM_PNC_LocalActReason[PN_Index][FillPosition] = SUM_PNC_LocalActReason[PN_Index][MainIndex];
+            FillPosition++;
+        }
+    }
+
+    /* Update the active reason count */
+    SUM_PNC_LocalActReasonCount[PN_Index] = FillPosition;
+
+    /* Update the Last Active Source */
+    if (FillPosition > 0U)
+    {
+        SUM_PNC_Local_WR[PN_Index] = SUM_PNC_LocalActReason[PN_Index][0U];
+    }
+    else
+    {
+        SUM_PNC_Local_WR[PN_Index] = SUM_PNC_INVALID_REASON; /* Reset if no sources remain */
+    }
+	«ELSE»
+	(void)TempDeactivationBuffer;
+	(void)TempDeactivationCount;
+	(void)PN_Index;
+	«ENDIF»
+}
+/*******************************************************************************
+ * Function name    : SUM_PNC_SortReasonBuffer
+ * Description      : Sorts a buffer of uint8 PN names in ascending order
+ *                    using insertion sort (in-place).
+ *                    Ascending order ensures the first element is the minimum,
+ *                    which is used as the wakeup reason (WR).
+ * Parameter in     : Count - number of valid entries in Buffer
+ * Parameter in/out : Buffer - array to sort in-place
+ * Return value     : None
+ ******************************************************************************/
+/*[$Satisfies $SDD_PNC 134]*/
+static FUNC(void, PNC_CODE) SUM_PNC_SortReasonBuffer(
+    P2VAR(uint8, AUTOMATIC, AUTOMATIC) Buffer,
+    VAR(uint8, AUTOMATIC) Count)
+{
+    VAR(uint8, AUTOMATIC) SortIndex;
+    VAR(uint8, AUTOMATIC) InsertIndex;
+    VAR(uint8, AUTOMATIC) TempReason;
+
+    for (SortIndex = 1U; SortIndex < Count; SortIndex++)
+    {
+        TempReason = Buffer[SortIndex];
+        for (InsertIndex = SortIndex;
+             (InsertIndex > 0U) && (Buffer[InsertIndex - 1U] > TempReason);
+             InsertIndex--)
+        {
+            Buffer[InsertIndex] = Buffer[InsertIndex - 1U];
+        }
+        Buffer[InsertIndex] = TempReason;
+    }
+}
+
+/*******************************************************************************
+ * Function name    : SUM_PNC_MergeReasonIntoNMList
+ * Description      : Appends a single PN name to the global NM activation
+ *                    history list if it is not already present and the list
+ *                    has remaining capacity. Has no effect otherwise.
+ * Parameter in     : Reason - PN name to add
+ * Parameter out    : None
+ * Return value     : None
+ ******************************************************************************/
+/*[$Satisfies $SDD_PNC 135]*/
+static FUNC(void, PNC_CODE) SUM_PNC_MergeReasonIntoNMList(
+    VAR(uint8, AUTOMATIC) Reason)
+{
+    VAR(uint8, AUTOMATIC) Index;
+    VAR(boolean, AUTOMATIC) ReasonExists = FALSE;
+
+    for (Index = 0U; Index < SUM_PNC_NM_ActReasonCount; Index++)
+    {
+        if (SUM_PNC_NM_ActReason[Index] == Reason)
+        {
+            ReasonExists = TRUE;
+            break;
+        }
+    }
+    if ((ReasonExists == FALSE) && (SUM_PNC_NM_ActReasonCount < (uint8)NUMBER_OF_PNC_PARTIAL_NETWORKS))
+    {
+        SUM_PNC_NM_ActReason[SUM_PNC_NM_ActReasonCount] = Reason;
+        SUM_PNC_NM_ActReasonCount++;
+    }
+}
+
+/*******************************************************************************
+ * Function name    : SUM_PNC_Update_NM_Activation_History
+ * Description      : Merges newly activated NM PN names into the global NM
+ *                    activation history list in ascending (sorted) order.
+ *                    Duplicates and entries that exceed the list capacity are
+ *                    silently discarded.
+ *                    SUM_PNC_NM_WR is set to the list head, which is the
+ *                    minimum active PN name due to the ascending sort.
+ * Parameter in     : NewReasons - array of newly activated PN names
+ *                    Count      - number of entries in NewReasons
+ * Parameter out    : None
+ * Return value     : None
+ ******************************************************************************/
+/*[$Satisfies $SDD_PNC 124] [$Satisfies $SDD_PNC 132]*/
+static FUNC(void, PNC_CODE) SUM_PNC_Update_NM_Activation_History(
+    P2CONST(uint8, AUTOMATIC, AUTOMATIC) NewReasons,
+    VAR(uint8, AUTOMATIC) Count)
+{
+    VAR(uint8, AUTOMATIC) ActivationIndex;
+    VAR(uint8, AUTOMATIC) SortedReasons[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+
+    /* Copy input to a local buffer so the callers array is not modified */
+    for (ActivationIndex = 0U; ActivationIndex < Count; ActivationIndex++)
+    {
+        SortedReasons[ActivationIndex] = NewReasons[ActivationIndex];
+    }
+
+    /* Sort ascending so WR (list head) will be the minimum PN name */
+    SUM_PNC_SortReasonBuffer(SortedReasons, Count);
+
+    /* Merge each sorted entry into the global list (dedup + capacity enforced inside) */
+    for (ActivationIndex = 0U; ActivationIndex < Count; ActivationIndex++)
+    {
+        SUM_PNC_MergeReasonIntoNMList(SortedReasons[ActivationIndex]);
+    }
+
+    /* Update WR to the list head (minimum active PN name) */
+    if (SUM_PNC_NM_ActReasonCount > 0U)
+    {
+        SUM_PNC_NM_WR = SUM_PNC_NM_ActReason[0U];
+    }
+}
+
+/*******************************************************************************
+ * Function name    : SUM_PNC_Update_NM_Deactivation_History
+ * Description      : Removes deactivated NM PN names from the global NM
+ *                    activation history list.
+ *                    Updates SUM_PNC_NM_WR to the new list head.
+ * Parameter in     : RemovedReasons, Count
+ * Parameter out    : None
+ * Return value     : None
+ ******************************************************************************/
+/*[$Satisfies $SDD_PNC 124] [$Satisfies $SDD_PNC 133]*/
+static FUNC(void, PNC_CODE) SUM_PNC_Update_NM_Deactivation_History(
+    P2CONST(uint8, AUTOMATIC, AUTOMATIC) RemovedReasons,
+    VAR(uint8, AUTOMATIC) Count)
+{
+    VAR(uint8, AUTOMATIC) MainIndex;
+    VAR(uint8, AUTOMATIC) FillPosition = 0U;
+    VAR(uint8, AUTOMATIC) TempIndex;
+    VAR(boolean, AUTOMATIC) IsDeactivated;
+    VAR(uint8, AUTOMATIC) MinReason;
+    VAR(uint8, AUTOMATIC) Idx;
+
+    for (MainIndex = 0U; MainIndex < SUM_PNC_NM_ActReasonCount; MainIndex++)
+    {
+        IsDeactivated = FALSE;
+        for (TempIndex = 0U; TempIndex < Count; TempIndex++)
+        {
+            if (SUM_PNC_NM_ActReason[MainIndex] == RemovedReasons[TempIndex])
+            {
+                IsDeactivated = TRUE;
+                break;
+            }
+        }
+        if (IsDeactivated == FALSE)
+        {
+            SUM_PNC_NM_ActReason[FillPosition] = SUM_PNC_NM_ActReason[MainIndex];
+            FillPosition++;
+        }
+    }
+
+    SUM_PNC_NM_ActReasonCount = FillPosition;
+
+    if (FillPosition > 0U)
+    {
+        SUM_PNC_NM_WR = SUM_PNC_NM_ActReason[0U];
+    }
+    else
+    {
+        /* Last PN(s) went inactive: WR = lowest of the deactivating PNs */
+        MinReason = RemovedReasons[0U];
+        for (Idx = 1U; Idx < Count; Idx++)
+        {
+            if (RemovedReasons[Idx] < MinReason)
+            {
+                MinReason = RemovedReasons[Idx];
+            }
+        }
+        SUM_PNC_NM_WR = MinReason;
+    }
+}
+
+#define SUM_PNC_STOP_SEC_CODE
+#include "SUM_PNC_MemMap.h"
+
+/********************************** END OF FILE *******************************/
+«ENDFILE»
+«ENDDEFINE»

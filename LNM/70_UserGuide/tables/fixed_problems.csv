@@ -1,0 +1,9 @@
+2;7;4
+\textbf{JIRA ticket};\textbf{Description};\textbf{Implementation}
+GMSUM-2108;SUSD error not resetted or cleared after Clear DTC;SUSD errors are neither reset, neither cleared when Clear DTC 0x14 service happens.
+GMSUM-3985;Usage of internal RTE Api for CData; Use of RTE Api for calibratable parameters
+GMSUM-3883;LNM Shutdown; Shutdown disabled if FULL_COMM has been requested
+GMSUM-3889;LNM Responder stuck; LNM Responder wake up stuck in the start state
+GMSUM-8371;Align LIN Bus Off enable criteria.; Added checks for vehicle power mode and the DTC enable parameter for LIN Bus Off.
+GMSUM-8369;Update test of enable criteria for signaling the Lost Communication with LIN Responder Device DTC.; Cleanup of previous related code and configuration. New calibration parameter to control the enabling of the setting of the DTC. Update of diagnostic function for the LossOfComm.
+GMSUM-8764;Support VehiclePowerMode for LNM activation criteria and schedule changes; Added rule support for activation criteria and schedule change. A rule is as a set of conditions linked together, implemented the rule including VehiclePowerMode as defined in SDV-5181.

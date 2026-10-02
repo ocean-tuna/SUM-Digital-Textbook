@@ -1,0 +1,25 @@
+package Sum_Pnc
+{
+    class  = PAC
+
+    rule-includes = CUBAS_TDATA-ARA
+
+    rule
+    {
+        class  = TDATA-ARA
+        domain = CUBAS
+        path   = Rte_Conf/*.arxml
+    }
+
+    variant USE {}
+
+    variant IGNORE
+    {
+        class  = XX
+        domain = XX
+        ignore-rule
+        {
+            path = **
+        }
+    }
+}

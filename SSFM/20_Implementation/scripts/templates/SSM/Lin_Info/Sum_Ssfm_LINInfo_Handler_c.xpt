@@ -1,0 +1,137 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_LINInfo_Handler.c"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM LIN Information Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+ /* PRQA S 0779 EOF # The name of the functions may look similar in the first 63 characters */
+ /* PRQA S 0789 EOF # The name of the functions may look similar in the first 63 characters*/
+ /* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+«IF SSFM_AnyLINSerialData(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+Sum_Ssfm_LINSignalInfo Sum_Ssfm_LINSignal[SSFM_NUM_OF_LINSIGNAL_INFO] =
+{
+«FOREACH Ssfm_Get_AllLINSerialDatas(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData) AS SERIAL_DATA-»
+	{
+		/* Write notification LIN «Ssfm_GetSerialDataName(SERIAL_DATA)» Signal Invalid */
+«IF Ssfm_IsLinSignalInIeFSlaveInfo(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError, SERIAL_DATA)-»
+		&Rte_Write_PP_SSFM_SWC_«Ssfm_GetSerialDataName(SERIAL_DATA)»_SSFM_LIN_Signal_Inv_SignalInv,
+«ELSE-»
+		NULL_PTR,
+«ENDIF-»
+		/*! RTE to write Signal status to be notified to SWC */
+		&Rte_Write_SUM_SSFM_PP_SSFM_RxMonitoredSignal_Av_SWC_«Ssfm_GetComSerialDataName(SERIAL_DATA)-»_SignalAvailability,
+		/* Signal status supervision */
+		SUM_SSFM_SigSts_Supervision_Uninitialized,
+		/* Signal status */
+		SUM_SSFM_SigSts_Disabled,
+		/* Function pointer to RTE Mode Read for LIN Current Schedule Status */
+		&Rte_Mode_RP_LIN_«SERIAL_DATA.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMChannelId»_BswM_LinSM_CurrentSchedule_SUM_LINSCH,
+		/* Function pointer to RTE Read for MSCL Status */
+		&Rte_Read_SUM_SSFM_RP_LIN_«SERIAL_DATA.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMChannelId»_LNM_SSM_MSCL_MSCL,
+		/* MSCL Mask */
+		«Ssfm_GetLINSerialDataMSCLMask(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo, SERIAL_DATA)-»u,
+	},
+«ENDFOREACH-»
+};
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+/* PRQA S 1503 EOF # The function provided to other modules will be used later */
+/* PRQA S 3408 EOF # The function is declared by RTE */
+
+«FOREACH Ssfm_GetAllLINChannelIDs(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData) AS LIN_CHANNEL_ID-»
+ /**
+ * @brief           The runnable to be called by RTE upon a change in Schedule Status for LIN Channel «LIN_CHANNEL_ID»
+ *
+ * @param[in]       void
+ * @return          void
+ */
+void Runnable_SSFM_LIN_«LIN_CHANNEL_ID»_ScheduleStatus_Changed(void){
+	/*[$Satisfies $DDS_SSFM 153]*/
+	«FOREACH Ssfm_GetSerialDatasOfLINChannel(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData, LIN_CHANNEL_ID) AS SERIAL_DATA-»
+	Sum_Ssfm_SigStsAvailability_Manager_LIN(&Sum_Ssfm_SerialDatas[«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.indexOf(SERIAL_DATA)-»]);
+	«ENDFOREACH-»
+}
+«ENDFOREACH-»
+
+«FOREACH Ssfm_GetAllLINChannelIDs(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData) AS LIN_CHANNEL_ID-»
+ /**
+ * @brief           The runnable to be called by RTE upon a change in MSCL Status for LIN Channel «LIN_CHANNEL_ID»
+ *
+ * @param[in]       void
+ * @return          void
+ */
+void Runnable_SSFM_LIN_«LIN_CHANNEL_ID»_LNM_SSM_MSCL_Changed(void){
+	/*[$Satisfies $DDS_SSFM 152]*/
+	«FOREACH Ssfm_GetSerialDatasOfLINChannel(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData, LIN_CHANNEL_ID) AS SERIAL_DATA-»
+	Sum_Ssfm_SigStsAvailability_Manager_LIN(&Sum_Ssfm_SerialDatas[«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.indexOf(SERIAL_DATA)-»]);
+	«ENDFOREACH-»
+}
+«ENDFOREACH-»
+
+«ENDIF-»
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

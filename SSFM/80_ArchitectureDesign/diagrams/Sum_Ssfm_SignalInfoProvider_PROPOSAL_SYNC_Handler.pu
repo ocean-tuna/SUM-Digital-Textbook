@@ -1,0 +1,61 @@
+@startuml Sum_Ssfm_SignalInfoProvider_PROPOSAL_SYNC_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+"SSFM::Sum_Ssfm_SignalStatusAv_LoC"
+
+**Interfaces Legend**
+    //ri40 //: Signal<n> 
+    //pi41 //: Signal<n>_Av
+    //pi42 //: Signal<n>_LcFA
+    //pi43 //: Signal<n>_Inv
+    //pi44 //: Signal<n>_FxI
+    //pi45 //: Signal<n>_FxFA
+    //FxI  //: Signal<n>_FxI_FromInternal
+    //FxFA //: Signal<n>_FxFA_FromInternal
+    //II_LcFA //: LostOfCom<n>_FA_FromInternal
+    //II_Av//: Signal<n>_Av
+    //II_inv//: Signal<n>_Inv_FromInternal
+end legend
+
+note left of P
+The block handles all signal status values and provides them
+to the requesting software components.
+Triggering mechanism(s) for providing messages shall be discussed 
+and further analyzed.
+end note
+component SSFM::Sum_Ssfm_SignalInfoProvider_Handler as P {
+    portin ri40
+    portout pi41
+    portout pi42
+    portout pi43
+    portout pi44
+    portout pi45
+
+    [Sum_Ssfm_SignalInfoProvider_Handler] as SS
+}
+
+() FxI
+() FxFA
+() II_Av
+() II_inv
+() II_LcFA
+
+ri40 --> SS
+
+FxI -l-> SS
+FxFA -l-> SS
+II_Av -r-> SS
+II_inv -r-> SS
+II_LcFA -r-> SS
+
+SS --> pi41
+SS --> pi42
+SS --> pi43
+SS --> pi44
+SS --> pi45
+
+
+
+@enduml

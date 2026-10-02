@@ -1,0 +1,322 @@
+\chapter{Runtime View (Dynamic View)}
+
+\section{Component description}
+
+\subsection{Initialization}
+\label{sec:InitDynamic}
+
+\RequirementTag{ADS_SrvcMgr}{027}\\
+The initialization of the RTA-SUM SrvcMgr module requires defining a specific function, Runnable_SrvcMgr_Init(), which we invoke from outside of the SUM SrvcMgr.
+The user can schedule the initialization function by following one of the mechanisms below:
+
+\begin{itemize}
+    \item As BswM Callout \textit{during} the initialization of the ECU;
+    \item As Periodic runnable (Task mapping \textbf{is} required)
+\end{itemize}
+
+The initialization function \textbf{shall} implement a mechanism that avoids further initialization after its first call.
+{\Satisfies{SRS_SrvcMgr 075}}
+
+\RequirementTag{ADS_SrvcMgr}{025}\\
+The inizialization function \textbf{shall} also initialize the calibration state of services to ON, by calling the \textit{SD_InitializeServicesCalibrationState} API, then trigger the calibrating off of services through the use of the \textit{SrvcMgr_CalibrationController} client/server interface operation surveyServiceDisableCalibrations.
+
+{\Satisfies{SRS_SrvcMgr 027}}
+
+
+The initialization routine \textbf{shall} run before the first evaluation of the PermitExecution.
+
+\subsection{Execution Manager}
+\label{sec:ExecManagerDynamic}
+\RequirementTag{ADS_SrvcMgr}{004}
+\\
+The execution manager implements the function \code{Runnable_SrvcMgr_ExecutionManager()}. 
+This runnable \textbf{shall} detect the information available at the interface \textit{SUSD_PermitExecution} and  produce the shutdown permission value on the interface \textit{SrvcMgr_ShutdownPermission}.
+\\
+To be scheduled at the sytem level, the function \code{Runnable_SrvcMgr_ExecutionManager()} \textbf{shall} be visible from the outside of the module.
+\\
+The \code{Runnable_SrvcMgr_ExecutionManager()} \textbf{shall}:
+\begin{enumerate}
+    \item Check the initialization status \textit{before} reading the \textit{SUSD_PermitExecution} interface on the dedicated port.
+    \item Evaluate the execution conditions for the SrvcMgr sub-modules.
+	\item Check the status of the request coming from the SPM.
+	\item Check the status of the learning session request.
+\end{enumerate}
+
+{\Satisfies{SRS_SrvcMgr 060} \Satisfies{SRS_SrvcMgr 061} \Satisfies{SRS_SrvcMgr 062} \Satisfies{SRS_SrvcMgr 063} \Satisfies{SRS_SrvcMgr 055} \Satisfies{SRS_SrvcMgr 056}}
+
+\RequirementTag{ADS_SrvcMgr}{005}
+
+The function \code{Runnable_SrvcMgr_ExecutionManager()} \textbf{should} be time-based scheduled with a periodicity equals to the configuration parameter. 
+\ConfigurationParameterExtRef{Sum_SrvcMgr_ExecutionManagerPeriodicity}
+
+\UMLDiagram{generated/diagrams/Sum_SrvcMgr_ExecutionManagement_StateDiag}{SrvcMgr Execution status Management}
+{\Satisfies{SRS_SrvcMgr 060} \Satisfies{SRS_SrvcMgr 061} \Satisfies{SRS_SrvcMgr 062} \Satisfies{SRS_SrvcMgr 063} \Satisfies{SRS_SrvcMgr 055} \Satisfies{SRS_SrvcMgr 056}}
+
+\RequirementTag{ADS_SrvcMgr}{026}\\
+If the current state of the SUM\_SrvcMgr is in RUN mode, the \textit{Runnable_SrvcMgr_ExecutionManager()}  \textbf{shall} perform certain actions required for DTC  U19A6 57, U19A6 87 and U19A6 54.
+These actions are only performed if the battery voltage, received from SUSD via \textit{SUSD_BattVltgSnsrStsAvl} interface, is available and only once. 
+In particular, the Execution Manager function \textbf{shall} retrieve the status of the learning table and the incomplete learning reasons to determine whether 
+the status of the DTCs U19A6 54 and U19A6 57 should be set or cleared. Additionally, it \textbf{shall} notify SSFM module of the learning table state, by using \textit{SrvcMgr_SSFM_LearningTableStatus} interface, 
+to allow SSFM to evaluate conditions for setting DTC U19A6 87.
+
+{\Satisfies{SRS_SrvcMgr 072} \Satisfies{SRS_SrvcMgr 082} \Satisfies{SRS_SrvcMgr 076}}
+\subsection{Learning Session Manager}
+\subsubsection{DID 0xE0CC}
+\label{sec:Ldid0xe0cc}
+\RequirementTag{ADS_SrvcMgr}{007}
+\\
+SUM\_SrvcMgr obtains the value of the learning table state using the SD API Sd_GetLearningTableState to be provided in the DID 0xE0CC which is a 1 byte.
+{\Satisfies{SRS_SrvcMgr 045}}
+
+SUM\_SrvcMgr implements the operations ConditionCheckRead and ReadData triggered by Dcm when this DID is requested. Not particular conditions are required to be verified for this DID.
+
+\UMLDiagram{generated/diagrams/Srvcmgr_LearningSession_DID_E0CC}{DID 0xE0CC: Retrieve Learning Table State Workflow}
+
+\subsubsection{DID 0xE0CD}
+\label{sec:didE0CD}
+\RequirementTag{ADS_SrvcMgr}{016}
+\\
+SUM\_SrvcMgr retrieves the list of required client services that are expected to be learned but have not been found or discovered. It also maintains a buffer to track the services that are missing from SSFM.\\
+{\Satisfies{SRS_SrvcMgr 046} \Satisfies{SRS_SrvcMgr 034}}
+
+SUM\_SrvcMgr implements the operations ConditionCheckRead, ReadDataLength and ReadData triggered by the Dcm when this DID is requested. The conditions verified by the ConditionCheckRead operation are:
+\begin{itemize}
+\item Learning Table State
+\item Maximum number of missing services to be returned into the Dcm buffer.
+\end{itemize}
+
+\UMLDiagram{generated/diagrams/Srvcmgr_LearningSession_DID_E0CD}{DID 0xE0CD: Retrieve Incomplete Learning Table - Client section Workflow}
+
+\subsubsection{DID 0xE0CE}
+\label{sec:didE0CE}
+\RequirementTag{ADS_SrvcMgr}{017}
+\\
+SUM\_SrvcMgr retrieves required subscriptions that were expected to be sent and acknowledged but that were not acknowledged (server section).\\
+
+SUM\_SrvcMgr implements the ConditionCheckRead, ReadDataLength and ReadData operations triggered by the Dcm when this DID is requested.
+In particular, in the operations:
+\begin{itemize}
+    \item ConditionCheckRead: the conditions of Learning Table State and the maximum number of missing services, to be returned in the Dcm buffer, are checked.
+    \item ReadData: the SUM\_SrvcMgr after checking the maximum number of missing event groups using the \code{Sd\_RetrieveIncompleteLearningReasons} API, 
+          retrieves the Dtc value from the SPM module, also using the \code{Sd\_GetNodeAddress} API to obtain the node's IP address.
+\end{itemize}
+
+\UMLDiagram{generated/diagrams/Srvcmgr_LearningSession_DID_E0CE}{DID 0xE0CE: Retrieve Incomplete Learning Table - Server section Workflow}
+
+{\Satisfies{SRS_SrvcMgr 046} \Satisfies{SRS_SrvcMgr 077}}
+
+
+\subsubsection{RID 0x0654: Triggering Learning Session}
+\label{subsubsec:RID0x0654}
+\RequirementTag{ADS_SrvcMgr}{011}\\
+SUM\_SrvcMgr implements the Start Routine of RID 0x0654 responsible of triggering the Learning Session.\\
+
+\paragraph{Enable Condition}
+RID 0x0654 execution is controlled by four AND conditions:
+
+\begin{enumerate}
+    \item The Vehicle Speed Average Driven must be less than or equal to 3 km/h.
+    \item The VSAD-related fault-active status from SSFM must be FALSE.
+    \item The Propulsion System Active (PropSysActv) signal must be FALSE.
+    \item The PSA-related fault-active status from SSFM must be FALSE.
+\end{enumerate}
+
+The data sources used by these checks are selected according to configuration:
+\begin{itemize}
+    \item COM signal reference:
+    \begin{itemize}
+        \item same signal/service reference: \textit{RP\_Com\_SrvcMgr\_VeActvProp\_YeDrvnVeh}
+        \item different references: \textit{RP\_Com\_SrvcMgr\_VePSAR\_b\_PropSysActv} and \textit{RP\_Com\_SrvcMgr\_YeVSPR\_v\_DrvnVehicle}
+    \end{itemize}
+    \item SSFM single-port support (\texttt{Sum\_Ssfm\_FxI\_FxFA\_SinglePortsSupport}):
+    \begin{itemize}
+        \item TRUE: use FxFA interfaces (\textit{RP\_SSFM\_SrvcMgr\_FxFA\_VSAD\_PSA} or \textit{RP\_SSFM\_SrvcMgr\_FxFA\_VSAD}/\textit{RP\_SSFM\_SrvcMgr\_FxFA\_PSA})
+        \item FALSE: use FsFA interfaces (\textit{RP\_SSFM\_SrvcMgr\_FsFA\_VSAD\_PSA} or \textit{RP\_SSFM\_SrvcMgr\_FsFA\_VSAD}/\textit{RP\_SSFM\_SrvcMgr\_FsFA\_PSA})
+    \end{itemize}
+\end{itemize}
+
+If any of the above conditions are not met when RID 0x0654 is requested, the routine shall return the negative response code \texttt{DCM\_E\_CONDITIONSNOTCORRECT} and shall not execute the learning session trigger logic.
+
+\paragraph{Implementation}
+The implementation consists of a state machine with valid states DCM\_INITIAL and DCM\_PENDING. In DCM\_INITIAL state:
+
+\begin{itemize}
+\item SUM\_SrvcMgr shall notify SUM\_SPM of the learning status "PENDING" by using SrvcMgr_SPM_SdLearningStatusIndication
+\item the SD API Sd\_ClearLearningTable is called; 
+\item services that belong to a Service Group are started using the Sd_ServiceGroupStart() API;
+\item the helper Sum\_Srvcmgr\_SetClientSrvcRequestedRemoteSrvcAvailable() is called; it reuses the same activation handling as Runnable\_SrvcMgr\_ActivateServices, ensuring Service Group members use Sd\_ServiceGroupStart/Stop and non-group services use Sd\_Client/ServerServiceSetState plus Sd\_ConsumedEventGroupSetState for requested clients;
+\item server services not in a Service Group are set to AVAILABLE using the Sd_ServerServiceSetState() API;
+\item client services not in a Service Group are set to REQUESTED using the Sd_ClientServiceSetState() API;
+\item all the Consumed Event Groups associated to each Client Service is set to REQUESTER using the Sd_ConsumedEventGroupSetState() API;
+\end{itemize}
+
+If Sd_ClearLearningTable() API returns E_NOT_OK, the SPM is notified of the learning status "FAILED" by using SrvcMgr_SPM_SdLearningStatusIndication.
+
+When the state machine transitions to the DCM\_PENDING state, the learning table write status is checked via Sum\_SrvcMgr\_prv\_CheckLearningTableWriteStatus(). Only after the learning session has concluded (ret == E\_OK or E\_NOT\_OK), the following actions are performed:
+\begin{itemize}
+    \item Call the SPM_SDLearningStatusIndication when the Learning Session completes in order to inform the SPM
+    \item Call the Sd_GetLearningTableState and Sd\_RetrieveIncompleteLearningReasons APIs to retrieve the current learning table state and the number of missing event groups.
+    \item Populate the LearningTableStatus to be sent to SSFM via the interface \textit{SrvcMgr_SSFM_LearningTableStatus}, allowing SSFM to evaluate conditions for setting DTC U19A6 87.
+    \item Set or Clear the  U19A6 54  and U19A6 57 Dtcs, via the correspoding SUM\_SSFM interfaces;
+\end{itemize}
+While the learning session is still in progress (ret == E\_PENDING), no DTC evaluation or SPM notification is performed.
+
+The complete workflow is depicted in the figure below. \\
+{\Satisfies{SRS_SrvcMgr 043} \Satisfies{SRS_SrvcMgr 072} \Satisfies{SRS_SrvcMgr 076} \Satisfies{SRS_SrvcMgr 080} \Satisfies{SRS_SrvcMgr 081} \Satisfies{SRS_SrvcMgr 082} {\Satisfies{SRS_SrvcMgr 083}}
+
+\label{subsubsec:RID0x0654Flow}
+\UMLDiagram{generated/diagrams/Srvcmgr_LearningSession_RID_0654}{RID 0x0654: Trigger Learning Session Workflow}
+
+\subsubsection{RID 0x0612}
+\label{sec:RID0x0612}
+\RequirementTag{ADS_SrvcMgr}{009}
+\\
+SUM\_SrvcMgr implements the Start Routine of RID 0x0612 responsible of retrieving the content of the Learning Table w.r.t. the Routine Control Option Records received. \\
+
+The implementation will check the consistency of the control option record received and will return the information requested accordingly. The complete workflow is depicted in the figure below.
+
+\UMLDiagram{generated/diagrams/Srvcmgr_LearningSession_RID_0612}{RID 0x0612: Retrieve Learning Table Workflow}
+
+{\Satisfies{SRS_SrvcMgr 045}}
+
+\paragraph{Enable Conditions}
+\RequirementTag{ADS_SrvcMgr}{032}
+
+RID 0x0612 execution is controlled by two conditions that must be satisfied. These signals can be accessed through two different port interfaces depending on the system configuration:
+
+\begin{enumerate}
+    \item The Propulsion System Active signal must be FALSE. This signal is read from the required port \textit{RP\_Com\_SrvcMgr\_VePSAR\_b\_PropSysActv} via RTE interface at runtime.
+    \item The Vehicle Speed Average Driven must be less than or equal to 3 km/h. This signal is read from the required port \textit{RP\_Com\_SrvcMgr\_YeVSPR\_v\_DrvnVehicle} via RTE interface at runtime.
+\end{enumerate}
+
+In case of reference to the same service-based or signal-based (group signal) signals, the SrvcMgr module can alternatively use the port interface \textit{RP\_Com\_SrvcMgr\_VeActvProp\_YeDrvnVeh}. This interface is introduced when both the Propulsion System Active signal and Vehicle Speed Average Driven are provided as service-based signals, allowing unified access to both signals through a single interface for RID 0x0612 and RID 0x0654 enable condition checking.
+
+If either condition is not met when RID 0x0612 is requested, the routine shall return the negative response code \texttt{DCM\_E\_CONDITIONSNOTCORRECT} and shall not execute the learning table retrieval logic.
+
+{\Satisfies{SRS_SrvcMgr 078} \Satisfies{SRS_SrvcMgr 079} \Satisfies{SRS_SrvcMgr 080} \Satisfies{SRS_SrvcMgr 081}}
+
+\subsection{Service Manager}
+\label{sec:SrvcManagerDynamic}
+\subsubsection{API Runnable_SrvcMgr_ActivateServices()}
+\RequirementTag{ADS_SrvcMgr}{022}
+\\
+This API will be called through the C/S interface SrvcMgr\_SPM\_ActivateServices by the SPM module.
+The purpose of this API is to set a list of Service ID (received as input parameter) the state (in function of a Command List received as input parameter).
+\begin{itemize}
+    \item For services that belong to a Service Group, the SD APIs Sd\_ServiceGroupStart()/Sd\_ServiceGroupStop() are used. In this case SrvcMgr does not call Sd\_ClientServiceSetState or Sd\_ServerServiceSetState for those services.
+    \item For services that do not belong to a Service Group, the helper Sum\_SrvcMgr\_HandlerServiceCommand is used:
+    \begin{itemize}
+        \item It determines if the service is Client or Server and calls the relevant SD API (Sd\_ClientServiceSetState or Sd\_ServerServiceSetState) based on the activationCommandList value (TRUE = activation, FALSE = disabling).
+        \item If the SD API returns E\_OK, the commandStatusList entry is set to E\_OK\_LOCAL\_ENABLED (Server Service) or E\_OK\_REMOTE\_ENABLED (Client Service).
+        \item For a requested and enabled Client Service that has SdConsumedEventGroup(s), Sd\_ConsumedEventGroupSetState() is called for each associated SdConsumedEventConfiguredEvent. If any Sd\_ConsumedEventGroupSetState() call returns E\_NOT\_OK, the commandStatusList entry is set to E\_GENERAL\_ERROR; otherwise it remains E\_OK\_REMOTE\_ENABLED.
+        \item If the SD API returns E\_NOT\_OK, the commandStatusList entry is set to E\_GENERAL\_ERROR.
+    \end{itemize}
+\end{itemize}
+The result of these operations are retrieved by populating an input array Command Status List.
+\UMLDiagram{generated/diagrams/SrvcMgr_ServiceManager_ActiveServices}{Runnable_SrvcMgr_ActivateServices workflow.}
+{\Satisfies{SRS_SrvcMgr 047} \Satisfies{SRS_SrvcMgr 048} \Satisfies{SRS_SrvcMgr 049} \Satisfies{SRS_SrvcMgr 050} \Satisfies{SRS_SrvcMgr 071} \Satisfies{SRS_SrvcMgr 055} \Satisfies{SRS_SrvcMgr 056}}
+{\Satisfies{SRS_SrvcMgr 073}}
+\RequirementTag{ADS_SrvcMgr}{024}
+\\
+Moreover, this API SHALL track if a request from SPM is ongoing in order to prevent that Execution Manager votes for shutdown.
+{\Satisfies{SRS_SrvcMgr 055} \Satisfies{SRS_SrvcMgr 056}}
+\subsection{Calibration Controller}
+\label{subsec:CalibControllerDynamic}
+
+\subsubsection{Runnable\_SrvcMgr\_DisableService}
+\RequirementTag{ADS_SrvcMgr}{020}
+
+SUM\_SrvcMgr implements the Runnable\_SrvcMgr\_DisableService that will be called through the C/S interface SrvcMgr\_ServiceCalibrationOff (operation SrvcMgr\_DisableService) 
+by the SWCs to change the state (disable) of services through SD APIs:
+
+\begin{itemize}
+\item Call to Sd\_ServerServiceSetState()/ClientServiceSetState() (depending on whether the service is client or server);  
+\item Call to Sd\_CalibrateServicesOff() (SD extension);
+\end{itemize}
+
+The return value of the implementation is based on:
+
+\begin{itemize}
+\item The consistency of the Service ID received with respect to the Sd configuration;
+\item The return value of the SD APIs;
+\end{itemize}
+
+\UMLDiagram{generated/diagrams/SrvcMgr_FlowDiagram_DisableService}{API SrvcMgr\_DisableService workflow} 
+
+{\Satisfies{SRS_SrvcMgr 021} \Satisfies{SRS_SrvcMgr 023} \Satisfies{SRS_SrvcMgr 024}}
+
+\subsubsection{Runnable\_SrvcMgr\_DisableServiceGroup}
+\RequirementTag{ADS_SrvcMgr}{021}
+
+SUM\_SrvcMgr implements the Runnable\_SrvcMgr\_DisableServiceGroup that will be called through the C/S interface SrvcMgr\_ServiceCalibrationOff (operation SrvcMgr\_DisableServiceGroup) 
+by the SWCs to change the state (disable) of services group through SD APIs:
+
+\begin{itemize}
+\item Call to Sd\_ServiceGroupStop;  
+\item Call to Sd\_CalibrateServicesOff() (SD extension);
+\end{itemize}
+
+The return value of the implementation is based on:
+
+\begin{itemize}
+\item The consistency over the Service Group ID received w.r.t. the Sd configuration;
+\item The return value of the SD APIs;
+\end{itemize}
+
+\UMLDiagram{generated/diagrams/SrvcMgr_FlowDiagram_DisableServiceGroup}{API SrvcMgr\_DisableService workflow}
+ 
+{\Satisfies{SRS_SrvcMgr 022} \Satisfies{SRS_SrvcMgr 025} \Satisfies{SRS_SrvcMgr 026}}
+
+\newpage
+\section{Run-time scenarios}
+\label{sec:RunTimeScenarios}
+
+\subsection{Initialization}
+\RequirementTag{ADS_SrvcMgr}{028}
+\UMLDiagram{generated/diagrams/Sum_SrvcMgr_Initialization}{SrvcMgr Initialization}
+{\Satisfies{SRS_SrvcMgr 075}}
+
+\subsection{SrvcMgr Execution status Management}
+\RequirementTag{ADS_SrvcMgr}{006}
+\UMLDiagram{generated/diagrams/Sum_SrvcMgr_ExecutionManager_SeqDiag}{SrvcMgr Execution Manager - Functionality enabler}
+{\Satisfies{SRS_SrvcMgr 060} \Satisfies{SRS_SrvcMgr 061} \Satisfies{SRS_SrvcMgr 062} \Satisfies{SRS_SrvcMgr 063}}
+
+\subsection{SrvcMgr Learning Session Management}
+\RequirementTag{ADS_SrvcMgr}{018}
+\label{sec:RID0x0654LearningPhase}
+\UMLDiagram{generated/diagrams/SrvcMgr_SeqDiagram_LearningPhase}{SrvcMgr Learning Session - Learning Phase}
+{\Satisfies{SRS_SrvcMgr 043} \Satisfies{SRS_SrvcMgr 072}}
+
+\RequirementTag{ADS_SrvcMgr}{019}
+\UMLDiagram{generated/diagrams/SrvcMgr_LrnManager_SeqDiagram_Runtime}{SrvcMgr Learning Session - Runtime}
+{\Satisfies{SRS_SrvcMgr 045} \Satisfies{SRS_SrvcMgr 046} \Satisfies{SRS_SrvcMgr 077}  \Satisfies{SRS_SrvcMgr 034}}
+
+\subsection{SrvcMgr Service Manager Management}
+\RequirementTag{ADS_SrvcMgr}{023}
+\UMLDiagram{generated/diagrams/SUM_SrvcMgr_ServiceManagement}{SrvcMgr Service Manager - ActivateServices}
+{{\Satisfies{SRS_SrvcMgr 047} \Satisfies{SRS_SrvcMgr 048} \Satisfies{SRS_SrvcMgr 049} \Satisfies{SRS_SrvcMgr 050} \Satisfies{SRS_SrvcMgr 055} \Satisfies{SRS_SrvcMgr 056} \Satisfies{SRS_SrvcMgr 071}}
+}
+
+\section{DTC Management}
+\label{sec:DTCs}
+\RequirementTag{ADS_SrvcMgr}{030}\\
+\textbf{DTC U19A6 57 - Invalid/Incompatible SW Component}\\
+The Service Manager shall set the DTC U19A6 57 via \textit{SrvcMgr\_SSFM\_SrvcDscvryFlr\_U19A6\_57} if \textit{Sd\_GetLearningTableState} returns \texttt{LEARNING\_INCOMPLETE} and \\\textit{Sd\_RetrieveIncompleteLearningReasons.num\_Of\_Missing\_EventGroups} $>$ 0.\\
+The DTC shall be cleared if \textit{Sd\_GetLearningTableState} returns \texttt{LEARNING\_COMPLETE} or \texttt{LEARNING\_INCOMPLETE} with zero missing event groups.\\
+This check is performed in the the Execution Manager, after RID 0x0654 execution, and after Service 0x14 (Clear Diagnostic Information) confirmation via \textit{SSFM\_ClearDiagReq}.
+
+\UMLDiagram{generated/diagrams/SUM_SrvcMgr_SSFM_ClearDiagReq_U19A6_57}{The Service Manager (SrvcMgr) handles DTC U19A6 57 upon receipt the confirmation of Service 0x14 (Clear Diagnostic Information) from SSFM.}
+
+\textbf{DTC U19A6 54 - Missing Setup/Learn} \\
+The Service Manager shall set the DTC U19A6 54 via \textit{SrvcMgr\_ERRH\_U19A6\_54\_Status} if \textit{Sd\_GetLearningTableState}
+returns \texttt{CLEARED}, otherwise reset the DTC. This action is performed in the the Execution Manager, after RID 0x0654 execution,
+and after Service 0x14 (Clear Diagnostic Information) confirmation via \textit{SSFM\_ClearDiagReq}.\\
+Note: The interaction with the SSFM module is similar to the diagram shown in the previously DTC.
+
+\textbf{DTC U19A6 87 - Missing Message}\\
+If the \textit{Sd\_GetLearningTableState} returns \texttt{LEARNING\_COMPLETE} or \texttt{LEARNING\_INCOMPLETE}, the Service Manager shall forward information on the learning table status to the SSFM module, via the \textit{SrvcMgr\_SSFM\_LearningTableStatus} interface.
+This information allows the SSFM to evaluate the conditions for setting DTC U19A6 87. 
+This action is performed in the Execution Manager and after RID 0x0654 execution.
+
+{\Satisfies{SRS_SrvcMgr 076} \Satisfies{SRS_SrvcMgr 072} \Satisfies{SRS_SrvcMgr 082} } 
+

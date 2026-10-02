@@ -1,0 +1,232 @@
+«IMPORT bsw»
+«IMPORT bsw::PNCModule»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«REM»«EXTENSION templates::validator::common::PNC_Ext»comment«ENDREM»
+«EXTENSION templates::Sum_Pnc_General»
+
+«REM» ********************* Start Define ********************** «ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND PNC FOR ecu»
+«ENDDEFINE»
+«REM»End Define«ENDREM»
+
+«REM»************************  xPandrba_SentIf ***********************«ENDREM»
+«DEFINE PNC FOR Ecu»
+
+«FILE "Sum_Pnc_Cfg.h"»
+
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_PNC
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description : PNC_Cfc.h header file
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+/*
+\defgroup PNC_H    PNC - APPLICATION LAYER MODULE
+*/
+
+#ifndef PNC_Cfg_H
+#define PNC_Cfg_H
+
+#include "ComStack_Cfg.h"
+
+/*
+ *******************************************************************************
+ * Defines
+ *******************************************************************************
+ */
+
+ /**
+  * \addtogroup Configuration_Macros
+  * @{
+  */
+
+ /* PRQA S 3408 EOF */  /* Extern definitions and declarations are analyzed and required.*/
+ /* PRQA S 3447 EOF */
+ /* SUM_PNC_ACTIVE_SYNCH_TIME */
+ /* [$Satisfies $SDD_PNC 004] */
+«IF (
+     pNC.pNCGeneral.sUM_PNC_ACTIVE_SYNCH_TIME != null
+     )»
+/**  macro used to define time to verify PNC to request the PN Tx PDU group activation (Activation Criteria) */
+#define  SUM_PNC_ACTIVE_SYNCH_TIME («(pNC.pNCGeneral.sUM_PNC_ACTIVE_SYNCH_TIME * 1000).toInt()»u)
+«ENDIF»
+ /* SUM_PNC_PASSIVE_SYNCH_TIME */
+  /* [$Satisfies $SDD_PNC 036] */
+«IF (
+     pNC.pNCGeneral.sUM_PNC_PASSIVE_SYNCH_TIME != null
+     )»
+/** macro used to define time to verify PNC to request the PN Tx PDU group activation (Remote ACtivation) */
+#define  SUM_PNC_PASSIVE_SYNCH_TIME («(pNC.pNCGeneral.sUM_PNC_PASSIVE_SYNCH_TIME * 1000).toInt()»u)
+«ENDIF»
+
+ /* PNC_t_RemoteSignals_Periodicity */
+ /* [$Satisfies $SDD_PNC 037] */
+«IF (
+     pNC.pNCGeneral.pNC_t_RemoteSignals_Periodicity != null
+     )»
+/**  macro used to define time to verify periodicity of polling for changes to Activation Signals */
+#define  PNC_T_REMOTESIGNALS_PERIODICITY (uint32)(«(pNC.pNCGeneral.pNC_t_RemoteSignals_Periodicity * 1000).toInt()»u)
+«ENDIF»
+ /* PNC_t_PNsPNsStatusMonitoring_Periodicity */
+ /* [$Satisfies $SDD_PNC 038] */
+«IF (
+     pNC.pNCGeneral.pNC_t_PNsPNsStatusMonitoring_Periodicity != null
+     )»
+/** macro used to define time for the periodicity of monitoring changes in PN status */
+#define  PNC_T_PNsPNsSTATUSMONITORING_PERIODICITY (uint32)(«(pNC.pNCGeneral.pNC_t_PNsPNsStatusMonitoring_Periodicity * 1000).toInt()»u)
+«ENDIF»
+ /* PNC_t_Activation_Req_Timer */
+ /* [$Satisfies $SDD_PNC 039] */
+«IF (
+     pNC.pNCGeneral.pNC_t_Activation_Req_Timer != null
+     )»
+/** macro used to define time to verify PN activation after mode request (for retry purposes). */
+#define  PNC_T_ACTIVATION_REQ_TIMER («(pNC.pNCGeneral.pNC_t_Activation_Req_Timer * 1000).toInt()»u)
+«ENDIF»
+«REM»[$Satisfies $SDD_PNC 007]«ENDREM-»
+ /* PNC_PermitExecution_Mask */
+«IF (
+     pNC.pNCGeneral.pNC_PermitExecution_Mask != null
+     )»
+static const uint16 PNC_PermitExecution_Mask = «pNC.pNCGeneral.pNC_PermitExecution_Mask»U;
+«ENDIF»
+
+/** Number_of_PNC_Partial_Networks */
+#define  NUMBER_OF_PNC_PARTIAL_NETWORKS («pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.size»u)
+
+«IF (
+     pNC.pNCGeneral.number_of_Retries != null
+     )»
+/** Number_of_PNC_Retries */
+#define  NO_OF_RETRIES («pNC.pNCGeneral.number_of_Retries»u)
+«ENDIF»
+
+«IF (
+     pNC.pNCGeneral.comM_PNC_Channel != null
+     )»
+/** Number_of_PNC_Total_Channels */
+#define NUMBER_OF_PNC_TOTAL_CHANNELS («pNC.pNCGeneral.comM_PNC_Channel.comM_Channel_Ref.size»u)
+«ENDIF»
+
+/*Bitmap is 56 bits (56 PNs supported)*/
+/* [$Satisfies $SDD_PNC 005] */
+#define DID_INFO 0x06
+
+/* [$Satisfies $SDD_PNC 099] */
+/** Enable the usage of a dedicated periodic runnable to run SUM_PNC_Init */
+«IF pNC.pNCGeneral.pncGenerateInitRunnable == true»
+#define Generate_Pnc_InitRunnable_Status STD_ON
+«ELSE»
+#define Generate_Pnc_InitRunnable_Status STD_OFF
+«ENDIF»
+
+«REM»[$Satisfies $SDD_PNC 079]«ENDREM»
+#define PNC_PN_COORDINATOR_ID «pNC.pNCGeneral.sUM_PN_Coordinator_Node_ID»u
+
+/* Time base is in microseconds */
+/* [$Satisfies $SDD_PNC 101] */
+#define PNC_MAIN_FUNCTION_PERIOD «(pNC.pNCGeneral.pNC_t_MainFunction_Periodicity * 1000).toInt()»u
+
+«REM»[$Satisfies $SDD_PNC 075]«ENDREM-»
+«IF isUsingUDP(pNC.pNCConfigSet) -»
+#define PNC_ETHERNET_SUPPORT STD_ON
+#define PNC_DID_F08B_SUPPORT STD_OFF
+«ELSE»
+#define PNC_ETHERNET_SUPPORT STD_OFF
+«IF pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Sensors.exists(e| e > 0) || pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER.number_of_PNC_Activation_Signals.exists(e| e > 0) -»
+#define PNC_DID_F08B_SUPPORT STD_ON
+«ELSE»
+#define PNC_DID_F08B_SUPPORT STD_OFF
+«ENDIF -»
+«ENDIF -»
+«IF IsPDUDisableFeatureEnabled(pNC)-»
+#define PNC_SSFM_NO_OF_DISABLEPDUS «GetNoOfDisablePDUs(pNC)-»u
+«ENDIF-»
+
+#define SPM_PNC_REMOTE_RID  		0x2U
+#define SUM_PNC_MAX_SIGNALS			0xFFU
+#define SUM_PNC_MAX_SENSORS			0xFFU
+#define SUM_PNC_INVALID_REASON		0x00U
+#define SUM_PNC_WR_UNSET		0xFFU
+
+#define SUM_PNC_LOCAL_NAME_OUTRANGE	0u
+#define SPM_PNC_LOC_DIAG_RID  	    0x25u
+/* *****************************************************************************
+	Configuration Typedefs
+***************************************************************************** */
+typedef struct
+{
+	/* Function Pointer to the RTE Read API of the port providing SUM_C_Disable_<MessageIPDU> */
+	P2FUNC(Std_ReturnType, TYPEDEF, Pnc_RteReadSumCDisable_MessagePdu_fp) (CONSTP2VAR(boolean, AUTOMATIC, RTE_APPL_DATA));
+	/* Pointer to indicate BswM to disable the PDU */
+	FUNC(Std_ReturnType, RTE_CODE) (*FP_Rte_Switch_SUM_BswM_DisablePdu)(uint8 data);
+} Pnc_TxMessagePduConfig_Type;
+
+/* *****************************************************************************
+	Externed DataStructures - For SSC Internal Use
+ **************************************************************************** */
+«IF IsPDUDisableFeatureEnabled(pNC)»
+extern const Pnc_TxMessagePduConfig_Type Pnc_TxMessagePdu_Configuration[PNC_SSFM_NO_OF_DISABLEPDUS];
+«ENDIF»
+
+/**
+ * @}
+ */
+
+ /*******************************************************************************
+ * Function Calls
+ *******************************************************************************
+ */
+
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+ «IF (PartialNWPara.number_of_PNC_Activation_Signals != 0)»
+extern Activation_Signal_Interface «PartialNWPara.comM_PNC_Ref.shortName -»_GaaSUM_Activation_Signals_Interface[«PartialNWPara.number_of_PNC_Activation_Signals-»];
+«ENDIF»«ENDFOREACH-»
+
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+ «IF (PartialNWPara.number_of_PNC_Activation_Signals != 0)»
+extern Activation_Signal_Status_Interface «PartialNWPara.comM_PNC_Ref.shortName -»_GaaSUM_Activation_Signals_Status_Interface[«PartialNWPara.number_of_PNC_Activation_Signals-»];
+«ENDIF»«ENDFOREACH-»
+
+extern Rte_Write_PNC_Active_RxPDU_Enable_Interface PNC_GaaSUM_PNC_Active_RxPDU_Enable[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+extern Rte_Write_PNC_Active_TxPDU_Enable_Interface PNC_GaaSUM_PNC_Active_TxPDU_Enable[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+extern Rte_Switch_PNC_BswMPduGroupSwitchRxReq_Interface «PartialNWPara.comM_PNC_Ref.shortName »_GaaSUM_BswM_ComM_Pdugroupswitch_RxReq[«PartialNWPara.comM_PNC_Ref.comMChannelPerPnc.size-»];
+«ENDFOREACH-»
+«FOREACH pNC.pNCConfigSet.sUM_PNC_PARTIAL_NETWORK_PARAMETER AS PartialNWPara ITERATOR i-»
+extern Rte_Switch_PNC_BswMPduGroupSwitchTxReq_Interface «PartialNWPara.comM_PNC_Ref.shortName »_GaaSUM_BswM_ComM_Pdugroupswitch_TxReq[«PartialNWPara.comM_PNC_Ref.comMChannelPerPnc.size-»];
+«ENDFOREACH-»
+extern Rte_Read_PNC_DisableNormalComm_DIAG_Interface PNC_GaaSUM_PNC_DisableNormalComm_Interface[NUMBER_OF_PNC_TOTAL_CHANNELS];
+extern Rte_mode_Bswm_ComM_Current_PNC_ModeUser_MDG_PNC_State_Interface PNC_GaaSUM_Bswm_ComM_Current_PNC_ModeUser_Interface[NUMBER_OF_PNC_PARTIAL_NETWORKS]; /* PRQA S 3447 EOF */
+extern Rte_mode_Bswm_ComM_Current_ModeUser_MDG_ComMChannel_State_Interface PNC_GaaSUM_Bswm_ComM_Current_ModeUser_Interface[NUMBER_OF_PNC_TOTAL_CHANNELS];
+extern Rte_Switch_Bswm_ComM_Current_ModeReq_PNC_State_Interface PNC_GaaSUM_Bswm_ComM_Current_ModeReq_Interface[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+
+extern FP_PNC_pCdata_Type PNC_GaaPNC_C_ProcessPN[NUMBER_OF_PNC_PARTIAL_NETWORKS];
+
+#endif
+«ENDFILE-»
+«ENDDEFINE»
+

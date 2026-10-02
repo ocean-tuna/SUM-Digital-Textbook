@@ -1,0 +1,1207 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_SoftwMgr.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for SPM Software Manager
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#include "Sum_Spm_Cfg.h"
+#include "Sum_Spm_SoftwMgr.h"
+#include "Sum_Spm_Request_Queue.h"
+#include "Sum_Spm_HeartBeat_Mgr.h"
+#include "Sum_Spm_PwrMgr.h"
+#include "Sum_Spm_WakeUp.h"
+#include "Sum_Spm_ErrorHandler.h"
+#include "Sum_Common_Algo_Deque.h"
+#include "Sum_Spm_Diagnostic.h"
+#include "Sum_Spm_Interaction_VehicleEnergyOptimizer.h"
+#include "Sum_Spm_VariantManagement.h"
+
+«IF spm.spmConfigSet.spmPowPrf.select(e|e.spmProfileIsLocal == false).size > 0-»
+#include "Sd_Cfg.h"
+# if( SD_ECUC_RB_RTE_IN_USE == STD_ON)
+#include "SchM_Sd.h"
+# endif
+«ENDIF -»
+
+/* This function does not modify any value. */
+#pragma PRQA_NO_SIDE_EFFECTS SpmRequesterList_pmGetReqAddrLstCurrLen
+
+/* PRQA S 1503 EOF # Usage of function that are called directly by other AUTOSAR modules. */
+/* PRQA S 3472 EOF # Following macro are used for sake of clarity to access fields of the PGTT.  */
+/* PRQA S 3469 EOF # Following macro are called to access fields of the PGTT. */
+
+# define SPM_SRVCID_FROM_PRFID(x)		((uint16)(x >> 16U))
+# define SPM_SRVC_INSTID_FROM_PRFID(x)  ((uint16)(x & 0xFFFFU))
+
+static void Sum_Spm_WriteLossofNode(void);
+static void Sum_Spm_CheckHBCounterShallBeSentFullScale(const SPM_PermitExecution Spm_allowed);
+static void Spm_ErrorHandler_ShutdownDetected(void);
+static void Spm_HandleInitAndShutdownState(const SPM_PermitExecution Spm_allowed);
+static void Spm_GetSdServiceConfig(uint16 profServiceId, uint16 profInstanceId, uint16 *sdInstanceId, uint8 *majorVersion);
+static void Spm_StartStayAwakeTimer(void);
+static void Spm_DecreaseStayAwakeTimer(void);
+static boolean Spm_IsStayAwakeTimerActive(void);
+static void Spm_SoftwMgr_Requester_Handler(void);
+static boolean Spm_HasActiveRequestFromRequester(const uint8 powProfIndex, uint32 TrgDvcIpAss);
+static boolean Spm_GetIfProfileRunningOnRemoteTrgDvc_Handler(const uint8 TrgDvcIndex);
+
+
+«IF Spm_IsThereAnyManagedDevice(spm) && (Spm_ECU_INTERMEDIATE(spm) == true) -»
+static boolean Spm_IsTargetDeviceRequestedByRemote(void);
+«ENDIF-»
+
+/**
+ * @brief Callback function to handle active Requesting Devices that are not actually in a valid Power State
+ *
+ * Callback is invoked periodically from the main function
+ *
+ * Global variables considered:
+ *
+ * - SPM_PrfStsMgr_RAM
+ * - Device Power State IRV in reading mode
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return 			void
+ */
+static void Spm_LoC_wRequester_Handler( void );
+
+«IF spm.spmGeneral.spmGenerateInitRunnable == true-»
+static void SPM_Init(void);
+«ENDIF-»
+/**
+ * @brief	Spm Controller current status
+ * @private
+ */
+static SpmStateEnumType SpmCtrl_Status = Spm_Initialized;
+
+/**
+ * @brief	Spm Module Initilizer current status
+ * @private
+ */
+static boolean SpmCtrl_Initilization_Status = FALSE;
+
+/**
+ * @brief	Spm alive rolling counter (Application level) to pass to the SUM_SUSD
+ * @private
+ */
+/* PRQA S 3218 1 # Defined here for modularity reason. */
+static SPM_ShutdownPermission Spm_ShutdownRollingCounter = 0x00U;
+
+/**
+ * @brief	Spm flag needed to inform Sum_Spm_HeartBeat_Mgr.c if the HB
+ * 			counter SHALL be sent at full scale.
+ * @private
+ */
+static boolean Spm_HBCounterShallBeSentFullScale = FALSE;
+
+/**
+ * @brief	Spm flag to track if the final heartbeat at full scale has been sent.
+ * 			TRUE: Final HB at full scale has been sent.
+ * 			FALSE: Final HB at full scale has NOT been sent yet.
+ * @private
+ */
+static boolean Spm_FinalHeartbeatSent = FALSE;
+
+/* Stay awake timer in ms*/
+static uint32 SpmStayAwakeTimer = 0u;
+
+
+
+/****************************************************************************************************************************************
+ * =====================================================================================================================================
+ *	BEGIN: Sum_Spm_SoftwMgr Coding Section
+ * -------------------------------------------------------------------------------------------------------------------------------------
+ ***************************************************************************************************************************************/
+
+/* PRQA S 3214 EOF # Macro is used for Memory Mapping Tool */
+/* PRQA S 3614 EOF # Memmap code inclusion */
+/* PRQA S 5087 EOF # Memmap code inclusion */
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+
+/**
+ * @brief Getter function of the variable Spm_HBCounterShallBeSentFullScale.
+ *
+ * @retval TRUE: HB counter value SHALL be set at full scale.
+ * 		   FALSE: HB counter value SHALL be just incremented
+ */
+/* PRQA S 1532 1 # The function is defined here for modularity reason. */
+boolean Sum_Spm_GetHBCounterShallBeSentFullScale(void){
+	return Spm_HBCounterShallBeSentFullScale;
+}
+
+/**
+ * @brief Setter function of the variable Spm_HBCounterShallBeSentFullScale.
+ *
+ * @param[in] value: TRUE to request HB counter at full scale, FALSE to allow normal increment.
+ * @retval None.
+ */
+/* PRQA S 1505 1 # The function is defined here for modularity reason. */
+void Sum_Spm_SetHBCounterShallBeSentFullScale(boolean value){
+	Spm_HBCounterShallBeSentFullScale = value;
+}
+
+/**
+ * @brief Getter function of the variable SpmCtrl_Initilization_Status.
+ *
+ * @retval TRUE: The module is initialized.
+ * 		   FALSE: The module is not initialized.
+ */
+/* PRQA S 1532 1 # The function is defined here for modularity reason. */
+boolean Sum_Spm_Get_SpmCtrl_Initilization_Status(void){
+	return SpmCtrl_Initilization_Status;
+}
+
+/**
+ * @brief Getter function to check if the final heartbeat at full scale has been sent.
+ *
+ * @retval TRUE: Final heartbeat at full scale has been sent.
+ * 		   FALSE: Final heartbeat at full scale has NOT been sent yet.
+ */
+/* PRQA S 1532 1 # The function is defined here for modularity reason. */
+boolean Sum_Spm_IsFinalHeartbeatSent(void){
+	return Spm_FinalHeartbeatSent;
+}
+
+/**
+ * @brief Setter function to mark if the final heartbeat at full scale has been sent.
+ *
+ * @param[in] sent: TRUE to mark final HB sent, FALSE otherwise.
+ * @retval None.
+ */
+/* PRQA S 1532 1 # The function is defined here for modularity reason. */
+void Sum_Spm_Set_FinalHeartbeatSent(boolean sent){
+	Spm_FinalHeartbeatSent = sent;
+}
+
+
+
+/**
+ * @brief Helper function needed to set the variable Spm_HBCounterShallBeSentFullScale.
+ *		  Sets the flag to TRUE if the shutdown target bit (bit 1) is 0.
+ *		  This function is called only in PrepareToShutdown state.
+ *
+ * @retval None.
+ *//*[$Satisfies $DDS_SPM 0652]*/
+/* PRQA S 1532 2 # The function is defined here for modularity reason. */
+static void Sum_Spm_CheckHBCounterShallBeSentFullScale(const SPM_PermitExecution Spm_allowed){
+	const boolean target_is_off = ((Spm_allowed & SPM_SHUTDOWN_TARGET_BIT) == 0x00U);
+
+	if (target_is_off) {
+		Sum_Spm_SetHBCounterShallBeSentFullScale(TRUE);
+	}
+}
+
+/**
+ * @brief Set the SpmStayAwakeTimer to the predefined value.
+ *
+ * @retval None.
+ */
+static void Spm_StartStayAwakeTimer(void)
+{
+	SpmStayAwakeTimer = SPM_ERR_REQUESTER_TIMER_TICK;
+}
+/**
+ * @brief Decrease the SpmStayAwakeTimer by one tick if it is greater than zero.
+ *
+ * @retval None.
+ */
+static void Spm_DecreaseStayAwakeTimer(void)
+{
+	if (SpmStayAwakeTimer > 0u) {
+		SpmStayAwakeTimer--;
+	}
+}
+/**
+ * @brief Check if the SpmStayAwakeTimer is active.
+ *
+ * @retval TRUE: The timer is still active.
+ *         FALSE: The timer is not active.
+ */
+static boolean Spm_IsStayAwakeTimerActive(void)
+{
+	return (SpmStayAwakeTimer > 0u) ? TRUE : FALSE;
+}
+
+/**
+ * @brief Handles dequeued profile request actions.
+ *
+ * This function processes requests dequeued from the request queue (`Sum_Spm_RequestQueue`).
+ *
+ * 1. **Iterates through dequeued requests:**
+ *    - Uses a loop (`while`) to continue processing as long as requests are successfully dequeued using `SPM_DequeueRequest`.
+    - Each iteration retrieves the request information into the `Itm` struct.
+ * 2. **Checks request type:**
+ *    - Compares the `reqCode` in the request to `SPM_ACT_REQ` (activation request).
+      - If it's an activation request:
+        - Calls `Spm_RequesterList_ActivationRequestHandler` to add the requester address (`Itm.TrgDvcIpRequester`) to the request list associated with the specified profile (using `SPM_PrfStsMgr_RAM[Itm.posOfPrfInCfgArray].reqLst`).
+      - Otherwise (deactivation request):
+        - Calls `Spm_RequesterList_DeactivationRequestHandler` to remove the requester address from the request list associated with the specified profile.
+ */
+void Spm_DequeueReqActionHandler(void){
+
+	struct SPM_ProfileReqItm Itm;
+
+
+	while(SPM_DequeueRequest(&Sum_Spm_RequestQueue, &Itm) != FALSE) {
+
+		/* Check if it is a deactivation or activation item request. */
+		if((Itm.reqCode & 1u) == SPM_ACT_REQ){
+
+			/** Just add reqAddr to the buff list. */
+			/* [$Satisfies $DDS_SPM 0014] *//* [$Satisfies $DDS_SPM 0015] *//* [$Satisfies $DDS_SPM 0016] */
+			Spm_RequesterList_ActivationRequestHandler( &(SPM_PrfStsMgr_RAM[Itm.posOfPrfInCfgArray].reqLst), Itm);
+
+		}else{
+			/* Just delete the reqAddr from the list. */
+			/* [$Satisfies $DDS_SPM 0014] *//* [$Satisfies $DDS_SPM 0032] *//* [$Satisfies $DDS_SPM 0036] */
+			Spm_RequesterList_DeactivationRequestHandler(&(SPM_PrfStsMgr_RAM[Itm.posOfPrfInCfgArray].reqLst), Itm);
+		}
+
+	}
+}
+
+/**
+ * @brief Retrieve the device power state information for a specific device.
+ *
+ * 	This function retrieves the power state information (`Spm_DvcPwrSt`) for a specific target device identified
+ *   by its IP address (`TrgDvcIp`)
+ *
+ * 1. **Retrieves target device index:**
+ *    - Calls `Spm_GetIndexTrgDvcFromIP()` to obtain the index of the target device in the configuration list.
+ * 2. **Validates the index:**
+ *    - Checks if the returned index is valid (not equal to `SPM_INVALID`).
+ * 3. **Return value:**
+ *    - if the device is found, then the IndexOfTrgDvc is valid, returns the power state of the corresponding device retrieved from
+ * `	Spm_DvcPwrSt->Spm_TrgDvcState[IndexOfTrgDvc]`.
+ *    - If the device IP is not found in the configuration (index is `SPM_INVALID`), it returns the default value SPM_UnknownDevice`.
+ *
+ * @param TrgDvcIp     The IP address of the target device.
+ * @param Spm_DvcPwrSt A pointer to the device power state information structure.
+ *
+ * @return SpmDevicePowerStateCode 		The power state of the target device found, otherwise  SPM_UnknownDevice(0xFEu) .
+ */
+/* PRQA S 1532 1 # The function is defined here for modularity reason. */
+SpmDevicePowerStateCode Spm_DevicePowerStateParser(const uint32 TrgDvcIp, Spm_DevicePowerStateInfo const * Spm_DvcPwrSt){
+	
+	SpmDevicePowerStateCode ret;
+	sint16 IndexOfTrgDvc;
+
+	/* Search for the Target device index based on the IP address. */
+	IndexOfTrgDvc = Spm_GetIndexTrgDvcFromIP(TrgDvcIp);
+
+	if(IndexOfTrgDvc != SPM_INVALID){
+		/* PRQA S 4342 1 # Cast needed since the RTE uses the uint8 type for device power states. */
+		ret = (SpmDevicePowerStateCode) Spm_DvcPwrSt->Spm_TrgDvcState[IndexOfTrgDvc];
+	}else{
+		ret = SPM_UnknownDevice;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Writes information about loss of nodes to the RTE.
+ *
+ * This function monitors changes in the power state of target devices and reports them as loss-of-node indications to the RTE.
+ *
+ * 1. **Initializes variables:**
+ *    - Declares a static array `Spm_StateOld` to store previous power states of target devices, initialized with `SPM_Off` for all entries.
+ *    - Declares arrays `Spm_ListOfDtc` and `Spm_ListOfState` to store data to be written.
+ *    - Declares variables `i`, `Spm_BufferRead`, and `Spm_DataToWrite` for loop control and data storage.
+ * 2. **Reads device power states:**
+ *    - Calls `Rte_IrvRead_RE_SPM_SoftMgr_MainFunction_Spm_DevicePowerState` to read the latest device power state information and stores it in `Spm_BufferRead`.
+ * 3. **Prepares data to write:**
+ *    - Initializes the `nodeListLength` member of `Spm_DataToWrite` to 0.
+ * 4. **Iterates through target devices:**
+ *    - Uses a loop (`i`) to iterate through all possible target devices (`SPM_NUM_OF_PG_OUT_EDGE`).
+ *    - For each device:
+      - Calculates `trs_toOkToFault_` to indicate a transition from non-faulted to faulted state.
+      - Calculates `trs_fromFault_` to indicate a transition from faulted to `SPM_On` state.
+      - If either transition condition is met:
+        - Adds the device ID (using `Sum_Spm_GetDTCId`) and corresponding state information (0x01U for transition to faulted, 0x00U for transition from faulted) to the respective lists in `Spm_DataToWrite`.
+        - Increments `nodeListLength` to indicate the number of entries added.
+ * 5. **Writes data if available:**
+ *    - Checks if `Spm_DataToWrite.nodeListLength` is greater than 0 (i.e., there are entries to write).
+ *    - If there is data to write:
+      - Calls `Rte_Write_PP_SPM_SerDatMon_LoNInd_LossOfNodeIndication` to write the `Spm_DataToWrite` structure to the RTE.
+      - Copies the newly read device states from `Spm_BufferRead` to `Spm_StateOld` to update the stored previous states.
+ *
+ * @note This function relies on the `Sum_Spm_GetDTCId` function to retrieve device IDs.
+ */
+static void Sum_Spm_WriteLossofNode(void){
+
+	static SpmDevicePowerStateCode Spm_StateOld[SPM_NUM_OF_PG_OUT_EDGE] = {
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc AS pp-»
+		SPM_Off,
+«ENDFOREACH»
+	};
+
+	uint16 Spm_ListOfDtc[SPM_NUM_OF_PG_OUT_EDGE];
+	NodeStatusType Spm_ListOfState[SPM_NUM_OF_PG_OUT_EDGE];
+	uint8 i;
+	Spm_DevicePowerStateInfo Spm_BufferRead;
+
+	SPM_LossOfNodeIndicationType Spm_DataToWrite;
+
+	boolean trs_toOkToFault_;
+	boolean trs_fromFault_;
+
+	/* [$Satisfies $DDS_SPM 0204] */
+	Rte_IrvRead_RE_SPM_SoftMgr_MainFunction_Spm_DevicePowerState(&Spm_BufferRead);
+
+	Spm_DataToWrite.nodeListLength = 0U;
+
+	for(i = 0U; i < SPM_NUM_OF_PG_OUT_EDGE; i++){
+
+		trs_toOkToFault_ = (Spm_StateOld[i] != SPM_Faulted) && (Spm_BufferRead.Spm_TrgDvcState[i] == (uint8)SPM_Faulted);
+		trs_fromFault_ = (Spm_StateOld[i] == SPM_Faulted) && (Spm_BufferRead.Spm_TrgDvcState[i] == (uint8)SPM_On);
+
+		if( (trs_toOkToFault_) || (trs_fromFault_) ){
+			/* [$Satisfies $DDS_SPM 0200] *//* [$Satisfies $DDS_SPM 0202] */
+			Spm_ListOfDtc[Spm_DataToWrite.nodeListLength] = SPM_GET_PGTT_INST_TRGDVC_DTCID(i);
+			/* GDT - 135 */
+			Spm_ListOfState[Spm_DataToWrite.nodeListLength] = ( (trs_toOkToFault_) ? 0x00u : 0x01u );
+			(Spm_DataToWrite.nodeListLength)++;
+
+		}
+
+		/* PRQA S 4442 1 # Cast needed since the RTE generates the unsigned char type.  */
+		Spm_StateOld[i] = Spm_BufferRead.Spm_TrgDvcState[i];
+
+	}
+
+	if(Spm_DataToWrite.nodeListLength > 0U){
+		Spm_DataToWrite.nodeDtcCodeValue = Spm_ListOfDtc;
+		Spm_DataToWrite.nodeStatus = Spm_ListOfState;
+		/* [$Satisfies $DDS_SPM 0202] *//* [$Satisfies $DDS_SPM 0203] */
+		(void)Rte_Write_PP_SPM_SerDatMon_LoNInd_LossOfNodeIndication(&Spm_DataToWrite);
+	}
+
+}
+
+
+/**
+ * @brief This function check if there is any requesters for profiles located on
+ * that target device index.
+ *
+ * @param TrgDvcIndex Index of the TrgDvc.
+ *
+ * @return TRUE: if there is at least one profile requested on that TargetDevice
+ * 		   FALSE: otherwise
+ */
+static boolean Spm_GetIfProfileRunningOnRemoteTrgDvc_Handler(const uint8 TrgDvcIndex){
+	boolean ProfRunningOnTrg = FALSE;
+	boolean temp;
+	uint8 j;
+
+	for(j = 0u; j < SPM_GET_PGTT_INST_NUMBER_IP_ASSOCIATED(TrgDvcIndex); j++){
+		temp = Spm_GetIfProfileRunningOnRemoteTrgDvc(SPM_GET_PGTT_INST_TRGDVCIP( TrgDvcIndex, j ));
+		ProfRunningOnTrg = ( ProfRunningOnTrg || temp );
+	}
+
+	return ProfRunningOnTrg;
+}
+
+/**
+ * @brief Handles the power-off requests for the requested target devices.
+ *
+ * This function checks if any remote profile are running on our requested Target device.
+ * If the Target device is no longer needed, because there is no remote profile running on it, the PowerOffDevice() is triggered.
+ *
+ */
+/* [$Satisfies $DDS_SPM 0039] */ /* [$Satisfies $DDS_SPM 0205]*/
+static void Spm_SoftwMgr_PowerOffDevice_Handler(void){
+
+	uint8 i;
+
+	for(i = 0u; i < SPM_NUM_OF_PG_OUT_EDGE; i++){
+		/*Check that there are no power profiles running on the requested target device in order to Power Off that specific Target device. */
+		if( (Sum_Spm_IsRequested(i) == TRUE)){
+			if(Spm_GetIfProfileRunningOnRemoteTrgDvc_Handler(i) == FALSE){
+				(void)Spm_PowerOffDevice(SPM_GET_PGTT_INST_TRGDVCIP( i, 0u));
+			}
+		}
+	}
+
+}
+
+/**
+ * @brief Check if a target device IP has an active request in a specific power profile
+ *
+ * @param powProfIndex Index of the power profile to check
+ * @param TrgDvcIpAss IP address of the target device to search
+ * @return TRUE if an active request exists, FALSE otherwise
+ *
+ */
+static boolean Spm_HasActiveRequestFromRequester(const uint8 powProfIndex, uint32 TrgDvcIpAss){
+
+	uint16 reqIndex;
+	boolean activeReqFound = FALSE;
+	/* Iterate over the requesters of the local power profile */
+	for (reqIndex = 0U; ((reqIndex <  SPM_PrfStsMgr_RAM[powProfIndex].reqLst.size) && (activeReqFound == FALSE)); reqIndex++) {
+
+		/* Check if the requester is present in the requesterList with a valid request type (not DEACTIVATION or NULL) */
+		if ((SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[reqIndex].requesterIP == TrgDvcIpAss) &&
+		    (SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[reqIndex].ReqType != SPM_REQ_DEACTIVATION) &&
+		    (SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[reqIndex].ReqType != SPM_NULL_REQ)) {
+			/* Found an active request for this target device IP */
+			activeReqFound = TRUE;
+		}
+	}
+
+	return activeReqFound;
+}
+
+
+/**
+ * @brief Handle and validate requester bit status for all the target devices
+ *
+ * This function checks if target devices, marked as requesters, have active requests in local power profiles.
+ * If the device has at least one active request, it will remain marked as a requester. Otherwise, if no active requests
+ * are found, the requester status is reset.
+ *
+ * @param void
+ * @return void
+ *//*[$Satisfies $DDS_SPM 0205]*/
+static void Spm_SoftwMgr_Requester_Handler(void){
+	uint8 IndexOfTrgDvc;
+	uint8 powProfIndex;
+	uint8 numIpAss;
+	uint32 TrgDvcIpAss;
+	/* */
+	boolean foundActiveRequest;
+
+	/*Iteration over the Target devices configured */
+	for(IndexOfTrgDvc = 0U; IndexOfTrgDvc < SPM_NUM_OF_PG_OUT_EDGE; IndexOfTrgDvc++){
+		/* Check if the target device is marked as a requester */
+		if(Sum_Spm_IsRequester((uint8)IndexOfTrgDvc) == TRUE){
+			/* Assume no active requests until we find at least one */
+			foundActiveRequest = FALSE;
+
+			/* Iterate over local power profiles as long as there is no active request */
+			for(powProfIndex = 0u; (powProfIndex < SPM_CONF_POW_PRF_NUM) && (foundActiveRequest == FALSE); powProfIndex++){
+				/* Check if the profile is a local power profile */
+				if (SPM_GET_PROF_IS_LOC_FROM_CONF(powProfIndex) == TRUE)
+				{
+					/* Check all IPs associated with the current target device */
+					for(numIpAss = 0u; numIpAss < SPM_GET_PGTT_INST_NUMBER_IP_ASSOCIATED(IndexOfTrgDvc); numIpAss++){
+						/* Retrieve the IP associated to the current Target Device */
+						TrgDvcIpAss = SPM_GET_PGTT_INST_TRGDVCIP(IndexOfTrgDvc, numIpAss);
+
+						/* Check if this IP has an active request in the current power profile */
+						if (Spm_HasActiveRequestFromRequester(powProfIndex, TrgDvcIpAss) == TRUE)
+						{
+							/* Active request found, so the device is a valid requester */
+							foundActiveRequest = TRUE;
+							break; /* no need to check other IPs for this profile */
+						}
+					} /* END ITERATION OVER IPs ASSOCIATED TO THE TARGET DEVICE */
+				}
+			} /* END ITERATION FOR THE CONFIGURED POWER PROFILES */
+
+			/* No active requests found: Reset the requester bit for the target device. Otherwise, no action needed ( it's a requester) */
+			if (foundActiveRequest == FALSE){
+
+				Sum_Spm_ResetAsRequester((uint8)IndexOfTrgDvc);
+			}
+		}
+	} /* END ITERATION FOR THE TARGET DEVICES */
+}
+
+
+
+/**
+ * @brief Manages the state machine of power profiles.
+ *
+ *
+ * @note This function assumes the existence of functions and data structures to
+ *       manage power profile states, requesters, and state machine transitions.
+ */
+void Spm_FSMManger(void){
+
+	uint8 i;
+
+	for( i = 0U; i < SPM_CONF_POW_PRF_NUM; i++){
+
+		if(SPM_GET_PROF_IS_LOC_FROM_CONF(i) == TRUE){
+			Spm_LocalPowerProfile_FSM(i);
+		}else{
+			Spm_RemotePowerProfile_FSM(i);
+		}
+	}
+}
+
+/**
+ * @brief Handles the Initialized and PrepareToShutdown states logic.
+ *
+ * This function manages the transition :
+ *  * from Initialized state to Running state when permit execution is granted
+ *  * in PrepareToShutdown state and handles the shutdown ready signal (0xFE) when all final heartbeats are transmitted 
+ *    during PrepareToShutdown.
+ *
+ * @param[in] Spm_allowed The permit execution status from SUSD
+ *//*[$Satisfies $DDS_SPM 0651]*/
+static void Spm_HandleInitAndShutdownState(const SPM_PermitExecution Spm_allowed){
+	
+	/* Transition from Initialized state to running state when permit execution is granted */
+	if(((Spm_allowed | SPM_PERMIT_EXEC_MASK) == SPM_EXEC_MASK_PASSED ) && (SpmCtrl_Status == Spm_Initialized)) {
+		/* Reset final heartbeat sent flag */
+		Sum_Spm_Set_FinalHeartbeatSent(FALSE);
+		/* Reset HB counter flag when returning to running */
+		Sum_Spm_SetHBCounterShallBeSentFullScale(FALSE);
+		/* Initializes the the SPM's Initial Shutdown Delay timer state to "not expired" */
+		Sum_Spm_Set_Shutdown_Delay_Timer_Expire_State(FALSE);
+		/* [$Satisfies $DDS_SPM 0415] */
+		SpmCtrl_Status = Spm_Running;
+	}
+	else if( SpmCtrl_Status == Spm_PrepareToShutdown ) {
+		/* Check if final heartbeat has been sent */
+		if(Sum_Spm_IsFinalHeartbeatSent()) {
+			/* All final heartbeat messages are transmitted, set SPM_Shutdown_ready */
+			Spm_ShutdownRollingCounter = 0xFEU; /* SPMShutdown_ready */
+		}
+	}
+	else
+	{
+		/* Do nothing */
+	}
+}
+
+/**
+ * @brief Count how many local profile are NOT in inactive state.
+ *
+ * @return The number of local profiles NOT in inactive state.
+ */
+/* [$Satisfies $DDS_SPM 0310] */
+/* PRQA S 1532 2 # Function defined here for modularity reason */
+uint16 Spm_GetNotInactiveLocalProfNumberForHB(void){
+	uint16 i;
+	uint16 counter = 0u;
+
+	for(i = 0u; i < SPM_CONF_POW_PRF_NUM; i++){
+		if((SPM_GET_PROF_IS_LOC_FROM_CONF(i) == TRUE) && (SPM_PrfStsMgr_RAM[i].sm != SPM_Inactive)){
+			counter++;
+		}
+	}
+
+	return counter;
+}
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief Main function of the Software Power Manager (SPM) module.
+ *
+ * This function periodically executes and manages the overall operation of the SPM module.
+ * It performs the following key tasks:
+ *
+ * 1. **Checks Execution Permission:**
+ *    - Reads the `SPM_PermitExecution` flag to verify if SPM execution is allowed based on external factors.
+ * 2. **Evaluates Shutdown Conditions:**
+ *    - If permission is denied and no activity is detected on local power profiles, initiates a controlled shutdown process.
+ * 3. **Manages SPM Functionality (when permitted):**
+ *    - Monitors vehicle states for potential power profile activation triggers.
+ *    - Processes incoming messages from other Software Managers.
+ *    - Handles power profile status updates, including deactivation requests, activation requests, and state transitions.
+ *    - Reacts to loss-of-node indications.
+ *    - Manages service activation status and notifies the Service Manager about active services.
+ * 4. **Handles Module States:**
+ *    - Transitions to the `Spm_Running` state if execution permission is granted.
+ *    - Remains in the `Spm_Initialized` or `Spm_PrepareToShutdown` state otherwise, depending on the current state and received permission.
+ * 5. **Writes Shutdown Permission:**
+ *    - Updates the `SPM_ShutdownPermission` value with the current shutdown rolling counter.
+ *
+ * @note This function interacts with various external functions and data structures for communication, state management, and power profile information.
+ *       - Refer to the implementation for details on specific dependencies.
+ *
+ *
+ */
+/* [$Satisfies $DDS_SPM 0403] [$Satisfies $DDS_SPM 0650]*/
+FUNC(void, SPM_CODE) SPM_SoftMgr_MainFunction(void)
+{
+
+	SPM_PermitExecution Spm_allowed = 0x00U;
+
+	if(TRUE == SpmCtrl_Initilization_Status){
+		/* [$Satisfies $DDS_SPM 0414] *//* [$Satisfies $DDS_SPM 0415] */
+		(void)Rte_Read_RP_SUSD_SPM_PerExec_SUSD_SWC_ExecutionStatus(&(Spm_allowed));
+
+	    switch(SpmCtrl_Status) {
+			/* SPM Module is requested */
+			case Spm_Running:
+	      	{
+
+				Spm_ShutdownRollingCounter = ( (Spm_ShutdownRollingCounter + 1u) % 0x04u );
+
+				/* ===================================
+					Evaluate Shutdown conditions
+				------------------------------------*/
+				if( ((Spm_allowed | SPM_PERMIT_EXEC_MASK) != SPM_EXEC_MASK_PASSED)) {
+					/* [$Satisfies $DDS_SPM 0416] */
+					SpmCtrl_Status = Spm_PrepareToShutdown;
+					Spm_ErrorHandler_ShutdownDetected();
+					/* Reset request queue */
+					SPM_InitQueue( &Sum_Spm_RequestQueue );
+					break; /* switch break */
+				}
+
+	«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+			if(FALSE == Sum_Spm_GetIsBranded())
+			{
+				Sum_Spm_GetVariantId_DataStructurePopulation_WithVariant();
+			}
+			else
+			{	
+	«ENDIF-»
+
+		«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+				/* Check if the LVOptmzerChk Application Interface ID profile needs to handled. */
+				Spm_LowVoltLVOptmzerChkApplicationInterfaceID_PeriodicCheck();
+				/* Read the Low Voltage Priority level value */
+				Spm_ReadLowVoltagePriorityStatus();
+				/* REJECTED_LACK_OF_POWER recovery's handler */
+				Spm_RecoveryHandler_RejectedLackOfPower();
+		«ENDIF-»
+				/* Read the incoming packet coming from other SM. */
+				Spm_ReadIncoming_SM_Message();
+
+				/* HNDLR: Error Handler PowerModeVehicle. */
+				Spm_ErrorHandler_VehOff();
+
+			«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+				/* HNDLR: Error Handler Low Voltage Battery. */
+				Spm_ErrorHandler_LowVoltageBattery();
+			«ENDIF-»
+
+				/*  HNLDR: Update Profile Status by Profile Status Manager. */
+				Spm_DequeueReqActionHandler();
+
+				/* HNDLR: check for the LossOfNode. */
+				Sum_Spm_WriteLossofNode();
+
+				/* HNDLR: check LossOf Communication with Requesting SM(s) [$Satisfies $DDS_SPM 0532] */
+				Spm_LoC_wRequester_Handler();
+
+				/* HNDLR: Start Deactivation Path. */
+				Spm_FSMManger();
+
+				/* HNDLR: function for calling the PowerOffDevice for the requested target device that are no longer needed (no power profile running). */
+				Spm_SoftwMgr_PowerOffDevice_Handler();
+
+				/* HNDLR: function to determine whether the target device is still a requester or not. */
+				Spm_SoftwMgr_Requester_Handler();
+
+				/* HNDLR: report local/remote request presence to SUSD */
+				Spm_E0D7_RequestsHandler();
+
+	«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+				/* HNDLR: function that increase the activity timers of the DID's records.*/
+				(void)Sum_Spm_UpdateActivityTimerDID_E0DE_E0DF();
+	«ENDIF-»
+				/* Handler function for sending the Req Prof Activation Packet; */
+				Spm_SoftwMgr_PopulateSMFrame();
+
+				/* Update the stay awake timer */
+				Spm_DecreaseStayAwakeTimer();
+					
+				/* Check whether the status of a service has changed; if so, handle communication with the Service Manager */
+				if( Spm_SrvcMgrIf_RAM.isChanged )	
+				{
+					Spm_SrvcMgrIf_HandleSrvcMgrComm();
+				} 
+	«IF Spm_ExistMultipleVariantConfigured(spm) == true -»
+			}
+	«ENDIF -»
+
+				/* [$Satisfies $DDS_SPM 0530] [$Satisfies $DDS_SPM 0639] [$Satisfies $DDS_SPM 0641] */
+				/* PRQA S 3415 2 #  No side effect since the function is a getter. */
+				if(( TRUE == Sum_Spm_Shutdown_Delay_Has_Expired() ) &&
+				( FALSE == Spm_GetOwnwakeUpBit() ) &&
+				( 0u == Spm_GetNotInactiveLocalProfNumberForHB()) &&
+				( Spm_IsStayAwakeTimerActive() == FALSE )
+				«IF Spm_IsThereAnyManagedDevice(spm) && (Spm_ECU_INTERMEDIATE(spm) == true) -»
+				&& (Spm_IsTargetDeviceRequestedByRemote() == FALSE)
+				«ENDIF-»
+				){
+					SpmCtrl_Status = Spm_PrepareToShutdown;
+				}
+
+				break;
+			}
+			/* SPM Module is not requested */
+			case Spm_PrepareToShutdown:
+			{		
+				/* Evaluate full-scale HB condition only during shutdown preparation. */
+				Sum_Spm_CheckHBCounterShallBeSentFullScale(Spm_allowed);
+				Spm_ShutdownRollingCounter = 0xFFU;
+
+				/* Handle PrepareToShutdown state logic */
+				Spm_HandleInitAndShutdownState(Spm_allowed);
+
+				break;
+	      	}
+			case Spm_Initialized:
+			{
+				/* Handle Init state logic */
+				Spm_HandleInitAndShutdownState(Spm_allowed);
+
+				break;
+			}
+	      	default:
+			{
+				/* Nothing to do */
+				break;
+			}
+		}
+
+		(void)Rte_Write_PP_SPM_SUSD_ShutDown_SUSD_UserRequest( Spm_ShutdownRollingCounter );
+	}
+}
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief Retrieves the current state of the Software Power Manager (SPM) module.
+ *
+ * This function simply reads the value of the `SpmCtrl_Status` global variable and returns it.
+ * The returned value represents the current operational state of the SPM, which can be:
+ *
+ * - `Spm_Initialized`: The module is initialized but not yet running.
+ * - `Spm_Running`: The module is running and handling power profile requests.
+ * - `Spm_PrepareToShutdown`: The module is preparing for a controlled shutdown.
+ *
+ * @return The current state of the SPM module as a `SpmStateEnumType` value.
+ */
+/* PRQA S 1532 1 # Defined here for modularity reason. */
+SpmStateEnumType Spm_GetState( void ) {
+	return SpmCtrl_Status;
+}
+«IF spm.spmGeneral.spmGenerateInitRunnable == true-»
+/**
+ * @brief			Runnable to execute SPM init function .
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+/* PRQA S 3408 1 # The function is declared by RTE */
+void RE_SPM_Init(void){
+    static uint32 spm_init_val = 0u;
+
+    if( spm_init_val == 0u ) {
+         spm_init_val = SUM_INITIALIZED;
+         SPM_Init();
+    }
+}
+«ENDIF-»
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief Initializes the Software Power Manager (SPM) module.
+ *
+ * This function performs the following initialization steps:
+ *
+ * 1. **Initializes the request queue:**
+ *    - Calls `SPM_InitQueue` to initialize the queue used for handling power profile requests.
+ * 2. **Retrieves target device IPs for power profiles:**
+ *    - Iterates through all configured power profiles (`SPM_CONF_POW_PRF_NUM`).
+    - For each profile:
+      - Extracts the service ID using `SPM_SRVCID_FROM_PRFID`.
+      - Attempts to retrieve the target device IP (TrgDvcIP) of the service using `Sd_GetNodeAddress`.
+      - If the IP retrieval fails or the retrieved IP is 0, marks the profile as local (`SPM_PrfStsMgr_RAM[i].TrgDvcIp = 0x00U`).
+      - Otherwise, sets the profile's TrgDvcIP based on the retrieved value, indicating a remote profile.
+      - Sets the initial activation state for the profile (`SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step`).
+ * 3. **Retrieves working device IPs for target device IPs:**
+ *    - Iterates through all possible outgoing power gates (`SPM_NUM_OF_PG_OUT_EDGE`).
+    - For each combination:
+      - Iterates through target device IPs in the Power Gate Table Translator (PGTT) of the working device.
+      - If a target device IP from a power profile request matches the current target IP in the PGTT, sets the source device ID (PMSrcID) of the request to the working device IP.
+      - This indicates that the target device is a subordinate of the working device.
+    - If a match is found, stops searching for further matches for the current request.
+ * 4. **Sets the module state:**
+ *    - Sets the `SpmCtrl_Status` to `Spm_Initialized` to indicate successful initialization.
+ *
+ */
+/* PRQA S 1505 1 # This runnable will be called by RTE */
+«IF spm.spmGeneral.spmGenerateInitRunnable == true-»
+static void SPM_Init(void){
+«ELSE-»
+void SPM_Init(void){
+«ENDIF-»
+	uint16 i;
+	if(FALSE == SpmCtrl_Initilization_Status){
+
+		Sum_Spm_VariantManagement_DataStructureInit();
+		«IF Spm_ExistMultipleVariantConfigured(spm) == false -»
+		Sum_Spm_DataStructurePopulation_WithoutVariant(); 
+		«ELSE-»
+		Sum_Spm_GetVariantId_DataStructurePopulation_WithVariant();
+		«ENDIF-»
+
+		SpmPgttRowEntry_CfgTable[0] = Rte_CData_TrgDvcs_«spm.spmConfigSet.spmPgttEntries.spmWkngDvc.shortName»();
+		
+		/* Init the periodicity of the WkUp Frame. */
+		SPM_PM_Init_WkUpFrame_Period();
+
+		/* Init the periodicity of the HB */
+		SPM_PM_Init_HB_BurstPhase();
+
+		/* ===============================================
+				Init request queue
+		   --------------------------------*/
+		SPM_InitQueue( &Sum_Spm_RequestQueue );
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+		Spm_InitializeQueueDID_E0DE_E0DF();
+«ENDIF-»
+        
+		SPM_PM_Init_ProfilesStructs();
+
+		/* ====================================================================================================================
+				Retrieve the WkngDvcIp for all the TrgDvcIp
+		   -----------------------------------------------------*/
+		for(i = 0U; i < SPM_NUM_OF_PG_OUT_EDGE; i++){
+			Spm_PowMgr_TrgDvc_List[i].MonitoringTypeInfo.WkUpSeqHBState = FALSE;
+			Spm_PowMgr_TrgDvc_List[i].MonitoringTypeInfo.DTCTImeoutTracker = SPM_GET_PGTT_INST_TIMEOUT( i ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS;
+			Spm_PowMgr_TrgDvc_List[i].IndexColumnInPgtt = (uint8)i;
+			Spm_PowMgr_TrgDvc_List[i].WkUpSeqTypeInfo.PowerOnDeviceRetry_WaitTime = (uint16)(SPM_GET_PGTT_INST_POWERONDEVICERETRY_WAITTIME( i ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS);
+			Spm_PowMgr_TrgDvc_List[i].WkUpSeqTypeInfo.PowerOnDeviceRetry_Periodicity = (uint16)(SPM_GET_PGTT_INST_POWERONDEVICERETRY_PERIODICITY( i ) / SUM_SPM_PERIOD_PM_MAINFUNCTION_MS);
+		}
+
+		SpmCtrl_Status = Spm_Initialized;
+		SpmCtrl_Initilization_Status = TRUE;
+	}
+}
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief			Retrieves TrgDvcIP for all the PowProf Configured that are NOT configured as local.
+ * 
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+/* PRQA S 1532 1 # Following macro are used to access data structure */
+void SPM_PM_Init_ProfilesStructs(void)
+{
+	uint16 i;
+	uint32 trgDvcId;
+	uint16 srvcId;
+«IF spm.spmConfigSet.spmPowPrf.select(e|e.spmProfileIsLocal == false).size > 0-»
+	uint16 sdSrvcInstId;
+	uint8  sdMajorVer;
+«ENDIF-»
+	Std_ReturnType rtn_getNodeAddr_u8;
+	for(i = 0U; i < SPM_CONF_POW_PRF_NUM; i++){
+
+		/* ====================================================================================================================
+			Retrieve the TrgDvcIP for all the PowProf Configured that are NOT configured as local.
+		--------------------------------------------------------*/
+		if( SPM_GET_PROF_IS_LOC_FROM_CONF(i) == FALSE ){
+			srvcId = SPM_SRVCID_FROM_PRFID( (SpmPowPrf_Cfg_WrpTable[i].powPrf_data->PowPrfID) );
+«IF spm.spmConfigSet.spmPowPrf.select(e|e.spmProfileIsLocal == false).size > 0-»
+			/* Get the service instance ID and major version based on Sd service configuration. */
+			/* [$Satisfies $DDS_SPM 0011] */
+			Spm_GetSdServiceConfig(srvcId,
+									SPM_SRVC_INSTID_FROM_PRFID( (SpmPowPrf_Cfg_WrpTable[i].powPrf_data->PowPrfID) ),
+									&sdSrvcInstId,
+									&sdMajorVer);
+			/* [$Satisfies $DDS_SPM 0026] *//* [$Satisfies $DDS_SPM 0040] *//* [$Satisfies $DDS_SPM 0011] */
+			rtn_getNodeAddr_u8 = Sd_GetNodeAddress(srvcId, sdSrvcInstId, sdMajorVer, &trgDvcId);
+«ELSE-»
+			/* [$Satisfies $DDS_SPM 0026] *//* [$Satisfies $DDS_SPM 0040] *//* [$Satisfies $DDS_SPM 0011] */
+			rtn_getNodeAddr_u8 = Sd_GetNodeAddress(srvcId, 0u, 0u, &trgDvcId);
+«ENDIF-»
+			if (rtn_getNodeAddr_u8 == E_OK) {
+				if (trgDvcId != 0UL) {
+					/*
+					* If the profile is a local one, its TrgDvcIp value is 0u as per definition of the struct.
+					*/
+					SPM_PrfStsMgr_RAM[i].TrgDvcIp = trgDvcId;
+				}
+			}
+		}
+
+		/* Reset the mask. */
+		SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_Activation_Step = 0U;
+
+		/* Init retry trackers with the calibrated slow periodicity (CData value available at runtime). */
+		SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_ActDeactRetry_StoredPeriodicityInTicks = SPM_ACT_RETRY_SLOW_TICKS;
+		SPM_PrfStsMgr_RAM[i].Spm_RemotePowProf_ActDeactRetry_OngoingTrackerInTicks   = SPM_ACT_RETRY_SLOW_TICKS;
+
+		/* Convert s in tick w.r.t. SM periodicity. */
+		SPM_GET_TICKTRACKER_VEH_OFF(i) = (uint32)SPM_GET_TIMEOUT_VEH_OFF_SECOND(i) * 1000u / SPM_SM_PERIODICITY_MS;
+	}
+}
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+«IF spm.spmConfigSet.spmPowPrf.select(e|e.spmProfileIsLocal == false).size > 0-»
+/**
+ * @brief Retrieves Service Discovery (SD) service configuration parameters.
+ *
+ * This function searches for the SD service configuration that matches the provided
+ * profile service ID and instance ID. It determines the appropriate SD instance ID
+ * and major version based on the extended learning table format setting.
+ *
+ * The function performs the following operations:
+ * 1. **Validates input parameters:**
+ *    - Checks that output pointers are not NULL.
+ * 2. **Checks extended learning table format:**
+ *    - If enabled, searches through the SD service configuration table for a matching entry.
+ * 3. **Returns configuration or defaults:**
+ *    - If a match is found, returns the configured SD instance ID and first major version.
+ *    - If no match is found or extended format is disabled, returns default values (0).
+ *
+ * @param[in]  profServiceId   The service ID from the power profile.
+ * @param[in]  profInstanceId  The instance ID from the power profile.
+ * @param[out] sdInstanceId    Pointer to store the retrieved SD instance ID.
+ * @param[out] majorVersion    Pointer to store the retrieved major version.
+ *
+ * @return void
+ *
+ * @note This function assumes the existence of:
+ *       - SchM_CData_Sd_SdEnableExtendedLearningTableFormat() function
+ *       - Spm_SdServiceConfig[] configuration array
+ *       - SPM_SD_CLIENT_SERVICE_CONFIG_NUM constant
+ */
+static void Spm_GetSdServiceConfig(uint16 profServiceId, uint16 profInstanceId, uint16 *sdInstanceId, uint8 *majorVersion) {
+	uint16 i;
+	boolean cfgFound = FALSE;
+
+	if((sdInstanceId != NULL_PTR) && (majorVersion != NULL_PTR)) {
+		/* Check the status of the extendedFlag in the Sd to determine instance Id and major version */
+		if (SchM_CData_Sd_SdEnableExtendedLearningTableFormat() == TRUE) {
+			/* Search for matching service configuration for current profile */
+			for(i = 0u; ((cfgFound == FALSE) && (i < SPM_SD_CLIENT_SERVICE_CONFIG_NUM)); i++) {
+				if((Spm_SdServiceConfig[i].serviceId == profServiceId) &&
+				   (Spm_SdServiceConfig[i].instanceId == profInstanceId)) {
+					cfgFound = TRUE;
+					*sdInstanceId = Spm_SdServiceConfig[i].instanceId;
+					/* Use first major version if multiple versions available (to be updated in future) */
+					*majorVersion = Spm_SdServiceConfig[i].majorVersions[0];
+				}
+			}
+		}
+
+		/* If no configuration found (or if Sd extendedFlag is FALSE),
+		fall back to defaults */
+		if(cfgFound == FALSE) {
+			*sdInstanceId = 0u;
+			*majorVersion = 0u;
+		}
+	}
+
+}
+«ENDIF-»
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/*=====================================================================================================================================
+ * BEGIN Function: Spm_LoC_wRequester_Handler
+ *-------------------------------------------------------------------------------------------------------------------------------------*/
+/*
+ * @brief The function iterates over the requesters for each Power Profile and checks whether the remote requester ReqType
+ * 	is different from SPM_NULL_REQ or SPM_REQ_DEACTIVATION. If so, the function retrieves the Power State of that specific
+ *  Target device and sets the ReqType field for the requester to SPM_NULL_REQ under two conditions.
+ *
+ * The function performs the following operations:
+ * 	1. **Retrieves the Power State of the Target Devices**
+ *	2. **Iterates over the Power Profiles:**
+ *		- For each Power Profile, iterates through its list of requesters.
+ *		- For each requester, checks if the ReqType is neither SPM_NULL_REQ nor SPM_REQ_DEACTIVATION.
+ *			- If so, retrieves the Power State of the target device using Spm_DevicePowerStateParser.
+ *			2.1 **Two conditions to sets the ReqType to SPM_NULL_REQ**
+ *			- The target device is not in the ON state and is present in the configuration list. It also adds the item to
+ *				the list of errors and sets the stay awake timer if the profile is local.
+ *			- The Target Device is not present in the configuration list.
+ * @param[in]  void
+ *
+ * @return void
+ */
+static void Spm_LoC_wRequester_Handler( void ) {
+	uint16 pp_idx_u16 = 0U;
+	uint8 td_idx_u8;
+	boolean prf_activity_Notreq_On_b;
+	SpmDevicePowerStateCode dvc_pow_state_ret; // Device power state return value
+	uint8 err_code_u8;
+
+	Spm_DevicePowerStateInfo ds_read_s;
+
+	/* [$Satisfies $DDS_SPM 0535] */
+	Rte_IrvRead_SPM_RE_SPM_SoftMgr_MainFunction_Spm_DevicePowerState(&(ds_read_s));
+
+	/* Iterate for each configured power profile and its requesters*/
+	for ( ;pp_idx_u16 < SPM_CONF_POW_PRF_NUM; pp_idx_u16++ ) {
+		/* [$Satisfies $DDS_SPM 0533] */
+		for ( td_idx_u8 = 0U; td_idx_u8 < SPM_PrfStsMgr_RAM[pp_idx_u16].reqLst.size; td_idx_u8++ ) {
+
+			/* [$Satisfies $DDS_SPM 0534] *//* Check if the Request type of the requester is deactivation or no request */
+			prf_activity_Notreq_On_b =  (SPM_PrfStsMgr_RAM[pp_idx_u16].reqLst.spmReqLst[td_idx_u8].ReqType == SPM_NULL_REQ) ||
+										(SPM_PrfStsMgr_RAM[pp_idx_u16].reqLst.spmReqLst[td_idx_u8].ReqType == SPM_REQ_DEACTIVATION);
+
+			if ((prf_activity_Notreq_On_b != TRUE) && (SPM_PrfStsMgr_RAM[pp_idx_u16].reqLst.spmReqLst[td_idx_u8].requesterIP != 0UL)) {
+				/* Retrieve the Power State  of the target device by using the dedicated utility in SPM code */
+				/* [$Satisfies $DDS_SPM 0533] [$Satisfies $DDS_SPM 0534] [$Satisfies $DDS_SPM 0535] */
+				dvc_pow_state_ret = Spm_DevicePowerStateParser(SPM_PrfStsMgr_RAM[pp_idx_u16].reqLst.spmReqLst[td_idx_u8].requesterIP, &ds_read_s);
+
+					/* Check the two conditions to remove the requester
+				* 	condition 1: The target Device is present in the configuration and is in Faulted or Reboot state
+				* condition 2 : The Target Device is not present in the configuration list -> No message can be delivered
+				*/
+				if ((dvc_pow_state_ret == SPM_Faulted) || (dvc_pow_state_ret == SPM_Reboot)) {
+
+					/* [$Satisfies $DDS_SPM 0536] */
+					/* If the Target device in Fault state sends feedback by setting the Request Status to Spm_REJECTED_LOSS_OF_HEARTBEAT,
+					otherwise, if in Restart status, it sets the field to Spm_REJECTED_RESET_DETECTED. */
+					err_code_u8 = (uint8) ((dvc_pow_state_ret ==  SPM_Faulted) ? Spm_REJECTED_LOSS_OF_HEARTBEAT : Spm_REJECTED_RESET_DETECTED);
+					/* Add the item to the list of errors */
+					Spm_AppendFeedbackErrorItemToList( (uint8)pp_idx_u16,
+													SPM_PrfStsMgr_RAM[pp_idx_u16].reqLst.spmReqLst[td_idx_u8].requesterIP,
+													err_code_u8, 
+													(uint32)0xFFFFFFFFU, 
+													(uint8)0xFFU);
+
+					/* Remove the target from the list of requester for the profile */
+					SPM_PrfStsMgr_RAM[pp_idx_u16].reqLst.spmReqLst[td_idx_u8].ReqType = SPM_NULL_REQ;
+
+					/* Check if the Power Profile is Local and reset the timer if a Target device is in Fault or Reboot state */
+					if (SPM_GET_PROF_IS_LOC_FROM_CONF(pp_idx_u16) == TRUE) {
+						/* [$Satisfies $DDS_SPM 0646] */
+						Spm_StartStayAwakeTimer();
+					}
+				} /* endif */
+
+				/* [$Satisfies $DDS_SPM 0537] */
+				if (dvc_pow_state_ret == SPM_UnknownDevice) { /* Device not found in configuration */
+					SPM_PrfStsMgr_RAM[pp_idx_u16].reqLst.spmReqLst[td_idx_u8].ReqType = SPM_NULL_REQ;
+				} /* endif */
+			}
+
+		}
+	}
+
+}
+/*-------------------------------------------------------------------------------------------------------------------------------------
+ * END Function: Spm_LoC_wRequester_Handler
+ *=====================================================================================================================================*/
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+#define SPM_START_SEC_CODE
+#include "SPM_MemMap.h"
+/**
+ * @brief function that deactivates a profiles as
+ *        Shutdown Detected reason.
+ *
+ * @return void
+ */
+ /* [$Satisfies $DDS_SPM 0538] */
+static void Spm_ErrorHandler_ShutdownDetected(void){
+
+	uint32 powProfIndex;
+	uint8 itm;
+	for(powProfIndex = 0u; powProfIndex < SPM_CONF_POW_PRF_NUM; powProfIndex++)
+	{
+		if(SPM_GET_PROF_IS_LOC_FROM_CONF(powProfIndex) == TRUE)
+		{
+			for(itm = 0u; itm < SPM_PrfStsMgr_RAM[powProfIndex].reqLst.size; itm++)
+			{
+				SPM_PrfStsMgr_RAM[powProfIndex].reqLst.spmReqLst[itm].ReqType = SPM_NULL_REQ;
+			}
+			/*Call the FSM function to deactivate the service*/
+			Spm_LocalPowerProfile_FSM(powProfIndex);
+		}
+	}
+
+}
+
+«IF Spm_IsThereAnyManagedDevice(spm) && (Spm_ECU_INTERMEDIATE(spm) == true) -»
+/**
+ * @brief  Checks if any target device in the Power Graph Traversal Table has been requested by a remote node.
+ *
+ * @return boolean
+ */
+
+static boolean Spm_IsTargetDeviceRequestedByRemote(void) {
+	uint8 trg_id;
+	boolean RequestedByRemote = FALSE;
+
+	for(trg_id = 0U; trg_id < SPM_NUM_OF_PG_OUT_EDGE; trg_id++)
+	{
+		if ((Spm_PowMgr_TrgDvc_List[trg_id].SpmTrgDevInfo.trgHndl_p != NULL_PTR )&&
+            (Spm_PowMgr_TrgDvc_List[trg_id].SpmTrgDevInfo.TargetDevicerequestedByRemote == TRUE))
+		{
+            RequestedByRemote = TRUE;
+        }
+	}
+
+	return RequestedByRemote;
+}
+«ENDIF-»
+
+#define SPM_STOP_SEC_CODE
+#include "SPM_MemMap.h"
+
+/****************************************************************************************************************************************
+ * -------------------------------------------------------------------------------------------------------------------------------------
+ *	BEGIN: Sum_Spm_SoftwMgr Coding Section
+ * =====================================================================================================================================
+ ***************************************************************************************************************************************/
+
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE -»

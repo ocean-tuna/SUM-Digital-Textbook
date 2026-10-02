@@ -1,0 +1,16 @@
+@startuml containers
+
+left to right direction
+
+class "SUM_PNC Configuration Set"
+class PNCConfigSet
+class PNCGeneral
+class "Partial Network Parameters"
+class "ComM PNC Channel"
+
+"SUM_PNC Configuration Set" *--"+" PNCConfigSet
+"SUM_PNC Configuration Set" *--"+" PNCGeneral
+PNCConfigSet *--"+" "Partial Network Parameters"
+PNCGeneral *--"+" "ComM PNC Channel"
+
+@enduml

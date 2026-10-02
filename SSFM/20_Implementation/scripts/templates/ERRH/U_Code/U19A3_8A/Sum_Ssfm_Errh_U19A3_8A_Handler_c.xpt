@@ -1,0 +1,604 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Errh_U19A3_8A_Handler.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM ERRH U19A3_8A Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+ /* PRQA S 0779 EOF # The name of the functions may look similar in the first 63 characters */
+ /* PRQA S 0789 EOF # The name of the functions may look similar in the first 63 characters*/
+ /* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+«IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))»
+static boolean Sum_Ssfm_Get_CalibPar_Errh_C_DTCProcess_KeySlotVerifyError(void);
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_Errh_KeySlotNumber AS ssc_keyslotverify-»
+static uint32 Sum_Ssfm_Get_CalibPar_Errh_C_FATimer_«ssc_keyslotverify.shortName»(void);
+static uint32 Sum_Ssfm_Get_CalibPar_Errh_C_SlowestPDU_RateTimer_«ssc_keyslotverify.shortName»(void);
+«ENDFOREACH-»
+static void Sum_Ssfm_Errh_Process_KeySlotVerifyErrors(Sum_Ssfm_Errh_KeySlotVerifyStatus* keyslotfilter, boolean SSC_data);
+static void Sum_Ssfm_Errh_KeySlotVerifyErrors_Handler(Sum_Ssfm_Errh_KeySlotVerifyStatus* keyslotfilter, Dem_EventStatusType EventStatus);
+static void Sum_Ssfm_Errh_SecPError_Handler(Sum_Ssfm_Errh_KeySlotVerifyStatus* keyslotfilter, boolean SSC_data);
+static void Sum_Ssfm_LastReceivedPDU_Timer_Update(void);
+static void Sum_Ssfm_Authentication_Timer_Manager(void);
+static void Sum_Ssfm_StartStopAuthenticationTimer_Handler(void);
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+
+ *********************************************************************************************************************************************************
+ */
+
+Sum_Ssfm_Errh_KeySlotVerifyStatus Sum_Ssfm_Errh_KeySlotVerifyFilter[SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER] =
+{
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_Errh_KeySlotNumber AS ssc_keyslotverify-»
+	/* «ssc_keyslotverify.shortName» */
+	{
+		/* Read KeySlotVerify data from SSC */
+		&Rte_Receive_RP_SSC_SSFM_E_KeySlotVerify_«ssc_keyslotverify.shortName»_E_KeySlotVerify,
+		/* Number of failure */
+		0u,
+		/* Key slot status */
+		0u,	
+		/* Failed Authentication Timer */
+		0u,
+		/* Authentication Window Timer */
+		0u,
+		/* k_ERRH_FailedAuthenticationTimer */
+		0u,
+		/* k_ERRH_SlowestPDUTimer */
+		0u,
+		/* last_received_pdu_timer */
+		0u,
+		/* DTC ID of the provider that exploit this KeySlot for MAC verification */
+		«ssc_keyslotverify.sum_Ssfm_Errh_KeySlotProviderDTCId-»u
+	},
+«ENDFOREACH-»
+};
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+ /* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value via RTE variable */
+/**
+ * @brief           SSFM/ERRH getter function to access calibration parameter DTC Process KeySlotVerify
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          boolean
+ */
+static boolean Sum_Ssfm_Get_CalibPar_Errh_C_DTCProcess_KeySlotVerifyError(void)
+{
+  return Rte_CData_Sum_Ssfm_Errh_C_DTCProcess_KeySlotVerifyError();
+}
+
+/**
+ * @brief           SSFM/ERRH getter function to access calibration parameter FailedAuthen Timer
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          uint32
+ */
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_Errh_KeySlotNumber AS ssc_keyslotverify-»
+static uint32 Sum_Ssfm_Get_CalibPar_Errh_C_FATimer_«ssc_keyslotverify.shortName»(void)
+{
+  return (Rte_CData_Sum_Ssfm_Errh_C_FATimer_KeySlotVerifyError_«ssc_keyslotverify.shortName»() * 1000u);
+}
+«ENDFOREACH-»
+
+/**
+ * @brief           SSFM/ERRH getter function to access calibration parameter SlowestPDU_RateTimer
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          uint32
+ */
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_Errh_KeySlotNumber AS ssc_keyslotverify-»
+static uint32 Sum_Ssfm_Get_CalibPar_Errh_C_SlowestPDU_RateTimer_«ssc_keyslotverify.shortName»(void)
+{
+  return Rte_CData_Sum_Ssfm_Errh_C_SlowestPDUTimer_KeySlotVerifyError_«ssc_keyslotverify.shortName»();
+}
+«ENDFOREACH-»
+
+/**
+ * @brief           SSFM/ERRH function to process KeySlotVerifyErrors
+ *
+ * @param[in]       keyslotfilter      - Sum_Ssfm_Errh_KeySlotVerifyStatus*: Sum_Ssfm_Errh_KeySlotVerifyStatus structure to access the KeySlotVerifyStatus member and RTE functions
+ * @param[in]       SSC_data           - boolean: E_KeySlotVerify data from SSC
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_Process_KeySlotVerifyErrors(Sum_Ssfm_Errh_KeySlotVerifyStatus* keyslotfilter, boolean SSC_data)
+{
+	/* [$Satisfies $DDS_SSFM 099] */
+	boolean battery_voltage_flag;
+	boolean reset_recovery_flag;
+
+	if(keyslotfilter != NULL_PTR)
+	{
+		if (Sum_Ssfm_Get_CalibPar_Errh_C_DTCProcess_KeySlotVerifyError() == TRUE)
+		{
+			battery_voltage_flag = Sum_Ssfm_Errh_GetBatteryVoltageRecoveryTimerFlag();
+			reset_recovery_flag = Sum_Ssfm_Errh_GetResetPowerUpRecoveryTimerFlag();
+
+			/* Checks for battery voltage status and recovery timer for overvoltage/undervoltage */
+			/* Checks for at least one PN active is already covered from SSC side before sending the data - related to DDS_SSFM 159 */
+			if((battery_voltage_flag == TRUE) && (reset_recovery_flag == TRUE))
+			{
+				/* If SECP is reporting an error mode, invalidate active KeySlotVerify errors */
+				Sum_Ssfm_Errh_SecPError_Handler(keyslotfilter, SSC_data);
+			}
+			else
+			{
+				/* do nothing */
+			}
+		}
+		else
+		{
+			/* do nothing */
+		}
+	}
+}
+
+/**
+ * @brief           SSFM/ERRH function to initialize KeySlotVerify flag
+ * @details         Called on init (operation cycle start).
+ *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+/* PRQA S 1532 1 # Here for modularity */
+void Sum_Ssfm_Errh_Initialize_KeySlotVerify(void)
+{
+	uint8 i;
+
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_Errh_KeySlotNumber AS ssc_keyslotverify ITERATOR i-»
+	Sum_Ssfm_Errh_KeySlotVerifyFilter[«i.counter0»].k_ERRH_FailedAuthenticationTimer = 1000u * Sum_Ssfm_Get_CalibPar_Errh_C_FATimer_«ssc_keyslotverify.shortName»();
+	Sum_Ssfm_Errh_KeySlotVerifyFilter[«i.counter0»].k_ERRH_SlowestPDUTimer = Sum_Ssfm_Get_CalibPar_Errh_C_SlowestPDU_RateTimer_«ssc_keyslotverify.shortName»();
+«ENDFOREACH-»
+
+	for (i = 0u; i < SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER; i++)
+	{
+		/* FailedAuthenticationTimer and KeySlot State are initialized to 0 */
+		Sum_Ssfm_Errh_KeySlotVerifyFilter[i].failed_auth_timer = 0u;
+		Sum_Ssfm_Errh_KeySlotVerifyFilter[i].keyslot_status = 0u;
+
+		/* AuthenticationWindowTimer is initialized to k_ERRH_FailedAuthenticationTimer */
+		Sum_Ssfm_Errh_KeySlotVerifyFilter[i].authentication_window_timer = Sum_Ssfm_Errh_KeySlotVerifyFilter[i].k_ERRH_FailedAuthenticationTimer;
+	}
+}
+
+/**
+ * @brief           EERH Function that clears all KeySlotVerify authentication and failure timers
+ * @details         Called when clear DTC executed (service 0x14 triggered).
+ *
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+/* PRQA S 1532 1 # Here for modularity */
+void Sum_Ssfm_Clear_KeySlot_Authentication_Failure_Timers(void)
+{
+	uint8 i;
+
+	for (i = 0u; i < SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER; i++)
+	{
+		/* Reset FailedAuthenticationTimer flag */
+		Sum_Ssfm_Errh_KeySlotVerifyFilter[i].failed_auth_timer = 0u;	
+		/* Reset AuthenticationWindowTimer flag*/
+		Sum_Ssfm_Errh_KeySlotVerifyFilter[i].authentication_window_timer = Sum_Ssfm_Errh_KeySlotVerifyFilter[i].k_ERRH_FailedAuthenticationTimer;
+	}
+}
+
+/**
+ * @brief           Update KeySlot State based on timer values
+ * @details         State determination:
+ *                  $0 Indeterminate: AuthenticationWindowTimer > 0 AND FailedAuthenticationTimer = 0
+ *                  $1 Passed: AuthenticationWindowTimer = 0 AND FailedAuthenticationTimer = 0
+ *                  $2 Failed: FailedAuthenticationTimer > 0
+ *                  $3 Unused: KeySlot not configured (preserved)
+ *
+ * @param[in]       keyslotfilter - Pointer to KeySlot structure
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+void Sum_Ssfm_Update_KeySlotState(Sum_Ssfm_Errh_KeySlotVerifyStatus* keyslotfilter)
+{
+	if(keyslotfilter != NULL_PTR)
+	{
+		/* Check if KeySlot is configured/active in SSFM (unused) */
+		if (Sum_Ssfm_Get_CalibPar_Errh_C_DTCProcess_KeySlotVerifyError() == TRUE)
+		{
+			if (keyslotfilter->failed_auth_timer == 0u)
+			{
+				/* KeySlotState = $0 (Indeterminate) when AuthenticationWindowTimer > 0 AND FailedAuthenticationTimer = 0 */
+				if (keyslotfilter->authentication_window_timer > 0u)
+				{
+					keyslotfilter->keyslot_status = 0u;
+				}
+				/* KeySlotState = $1 (Passed) when AuthenticationWindowTimer = 0 AND FailedAuthenticationTimer = 0 */
+				else
+				{
+					keyslotfilter->keyslot_status = 1u;
+				}
+			}
+			/* KeySlotState = $2 (Failed) when FailedAuthenticationTimer > 0 */
+			else
+			{
+				keyslotfilter->keyslot_status = 2u;
+			}
+		}
+		/* KeySlotState = $3 (Unused) when a key slot is calibrated off */
+		else
+		{
+			keyslotfilter->keyslot_status = 3u;
+		}
+	}
+}
+
+/**
+ * @brief           SSFM/ERRH function to handle SecPError
+ *
+ * @param[in]       keyslotfilter      - Sum_Ssfm_Errh_KeySlotVerifyStatus*: Sum_Ssfm_Errh_KeySlotVerifyStatus structure to access the KeySlotVerifyStatus member and RTE functions
+ * @param[in]       SSC_data           - boolean: E_KeySlotVerify data from SSC
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_SecPError_Handler(Sum_Ssfm_Errh_KeySlotVerifyStatus* keyslotfilter, boolean SSC_data)
+{
+	/* [$Satisfies $DDS_SSFM 098] */
+	Dem_EventStatusType ActiveEventStatus;
+
+	uint16 Sum_Ssfm_Errh_SecPErrorStatusNextMode;
+	uint16 Sum_Ssfm_Errh_SecPErrorStatusCurrentMode;
+	(void)Rte_Mode_RP_BswM_SSFM_SecPError_SUM_ERC(&Sum_Ssfm_Errh_SecPErrorStatusCurrentMode, &Sum_Ssfm_Errh_SecPErrorStatusNextMode);
+	if (Sum_Ssfm_Errh_SecPErrorStatusNextMode == RTE_MODE_SECP_Error_Status_SUM_ERC_NO_ERROR)
+	{
+		ActiveEventStatus = (SSC_data == TRUE) ? DEM_EVENT_STATUS_FAILED : DEM_EVENT_STATUS_PASSED;
+		Sum_Ssfm_Errh_KeySlotVerifyErrors_Handler(keyslotfilter, ActiveEventStatus);
+	}
+	else
+	{
+		/* do nothing when SECP Error */
+	}
+}
+
+/**
+ * @brief           SSFM/ERRH function to handle KeySlotVerifyErrors
+ * @details         Number of Failures: Increment only if failure detected (SecP check already done in caller)
+ *                  Reset to 0 if no failure from SSC
+ *
+ * @param[in]       keyslotfilter      - Sum_Ssfm_Errh_KeySlotVerifyStatus*: Sum_Ssfm_Errh_KeySlotVerifyStatus structure to access the KeySlotVerifyStatus member and RTE functions
+ * @param[in]       EventStatus        - Dem_EventStatusType: Event status (PASSED/FAILED)
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_Errh_KeySlotVerifyErrors_Handler(Sum_Ssfm_Errh_KeySlotVerifyStatus* keyslotfilter, Dem_EventStatusType EventStatus)
+{
+	/* [$Satisfies $DDS_SSFM 097] */
+	/* Handle KeySlotVerify events */
+	if (EventStatus == DEM_EVENT_STATUS_FAILED)
+	{
+		/* Increment Number of Failures with overflow protection */
+		if (keyslotfilter->num_of_failure < 0xFFFFu)
+		{
+			keyslotfilter->num_of_failure++;
+		}
+	}
+	else
+	{
+		/* Reset the number of failure of specific keyslot */
+		keyslotfilter->num_of_failure = 0u;
+	}
+}
+
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_Errh_KeySlotNumber AS ssc_keyslotverify ITERATOR i-»
+/* PRQA S 1503 10 # When the SSFM is integrated, this runnable will be called by the RTE*/
+/**
+ * @brief           SSFM/SSM runnable function to be called upon any change in the status of DTC_U19A3_8A
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+FUNC (void, SUM_SSFM_CODE) Runnable_SSFM_SSC_KeySlotVerifyErrors_«ssc_keyslotverify.shortName»(void)
+{
+	/* [$Satisfies $DDS_SSFM 079] */ /*[$Satisfies $DDS_SSFM 189]*/
+	boolean verificationPassed;
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	if ((Sum_Ssfm_Errh_KeySlotVerifyFilter[«i.counter0»].Rte_Read_SSC_SSFM_E_KeySlotVerify(&verificationPassed) != RTE_E_NO_DATA) && (dtcs_are_disabled == FALSE))
+	{
+		/* Reset the slowest PDU rate timer each time receiving a frame from SSC */
+		Sum_Ssfm_Errh_KeySlotVerifyFilter[«i.counter0»].last_received_pdu_timer = 0u;
+		Sum_Ssfm_Errh_Process_KeySlotVerifyErrors(&Sum_Ssfm_Errh_KeySlotVerifyFilter[«i.counter0»], verificationPassed);
+	}
+
+}
+«ENDFOREACH-»
+
+/**
+ * @brief           SSFM/ERRH function to advance last received PDU timer of KeySlotVerifyError
+ *
+ * @param[in]       void
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_LastReceivedPDU_Timer_Update(void)
+{
+	/* [$Satisfies $DDS_SSFM 092] */
+	uint8 i;
+
+	/* Per-keyslot last_received_pdu_timer update */
+	for (i = 0u; i < SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER; i++)
+	{
+		/* We just check that we do not overflow */
+		if (Sum_Ssfm_Errh_KeySlotVerifyFilter[i].last_received_pdu_timer <= (SUM_SSFM_PDU_TIMER_MAX - «(1000 * sSFM.sum_Ssfm_General.sum_Ssfm_KeySlotVerify_RunnablePeriodicity).extractMantissaFrmFloatValue()»u))
+		{
+			Sum_Ssfm_Errh_KeySlotVerifyFilter[i].last_received_pdu_timer += «(1000 *  sSFM.sum_Ssfm_General.sum_Ssfm_KeySlotVerify_RunnablePeriodicity).extractMantissaFrmFloatValue()»u;
+		}
+	}
+}
+
+
+/**
+ * @brief          Callback executed when the DEM notifies a DTC status changed for KeySlotVerifyError.
+ *
+ * @param[in]       DTC Value, Old DTC Status, New DTC Status
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+/* PRQA S 1532 1 # This callback will be called in dtc status change runnable*/
+FUNC(void, SUM_SSFM_ERRH_CODE) Sum_Ssfm_KeySlotNumber_DTCStatusChanged (uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew)
+{
+	/* Unused parameter */
+	(void)DTC;
+	(void)DTCStatusOld;
+	(void)DTCStatusNew;
+}
+
+/**
+ * @brief           SSFM/ERRH function to handle the start stop authentication timer of KeySlotVerifyError
+ * @details         AuthenticationWindowTimer: Decrement when last received PDU < 3*k_ERRH_SlowestPDURate
+ *                  FailedAuthenticationTimer (per-keyslot): Increment when #Err > 0 AND last received PDU < 3*k_ERRH_SlowestPDURate
+ *                  FailedAuthenticationTimer: Cleared when #Err == 0
+ *
+ * @param[in]       void
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_StartStopAuthenticationTimer_Handler(void)
+{
+	/* [$Satisfies $DDS_SSFM 094] */
+	uint8 i;
+	uint32 SlowestPDU_Timer_ks;
+
+	for (i = 0u; i < SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER; i++)
+	{
+		SlowestPDU_Timer_ks = 3u * 1000u * Sum_Ssfm_Errh_KeySlotVerifyFilter[i].k_ERRH_SlowestPDUTimer;
+
+		if (Sum_Ssfm_Errh_KeySlotVerifyFilter[i].last_received_pdu_timer < SlowestPDU_Timer_ks)
+		{
+			/* AuthenticationWindowTimer decrement */
+			if (Sum_Ssfm_Errh_KeySlotVerifyFilter[i].authentication_window_timer >= «(1000 * sSFM.sum_Ssfm_General.sum_Ssfm_KeySlotVerify_RunnablePeriodicity).extractMantissaFrmFloatValue()»u)
+			{
+				Sum_Ssfm_Errh_KeySlotVerifyFilter[i].authentication_window_timer -= «(1000 * sSFM.sum_Ssfm_General.sum_Ssfm_KeySlotVerify_RunnablePeriodicity).extractMantissaFrmFloatValue()»u;
+			}
+			else
+			{
+				Sum_Ssfm_Errh_KeySlotVerifyFilter[i].authentication_window_timer = 0u;
+			}
+
+			/* FailedAuthenticationTimer increment when #Err > 0 */
+			if (Sum_Ssfm_Errh_KeySlotVerifyFilter[i].num_of_failure > 0u)
+			{
+				Sum_Ssfm_Errh_KeySlotVerifyFilter[i].failed_auth_timer += «(1000 * sSFM.sum_Ssfm_General.sum_Ssfm_KeySlotVerify_RunnablePeriodicity).extractMantissaFrmFloatValue()»u;
+			}
+			/* FailedAuthenticationTimer reset when #Err == 0 */
+			else
+			{
+				Sum_Ssfm_Errh_KeySlotVerifyFilter[i].failed_auth_timer = 0u;
+			}
+		}
+		else
+		{
+			/* Stop timers for this keyslot: last received PDU >= 3*k_ERRH_SlowestPDURate */
+		}
+	}
+		/* Update KeySlotState after timer changes */
+	for (i = 0u; i < SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER; i++)
+	{
+		Sum_Ssfm_Update_KeySlotState(&Sum_Ssfm_Errh_KeySlotVerifyFilter[i]);
+	}
+}
+
+/**
+ * @brief           SSFM/ERRH function to manage the passed/failed authentication timer of KeySlotVerifyError
+ * @details         Test Fail: KeySlotState = $2 (Failed) AND FailedAuthenticationTimer > k_ERRH_FailedAuthenticationTimer
+ *                  Test Pass: All KeySlotStates != $2 (Failed) AND at least one KeySlotState = $1 (Passed)
+ *
+ * @param[in]       void
+ * @param[in]       void
+ * @param[inout]    void
+ * @param[out]      void
+ * @return          void
+ */
+static void Sum_Ssfm_Authentication_Timer_Manager(void)
+{
+	/* [$Satisfies $DDS_SSFM 093] */
+	boolean has_keyslot_failed = FALSE;
+	boolean has_keyslot_passed = FALSE;
+	boolean has_keyslot_failed_with_timer = FALSE;
+	uint8 i; 
+
+	/* Check all keyslots per IDOC-1010 specification */
+	for (i = 0u; i < SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER; i++)
+	{
+		/* Test Fail Criteria: KeySlotState = $2 (Failed) AND FailedAuthenticationTimer > k_ERRH_FailedAuthenticationTimer */
+		if (Sum_Ssfm_Errh_KeySlotVerifyFilter[i].keyslot_status == 2u)
+		{
+			/* Check if any Failed state exists (for Pass criteria: All KeySlotStates != $2 Failed) */
+			has_keyslot_failed = TRUE;
+
+			/* Check if timer expired */
+			if (Sum_Ssfm_Errh_KeySlotVerifyFilter[i].failed_auth_timer > Sum_Ssfm_Errh_KeySlotVerifyFilter[i].k_ERRH_FailedAuthenticationTimer)
+			{
+				has_keyslot_failed_with_timer = TRUE;
+			}
+		}
+
+		/* Check for at least one Passed state (for Pass criteria: At least one KeySlotState = $1 Passed)*/
+		if (Sum_Ssfm_Errh_KeySlotVerifyFilter[i].keyslot_status == 1u)
+		{
+			has_keyslot_passed = TRUE;
+		}
+	}
+
+	/* Test Fail: KeySlotState = $2 Failing AND FailedAuthenticationTimer > k_ERRH_FailedAuthenticationTimer */
+	if (has_keyslot_failed_with_timer == TRUE)
+	{
+		(void) Rte_Call_RP_Dem_SSFM_DiagnosticMonitor_SSC_E_KeySlotVerifyError_SetEventStatus(DEM_EVENT_STATUS_FAILED);
+	}
+	/* Test Pass: All KeySlotStates != $2 (Failed) AND at least one KeySlotState = $1 (Passed) */
+	else if ((has_keyslot_failed == FALSE) && (has_keyslot_passed == TRUE))
+	{
+		(void) Rte_Call_RP_Dem_SSFM_DiagnosticMonitor_SSC_E_KeySlotVerifyError_SetEventStatus(DEM_EVENT_STATUS_PASSED);
+	}
+	else
+	{
+		/* Do nothing */
+	}
+
+	/* Execution of start/stop authentication timer handler */
+	Sum_Ssfm_StartStopAuthenticationTimer_Handler();
+}
+
+/**
+ * @brief			Runnable function for SUM SSFM KeySlotVerifyErrors to handle the time management
+ *
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE*/
+FUNC(void, SUM_SSFM_CODE) Runnable_SSFM_KeySlotVerifyErrors_Time_Management(void)
+{
+	boolean dtcs_are_disabled = Sum_Ssfm_Errh_GetDTCsDisabled();
+
+	/*[$Satisfies $DDS_SSFM 091]*/
+	/* Execution of slowest PDU rate timer handler */
+	Sum_Ssfm_LastReceivedPDU_Timer_Update();
+	/* Execution of authentication timer handler */
+
+	if(dtcs_are_disabled == FALSE)
+	{
+		Sum_Ssfm_Authentication_Timer_Manager();
+	}
+
+}
+
+/**
+ * @brief			Runnable function for SUM SSFM upon successful completion of key provisioning
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+/* PRQA S 1503 1 # When the SSFM is integrated, this runnable will be called by the RTE*/
+FUNC(void, SUM_SSFM_CODE) Runnable_SSC_SSFM_U19A3_8A_KeyProvisioned(void)
+{
+	uint8 keySlotId;
+
+	/* Read keySlotId upon successful completion of key provisioning*/
+	(void)Rte_Read_RP_SSC_SSFM_U19A3_8A_KeyProvisioned_KeySlotId(&keySlotId);
+
+	if (keySlotId < SSFM_ERRH_NUM_OF_CFG_KEYSLOT_VERIFY_FILTER)
+	{
+		/* Set FailedAuthenticationTimer and KeySlot State are 0u */
+		Sum_Ssfm_Errh_KeySlotVerifyFilter[keySlotId].failed_auth_timer = 0u;
+		Sum_Ssfm_Errh_KeySlotVerifyFilter[keySlotId].keyslot_status = 0u;
+
+		/* Set AuthenticationWindowTimer is k_ERRH_FailedAuthenticationTimer */
+		/* k_ERRH_FailedAuthenticationTimer is initialized in Sum_Ssfm_Errh_Initialize_KeySlotVerify func*/
+		Sum_Ssfm_Errh_KeySlotVerifyFilter[keySlotId].authentication_window_timer = Sum_Ssfm_Errh_KeySlotVerifyFilter[keySlotId].k_ERRH_FailedAuthenticationTimer;
+	}
+	else
+	{
+		/* Nothing */
+	}
+}
+«ENDIF-»
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

@@ -1,0 +1,367 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_EM_Errh_Execution_Manager.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM Execution Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+
+
+/**
+ *  @brief Variable for permit execution status of SSFM-ERRH
+ *  @private
+ */
+static boolean Sum_Ssfm_ErrhFuncPermitExec = FALSE;
+
+/**
+ *  @brief Variable for battery voltage recovery timer flag
+ *  @private
+ */
+static boolean Sum_Ssfm_BatteryVoltage_RecoveryTimerFlag = FALSE;
+
+/**
+ *  @brief Variable for reset power up recovery timer flag
+ *  @private
+ */
+static boolean Sum_Ssfm_ResetPowerUp_RecoveryTimerFlag = FALSE;
+
+/**
+ *  @brief Variable for the starting operation cycle of SSFM-ERRH
+ *  @private
+ */
+/* PRQA S 3218 1 # This variable shall be used in future development usecase */
+static boolean Sum_Ssfm_Errh_OpCycle_started = FALSE;
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_prv_ErrhCheckStartOperationCycle(void);
+static FUNC (boolean, SUM_SSFM_ERRH_CODE)Sum_Ssfm_Errh_prv_CheckTimer_BatteryVoltage(void);
+static FUNC (boolean, SUM_SSFM_ERRH_CODE)Sum_Ssfm_Errh_prv_CheckTimer_ResetPowerUp(void);
+
+/**
+ * @brief			SSFM/ERRH getter of permit execution value of Errh for other TU
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - Sum_Ssfm_ErrhFuncPermitExec
+ */
+ /*PRQA S 1503 1*/ /* it will be used in future development */
+FUNC(boolean, SUM_SSFM_ERRH_CODE) Sum_Ssfm_Errh_GetFuncPermitExecution(void)
+{
+	return Sum_Ssfm_ErrhFuncPermitExec;
+}
+
+/**
+ * @brief			SSFM/ERRH getter of Operation Cycle status
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - Sum_Ssfm_ErrhFuncPermitExec
+ */
+ /*PRQA S 1503 1*/ /* it will be used in future development */
+FUNC(boolean, SUM_SSFM_ERRH_CODE) Sum_Ssfm_Errh_GetOperationCycleStatus(void)
+{
+	return Sum_Ssfm_Errh_OpCycle_started;
+}
+
+/**
+ * @brief			SSFM/ERRH getter of Sum_Ssfm_BatteryVoltage_RecoveryTimerFlag value
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - battery Voltage Recovery Timer flag
+ */
+ /*PRQA S 1503 1*/ /* it will be used in future development */
+FUNC(boolean, SUM_SSFM_ERRH_CODE) Sum_Ssfm_Errh_GetBatteryVoltageRecoveryTimerFlag(void)
+{
+	return Sum_Ssfm_BatteryVoltage_RecoveryTimerFlag;
+}
+
+
+/**
+ * @brief			SSFM/ERRH getter of Sum_Ssfm_ResetPowerUp_RecoveryTimerFlag value
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - ResetPowerUp Recovery Timer flag
+ */
+ /*PRQA S 1503 1*/ /* it will be used in future development */
+FUNC(boolean, SUM_SSFM_ERRH_CODE) Sum_Ssfm_Errh_GetResetPowerUpRecoveryTimerFlag(void)
+{
+	return Sum_Ssfm_ResetPowerUp_RecoveryTimerFlag;
+}
+
+
+
+/**
+ * @brief			Static SSFM/ERRH Check the the recovery time from reset or power up
+ *
+ * @private
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - Flag count 5 second after reset or power up -should be true only when the timer is zero
+ */
+  /*[$Satisfies $DDS_SSFM 030]*/
+static FUNC (boolean, SUM_SSFM_ERRH_CODE)Sum_Ssfm_Errh_prv_CheckTimer_ResetPowerUp(void)
+{
+	boolean ret = FALSE ;
+	static uint32 Sum_Ssfm_ResetPowerUpRecoveryTimer = SUM_SSFM_ERRH_MAX_RESET_TIMER * SUM_SSFM_MS_TO_US_UNIT;
+
+		if (Sum_Ssfm_ResetPowerUpRecoveryTimer >= SSFM_MAIN_FUNCTION_PERIODICITY_US )
+		{
+			Sum_Ssfm_ResetPowerUpRecoveryTimer -= SSFM_MAIN_FUNCTION_PERIODICITY_US;
+		}
+		else
+		{
+			ret = TRUE;
+		}
+
+	return ret;
+
+}
+
+
+
+/**
+ * @brief			Static SSFM/ERRH Check the the recovery time depending on the level of battry voltage
+ *
+ * @private
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - Flag-should be true only when the timer is zero
+ */
+  /*[$Satisfies $DDS_SSFM 029]*/
+static FUNC (boolean, SUM_SSFM_ERRH_CODE)Sum_Ssfm_Errh_prv_CheckTimer_BatteryVoltage(void)
+{
+	OperatingRangeType BatteryVoltage;
+	static uint32 Sum_Ssfm_BatteryVoltageRecoveryTimer = SUM_SSFM_ERRH_MAX_RESET_TIMER * SUM_SSFM_MS_TO_US_UNIT;
+	boolean ret = FALSE ;
+
+	if (E_OK == Rte_Read_RP_SUSD_SSFM_Errh_BatteryVoltage_BatteryVoltageRangeMinToMax_OperatingRange(&(BatteryVoltage)))
+	{
+		if (BatteryVoltage == OUT_OF_RANGE_LOW)
+		{
+			Sum_Ssfm_BatteryVoltageRecoveryTimer = SUM_SSFM_ERRH_MAX_RESET_TIMER * SUM_SSFM_MS_TO_US_UNIT;
+		}
+		else if (BatteryVoltage == OUT_OF_RANGE_HIGH)
+		{
+			Sum_Ssfm_BatteryVoltageRecoveryTimer = SUM_SSFM_ERRH_MAX_RESET_TIMER * SUM_SSFM_MS_TO_US_UNIT;
+		}
+		else
+		{
+
+			if (Sum_Ssfm_BatteryVoltageRecoveryTimer >= SSFM_MAIN_FUNCTION_PERIODICITY_US )
+			{
+				Sum_Ssfm_BatteryVoltageRecoveryTimer -= SSFM_MAIN_FUNCTION_PERIODICITY_US;
+			}
+			else
+			{
+				ret = TRUE;
+			}
+		}
+	}
+	return ret;
+
+}
+
+
+/**
+ * @brief			Runnable to determine status of wakeup and reset through
+ *          		permit execution from SUM_SUSD for the Errh sub-module
+ *
+ * @private
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			None
+ */
+FUNC(void, SUM_SSFM_CODE) Sum_Ssfm_prv_ErrhExecutionManager(void)
+{
+
+    static Sum_Ssfm_ExecutionStatus Errh_Execution_State = SUM_SSFM_Shutdown_Mode; 	    /* Static variable to store the current status of the SSFM_ERRH */
+	SUSD_SWC_ExecutionStatusType  errh_execution_status;										/* Store the permit execution received value */
+	SUSD_UserRequestType		  errh_shutdown_permission =  SUM_SSFM_ENABLE_SHUTDOWN;	/* Store the value to pass as shutdown permisison command */
+
+	/*[$Satisfies $DDS_SSFM 016]*/
+	/* Check if the ERRH has been initialized */
+	if(Sum_Ssfm_Errh_GetInitialization() == TRUE)
+	{
+		if(E_NOT_OK == Rte_Read_RP_SUSD_SSFM_Errh_SUSD_PermitExecution_SUSD_SWC_ExecutionStatus(&(errh_execution_status)))
+		{
+			/*[$Satisfies $DDS_SSFM 019]*/
+			/* Command could not be read: value inconsistent, prevent the evaluation */
+			Errh_Execution_State = SUM_SSFM_Invalid_Mode;
+		}
+
+		Sum_Ssfm_ResetPowerUp_RecoveryTimerFlag = Sum_Ssfm_Errh_prv_CheckTimer_ResetPowerUp();
+		Sum_Ssfm_BatteryVoltage_RecoveryTimerFlag = Sum_Ssfm_Errh_prv_CheckTimer_BatteryVoltage();
+
+		switch(Errh_Execution_State)
+	    {
+	           /* SHUTDOWN */
+	           case SUM_SSFM_Shutdown_Mode:
+
+					/*[$Satisfies $DDS_SSFM 017]*/
+	            	if((errh_execution_status | SUM_SSFM_ERRH_PERMITEXECUTION_MASK) == SUM_SSFM_EXEC_MASKING_PASSED)
+	            	{
+	                    /* ERRH functionality can be executed */
+	                    Errh_Execution_State        = SUM_SSFM_Run_Mode;
+	                    Sum_Ssfm_ErrhFuncPermitExec = TRUE;
+	                }
+
+		       break;
+
+			   /* RUNNING */
+	           case SUM_SSFM_Run_Mode:
+	                /* Check the start of operation cycle */
+                    Sum_Ssfm_prv_ErrhCheckStartOperationCycle();
+
+	                /*
+	                 * Check if shutdown has been requested
+	                 * The only supported shutdown is ECU_RESET.  For normal reset, the ERRH has no indication.
+	                 */
+	                /*[$Satisfies $DDS_SSFM 018]*/
+	                if ( ((errh_execution_status | SUM_SSFM_ERRH_PERMITEXECUTION_MASK) != SUM_SSFM_EXEC_MASKING_PASSED) ||
+	                     ((errh_execution_status | SUM_SSFM_RESETBIT_MASK)        != SUM_SSFM_EXEC_MASKING_PASSED) )
+	                {
+	                    /* Begin Shutdown phase */
+	                    Errh_Execution_State        = SUM_SSFM_Shutdown_Mode;
+	                    Sum_Ssfm_ErrhFuncPermitExec = FALSE;
+						Sum_Ssfm_DID_E0B8_SaveData();
+						/*[$Satisfies $DDS_SSFM 128]*/
+						Sum_Ssfm_SaveDIDE0B9_Data();
+«IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))-»
+						Sum_Ssfm_DID_E0BB_SaveData();
+«ENDIF-»
+	                }
+	           break;
+
+               /*[$Satisfies $DDS_SSFM 020]*/
+	           default:
+		            Errh_Execution_State        = SUM_SSFM_Shutdown_Mode;
+		    		Sum_Ssfm_ErrhFuncPermitExec = FALSE;
+	           break;
+	    }
+	}
+	else
+    {
+    	Errh_Execution_State        = SUM_SSFM_Shutdown_Mode;
+    	Sum_Ssfm_ErrhFuncPermitExec = FALSE;
+    }
+
+     /*[$Satisfies $DDS_SSFM 121]*/
+	 /* @set the shutdown command for ERRH */
+	(void) Rte_Write_SUM_SSFM_PP_SSFM_SUSD_ERRH_ShutdownPermission_SUSD_UserRequest(errh_shutdown_permission);
+
+	«IF Ssfm_isEnableERRHLocalSupervision(sSFM.sum_Ssfm_General) -»
+	/* Advising the WgdM that the checkpoint is reached */
+	(void) Rte_Call_RP_SSFM_ERRH_WdgM_WdgM_LocalSupervision_CheckpointReached();
+    «ENDIF-»
+
+
+}
+
+/**
+ * @brief			Private function to check the start of operation cycle to notify to Dem
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			None
+ */
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_prv_ErrhCheckStartOperationCycle(void)
+{
+    boolean Errh_op_cycle_enable_conditions;
+    Std_ReturnType retValue;
+
+    /*[$Satisfies $DDS_SSFM 025]*/
+    if (Sum_Ssfm_Errh_OpCycle_started == FALSE)
+    {
+    	/* Read from RPort if project specific enable criteria are satisfied */
+    	retValue = Rte_Read_SUM_SSFM_RP_SWC_SSFM_Errh_SWC_OperationCycle_EnableConditions_SWC_SSFM_OpCycle_EnableConditions(&Errh_op_cycle_enable_conditions);
+    	/* Check if the port is left unconnected, the operation cycle is started immediately since the WakeUp bit is set */
+    	if ((retValue == RTE_E_UNCONNECTED) || (Errh_op_cycle_enable_conditions == TRUE))
+    	{
+	       /* When the criteria are met, the operation cycle is started to notify Dem */
+	       (void) Rte_Call_SUM_SSFM_RP_Dem_SSFM_Errh_Dem_OperationCycle_RestartOperationCycle();
+	       Sum_Ssfm_Errh_OpCycle_started = TRUE;
+    	}
+     }
+
+}
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

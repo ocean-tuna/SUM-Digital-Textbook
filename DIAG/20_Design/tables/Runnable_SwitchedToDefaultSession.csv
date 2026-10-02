@@ -1,0 +1,9 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};Runnable_SwitchedToDefaultSession
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};IR_Normal_msg_transmission
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};N\/A
+\cellcolor{ETASlightgray}\textbf{Parameters};N\/A
+\cellcolor{ETASlightgray}\textbf{Return};N\/A
+\cellcolor{ETASlightgray}\textbf{Description};This runnable is responsible for: \newline Resetting the Normal_msg_transmission flag when a default session is entered

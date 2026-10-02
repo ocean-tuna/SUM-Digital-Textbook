@@ -1,0 +1,64 @@
+<workflow>
+	<!-- include of properties files with global settings -->
+    <property file="oaw.properties"/>
+
+  <!-- Property file containing model package and generator version info -->
+	<property file="Tcs_Workflow.properties"/>
+   <!-- Property file containing model and editor version info -->
+   	  <property file="model_tool_version.properties"/>
+
+	<!-- generate Tcs_Cfg.h -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="TCS_Cfg_h::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+  	<!-- generate Tcs_Cfg.c -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="TCS_Cfg_c::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+  	<!-- generate SUM_TCS.h -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="SUM_TCS_h::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+  	<!-- generate SUM_TCS.c -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="SUM_TCS_c::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+
+	<!-- generate Tcs_Cfg_SWCD.arxml -->
+	 <component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<!--<fileEncoding value="ISO-8859-1"/>-->
+		 <metaModel id="mm"
+			class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<globalVarDef name="gen_ver" value="'${gen_ver}'"/>
+		<globalVarDef name="model_ver" value="'${model_ver}'"/>
+		<expand value="Tcs_Cfg_SWCD_arxml::Root FOR model" />
+		<outlet path='${OutputDir}' />
+	</component>
+</workflow>

@@ -1,0 +1,61 @@
+# GM SUM SPM
+###################################################################################################################################################################################
+#####	Mandatory part for rreqs file:
+#####   Please verify the presence of this part in each rreqs file for each SUM
+#####   Don't edit this file (it is just a sample. Make a copy and paste), let's edit the respective file in each SUM repository with the appropriate name
+###################################################################################################################################################################################
+
+#------------------------------------------------------------------------------
+# Project Settings
+#------------------------------------------------------------------------------
+$project_name = "RTA-SUM - SUM_SPM"
+$project_number = 10884
+
+$system_requirements = ["SRS_SPM"]
+$detailed_requirements = ["DDS_SPM"]
+#------------------------------------------------------------------------------
+# Rule Overrides
+#------------------------------------------------------------------------------
+$requirements_without_source = ["SRS_SPM"]
+$requirements_without_test = ["SRS_SPM"]
+$requirements_without_result = ["SRS_SPM"]
+
+###################################################################################################################################################################################
+###################################################################################################################################################################################
+
+#------------------------------------------------------------------------------
+# Software Requirements
+#------------------------------------------------------------------------------
+source "../../RTA-SUM_SPM_Docs/DocsAsCode/doc/Requirements/10_*.rst"
+
+#------------------------------------------------------------------------------
+# Detailed Design
+#------------------------------------------------------------------------------
+source "../../RTA-SUM_SPM_Docs/DocsAsCode/doc/Requirements/2*.rst", :greedy_satisfactions => true
+source "../../RTA-SUM_SPM_Docs/DocsAsCode/doc/DesignNotes/*", :greedy_satisfactions => true
+
+#------------------------------------------------------------------------------
+# Implementation
+#------------------------------------------------------------------------------
+implementation "../../../20_Implementation/src/*.c"
+implementation "../../../20_Implementation/api/*.h"
+implementation "../../../20_Implementation/scripts/templates/**/*.xpt", :greedy_satisfactions => true
+implementation "../../../20_Implementation/scripts/paramdef/*.arxml"
+
+#------------------------------------------------------------------------------
+# Test Scripts
+#------------------------------------------------------------------------------
+source '../../../40_Test/SPM_CantataUT\Cantata\tests\test_Sum_Spm_*/test_Sum_Spm_*.c', :filter => proc {|file, content| 
+	content.gsub(/\s*-?\s*\[\$Validates\s*\$\w+\s*\d+:\s*Pass\]\s*/m, '')}
+	
+#------------------------------------------------------------------------------
+# Test Results
+#------------------------------------------------------------------------------
+results "../../../40_Test/SPM_CantataUT/Cantata/results/test_report.html"
+
+#------------------------------------------------------------------------------
+# Exceptions
+#------------------------------------------------------------------------------
+source "../1_Sources/SPM_Not_Implemented.txt"
+source "../1_Sources/SPM_Rejected.txt"
+source "../1_Sources/SUM_SPM_tested_by_inspection.txt"

@@ -1,0 +1,31 @@
+@startuml SUM_SrvcMgr_Initialization
+
+participant SrvcMgr
+participant BswM
+participant Sd
+participant SWC
+
+group if(Sum_SrvcMgr_GenerateInitRunnable == False)
+BswM -> SrvcMgr : Sum_SrvcMgr_Init();
+Activate SrvcMgr
+SrvcMgr -> SrvcMgr: init()
+
+end
+group if(Sum_SrvcMgr_GenerateInitRunnable == True)
+Activate SrvcMgr
+SrvcMgr -> SrvcMgr : RE_SrvcMgr_Init();
+SrvcMgr -> SrvcMgr: Sum_SrvcMgr_Init();
+SrvcMgr -> SrvcMgr: init();
+end
+SrvcMgr -> Sd: Sd_InitializeServicesCalibrationState()
+SrvcMgr -> SWC: Rte_Call_SurveyServiceDisableCalibrations()
+SrvcMgr -> Sd:Sum_SrvcMgr_pub_GetSdEnableExtendedLearningTableFormat()
+note right
+	Function to retrieve the 
+	Sd_SdEnableExtendedLearningTableFormat 
+	value. If the value is FALSE, the InstanceId
+	and MajorVersion are updated to 0 
+	for each configured Service
+end note
+Deactivate SrvcMgr
+@enduml

@@ -1,0 +1,1454 @@
+import bsw;
+import bsw::SSFMModule;
+import bsw::ComModule;
+import bsw::SdModule;
+import bsw::DemModule;
+import bsw::LNMModule;
+
+extension templates::mathlib;
+extension org::eclipse::xtend::util::stdlib::elementprops;
+extension org::eclipse::xtend::util::stdlib::io;
+extension org::eclipse::xtend::util::stdlib::counter;
+extension org::eclipse::xtend::util::stdlib::cloning;
+extension ERRH::U_Code::U_Code_Utils;
+extension ERRH::DID::Sum_Ssfm_DID_Utils;
+
+///////////////////////////// SSFM Counter //////////////////////
+String Ssfm_GetSsfm1msCounterName(Sum_Ssfm_General cfg):
+	cfg.sum_Ssfm_Os_Counter_1ms_Ref.shortName
+;
+
+Boolean sum_Ssfm_DtcTriggerMessageSupport_IsTRUE(Sum_Ssfm_General cfg):
+	cfg.sum_Ssfm_DtcTriggerMessageSupport == true
+;
+
+Integer Ssfm_Get_SizeofFxl_DemEvent(List[Object] controllers, SSFM cfg):
+	Ssfm_Get_AllComBasedSerialData_InvalidDataDemEvents(controllers, cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData).size
+	+ Ssfm_Get_AllServiceBasedSerialDatas_InvalidDataDemEvents(cfg).size
+;
+///////////////////////////// General E2E ///////////////////////////////
+// Returns True if the SerialData is configured to use the E2EXf transformer
+Boolean Ssfm_IsE2EConfigured(Sum_Ssfm_SerialData serialData):
+	let e2exf = serialData.eRootContainer.xfrm.select(e | e.shortName.toLowerCase() == "e2exf"):
+		if e2exf != null then (
+			if serialData.Ssfm_IsSignalGroup() then (
+				e2exf.xfrmImplementationMapping.xfrmSignal
+				.xfrmSignalChoice.select(e | e.xfrmISignalGroupRefChoice != null)
+				.xfrmISignalGroupRefChoice.xfrmISignalGroupRef
+				.exists(e | e == serialData.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalGroupRefChoice.rteISignalGroupRef)
+			)
+			else (
+				e2exf.xfrmImplementationMapping.xfrmSignal
+				.xfrmSignalChoice.select(e | e.xfrmISignalRefChoice != null)
+				.xfrmISignalRefChoice.xfrmISignalRef
+				.exists(e | e == serialData.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalRefChoice.rteISignalRef)
+			)
+		)
+		else
+			false
+;
+
+// Returns True if there is at least one SerialData with E2E reference available
+Boolean Ssfm_AnyE2EConfigured(List[Sum_Ssfm_SerialData] cfg):
+	cfg.exists(e | Ssfm_IsE2EConfigured(e) == true)
+;
+
+Integer Ssfm_GetIndexOfOneE2EConfigured(List[Sum_Ssfm_SerialData] cfg):
+	if (Ssfm_AnyE2EConfigured(cfg) == true) then
+	(
+		0.upTo(cfg.size-1).select(e|Ssfm_IsE2EConfigured(cfg.get(e))==true).get(0)
+	)
+	else
+		-1
+;
+
+Boolean Ssfm_IsE2EProfileGM01(Sum_Ssfm_SerialData serialData):
+	if (Ssfm_IsE2EConfigured(serialData) == true) then
+	(
+		let e2exf = serialData.eRootContainer.xfrm.select(e | e.shortName.toLowerCase() == "e2exf"):
+			if serialData.Ssfm_IsSignalGroup() then (
+				e2exf.xfrmImplementationMapping
+				.select(e |
+					e.xfrmSignal
+					.xfrmSignalChoice
+					.xfrmISignalGroupRefChoice != null)
+				.select(e |
+					e.xfrmSignal
+					.xfrmSignalChoice
+					.xfrmISignalGroupRefChoice
+					.xfrmISignalGroupRef
+					==
+					serialData
+					.sum_Ssfm_RteSerialData_Ref
+					.rteSignal.rteSignalChoice.rteISignalGroupRefChoice.rteISignalGroupRef
+				)
+				.first()
+				.rba_SysElem_XfrmTransformationTechnologyRef.shortName.endsWith("PROFILE_GM_01")
+			)
+			else (
+				e2exf.xfrmImplementationMapping
+				.select(e |
+					e.xfrmSignal
+					.xfrmSignalChoice
+					.xfrmISignalRefChoice != null)
+				.select(e |
+					e.xfrmSignal
+					.xfrmSignalChoice
+					.xfrmISignalRefChoice
+					.xfrmISignalRef
+					==
+					serialData
+					.sum_Ssfm_RteSerialData_Ref
+					.rteSignal.rteSignalChoice.rteISignalRefChoice.rteISignalRef
+				)
+				.first()
+				.rba_SysElem_XfrmTransformationTechnologyRef.shortName.endsWith("PROFILE_GM_01")
+			)
+	)
+	else
+		false
+;
+
+///////////////////////////////////// SomeIpXf ///////////////////////////////////
+// Returns True if the SerialData is configured to use the SomeIpXf transformer
+Boolean Ssfm_IsSomeIpConfigured(Sum_Ssfm_SerialData serialData):
+	let someipxf = serialData.eRootContainer.xfrm.select(e | e.shortName.toLowerCase() == "someipxf"):
+		if someipxf != null then (
+			if serialData.Ssfm_IsSignalGroup() then (
+				someipxf.xfrmImplementationMapping.xfrmSignal
+				.xfrmSignalChoice.select(e | e.xfrmISignalGroupRefChoice != null)
+				.xfrmISignalGroupRefChoice.xfrmISignalGroupRef
+				.exists(e | e == serialData.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalGroupRefChoice.rteISignalGroupRef)
+			)
+			else (
+				someipxf.xfrmImplementationMapping.xfrmSignal
+				.xfrmSignalChoice.select(e | e.xfrmISignalRefChoice != null)
+				.xfrmISignalRefChoice.xfrmISignalRef
+				.exists(e | e == serialData.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalRefChoice.rteISignalRef)
+			)
+		)
+		else
+			false
+;
+
+// Returns True if there is at least one SerialData which is configured to use the SomeIpXf transformer
+Boolean Ssfm_AnySomeIpConfigured(List[Sum_Ssfm_SerialData] cfg):
+	cfg.exists(e | Ssfm_IsSomeIpConfigured(e) == true)
+;
+
+// Returns True if the serial data requires any sort of transformer in the chain (Com, E2E, SomeIp)
+Boolean Ssfm_IsTransformerErrorNeeded(Sum_Ssfm_SerialData serial_data):
+	if serial_data.Ssfm_IsSignalGroup() then (
+		serial_data.eRootContainer.xfrm.xfrmImplementationMapping.xfrmSignal
+		.xfrmSignalChoice.select(e | e.xfrmISignalGroupRefChoice != null)
+		.xfrmISignalGroupRefChoice.xfrmISignalGroupRef
+		.exists(e | e == serial_data.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalGroupRefChoice.rteISignalGroupRef)
+	)
+	else (
+		serial_data.eRootContainer.xfrm.xfrmImplementationMapping.xfrmSignal
+		.xfrmSignalChoice.select(e | e.xfrmISignalRefChoice != null)
+		.xfrmISignalRefChoice.xfrmISignalRef
+		.exists(e | e == serial_data.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalRefChoice.rteISignalRef)
+	)
+;
+///////////////////////////// Authentication (FcI) ///////////////////////////////
+
+// Returns True if the SerialData is authenticated
+Boolean Ssfm_IsAuthenticated(Sum_Ssfm_SerialData serialData):
+	serialData.sum_Ssfm_SecOCRxPdu_Ref != null
+;
+
+// Returns True if the SerialData is authenticated
+Boolean Ssfm_IsAnyAuthenticated(List[Sum_Ssfm_SerialData] cfg):
+	cfg.select(e|e.sum_Ssfm_SecOCRxPdu_Ref != null).size > 0
+;
+
+Integer Ssfm_GetIndexOfOneAuthenticated(List[Sum_Ssfm_SerialData] cfg):
+	if (Ssfm_IsAnyAuthenticated(cfg) == true) then
+	(
+		0.upTo(cfg.size-1).select(e|Ssfm_IsAuthenticated(cfg.get(e))==true).get(0)
+	)
+	else
+		-1
+;
+
+///////////////////////////// Continuous Operation (FoI) ///////////////////////////////
+
+// Returns true if the SerialData is continuous-operation-enabled
+// The logic is:
+// The SerialData is continuous operation enabled if it is E2E configured regardless of the E2E profile
+Boolean Ssfm_IsContOp(Sum_Ssfm_SerialData serialData):
+	Ssfm_IsE2EConfigured(serialData) ? true : false
+;
+
+// Returns true if there is at least one SerialData for which FoI is neeeded
+Boolean Ssfm_IsAnyContOp(List[Sum_Ssfm_SerialData] cfg):
+	cfg.select(e | Ssfm_IsContOp(e) == true).size > 0 ? true : false
+;
+
+Integer Ssfm_GetIndexOfOneContOp(List[Sum_Ssfm_SerialData] cfg):
+	if (Ssfm_IsAnyContOp(cfg) == true) then
+	(
+		0.upTo(cfg.size-1).select(e|Ssfm_IsContOp(cfg.get(e))==true).get(0)
+	)
+	else
+		-1
+;
+
+///////////////////////////// Protection (FpI) ///////////////////////////////
+
+// Returns true if the SerialData is protected
+// The logic is:
+// The SerialData is protection enabled if the E2E is configured (except for profile GM_01) or it is an authenticated SerialData
+Boolean Ssfm_IsProtected(Sum_Ssfm_SerialData serialData):
+	(
+		(Ssfm_IsE2EConfigured(serialData) && !Ssfm_IsE2EProfileGM01(serialData))
+	 	|| Ssfm_IsAuthenticated(serialData)
+	)
+	? true : false
+;
+
+// Returns true if there is at least one SerialData for which FoI is neeeded
+Boolean Ssfm_IsAnyProtected(List[Sum_Ssfm_SerialData] cfg):
+	cfg.select(e | Ssfm_IsProtected(e) == true).size > 0 ? true : false
+;
+
+Integer Ssfm_GetIndexOfOneProtected(List[Sum_Ssfm_SerialData] cfg):
+	if (Ssfm_IsAnyProtected(cfg) == true) then
+	(
+		0.upTo(cfg.size-1).select(e|Ssfm_IsProtected(cfg.get(e))==true).get(0)
+	)
+	else
+		-1
+;
+
+///////////////////////////// Safety (FsI) ///////////////////////////////
+
+// Returns true if the SerialData requires a safety status notification
+// The logic is:
+// The SerialData is safety status enabled if the FpI and/or the FoI is required
+Boolean Ssfm_IsSafety(Sum_Ssfm_SerialData serialData):
+	(Ssfm_IsContOp(serialData) || Ssfm_IsProtected(serialData))
+	? true : false
+;
+
+// Returns true if there is at least one SerialData for which FsI is neeeded
+Boolean Ssfm_IsAnySafety(List[Sum_Ssfm_SerialData] cfg):
+	cfg.select(e | Ssfm_IsSafety(e) == true).size > 0 ? true : false
+;
+
+Integer Ssfm_GetIndexOfOneSafety(List[Sum_Ssfm_SerialData] cfg):
+	if (Ssfm_IsAnySafety(cfg) == true) then
+	(
+		0.upTo(cfg.size-1).select(e|Ssfm_IsSafety(cfg.get(e))==true).get(0)
+	)
+	else
+		-1
+;
+
+Integer Ssfm_GetIndexOfOneSafetyWithProtectedAndContOp(List[Sum_Ssfm_SerialData] cfg):
+	if (Ssfm_IsAnySafety(cfg) == true) then
+	(
+		0.upTo(cfg.size-1).select(e| (Ssfm_IsSafety(cfg.get(e)) && Ssfm_IsContOp(cfg.get(e)) && Ssfm_IsProtected(cfg.get(e))) ==true).get(0)
+	)
+	else
+		-1
+;
+
+/* It combines the four Ssfm_IsAnyAuthenticated/ContOp/Protected/Safety into one function.
+ * i.e. Ssfm_IsAnyACPS(serial_datas, "ContOp") checks if there is any ContOp Serial Data.
+ */
+Boolean Ssfm_IsAnyACPS(List[Sum_Ssfm_SerialData] serialDatas, String ACPS):
+	switch(ACPS)
+	{
+		case "Authenticated" : Ssfm_IsAnyAuthenticated(serialDatas)
+		case "ContOp" : Ssfm_IsAnyContOp(serialDatas)
+		case "Protected" : Ssfm_IsAnyProtected(serialDatas)
+		case "Safety" : Ssfm_IsAnySafety(serialDatas)
+		default : false
+	}
+;
+
+///////////////////////////// Message Info Handler ///////////////////////////////
+
+List[ComIPdu] Ssfm_SignalRxPDU(List[Sum_Ssfm_SerialData] serialData) :
+    let listofRxPDU1 = serialData.sum_Ssfm_C_SsmDisable_Rx_PDURef.shortName:
+    	listofRxPDU1.toSet()
+;
+
+// Returns True if the SerialData participated in Partial Network
+Boolean Ssfm_IsPNCfg(Sum_Ssfm_SerialData serialData):
+	serialData.sum_Ssfm_Partial_Network_Ref != null
+;
+
+// Returns True if the SerialData channel monitor disable normal communication request
+Boolean Ssfm_IsChannelInfo(Sum_Ssfm_SerialData serialData):
+	serialData.sum_Ssfm_Channel_Ref != null && serialData.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref != null
+;
+
+// Returns True if the SerialData disable Rx PDU is configured
+Boolean Ssfm_IsDisableRxPDU(Sum_Ssfm_SerialData serialData):
+	serialData.sum_Ssfm_C_SsmDisable_Rx_PDURef != null
+;
+
+// Returns True if the any message info condition is configured
+Boolean Ssfm_IsMessageInfo(Sum_Ssfm_SerialData serialData):
+	(Ssfm_IsPNCfg(serialData) || Ssfm_IsChannelInfo(serialData) || Ssfm_IsDisableRxPDU(serialData))
+	&& !Ssfm_IsLINChannelCfg(serialData)
+;
+
+/* When the message is not from LIN, this function returns the message ID of the serial data.
+   For CAN serial data the message ID is derived from CAN ID and for ETH serial data it is derived from PDU Header ID.
+ */
+Integer Ssfm_GetMessageID(Sum_Ssfm_SerialData serialData):
+	if serialData.Ssfm_IsLINChannelCfg() then (
+		0
+	)
+	else if (serialData.sum_Ssfm_MessageID_Ref != null) then (
+		if (serialData.sum_Ssfm_MessageID_Ref.metaType.toString().endsWith("CanIfRxPduCfg")) then (
+			serialData.sum_Ssfm_MessageID_Ref.canIfRxPduCanId
+		) else (
+			serialData.sum_Ssfm_MessageID_Ref.soAdRxPduHeaderId
+		)
+	)
+	else (
+		0
+	)
+;
+
+// Returns size of PN configured
+Integer Ssfm_GetPNsizeSerialData(Sum_Ssfm_SerialData serialData):
+	serialData.sum_Ssfm_Partial_Network_Ref.size
+;
+
+// Returns SerialData name
+String Ssfm_GetComSerialDataName(Sum_Ssfm_SerialData serialData):
+	serialData.Ssfm_GetSerialDataName()
+;
+
+
+// Returns True if the given SerialData is associated with the given PN id
+Boolean Ssfm_IsSerialDataAssociatedWithPN(Sum_Ssfm_SerialData serialData, Integer PNId):
+	serialData.sum_Ssfm_Partial_Network_Ref.exists(PN | PN.comMPncId == PNId)
+;
+
+// Returns a list of com SerialData names that are associated with the given PN id
+List[String] Ssfm_GetComSerialDataNamesGivenPNId(List[Sum_Ssfm_SerialData] serialDatas, Integer PNId):
+	serialDatas.select(serialData | Ssfm_IsSerialDataAssociatedWithPN(serialData, PNId))
+	.Ssfm_GetSerialDataName().toList()
+;
+
+// Returns a set of PN Ids that are associated with the given SerialDatas
+List[Integer] Ssfm_ListOfAllAssociatedPNsIdsToSerialDatas(List[Sum_Ssfm_SerialData] serialDatas):
+    serialDatas.sum_Ssfm_Partial_Network_Ref.comMPncId
+	.toSet()
+;
+
+// Returns True if the give lnm moduele is available and networks are configured
+Boolean sum_Lnm_NetworkSupport_IsTRUE(LNM cfg):
+	((cfg != null)&&((cfg.lNM_Networks != null)&&(cfg.lNM_Networks.lNMNetwork.size > 0 ))) ? true : false
+;
+
+// Returns True if the given SerialData is associated with the given channel id
+Boolean Ssfm_IsSerialDataAssociatedWithChannel(Sum_Ssfm_SerialData serialData, Integer ChId):
+	if (serialData.sum_Ssfm_Channel_Ref != null && serialData.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref != null) then
+		serialData.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMChannelId == ChId
+	else
+		false
+;
+
+// Returns a list of com SerialData names that are associated with the given channel id
+List[String] Ssfm_GetComSerialDataNamesGivenChId(List[Sum_Ssfm_SerialData] serialDatas, Integer ChId):
+	serialDatas.select(serialData | Ssfm_IsSerialDataAssociatedWithChannel(serialData, ChId))
+	.Ssfm_GetSerialDataName().toList()
+;
+
+// Returns a set of CAN/ETH channel Ids that are associated with the given SerialDatas
+List[Integer] Ssfm_GetAllCANETHChannelIDs(List[Sum_Ssfm_SerialData] serialDatas):
+    serialDatas.select(e | e.sum_Ssfm_Channel_Ref != null)
+    .sum_Ssfm_Channel_Ref.select(e | e.sum_Ssfm_Channel_ID_Ref != null && e.sum_Ssfm_Channel_ID_Ref.comMBusType != "COMM_BUS_TYPE_LIN")
+    .sum_Ssfm_Channel_ID_Ref.comMChannelId.toSet()
+;
+
+/* These below function will be used in the future development
+List[Sum_Ssfm_Errh_BswError] Ssfm_GetListOfBswErrorsPerFilterType(List[Sum_Ssfm_Errh_BswError] bsw, String filter):
+	bsw.select(e|e.sum_Ssfm_Errh_BSWErr_EventFilter_Ref.sum_Ssfm_FilterType == filter)
+;
+
+List[String] Sum_Ssfm_GetErrorFilterTypeConfiguredforBsw(List[Sum_Ssfm_Errh_BswError] bsw ):
+	bsw.collect(e|e.sum_Ssfm_Errh_BSWErr_EventFilter_Ref.sum_Ssfm_FilterType)
+;
+
+Integer Ssfm_GetNumberOfXY_Filters(List[Sum_Ssfm_Errh_GeneralEventsFilter] f ):
+	f.collect(e|e.sum_Ssfm_FilterType.contains("X_OF_Y")).size
+;
+
+Integer Ssfm_GetNumberOfXYFilter_Bsw(List[Sum_Ssfm_Errh_BswError] bsw):
+	bsw.collect(e|e.sum_Ssfm_Errh_BSWErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size
+;
+
+Integer Ssfm_GetNumberOfXYFilter_Lnm_Net(Sum_Ssfm_Errh_LNMErrors lnm):
+if lnm != null && lnm.sum_Ssfm_LNM_NetworkError.size > 0
+then
+	lnm.sum_Ssfm_LNM_NetworkError.collect(e|e.sum_Ssfm_Errh_LNMNetworkErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size
+		else
+	0
+;
+
+Integer Ssfm_GetNumberOfXYFilter_Lnm_Slave(Sum_Ssfm_Errh_LNMErrors lnm):
+if lnm != null && lnm.sum_Ssfm_LNM_ResponderInfoError.size > 0
+then
+	lnm.sum_Ssfm_LNM_ResponderInfoError.collect(e|e.sum_Ssfm_LNMResponderErr_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size
+		else
+	0
+;
+
+// Complete for Ssc once it has been defined
+
+Integer Ssfm_GetNumberOfXYFilter_Susd_High(Sum_Ssfm_Errh_SUSDErrors susd):
+if susd != null && susd.sum_Ssfm_SUSD_RunCrankHIGH_DiagStatus != null
+then (susd.sum_Ssfm_SUSD_RunCrankHIGH_DiagStatus.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y") ?1:0)
+		else
+	 0
+;
+
+Integer Ssfm_GetNumberOfXYFilter_Susd_Low(Sum_Ssfm_Errh_SUSDErrors susd):
+if susd != null && susd.sum_Ssfm_SUSD_RunCrankLOW_DiagStatus != null
+then (susd.sum_Ssfm_SUSD_RunCrankLOW_DiagStatus.sum_Ssfm_Errh_SUSD_RCHLow_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y") ?1:0)
+		else
+	 0
+;
+
+Integer Ssfm_GetNumberOfXYFilter_InternalFi(List[Sum_Ssfm_SsmMeasureFailed] ssm):
+	ssm.collect(e|e.sum_Ssfm_SsmMeasureFailed_EventFilter_Ref.sum_Ssfm_FilterType.contains("X_OF_Y")).size
+;
+*/
+
+
+///////////////////////////////// Loss of Comm ///////////////////////////////////////////
+
+
+
+
+Boolean Ssfm_IsSerialDataLcFA(List[Sum_Ssfm_ECUInfo] ECUs, Sum_Ssfm_SerialData serialData):
+	ECUs.sum_Ssfm_ECUInfo_SerialData.exists(ecu_serial_data | ecu_serial_data.sum_Ssfm_SerialData_Ref == serialData) ||
+	serialData.Ssfm_IsServiceBased()
+;
+
+Boolean Ssfm_IsAnyLcFA(List[Sum_Ssfm_ECUInfo] ECUs, List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.exists(e | Ssfm_IsSerialDataLcFA(ECUs, e))
+;
+
+Integer Ssfm_NumOfSerialDataLcFA(List[Sum_Ssfm_ECUInfo] ECUs, List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.select(e | Ssfm_IsSerialDataLcFA(ECUs, e) && !Ssfm_IsNonDiscoverableService(e)).size
+;
+
+Boolean Ssfm_AnyTrgDvc(Sum_Ssfm_ConfigSet cfg):
+	(cfg.sum_Ssfm_GroupInfo.sum_Ssfm_TrgDvcInfo.size > 0 )
+;
+
+///////////////////////////////// Run Crank Input Stuck Fault Indication //////////////////////
+
+Integer Ssfm_Get_SusdErrors_RunCrankHigh(Sum_Ssfm_Errh_SUSDErrors susd):
+(susd != null && susd.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus != null)? 1:0
+;
+
+Integer Ssfm_Get_SusdErrors_RunCrankLow(Sum_Ssfm_Errh_SUSDErrors susd):
+(susd != null && susd.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus != null) ? 1:0
+;
+
+// Check if RunCrankHighDiagStatus is configured
+boolean Ssfm_IsRunCrankHighDiagStatus_Configured(Sum_Ssfm_ConfigSet cfg):
+	if (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null) then
+		((cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus != null) ? true : false)
+	else
+		false
+;
+
+// Check if RunCrankLowDiagStatus is configured
+boolean Ssfm_IsRunCrankLowDiagStatus_Configured(Sum_Ssfm_ConfigSet cfg):
+	if (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null) then
+		((cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus != null) ? true : false)
+	else
+		false
+;
+
+// Check if there is at least one RunCrankDiagStatus is configured
+boolean Ssfm_IsSUSDErrors_Configured(Sum_Ssfm_ConfigSet cfg):
+	((cfg.sum_Ssfm_ErrorsHandlers != null) && (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors != null) && Ssfm_NumOfRunCrankDebouncers(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) != 0) ? true : false
+;
+
+// Get the correct index for the Run Crank Errors according to configuration
+Integer Ssfm_GetSUSDErrorIndex(Sum_Ssfm_ConfigSet cfg, String level_type):
+
+	if (Ssfm_NumOfRunCrankDebouncers(cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) > 1) then
+		((level_type == "HIGH") ? 0 : 1)
+	else
+		 0
+;
+
+// Get the filtertype for RunCrankDiagStatus
+String Ssfm_GetFilterType(Sum_Ssfm_Errh_GeneralEventsFilter cfg):
+	switch(cfg.sum_Ssfm_FilterType)
+	{
+		case "NONE" : "None"
+		case "BLOCK" : "Block"
+		case "X_OF_Y_MOVING_WINDOW_TIMEBASED" : "MovingWindow_TimeBased"
+		default : "MovingWindow_EventBased"
+	}
+;
+
+// Get the sum_Ssfm_BswEventType for BSW errors to notify SOH
+String Ssfm_GetBswErrorEventType(Sum_Ssfm_Errh_BswError cfg):
+	switch(cfg.sum_Ssfm_BswEventType)
+	{
+		case "NVM_E_HARDWARE" : "NVM_E_HARDWARE"
+		case "NVM_E_INTEGRITY_FAILED" : "NVM_E_INTEGRITY_FAILED"
+		case "NVM_E_REQ_FAILED" : "NVM_E_REQ_FAILED"
+		case "NVM_E_WRONG_BLOCK_ID" : "NVM_E_WRONG_BLOCK_ID"
+		case "NVM_E_VERIFY_FAILED" : "NVM_E_VERIFY_FAILED"
+		case "NVM_E_LOSS_OF_REDUNDANCY" : "NVM_E_LOSS_OF_REDUNDANCY"
+		case "NVM_E_QUEUE_OVERFLOW" : "NVM_E_QUEUE_OVERFLOW"
+		case "NVM_E_WRITE_PROTECTED" : "NVM_E_WRITE_PROTECTED"
+		case "WDGM_E_SUPERVISION" : "WDGM_E_SUPERVISION"
+		case "WDGM_E_SET_MODE" : "WDGM_E_SET_MODE"
+		default : "NONE"
+	}
+;
+
+// Check if filtertype X of Y is configured
+Boolean Ssfm_isXofYFilterType( Sum_Ssfm_Errh_GeneralEventsFilter f ):
+	f.sum_Ssfm_FilterType.contains("X_OF_Y_")
+;
+
+// Check if filtertype time based is configured
+Boolean Ssfm_IsTimeBasedFilterType( Sum_Ssfm_Errh_GeneralEventsFilter f ):
+	f.sum_Ssfm_FilterType.contains("TIMEBASED")
+;
+
+// Check if filtertype is None
+Boolean Ssfm_IsFilterTypeNone( Sum_Ssfm_Errh_GeneralEventsFilter f ):
+	f.sum_Ssfm_FilterType.contains("NONE")
+;
+
+/////////////////////// Virtual ECUs ////////////////////////////////////
+
+List[Sum_Ssfm_SerialData] Ssfm_GetControllerFaultAndRecoverySignals(Object controller):
+	controller.getProperty("ecu_serial_datas")
+	.select(ecu_serial_data | ecu_serial_data.sum_Ssfm_FaultDetectionUsage == "FaultAndRecovery")
+	.sum_Ssfm_SerialData_Ref.toSet().toList()
+;
+
+List[Sum_Ssfm_SerialData] Ssfm_GetControllerRecoveryOnlySignals(Object controller):
+	controller.getProperty("ecu_serial_datas")
+	.select(ecu_serial_data | ecu_serial_data.sum_Ssfm_FaultDetectionUsage == "RecoveryOnly")
+	.sum_Ssfm_SerialData_Ref.toSet().toList()
+;
+
+List[Sum_Ssfm_SerialData] Ssfm_GetControllerNonFaultAndRecoverySignals(Object controller):
+	controller.getProperty("ecu_serial_datas")
+	.select(ecu_serial_data | ecu_serial_data.sum_Ssfm_FaultDetectionUsage == "None")
+	.sum_Ssfm_SerialData_Ref.toSet().toList()
+;
+
+//////////////////// CGM /////////////////
+Boolean Ssfm_IsCGM(Sum_Ssfm_ECUInfo ECU):
+	ECU.sum_Ssfm_IsGateway == true
+;
+
+Boolean Ssfm_AnyCGM(List[Sum_Ssfm_ECUInfo] ECUs):
+	ECUs.exists(ecu | Ssfm_IsCGM(ecu))
+;
+
+Sum_Ssfm_ECUInfo Ssfm_GetCGM(List[Sum_Ssfm_ECUInfo] ECUs):
+	ECUs.select(ecu | Ssfm_IsCGM(ecu)).first()
+;
+
+String Ssfm_GetSerialDataChannelName(Sum_Ssfm_SerialData serialData):
+	if (serialData != null && serialData.sum_Ssfm_Channel_Ref != null) then
+		serialData.sum_Ssfm_Channel_Ref.shortName
+	else
+		""
+;
+
+List[String] Ssfm_GetECUTxChannelNames(Sum_Ssfm_ECUInfo ECU, List[String] accepted_routings):
+	ECU.sum_Ssfm_ECUInfo_SerialData
+	.select(ecu_signal | accepted_routings.contains(ecu_signal.sum_Ssfm_RoutingMethod)&& ecu_signal.sum_Ssfm_SerialData_Ref != null )
+	.sum_Ssfm_SerialData_Ref.Ssfm_GetSerialDataChannelName()
+	.toSet()
+;
+
+List[String] Ssfm_GetCGMTxChannelNames(List[Sum_Ssfm_ECUInfo] ECUs):
+	ECUs.reject(ecu | ecu.sum_Ssfm_IsGateway == true)
+	.sum_Ssfm_ECUInfo_SerialData
+	.select(ecu_serial_data | ecu_serial_data.sum_Ssfm_RoutingMethod == "SignalRouted" &&  ecu_serial_data.sum_Ssfm_SerialData_Ref != null)
+	.addAll(
+		ECUs.select(ecu | ecu.sum_Ssfm_IsGateway == true )
+		.sum_Ssfm_ECUInfo_SerialData
+	)
+	.sum_Ssfm_SerialData_Ref.Ssfm_GetSerialDataChannelName()
+	.toSet()
+;
+
+/*! Extract the LossOfComm Dem event with the target channel's name for an ECU */
+demEventParameter Ssfm_GetLossOfCommEvent(Sum_Ssfm_ECUInfo ecu, String channel_name):
+	let events = ecu.sum_Ssfm_ECUInfo_Event.select(binding | binding.sum_Ssfm_Channel_Ref != null && binding.sum_Ssfm_Channel_Ref.shortName == channel_name):
+			events.size > 0
+				? events.get(0).sum_Ssfm_LossOfComm_DemEvent_Ref
+				: null
+;
+
+/*! Extract the InvalidData Dem event with the target channel's name for an ECU */
+demEventParameter Ssfm_GetInvalidDataEvent(Sum_Ssfm_ECUInfo ecu, String channel_name):
+	let events = ecu.sum_Ssfm_ECUInfo_Event.select(binding |binding.sum_Ssfm_Channel_Ref != null && binding.sum_Ssfm_Channel_Ref.shortName == channel_name):
+	events.size > 0
+		? events.get(0).sum_Ssfm_InvalidData_DemEvent_Ref
+		: null
+;
+
+List[Object] Ssfm_GetControllerECUInfos(List[Sum_Ssfm_ECUInfo] ECUs, boolean ignore_direct_routed):
+	ECUs.collect(ecu |
+			let tx_channels = ecu.sum_Ssfm_IsGateway ? Ssfm_GetCGMTxChannelNames(ECUs) : Ssfm_GetECUTxChannelNames(ecu, {"Direct", "PDURouted", "SignalRouted"}):
+			switch{
+				case tx_channels.size == 1:(
+					let controller = new Object:
+					let tx_channel = tx_channels.toList().get(0):
+					controller.setProperty("name", ecu.shortName) ->
+					controller.setProperty("ecu_ref", ecu) ->
+					controller.setProperty("ecu_name", ecu.shortName) ->
+					controller.setProperty("channel_name", tx_channel) ->
+					controller.setProperty("is_CGM", Ssfm_IsCGM(ecu)) ->
+					controller.setProperty("loss_comm_id", ecu.sum_Ssfm_LossCommID != null ? ecu.sum_Ssfm_LossCommID : 0) ->
+					controller.setProperty("LcFA_DTC_id", Ssfm_GetLossOfCommEvent(ecu, tx_channel) != null ? Ssfm_GetLossOfCommEvent(ecu, tx_channel).demDTCRef.demDtcValue : 0) ->
+					controller.setProperty("invalid_data_DEM", Ssfm_GetInvalidDataEvent(ecu, tx_channel)) ->
+				// Only need the ECU name for LC timer
+					controller.setProperty("lc_ecu_timer_name", ecu.shortName) ->
+					controller.setProperty("node_loss_enable", ecu.sum_Ssfm_Errh_C_DTCProcess_SsmNodeLoss) ->
+					controller.setProperty("is_all_direct", !ecu.sum_Ssfm_ECUInfo_SerialData.exists(ecu_serial_data | ecu_serial_data.sum_Ssfm_RoutingMethod != "Direct")) ->
+					controller.setProperty("ecu_serial_datas",
+						ecu.sum_Ssfm_IsGateway ?
+							ECUs.reject(ecu | ecu.sum_Ssfm_IsGateway == true)
+							.sum_Ssfm_ECUInfo_SerialData
+							.select(ecu_serial_data | ecu_serial_data.sum_Ssfm_RoutingMethod == "SignalRouted")
+							.addAll(
+								ECUs.select(ecu | ecu.sum_Ssfm_IsGateway == true)
+								.sum_Ssfm_ECUInfo_SerialData
+							).toSet().toList()
+						:
+							ecu.sum_Ssfm_ECUInfo_SerialData
+							.select(ecu_serial_data |
+								(!ignore_direct_routed || (ignore_direct_routed && ecu_serial_data.sum_Ssfm_RoutingMethod != "Direct")) &&
+								ecu_serial_data.sum_Ssfm_RoutingMethod != "SignalRouted"
+							).toSet().toList()
+					) ->
+					controller
+				)
+				case tx_channels.size > 1:(
+					tx_channels.collect(tx_channel |
+						let controller = new Object:
+						controller.setProperty("name", ecu.shortName + "_" + tx_channel) ->
+						controller.setProperty("ecu_ref", ecu) ->
+						controller.setProperty("ecu_name", ecu.shortName) ->
+						controller.setProperty("channel_name", tx_channel) ->
+						controller.setProperty("is_CGM", Ssfm_IsCGM(ecu)) ->
+						controller.setProperty("loss_comm_id", ecu.sum_Ssfm_LossCommID != null ? ecu.sum_Ssfm_LossCommID : 0) ->
+						controller.setProperty("LcFA_DTC_id", Ssfm_GetLossOfCommEvent(ecu, tx_channel) != null ? Ssfm_GetLossOfCommEvent(ecu, tx_channel).demDTCRef.demDtcValue : 0) ->
+						controller.setProperty("invalid_data_DEM", Ssfm_GetInvalidDataEvent(ecu, tx_channel)) ->
+						// Only need the ECU name for LC timer
+						controller.setProperty("lc_ecu_timer_name", ecu.shortName) ->
+						controller.setProperty("node_loss_enable", ecu.sum_Ssfm_Errh_C_DTCProcess_SsmNodeLoss) ->
+						controller.setProperty("is_all_direct",
+							!ecu.sum_Ssfm_ECUInfo_SerialData
+							.select(ecu_serial_data | ecu_serial_data.sum_Ssfm_SerialData_Ref.Ssfm_GetSerialDataChannelName() == tx_channel)
+							.exists(ecu_serial_data | ecu_serial_data.sum_Ssfm_RoutingMethod != "Direct")
+							) ->
+						controller.setProperty("ecu_serial_datas",
+							ecu.sum_Ssfm_IsGateway ?
+								ECUs.reject(ecu | ecu.sum_Ssfm_IsGateway == true)
+								.sum_Ssfm_ECUInfo_SerialData
+								.select(ecu_serial_data | ecu_serial_data.sum_Ssfm_RoutingMethod == "SignalRouted" &&
+									ecu_serial_data.sum_Ssfm_SerialData_Ref.Ssfm_GetSerialDataChannelName() == tx_channel
+								)
+								.addAll(
+									ECUs.select(ecu | ecu.sum_Ssfm_IsGateway == true)
+									.sum_Ssfm_ECUInfo_SerialData
+									.select(ecu_serial_data | ecu_serial_data.sum_Ssfm_SerialData_Ref.Ssfm_GetSerialDataChannelName() == tx_channel)
+								).toSet().toList()
+							:
+								ecu.sum_Ssfm_ECUInfo_SerialData
+								.select(ecu_serial_data |
+									(!ignore_direct_routed || (ignore_direct_routed && ecu_serial_data.sum_Ssfm_RoutingMethod != "Direct")) &&
+									ecu_serial_data.sum_Ssfm_RoutingMethod != "SignalRouted" &&
+									ecu_serial_data.sum_Ssfm_SerialData_Ref.Ssfm_GetSerialDataChannelName() == tx_channel
+								).toSet().toList()
+						) ->
+						controller
+					)
+				)
+				default: {}
+			}
+	)
+	.flatten()
+;
+
+Boolean Ssfm_IsControllerServiceBased(Object controller):
+	// The controller is either service based or not. The forAll is not neccessary here.
+	if (controller.getProperty("ecu_serial_datas").size > 0 ) then
+		controller.getProperty("ecu_serial_datas").first().sum_Ssfm_SerialData_Ref.Ssfm_IsServiceBased()
+	else
+		false
+;
+
+List[Object] Ssfm_GetLoFDemEvents(SSFM cfg):
+	if ((cfg.eRootContainer.spm != null) && Ssfm_AnyServiceBased(cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)) then (
+		let LoF_dtc_low_byte = 8*16 + 7: // 0x87
+		cfg.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_TrgDvcInfo.sum_Ssfm_SpmTargetDevice_Ref.collect(e |
+			let dem_new = new Object:
+			dem_new.setProperty("name", e.shortName) ->
+			dem_new.setProperty("dtc_value", e.spmTrgDvcDtcBaseID.shiftLeftOperand(8) + LoF_dtc_low_byte) ->
+			dem_new
+		)
+	)
+	else (
+		{}
+	)
+;
+
+List[Integer] Ssfm_GetSpmTargetDeviceIPList(SpmTrgDvc device):
+	device.spmTrgDvcID.collect(ip |
+		let address_sections = ip.split("\\."):
+			address_sections.get(0).asInteger().shiftLeftOperand(3 * 8)
+			+ address_sections.get(1).asInteger().shiftLeftOperand(2 * 8)
+			+ address_sections.get(2).asInteger().shiftLeftOperand(1 * 8)
+			+ address_sections.get(3).asInteger()
+	)
+;
+
+List[Object] Ssfm_GetSerialDataControllers(List[Object] controllers, Sum_Ssfm_SerialData serialData):
+	controllers.select(controller | controller.getProperty("ecu_serial_datas").sum_Ssfm_SerialData_Ref.contains(serialData))
+;
+
+/* Returns the list of unique Rx PDU references of the controller's SerialDatas.
+These PDUs are the Tx PDUs of the given controller */
+List[String] Ssfm_GetControllerTxPDUs(Object controller):
+	controller.getProperty("ecu_serial_datas")
+	.sum_Ssfm_SerialData_Ref.Ssfm_GetSerialDataName()
+	.toSet().toList()
+	.remove(null)
+;
+
+/* Returns the list of SerialDatas coming from a specific pair of controller and PDU */
+List[Sum_Ssfm_SerialData] Ssfm_GetPDUControllerSerialDatas(Object controller, String PDU):
+	controller.getProperty("ecu_serial_datas").sum_Ssfm_SerialData_Ref
+	.select(serial_data |
+			serial_data.Ssfm_GetSerialDataName() == PDU
+	)
+;
+
+/* Returns true if the SerialData is provided by multiple controllers */
+Boolean Ssfm_HasMultipleProvider(List[Object] controllers, Sum_Ssfm_SerialData serialData):
+	(Ssfm_GetSerialDataControllers(controllers, serialData).size > 1)
+;
+
+/////////////////////////// Single Signal / Signal Group ////////////////////////////
+Boolean Ssfm_IsSingleSignal(Sum_Ssfm_SerialData serialData):
+	serialData.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalRefChoice != null
+;
+
+
+Boolean Ssfm_IsSignalGroup(Sum_Ssfm_SerialData serialData):
+	serialData.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalGroupRefChoice != null
+;
+
+List[Sum_Ssfm_SerialData] Ssfm_GetOnlySerialDatas(List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.select(e | Ssfm_IsSignalGroup(e))
+;
+
+String Ssfm_GetSerialDataName(Sum_Ssfm_SerialData serialData):
+	serialData.Ssfm_IsSingleSignal()
+		? serialData.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalRefChoice.rteISignalRef.split("/").last()
+		: serialData.sum_Ssfm_RteSerialData_Ref.rteSignal.rteSignalChoice.rteISignalGroupRefChoice.rteISignalGroupRef.split("/").last()
+;
+
+String Ssfm_GetSerialDataCallbackName(Sum_Ssfm_SerialData serialData):
+	serialData.sum_Ssfm_RteSerialData_Ref.rteCallBackFunction
+;
+
+
+/////////////////////// SSFM - EERH Key Slot Verify Errors ////////////////////////////////////
+Integer Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(Sum_Ssfm_ConfigSet cfg):
+	if (cfg.sum_Ssfm_ErrorFilter != null)
+	then
+		(cfg.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter != null ? cfg.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_Errh_KeySlotNumber.size : 0)
+	else
+    	0
+;
+
+
+//////////////////////////// Service Based Traffic /////////////////////////////////
+Boolean Ssfm_IsServiceBased(Sum_Ssfm_SerialData serialData):
+	if (serialData != null) then (serialData.sum_Ssfm_SDService_Ref != null)
+	else false
+;
+
+Boolean Ssfm_AnyServiceBased(List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.exists(e | e.Ssfm_IsServiceBased())
+;
+
+Integer Ssfm_NumOfServiceBased(List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.select(e | e.Ssfm_IsServiceBased()).size
+;
+
+//////////////////////////// Non-Discoverable Services /////////////////////////////////
+/* Returns true if the SerialData represents a non-discoverable SOME/IP service */
+Boolean Ssfm_IsNonDiscoverableService(Sum_Ssfm_SerialData serialData):
+	if (serialData != null && serialData.sum_Ssfm_IsNonDiscoverable != null) then
+		serialData.sum_Ssfm_IsNonDiscoverable
+	else
+		false
+;
+
+/* Returns true if any SerialData in the list is a non-discoverable service */
+Boolean Ssfm_AnyNonDiscoverableService(List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.exists(e | e.Ssfm_IsNonDiscoverableService())
+;
+
+/* Returns the count of non-discoverable services in a list */
+Integer Ssfm_NumOfNonDiscoverableServices(List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.select(e | e.Ssfm_IsNonDiscoverableService()).size
+;
+
+Integer Ssfm_GetServiceID(Sum_Ssfm_SerialData serialData):
+	if (serialData.sum_Ssfm_SDService_Ref.metaType.toString().endsWith("SdClientService")) then
+		serialData.sum_Ssfm_SDService_Ref.sdClientServiceId
+	else
+		serialData.sum_Ssfm_SDService_Ref.sdServerServiceId
+;
+
+/* Returns the instance id of a given service based serial data */
+Integer Ssfm_GetServiceInstanceID(Sum_Ssfm_General cfg, Sum_Ssfm_SerialData serialData):
+	if (serialData.sum_Ssfm_SDService_Ref.metaType.toString().endsWith("SdClientService")) then
+		serialData.sum_Ssfm_SDService_Ref.sdClientServiceInstanceId
+	else
+		serialData.sum_Ssfm_SDService_Ref.sdServerServiceInstanceId
+;
+
+/* Returns the Major Version of a given service based serial data */
+Integer Ssfm_GetServiceMajorVersion(Sum_Ssfm_General cfg, Sum_Ssfm_SerialData serialData):
+	if (serialData.sum_Ssfm_SDService_Ref.metaType.toString().endsWith("SdClientService")) then
+		serialData.sum_Ssfm_SDService_Ref.sdClientServiceMajorVersion
+	else
+		serialData.sum_Ssfm_SDService_Ref.sdServerServiceMajorVersion
+;
+
+
+////////////////////// Single Port FxI/FxFA /////////////////////////////
+Boolean Ssfm_IsSinglePortSupportEnabled(Sum_Ssfm_General general_cfg):
+	(general_cfg.sum_Ssfm_FxI_FxFA_SinglePortsSupport == true)
+;
+
+String Ssfm_GetFxISourceVariable(Sum_Ssfm_SerialData serialData):
+	if (serialData.Ssfm_IsE2EConfigured() == true) then (
+		if (serialData.Ssfm_IsE2EProfileGM01() == true) then (
+			"FoI"
+		)
+		else (
+			"FsI"
+		)
+	)
+	else if (serialData.Ssfm_IsAuthenticated() == true) then (
+		"FpI"
+	)
+	else
+		""
+;
+
+Boolean Ssfm_IsFxI(Sum_Ssfm_SerialData serialData):
+	(Ssfm_IsE2EConfigured(serialData) == true) || (Ssfm_IsAuthenticated(serialData) == true)
+;
+
+Boolean Ssfm_AnyFxI(List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.exists(e | e.Ssfm_IsFxI())
+;
+
+Integer Ssfm_GetIndexOfOneFxI(List[Sum_Ssfm_SerialData] serialDatas):
+	if (Ssfm_AnyFxI(serialDatas) == true) then
+	(
+		0.upTo(serialDatas.size-1).select(e|Ssfm_IsFxI(serialDatas.get(e))==true).get(0)
+	)
+	else
+		-1
+;
+
+
+///////////// General Event Filter Handling //////////////
+/* The order of features having debouncer:
+	1. Run Crank
+	2. ECU Node Loss
+	3. Fault Indication
+	4. BSW errors Manager
+	5. Slave Info Error
+*/
+Integer Ssfm_GetNumOfDebouncingFeatures(SSFM cfg):
+	(Ssfm_NumOfRunCrankDebouncers(cfg.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors) != 0 ? 1 : 0) +
+	(Ssfm_IsAnyAuthenticated(cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData) ? 1 : 0) +
+	(Ssfm_IsAnyContOp(cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData) ? 1 : 0) +
+	(Ssfm_IsAnyProtected(cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData) ? 1 : 0) +
+	(Ssfm_IsAnySafety(cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData) ? 1 : 0) +
+	((cfg.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_BswError.size)!= 0 ? 1 : 0) +
+	(Ssfm_NumOfLNMSlaveInfoError(cfg.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_IEF") > 0 ? 1 : 0) +
+	(Ssfm_NumOfLNMSlaveInfoError(cfg.sum_Ssfm_ConfigSet, "SSFM_LNM_RESPONDER_MISSING_MSG") > 0 ? 1 : 0) +
+	((Ssfm_U198C_49_IsCounted(cfg))!= 0 ? 1 : 0) +
+	((Ssfm_U198C_54_IsCounted(cfg))!= 0 ? 1 : 0) +
+	((Ssfm_U19A6_57_IsCounted(cfg))!= 0 ? 1 : 0) +
+	((Ssfm_U198C_8A_IsCounted(cfg))!= 0 ? 1 : 0) +
+	1 // Node Loss always present (maybe with 0 controllers and 0 debouncers)
+;
+
+Integer Ssfm_NumOfRunCrankDebouncers(Sum_Ssfm_Errh_SUSDErrors SUSDError):
+	Ssfm_Get_SusdErrors_RunCrankHigh(SUSDError)
+	+ Ssfm_Get_SusdErrors_RunCrankLow(SUSDError)
+;
+Integer Ssfm_NumOfECUNodeDebouncers(List[Sum_Ssfm_ECUInfo] ECUs):
+	Ssfm_GetControllerECUInfos(ECUs, false).size
+;
+Integer Ssfm_NumOfFaultIndicationDebouncers(List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.select(e | e.sum_Ssfm_FcI_Debouncer != null).size
+	+ 	serialDatas.select(e | e.sum_Ssfm_FoI_Debouncer != null).size
+	+ 	serialDatas.select(e | e.sum_Ssfm_FpI_Debouncer != null).size
+	+ 	serialDatas.select(e | e.sum_Ssfm_FsI_Debouncer != null).size
+;
+
+/*							U198C 49						*/
+Integer Ssfm_U198C_49_IsCounted(SSFM cfg):
+
+   if (
+        cfg != null &&
+        cfg.sum_Ssfm_ConfigSet != null &&
+        Sum_Ssfm_Errh_U198C_49_IsValid(cfg.sum_Ssfm_ConfigSet)
+    ) then (
+        1
+    )
+    else (
+        0
+    )
+;
+
+/*							U198C 54						*/
+Integer Ssfm_U198C_54_IsCounted(SSFM cfg):
+
+   if (
+        cfg != null &&
+        cfg.sum_Ssfm_ConfigSet != null &&
+        Sum_Ssfm_Errh_U198C_54_IsValid(cfg.sum_Ssfm_ConfigSet)
+    ) then (
+        1
+    )
+    else (
+        0
+    )
+;
+
+/*							U19A6 57						*/
+Integer Ssfm_U19A6_57_IsCounted(SSFM cfg):
+
+   if (
+        cfg != null &&
+        cfg.sum_Ssfm_ConfigSet != null &&
+        cfg.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers != null &&
+        cfg.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors != null &&
+        cfg.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors.sum_Ssfm_Errh_U19A6_57_PhyECUInvIncComp != null &&
+        cfg.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SrvcMgrErrors.sum_Ssfm_Errh_U19A6_57_PhyECUInvIncComp.sum_Ssfm_Errh_U19A6_57_DTCProcess == true
+    ) then (
+        1
+    )
+    else (
+        0
+    )
+;
+
+/*							U198C 8A						*/
+Integer Ssfm_U198C_8A_IsCounted(SSFM cfg):
+
+   if (
+        cfg != null &&
+        cfg.sum_Ssfm_ConfigSet != null &&
+        Sum_Ssfm_Errh_U198C_8A_IsValid(cfg.sum_Ssfm_ConfigSet)
+    ) then (
+        1
+    )
+    else (
+        0
+    )
+;
+
+Integer Ssfm_NumOfAllDebouncers(SSFM cfg):
+	Ssfm_NumOfRunCrankDebouncers(cfg.sum_Ssfm_ConfigSet.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_SUSDErrors)
+	+ Ssfm_NumOfECUNodeDebouncers(cfg.sum_Ssfm_ConfigSet.sum_Ssfm_ECUInfo)
+	+ Ssfm_NumOfFaultIndicationDebouncers(cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)
+;
+List[Object] Ssfm_Get_AllServiceBasedSerialDatas_InvalidDataDemEvents(SSFM cfg):
+	if ((cfg.eRootContainer.spm != null) && Ssfm_AnyServiceBased(cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)) then (
+		let invalid_data_dtc_low_byte = 8*16+3: // 0x83
+		cfg.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_TrgDvcInfo.sum_Ssfm_SpmTargetDevice_Ref.collect(e |
+			let dem_new = new Object:
+			dem_new.setProperty("name", e.shortName) ->
+			dem_new.setProperty("dtc_value", e.spmTrgDvcDtcBaseID.shiftLeftOperand(8) + invalid_data_dtc_low_byte) ->
+			dem_new
+		)
+	)
+	else (
+		{}
+	)
+;
+
+/* Returns all the possible DemEvent containers associated to all com-based SerialDatas (for multiple provider usecase) */
+List[demEventParameter] Ssfm_Get_AllComBasedSerialData_InvalidDataDemEvents(List[Object] controllers, List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas
+		.select(serialData | !serialData.Ssfm_IsServiceBased())
+		.collect(serialData | Ssfm_Get_ComBasedSerialData_InvalidDataDemEvents(controllers, serialData))
+		.flatten()
+		.toSet()
+		.toList()
+;
+
+/* Returns all the possible DemEvent containers associated to a com-based SerialData (for multiple provider usecase) */
+List[demEventParameter] Ssfm_Get_ComBasedSerialData_InvalidDataDemEvents(List[Object] controllers, Sum_Ssfm_SerialData serialData):
+	controllers
+        .select(controller | controller.getProperty("ecu_serial_datas").sum_Ssfm_SerialData_Ref.contains(serialData))
+        .collect(controller | controller.getProperty("invalid_data_DEM"))
+        .select(demEvent | demEvent != null)
+        .toSet()
+        .toList()
+;
+
+/* Returns True if LIN channel is configured for serialData */
+Boolean Ssfm_IsLINChannelCfg(Sum_Ssfm_SerialData serialData):
+	(serialData.sum_Ssfm_Channel_Ref != null
+	&& serialData.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref != null
+	&& serialData.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMBusType == "COMM_BUS_TYPE_LIN")
+;
+
+/* Get the number of Fxl DemEvent configured */
+Integer Ssfm_Get_SizeofFxl_DemEvent(List[Object] controllers, SSFM cfg):
+	Ssfm_Get_AllComBasedSerialData_InvalidDataDemEvents(controllers, cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData).size
+	+ Ssfm_Get_AllServiceBasedSerialDatas_InvalidDataDemEvents(cfg).size
+;
+
+/* Get the number of slave info error configured */
+Integer Ssfm_NumOfLNMSlaveInfoError(Sum_Ssfm_ConfigSet cfg, String error_type):
+	if (cfg.eRootContainer.lNM != null) && cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors != null && cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError.select(e|e.sum_Ssfm_LNM_ResponderInfoErrorType == error_type) != null then
+		(
+			cfg
+			.sum_Ssfm_ErrorsHandlers
+			.sum_Ssfm_Errh_LNMErrors
+			.sum_Ssfm_LNM_ResponderInfoError.select(e|e.sum_Ssfm_LNM_ResponderInfoErrorType == error_type
+			&& !e.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LINResponderOBD_Supported).size
+		)
+	else
+		0
+;
+
+/* Check if there is at least one Sum_Ssfm_Errh_LNMErrors is configured */
+boolean Ssfm_IsLNM_SlaveInfoError_Configured(Sum_Ssfm_ConfigSet cfg):
+	(((cfg.sum_Ssfm_ErrorsHandlers != null)
+	&& (cfg.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors != null)
+	&& Ssfm_NumOfLNMSlaveInfoError(cfg, "SSFM_LNM_RESPONDER_IEF") != 0)
+	|| Ssfm_NumOfLNMSlaveInfoError(cfg, "SSFM_LNM_RESPONDER_MISSING_MSG") != 0) ? true : false
+;
+
+/* Get all IeF Dem Events configured */
+List[demEventParameter] Ssfm_GetLinIefDemEvents(List[Sum_Ssfm_LNM_ResponderInfoError] SlaveInfoError):
+	SlaveInfoError.select(e|e.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_IEF")
+	.sum_Ssfm_LINInfo_Ref.select(e|!e.sum_Ssfm_LINResponderOBD_Supported)
+	.sum_Ssfm_LINInfo_Event
+	.sum_Ssfm_IeF_DemEvent_Ref
+	.toSet()
+	.remove(null)
+	.toList()
+;
+
+// Returns True if the given SerialDataRef is associated with Sum_Ssfm_LNM_ResponderInfoError
+Boolean Ssfm_IsLINSlaveAssociatedWithSerialData(Sum_Ssfm_LNM_ResponderInfoError SlaveInfoError, Sum_Ssfm_SerialData serialData):
+	SlaveInfoError
+	.sum_Ssfm_LINInfo_Ref
+	.sum_Ssfm_LINInfo_SerialData
+	.sum_Ssfm_SerialData_Ref
+	.exists(e|e.shortName == serialData.shortName)
+;
+
+
+
+/* Get List of LIN Responder configured */
+List[Sum_Ssfm_LINInfo] Ssfm_Get_CfgLinResponder(Sum_Ssfm_ConfigSet cfg_set):
+	if (cfg_set.sum_Ssfm_GroupInfo != null && cfg_set.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo != null) then
+	cfg_set
+	.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo
+	.toSet()
+	else (
+		{}
+	)
+;
+/* Get LNM Error type from Sum_Ssfm_LNM_ResponderInfoError configured */
+List[Sum_Ssfm_LNM_ResponderInfoError] Ssfm_Get_LNMError_LinSlaveInfo(Sum_Ssfm_ConfigSet cfg_set, String error_type):
+	if (cfg_set.sum_Ssfm_ErrorsHandlers != null && cfg_set.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors != null) then
+	cfg_set
+	.sum_Ssfm_ErrorsHandlers
+	.sum_Ssfm_Errh_LNMErrors
+	.sum_Ssfm_LNM_ResponderInfoError
+	.select(e|e.sum_Ssfm_LNM_ResponderInfoErrorType == error_type && !e.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LINResponderOBD_Supported)
+	else (
+		{}
+	)
+;
+
+/* Get all Sum_Ssfm_SerialData configured in IeF Sum_Ssfm_LNM_ResponderInfoError */
+List[Sum_Ssfm_SerialData] Ssfm_GetLinSlaveSignal(List[Sum_Ssfm_LNM_ResponderInfoError] SlaveInfoError):
+	SlaveInfoError
+	.sum_Ssfm_LINInfo_Ref.select(e|!e.sum_Ssfm_LINResponderOBD_Supported)
+	.sum_Ssfm_LINInfo_SerialData
+	.sum_Ssfm_SerialData_Ref
+	.sortBy(e|e.shortName)
+	.toSet()
+	.toList()
+;
+
+/* Get the index of Sum_Ssfm_LINInfo that configured sum_Ssfm_SerialData_Ref matched to the input one*/
+Integer Ssfm_Get_InvalidLINDemEvents_index(Sum_Ssfm_LINInfo lin_info, Sum_Ssfm_SerialData serialData):
+	if lin_info.sum_Ssfm_LINInfo_SerialData.exists(e|e.sum_Ssfm_SerialData_Ref.shortName == serialData.shortName) then
+		(
+			lin_info.parent.sum_Ssfm_LINInfo.indexOf(lin_info)
+		)
+	else
+		-1
+;
+
+/* Returns the list of LIN serial datas associated with a serial data configured in Sum_Ssfm_LINInfo */
+Sum_Ssfm_LINInfo Ssfm_Get_LINInfoOfSerialData(List[Sum_Ssfm_LINInfo] lin_info, Sum_Ssfm_SerialData serialData):
+	 lin_info
+	 .select(e|e.sum_Ssfm_LINInfo_SerialData.sum_Ssfm_SerialData_Ref.contains(serialData))
+	 .first()
+;
+
+
+/* Returns the list of Invalid Dem Event of LIN serial datas configured in Sum_Ssfm_LINInfo */
+List[demEventParameter] Ssfm_Get_InvalidLINDemEvents(List[Sum_Ssfm_LINInfo] info):
+	info
+	.sum_Ssfm_LINInfo_Event
+	.select(e|e.sum_Ssfm_InvalidData_DemEvent_Ref != null)
+	.sum_Ssfm_InvalidData_DemEvent_Ref
+	.toSet()
+	.toList()
+;
+
+/* Check if the serial data is configured in IeF Sum_Ssfm_LNM_ResponderInfoError */
+Boolean Ssfm_IsLinSignalInIeFSlaveInfo(List[Sum_Ssfm_LNM_ResponderInfoError] SlaveInfoError, Sum_Ssfm_SerialData Serialdata):
+	SlaveInfoError
+	.select(e|e.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_IEF")
+	.sum_Ssfm_LINInfo_Ref
+	.select(e|!e.sum_Ssfm_LINResponderOBD_Supported)
+	.sum_Ssfm_LINInfo_SerialData
+	.exists(e|e.sum_Ssfm_SerialData_Ref == Serialdata)
+;
+
+/* Check if there is at least one Sum_Ssfm_Errh_LNMErrors is configured */
+boolean Ssfm_IsAnyRefToLINInfo(List[Sum_Ssfm_LNM_ResponderInfoError] slaveinfo,Sum_Ssfm_LINInfo info):
+	slaveinfo
+	.exists(e|e.sum_Ssfm_LINInfo_Ref == info)
+;
+
+/* Check if any timebased filter configured in Sum_Ssfm_LNM_ResponderInfoError */
+Boolean Ssfm_IsAnyTimeBasedFilterInLinSlaveError(List[Sum_Ssfm_LNM_ResponderInfoError] SlaveInfoError):
+	SlaveInfoError
+	.sum_Ssfm_LNMResponderErr_EventFilter_Ref.select(e|e != null)
+	.exists(e|e.sum_Ssfm_FilterType
+	.contains("TIMEBASED"))
+;
+
+/* Returns the list of serial datas configured under a LIN Channel */
+List[Sum_Ssfm_SerialData] Ssfm_Get_AllLINSerialDatas(List[Sum_Ssfm_SerialData] serial_datas):
+	serial_datas.select(e | e.Ssfm_IsLINChannelCfg())
+;
+
+/* Returns true if there is at least one LIN serial data */
+Boolean SSFM_AnyLINSerialData(List[Sum_Ssfm_LINInfo] lin_info):
+	Ssfm_Get_AllLINSerialDatas(lin_info).size > 0
+;
+
+/* Returns a List of all LIN channel IDs */
+List[Integer] Ssfm_GetAllLINChannelIDs(List[Sum_Ssfm_SerialData] serial_datas):
+	serial_datas
+	.select(e |
+		e.sum_Ssfm_Channel_Ref != null &&
+		e.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref != null &&
+		e.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMBusType == "COMM_BUS_TYPE_LIN"
+	)
+	.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMChannelId
+	.toSet()
+	.toList()
+;
+
+List[Sum_Ssfm_SerialData] Ssfm_GetSerialDatasOfLINChannel(List[Sum_Ssfm_SerialData] serial_datas, Integer channel_id):
+	serial_datas
+	.select(e |
+		e.sum_Ssfm_Channel_Ref != null &&
+		e.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref != null &&
+		e.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMBusType == "COMM_BUS_TYPE_LIN" &&
+		e.sum_Ssfm_Channel_Ref.sum_Ssfm_Channel_ID_Ref.comMChannelId == channel_id
+	)
+;
+
+Integer Ssfm_GetLINSerialDataMSCLMask(List[Sum_Ssfm_LINInfo] lin_infos, Sum_Ssfm_SerialData serial_data):
+	let lin_info = Ssfm_Get_LINInfoOfSerialData(lin_infos, serial_data):
+		lin_info.sum_Ssfm_LNM_ResponderInfo_Ref.lNM_MSCL_ByteIndex == "MSCL_BYTE_1" ?
+			1.shiftLeftOperand(lin_info.sum_Ssfm_LNM_ResponderInfo_Ref.lNM_MSCL_BitIndex) :
+			1.shiftLeftOperand(8 + lin_info.sum_Ssfm_LNM_ResponderInfo_Ref.lNM_MSCL_BitIndex)
+;
+
+/* Check if timebased filter configured in Sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus */
+Integer Ssfm_IsTimeBasedFilterInRunCrankHigh(Sum_Ssfm_Errh_SUSDErrors SUSDError):
+	if (Ssfm_IsSUSDErrors_Configured(SUSDError.parent.parent) == true && Ssfm_IsRunCrankHighDiagStatus_Configured(SUSDError.parent.parent)) then
+	(
+		SUSDError.sum_Ssfm_Errh_SUSD_RunCrankHIGH_DiagStatus
+		.sum_Ssfm_Errh_SUSD_RCHigh_EventFilter_Ref
+		.sum_Ssfm_FilterType
+		.contains("TIMEBASED") ? 1 : 0
+	)
+	else
+		0
+;
+
+/* Check if timebased filter configured in Sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus */
+Integer Ssfm_IsTimeBasedFilterInRunCrankLow(Sum_Ssfm_Errh_SUSDErrors SUSDError):
+	if (Ssfm_IsSUSDErrors_Configured(SUSDError.parent.parent) == true && Ssfm_IsRunCrankLowDiagStatus_Configured(SUSDError.parent.parent)) then
+	(
+		SUSDError.sum_Ssfm_Errh_SUSD_RunCrankLOW_DiagStatus
+		.sum_Ssfm_Errh_SUSD_RCLow_EventFilter_Ref
+		.sum_Ssfm_FilterType
+		.contains("TIMEBASED") ? 1 : 0
+	)
+	else
+		0
+;
+
+/* Check if any timebased filter configured in Sum_Ssfm_Errh_SUSDErrors  */
+Integer Ssfm_IsTimeBasedFilterInSUSDError(Sum_Ssfm_Errh_SUSDErrors SUSDError):
+	Ssfm_IsTimeBasedFilterInRunCrankHigh(SUSDError) + Ssfm_IsTimeBasedFilterInRunCrankLow(SUSDError)
+;
+
+// Check if sum_Ssfm_GetDTCStatus_DemEvent_Ref is configured for the KeySlots
+boolean Ssfm_IsKeySlotErrEvent_Configured(Sum_Ssfm_ConfigSet cfg):
+	(cfg.sum_Ssfm_ErrorFilter.sum_Ssfm_Errh_KeySlotVerifyFilter.sum_Ssfm_GetDTCStatus_DemEvent_Ref  != null) ? true : false
+;
+
+///////////////////////////////////////////LNM Missing Message Error//////////////////////////////////////
+/* Get all Missing Message Dem Events configured */
+List[demEventParameter] Ssfm_GetLinMissingMsgDemEvents(List[Sum_Ssfm_LNM_ResponderInfoError] SlaveInfoError):
+	SlaveInfoError.select(e|e.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_MISSING_MSG")
+	.sum_Ssfm_LINInfo_Ref.select(e|!e.sum_Ssfm_LINResponderOBD_Supported)
+	.sum_Ssfm_LINInfo_Event
+	.sum_Ssfm_MissingMsg_DemEvent_Ref
+	.toSet()
+	.remove(null)
+	.toList()
+;
+
+/* Get all Sum_Ssfm_SerialData configured Sum_Ssfm_LINInfo_Ref */
+List[Sum_Ssfm_SerialData] Ssfm_GetAllLinSlaveSignal(List[Sum_Ssfm_LINInfo_Ref] SlaveInfo):
+	SlaveInfo
+	.sum_Ssfm_LINInfo_SerialData
+	.sum_Ssfm_SerialData_Ref
+	.sortBy(e|e.shortName)
+	.toSet()
+	.toList()
+;
+
+/* Returns True if the given SerialDataRef is associated with Sum_Ssfm_LINInfo */
+Boolean Ssfm_IsLINSlaveAssociated(Sum_Ssfm_LINInfo lininfo, Sum_Ssfm_SerialData serialData):
+	lininfo
+	.sum_Ssfm_LINInfo_SerialData
+	.exists(e|e.sum_Ssfm_SerialData_Ref == serialData)
+;
+
+/* Get the index of Sum_Ssfm_LINInfo that configured sum_Ssfm_SerialData_Ref matched to the input one*/
+Integer Ssfm_Get_LNMError_LinResponder_index(Sum_Ssfm_LNM_ResponderInfoError lin_info, String error_type):
+	if lin_info.parent.parent.parent.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo.exists(e|e == lin_info.sum_Ssfm_LINInfo_Ref && lin_info.sum_Ssfm_LNM_ResponderInfoErrorType == error_type) then
+		(
+			lin_info.parent.parent.parent.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo.indexOf(lin_info.sum_Ssfm_LINInfo_Ref)
+		)
+	else
+		-1
+;
+
+/* Returns True if the given SerialDataRef is associated with Sum_Ssfm_LINInfo and the LNM error type */
+Boolean Ssfm_IsAnyErrorAssociatedWithLinInfo(Sum_Ssfm_LINInfo lininfo, String error_type):
+	lininfo
+	.parent.parent
+	.sum_Ssfm_ErrorsHandlers
+	.sum_Ssfm_Errh_LNMErrors
+	.sum_Ssfm_LNM_ResponderInfoError
+	.exists(e|(e.sum_Ssfm_LINInfo_Ref.shortName == lininfo.shortName)&&e.sum_Ssfm_LNM_ResponderInfoErrorType == error_type && !e.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LINResponderOBD_Supported)
+
+;
+
+/* Returns the index of first configured IeF Lin Responder */
+Integer Ssfm_Get_FirstCfgIeFLinResponder_index(Sum_Ssfm_ConfigSet cfg):
+	if Ssfm_IsLNM_SlaveInfoError_Configured(cfg) then (
+		Ssfm_Get_LNMError_LinResponder_index(Ssfm_Get_LNMError_LinSlaveInfo(cfg, "SSFM_LNM_RESPONDER_IEF").first(), "SSFM_LNM_RESPONDER_IEF")
+	)
+	else
+		0
+;
+
+/* Returns the list of IeF Lin Responder which are the same Dem Event Ref */
+List[Sum_Ssfm_LNM_ResponderInfoError] Ssfm_Get_SameDemEventIeF(Sum_Ssfm_LNM_ResponderInfoError slaveinfo):
+	slaveinfo
+	.parent
+	.sum_Ssfm_LNM_ResponderInfoError
+	.select(e|e.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_IEF"
+	&& !e.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LINResponderOBD_Supported
+	&& e.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LINInfo_Event.sum_Ssfm_IeF_DemEvent_Ref == slaveinfo.sum_Ssfm_LINInfo_Ref.sum_Ssfm_LINInfo_Event.sum_Ssfm_IeF_DemEvent_Ref)
+	.toList()
+;
+
+/* Get all missing message Dem Events configured */
+List[demEventParameter] Ssfm_GetLinMissingMsgDemEvents(List[Sum_Ssfm_LNM_ResponderInfoError] SlaveInfoError):
+	SlaveInfoError.select(e|e.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_MISSING_MSG")
+	.sum_Ssfm_LINInfo_Ref.select(e|!e.sum_Ssfm_LINResponderOBD_Supported)
+	.sum_Ssfm_LINInfo_Event
+	.sum_Ssfm_MissingMsg_DemEvent_Ref
+	.toSet()
+	.remove(null)
+	.toList()
+;
+
+/* Check if the serialdata associated to the LIN responder with missing message */
+Boolean sum_Ssfm_CheckSerialDataAssociatedMissingMsgCfg(Sum_Ssfm_SerialData serialData):
+	if (serialData.eRootContainer.lNM != null) then (
+		serialData
+		.parent
+		.sum_Ssfm_ErrorsHandlers.sum_Ssfm_Errh_LNMErrors.sum_Ssfm_LNM_ResponderInfoError.select(e|e.sum_Ssfm_LNM_ResponderInfoErrorType == "SSFM_LNM_RESPONDER_MISSING_MSG")
+		.sum_Ssfm_LINInfo_Ref.exists(e|e.sum_Ssfm_LINInfo_SerialData.sum_Ssfm_SerialData_Ref.contains(serialData))
+		)
+	else
+		false
+;
+
+/* Returns the index of Sum_Ssfm_LINInfo associated with LIN serial datas */
+Integer Ssfm_Get_SerialDataAssociatedLINInfo(Sum_Ssfm_SerialData serialData):
+	serialData
+	.parent
+	.sum_Ssfm_GroupInfo
+	.sum_Ssfm_LINInfo
+	.indexOf(serialData.parent.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo.select(e|e.sum_Ssfm_LINInfo_SerialData.sum_Ssfm_SerialData_Ref.contains(serialData))
+	.first())
+;
+
+Boolean IsDemFF_UXXXX_87_Required(Sum_Ssfm_GroupInfo cfg):
+	(cfg.sum_Ssfm_ECUInfo.sum_Ssfm_ECUInfo_Event.size > 0 )
+;
+
+Boolean IsDemFF_U19A3_8A_Required(Sum_Ssfm_ErrorFilter cfg):
+	((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(cfg.parent) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(cfg.parent) == true)) && (Ssfm_DID_E0BB_IsConfigured(cfg.parent.eRootContainer.sSFM))
+;
+
+///////////////////////////// Quality of Service ///////////////////////////////
+
+/* Returns true if QoS consolidation feature is globally enabled in SSFM configuration */
+Boolean Ssfm_IsQoSEnabled(SSFM cfg): 
+	cfg.sum_Ssfm_General.sSFM_QoS_Enabled
+;
+
+/* Returns true if there is at least one SerialData with QoS configured */
+Boolean Ssfm_AnyQoSConfigured(SSFM cfg):
+    cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData
+       .exists(sd | sd.sum_Ssfm_QoS_Ref != null && sd.sum_Ssfm_QoS_Ref.size > 0)
+;
+
+/* path refer to QosRef */
+String Ssfm_GetImplementationDataTypeElementName(String path):
+	path.toString().split("/").last()
+;
+
+/* path refer to QosRef */
+String Ssfm_GetImplementationDataTypeName(String path):
+	Ssfm_GetImplementationDataTypePath(path).split("/").last()
+;
+
+String Ssfm_GetImplementationDataTypePath(String path):
+	path.toString().replaceAll("/"+Ssfm_GetImplementationDataTypeElementName(path),"")
+;
+
+boolean Ssfm_GetSerialDataHasQoSRef(Sum_Ssfm_SerialData serialData):
+	serialData.sum_Ssfm_QoS_Ref != null && serialData.sum_Ssfm_QoS_Ref.size > 0
+;
+
+/* Return ALL SerialData with Sum_Ssfm_QoS_Ref configured */
+List[Sum_Ssfm_SerialData] Ssfm_GetAllSerialDataWithQoS(SSFM cfg):
+    cfg.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData
+       .select(sd | sd.sum_Ssfm_QoS_Ref != null && sd.sum_Ssfm_QoS_Ref.size > 0)
+;
+
+/* Return ALL QoS ImplementationDataType paths (one per SerialData) 
+ * Since each SerialData has the same data type for all its QoS refs,
+ * we only need to take the first QoS ref from each SerialData
+ */
+List[String] Ssfm_GetAllQoSImplementationDataTypePaths(SSFM cfg):
+    Ssfm_GetAllSerialDataWithQoS(cfg)
+       .collect(sd | Ssfm_GetImplementationDataTypePath(sd.sum_Ssfm_QoS_Ref.first()))
+       .toList()
+;
+
+/* Check if all QoS ImplementationDataType paths are unique (no duplicates)
+ * Returns true if each data type is used by only one SerialData
+ */
+Boolean Ssfm_AllQoSDataTypesAreUnique(SSFM cfg):
+    let allPaths = Ssfm_GetAllQoSImplementationDataTypePaths(cfg):
+    allPaths.size == allPaths.toSet().size
+;
+
+/* Return the QoS ImplementationDataType path for a specific SerialData
+ * Since all QoS refs in a SerialData have the same type, return the first one
+ */
+String Ssfm_GetQoSImplementationDataTypePathForSerialData(Sum_Ssfm_SerialData serialData):
+    serialData.sum_Ssfm_QoS_Ref != null && serialData.sum_Ssfm_QoS_Ref.size > 0 ?
+        Ssfm_GetImplementationDataTypePath(serialData.sum_Ssfm_QoS_Ref.first()) :
+        null
+;
+
+/* Check if all QoS references in a SerialData belong to the same ImplementationDataType
+ * Returns true if all QoS refs have the same data type path
+ */
+Boolean Ssfm_AllQoSRefsHaveSameDataType(Sum_Ssfm_SerialData serialData):
+    if (serialData.sum_Ssfm_QoS_Ref == null || serialData.sum_Ssfm_QoS_Ref.size == 0) then
+        true
+    else if (serialData.sum_Ssfm_QoS_Ref.size == 1) then
+        true
+    else
+        let allPaths = serialData.sum_Ssfm_QoS_Ref.collect(ref | Ssfm_GetImplementationDataTypePath(ref)):
+        allPaths.toSet().size == 1
+;
+
+///////////////////////////// Non-Discoverable SOME/IP Services //////////////////////
+
+/* Returns true if the SerialData represents a non-discoverable SOME/IP service
+ * Non-discoverable services are always available, bypass partial network conditions,
+ * and only report Security and Safety diagnostics.
+ */
+Boolean Ssfm_IsNonDiscoverableService(Sum_Ssfm_SerialData serialData):
+	if (serialData != null && serialData.sum_Ssfm_IsNonDiscoverable != null) then
+		serialData.sum_Ssfm_IsNonDiscoverable
+	else
+		false
+;
+
+/* Returns true if any SerialData in the list is a non-discoverable service */
+Boolean Ssfm_AnyNonDiscoverableService(List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.exists(e | e.Ssfm_IsNonDiscoverableService())
+;
+
+/* Returns the count of non-discoverable services in a list */
+Integer Ssfm_NumOfNonDiscoverableServices(List[Sum_Ssfm_SerialData] serialDatas):
+	serialDatas.select(e | e.Ssfm_IsNonDiscoverableService()).size
+;
+

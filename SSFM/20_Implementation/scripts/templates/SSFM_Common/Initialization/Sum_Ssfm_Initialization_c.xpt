@@ -1,0 +1,264 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«EXTENSION Util::Sum_Ssfm_DID_Utils»
+«EXTENSION Util::U_Code_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Initialization.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM Initialization
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+
+/* Include SSFM-SSM Top Level Library */
+#include "Sum_Ssfm.h"
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+/**
+ *  @brief Variable for initialization status of Ssm
+ *  @private
+ */
+static boolean Sum_Ssfm_SsmInitialization = FALSE;
+
+/**
+ *  @brief Variable for initialization status of Errh
+ *  @private
+ */
+static boolean Sum_Ssfm_ErrhInitialization = FALSE;
+
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+«IF (this.sSFM.sum_Ssfm_General.ssfmGenerateInitRunnable == true) -»
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_SsmInit(void);
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_ErrhInit(void);
+«ENDIF-»
+«IF Ssfm_AnyServiceBased(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+static FUNC(boolean,SUM_SSFM_CODE) Sum_Ssfm_Get_SdEnableExtendedLearningTableFormat(void);
+«ENDIF-»
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+/* PRQA S 3469 EOF # The function like macros is used. This is necessary to get value variable via macros */
+
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+
+
+/**
+ * @brief			SSFM/SSM get init value value of Ssm for other TU
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - Sum_Ssfm_SsmInitialization
+ */
+FUNC(boolean, SUM_SSFM_SSM_CODE) Sum_Ssfm_Ssm_GetInitialization(void)
+{
+	return Sum_Ssfm_SsmInitialization;
+}
+
+
+/**
+ * @brief			SSFM/ERRH get init value value of Errh for other TU
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean - Sum_Ssfm_ErrhInitialization
+ */
+FUNC(boolean, SUM_SSFM_ERRH_CODE) Sum_Ssfm_Errh_GetInitialization(void)
+{
+	return Sum_Ssfm_ErrhInitialization;
+}
+
+/**
+ * @brief			Callback that is invoked to initialize the SSFM/SSM
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			None
+ */
+ /*[$Satisfies $DDS_SSFM 188]*/
+«IF (this.sSFM.sum_Ssfm_General.ssfmGenerateInitRunnable == true) -»
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_SsmInit(void)
+«ELSE-»
+/* PRQA S 1503 5 # This function will and must be called by the BSW Init rule */
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_SsmInit(void)
+«ENDIF-»
+{
+«IF Ssfm_AnyServiceBased(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData) || Ssfm_AnyNonDiscoverableService(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+	uint16 i;
+«ENDIF-»
+    /* Check if the input is not NULL - received through ConfigSet container of SSM */
+    if (Sum_Ssfm_SsmInitialization == FALSE)
+    {
+		/* Disable configured PDU in transmittion */
+		Sum_Ssfm_SsmDisablePdu_Tx();
+		/* Set SerialDatas' providers */
+		Sum_Ssfm_SetSerialDatasProviders();
+		/* Restore DID E0B8 data from NvM */
+		Sum_Ssfm_DID_E0B8_RestoreData();
+		/* Restore DID E0BA data from NvM */
+		Sum_Ssfm_DID_E0BA_RestoreData();
+«IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))»		
+		 /*[$Satisfies $DDS_SSFM 215]*/
+		/* Restore DID E0BB data from NvM */
+		Sum_Ssfm_DID_E0BB_RestoreData();
+«ENDIF-»		
+		/* Restore message's availability for DID 0xE0B9 */
+		/*[$Satisfies $DDS_SSFM 129]*/
+		Sum_Ssfm_RestoreMessageAvDidE0B9();
+«IF Ssfm_AnyNonDiscoverableService(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+		/*[$Satisfies $DDS_SSFM 367]*/ /*[$Satisfies $ADS_SSFM 208]*/ /*Initialize non-discoverable PDUs to Always Available*/
+		for (i = 0u; i < SSFM_SSM_NUM_OF_SERIALDATAS; i++)
+		{
+			if (Sum_Ssfm_SerialDatas[i].IsNonDiscoverable == TRUE)
+			{
+				/* Set internal signal status to Available */
+				Sum_Ssfm_SerialDatas[i].MsgInfoGrp->SigSts = SUM_SSFM_SigSts_Available;
+				/* Write to RTE Availability port */
+				(void) Sum_Ssfm_SerialDatas[i].MsgInfoGrp->FP_RxMonitoredSignal_Av((uint8) SUM_SSFM_SigSts_Available);
+			}
+		}
+«ENDIF-»
+«IF Ssfm_AnyServiceBased(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+		/* Check SdEnableExtendedLearningTableFormat calibration parameter at run time */
+		if (Sum_Ssfm_Get_SdEnableExtendedLearningTableFormat() == FALSE)
+		{
+			for (i = 0u; i < SSFM_SSM_NUM_OF_SERVICEINFO_SERIALDATAS; i++)
+			{
+				Sum_Ssfm_ServiceInfo_SerialDatas[i].InstanceID = 0u;
+				Sum_Ssfm_ServiceInfo_SerialDatas[i].MajorVersion = 0u;
+				Sum_Ssfm_ServiceInfo_SerialDatas[i].IsResolved = FALSE;
+			}
+		}
+«ENDIF-»
+		/* Set Initialization status of SSM to INIT */
+        Sum_Ssfm_SsmInitialization = TRUE;
+    }
+
+}
+
+/**
+ * @brief			Callback that is invoked to initialize the SSFM/ERRH
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			None
+ */
+ /*[$Satisfies $DDS_SSFM 188]*/
+«IF (this.sSFM.sum_Ssfm_General.ssfmGenerateInitRunnable == true) -»
+static FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_ErrhInit(void)
+«ELSE-»
+/* PRQA S 1503 5 # This function will and must be called by the BSW Init rule */
+FUNC(void,SUM_SSFM_CODE) Sum_Ssfm_ErrhInit(void)
+«ENDIF-»
+{
+
+    /* Check if the input is not NULL - received through ConfigSet container of ERRH */
+    if (Sum_Ssfm_ErrhInitialization == FALSE)
+    {
+
+«IF (sum_Ssfm_DtcTriggerMessageSupport_IsTRUE(sSFM.sum_Ssfm_General) == true)-»
+		/*Initial Queue*/
+		(void)Sum_Algo_UnsortedDeque_Init(&Sum_Ssfm_DtcTriggered_Queue, sizeof(Sum_Ssfm_DTC_NotificationType), «(sSFM.sum_Ssfm_General.sum_Ssfm_DTCNotificationQueueSize)»u, DTCNotificationList);
+«ENDIF»
+«IF ((Sum_Ssfm_Errh_Get_SSCKeySlotErrorSize(sSFM.sum_Ssfm_ConfigSet) != 0) && (Sum_Ssfm_Errh_U19A3_8A_PreCondition_IsValid(sSFM.sum_Ssfm_ConfigSet) == true))»		
+		/* Initialize all KeySlotVerify authentication timers */
+		Sum_Ssfm_Errh_Initialize_KeySlotVerify();
+«ENDIF-»	
+
+		/* Set Initialization status of ERRH to INIT */
+        Sum_Ssfm_ErrhInitialization = TRUE;
+    }
+}
+
+«IF Ssfm_AnyServiceBased(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData)-»
+/**
+ * @brief			SSFM getter function to retrieve Sd_SdEnableExtendedLearningTableFormat variable
+ *
+ * @param[in]		void
+ * @param[inout]	void
+ * @param[out]		void
+ * @return			boolean
+ */
+static FUNC(boolean,SUM_SSFM_CODE) Sum_Ssfm_Get_SdEnableExtendedLearningTableFormat(void)
+{
+	return SchM_CData_Sd_SdEnableExtendedLearningTableFormat();
+}
+«ENDIF-»
+«IF (this.sSFM.sum_Ssfm_General.ssfmGenerateInitRunnable == true) -»
+/* PRQA S 1503 EOF # The following functions will be scheduled by OS Tasks */
+
+/**
+ * @brief			Runnable function for SUM SSFM
+ *					Initialization.
+ *
+ * @param[in]		None
+ * @param[inout]	None
+ * @param[out]		None
+ * @return			void
+ */
+/*[$Satisfies $DDS_SSFM 188]*/
+FUNC(void, SUM_SSFM_CODE) Runnable_SSFM_Init(void)
+{
+	/* Initialize ERRH */
+	Sum_Ssfm_ErrhInit();
+	/* Initialize SSM */
+	Sum_Ssfm_SsmInit();
+}
+«ENDIF-»
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

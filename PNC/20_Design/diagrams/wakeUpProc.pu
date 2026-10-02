@@ -1,0 +1,30 @@
+@startuml wakeUpProc
+
+left to right direction
+
+state PN_IDLE {
+    state PNC_ENABLE_CHECK
+    STATE PNC_MONITOR_ACTIVATION
+    STATE PNC_ACK_ACTIVATION
+    STATE PNC_TX_ENABLE
+}
+
+state PN_Active {
+    
+    state Activation {
+        state PNC_LOCALLY_ACTIVE
+        state PNC_REMOTELLY_ACTIVE
+    }
+    
+    state Deactivation {    
+        state PNC_PREPARE_SLEEP
+        state PNC_READY_SLEEP
+    }
+}
+
+[*] -> PN_IDLE
+PN_IDLE --> Activation: A
+Activation --> Deactivation: B
+Deactivation -> PN_IDLE: C
+
+@enduml

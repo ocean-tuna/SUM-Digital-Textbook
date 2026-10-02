@@ -1,0 +1,203 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::Spm_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Interaction_VehicleEnergyOptimizer.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Source for SPM interaction with Vehicle Energy Optimizer
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+/*-----------------------------------------------------------------------------
+ *    Include files
+*/
+#include "Sum_Spm_Interaction_VehicleEnergyOptimizer.h"
+#include "Sum_Spm_Services.h"
+#include "Sum_Spm_PBCfg.h"
+
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+/* Timer tracker for the 5s. */
+static uint32 Spm_LowVoltLVOptmzerTrigger_TimerTickTracker = 0u;
+/* Flag that track if the LVOptmzerChk Application Interface ID profile is active. */
+static boolean Spm_LowVoltLVOptmzerTrigger_IsActivated = FALSE;
+/* RAM Mirror to Nvm Block *//* PRQA S 1504 1 # Following buffer is accessed also by NvM module.*/
+uint8 «spm.spmConfigSet.spmLowVoltagePowerInfo.spmLowVoltSwActPrioNvmRef.nvMRamBlockDataAddress-»[«spm.spmConfigSet.spmLowVoltagePowerInfo.spmLowVoltSwActPrioNvmRef.nvMNvBlockLength-»] = {0u};
+«ENDIF-»
+
+/* ****************************************************************************
+ * BEGIN: FUNCTIONS OF COMPONENT
+ ******************************************************************************/
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+/**
+ * @brief Get the Priority value from the RAM mirror block
+ *
+ * @return The priority level value
+ */
+/* PRQA S 1532 1 # This function can be called by other functions */
+uint8 Spm_GetPriorityLevelValue(void){
+
+	return «spm.spmConfigSet.spmLowVoltagePowerInfo.spmLowVoltSwActPrioNvmRef.nvMRamBlockDataAddress-»[0];
+}
+«ENDIF-»
+
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+/**
+ * @brief Retrieve the Low Voltage Priority level value from the low volatge energy optimizer, after checking if the data is
+ * 	available from the SSFM module.
+ *
+ * @return void
+ *//*[$Satisfies $DDS_SPM 0057]*/
+/* PRQA S 1532 1 # Following function is defined here for modularity reason */
+void Spm_ReadLowVoltagePriorityStatus(void)
+{
+	Std_ReturnType retVal;
+	SignalStatusType sigStatus;
+	«Spm_GetImplementationDatatypeName(spm.spmConfigSet.spmLowVoltagePowerInfo.spmLowVoltSwActPrioReqDataServiceBased)» service;
+	Rte_TransformerError transformerErr;
+
+	/* Check from the SSFM if the Signal is available */
+	retVal = Rte_Read_RP_SSFM_SPM_LowVoltSwActPrioReqAvailability_SignalAvailability(&sigStatus);
+
+	/* If available, retrieve the Priority level value and save it in the Nvm */
+	if((retVal == E_OK) && (sigStatus == SIG_STATUS_AVAILABLE)){
+
+		retVal = Rte_Read_RP_Com_Spm_LowVoltSwActPrioReq_SPM_LowVoltSwActPrioReqSignal(&service, &transformerErr);
+
+		if((retVal == E_OK)){
+				/* Storage in the RAM mirror block */
+				«spm.spmConfigSet.spmLowVoltagePowerInfo.spmLowVoltSwActPrioNvmRef.nvMRamBlockDataAddress-»[0] = (uint8) service.«Spm_GetImplementationDatatypeSubElementName(spm.spmConfigSet.spmLowVoltagePowerInfo.spmLowVoltSwActPrioReqDataServiceBased)»;
+
+				/* Notification that the content of the RAM mirror block have changed */
+				(void)Rte_Call_RP_SPM_NvmService_LowVoltageActivationPriority_SetRamBlockStatus(TRUE);
+		}
+	}
+}
+«ENDIF-»
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+ /**
+ * @brief Handles the timer tracker for LowVoltage optimizer trigger.
+ */
+/*[$Satisfies $DDS_SPM 0649]*/
+/* PRQA S 1532 1 # Following function is defined here for modularity reason */
+ void Spm_LowVoltLVOptmzerChkApplicationInterfaceID_PeriodicCheck(void){
+    uint16 Spm_LVOptmzerChkApplicationInterfaceID = (uint16)«Spm_GetLowVoltLVOptmzerChkApplicationInterfaceID(spm)»u;
+	sint16 PowProfIndex;
+	Std_ReturnType retVal;
+	SignalStatusType sigStatus;
+
+	/* Check if there is an ongoing activation of LVOptmzerChk Application Interface ID profile */
+    if(Spm_LowVoltLVOptmzerTrigger_IsActivated == TRUE){
+
+	    if(Spm_LowVoltLVOptmzerTrigger_TimerTickTracker > 0u){
+		    Spm_LowVoltLVOptmzerTrigger_TimerTickTracker--;
+        }
+
+		/* Check from the SSFM if the Signal is available */
+		retVal = Rte_Read_RP_SSFM_SPM_LowVoltSwActPrioReqAvailability_SignalAvailability(&sigStatus);
+
+		/* Check if the timer (5s) has expired or the signal is available.
+		   If conditions are met, a request to deactivate a profile is done. */
+        if( (Spm_LowVoltLVOptmzerTrigger_TimerTickTracker == 0u) ||
+		    ((retVal == E_OK) && (sigStatus == SIG_STATUS_AVAILABLE)) ){
+
+            PowProfIndex = Spm_GetPowProfIndexFromAppID(Spm_LVOptmzerChkApplicationInterfaceID);
+
+            if(PowProfIndex != SPM_INVALID){
+				/* Enque request for deactivate LVOptmzerChk Application Interface ID profile. */
+                Spm_prv_prfReqDispatcher((uint8)PowProfIndex, 0u, SPM_DEA_REQ, &retVal);
+            }
+
+            Spm_LowVoltLVOptmzerTrigger_TimerTickTracker = 0u;
+			/* Reset the flag since the LVOptmzerChk Application Interface ID profile is no longer active. */
+			Spm_LowVoltLVOptmzerTrigger_IsActivated = FALSE;
+		}
+    }
+}
+«ENDIF-»
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+/**
+ * @brief Triggers activation of LVOptmzerChk Application Interface ID profile when REJECTED_LACK_OF_POWER is received.
+ */
+/*[$Satisfies $DDS_SPM 0648]*/
+/* PRQA S 1532 1 # Following function is defined here for modularity reason */
+void Spm_LowVoltLVOptmzerChkApplicationInterfaceID_TriggerActivation(void){
+	uint16 Spm_LVOptmzerChkApplicationInterfaceID = (uint16)«Spm_GetLowVoltLVOptmzerChkApplicationInterfaceID(spm)»u;
+	sint16 PowProfIndex;
+	Std_ReturnType retVal = E_NOT_OK;
+
+    PowProfIndex = Spm_GetPowProfIndexFromAppID(Spm_LVOptmzerChkApplicationInterfaceID);
+
+	if(PowProfIndex != SPM_INVALID){
+		/* Enque request for activate LVOptmzerChk Application Interface ID profile. */
+		Spm_prv_prfReqDispatcher((uint8)PowProfIndex, 0u, SPM_ACT_REQ, &retVal);
+		/* Re-load timer tracker for 5s. */
+        Spm_LowVoltLVOptmzerTrigger_TimerTickTracker = SPM_LOWVOLT_LV_OPTMZER_TRIGGER_TIMER_TICK;
+		/* This flag is set to TRUE in order to track the activation of LVOptmzerChk Application Interface ID. */
+		Spm_LowVoltLVOptmzerTrigger_IsActivated = TRUE;
+	}
+
+}
+«ENDIF-»
+«IF Spm_IsLowVoltPrioServiceConfigured(spm.spmConfigSet.spmLowVoltagePowerInfo)-»
+/**
+ * @brief Clears the REJECTED_LACK_OF_POWER suspension for profiles whose VEO priority level
+ *        has dropped below the level recorded at rejection time.
+ */
+/* PRQA S 1532 2 # Following function is defined here for modularity reason */
+/* [$Satisfies $DDS_SPM 0667] */
+void Spm_RecoveryHandler_RejectedLackOfPower(void){
+	uint8 i;
+
+	for(i = 0u; i < (uint8)SPM_CONF_POW_PRF_NUM; i++){
+		/* A profile activation that has been supended with REJECTED_LACK_OF_POWER reason implies that
+		   LackOfPowerPriority has been set to a value different from invalid (-1). */
+		if( (SPM_PrfStsMgr_RAM[i].Rejection.RetryNone == TRUE) &&
+		    (SPM_PrfStsMgr_RAM[i].Rejection.LackOfPowerPriority != (sint8)-1) ){
+
+			/* If the current VEO priority level dropped below the level at rejection time,
+			   the lack-of-power condition has cleared: re-enable activation retries. */
+			if( Spm_GetPriorityLevelValue() < (uint8)SPM_PrfStsMgr_RAM[i].Rejection.LackOfPowerPriority ){
+
+				SPM_PrfStsMgr_RAM[i].Rejection.LackOfPowerPriority = (sint8)-1;
+				SPM_PrfStsMgr_RAM[i].Rejection.RetryNone = FALSE;
+			}
+		}
+	}
+}
+«ENDIF-»
+/* ****************************************************************************
+ * END: FUNCTIONS OF COMPONENT
+ ******************************************************************************/
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

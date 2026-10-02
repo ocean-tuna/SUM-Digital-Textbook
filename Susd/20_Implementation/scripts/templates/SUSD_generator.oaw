@@ -1,0 +1,107 @@
+<!--
+/* ********************************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as the communication of its contents to
+ * others without explicit authorization is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or design.
+ ******************************************************************************************************************* */
+
+/* Administrative Information (automatically filled in)
+* $Domain____:$
+* $Namespace_:$
+* $Class_____:$
+* $Name______:$
+* $Variant___:
+* $Revision__:0$
+* $Author____:$
+**********************************************************************************************************************
+*/
+ -->
+
+<workflow>
+  <!-- Property file containing model package and generator version info -->
+	<property file="SUSD_workflow.properties" />
+
+	<!-- generate SUM_SUSD.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUM_SUSD_h::Susd_h FOR model" />
+	</component>
+	
+	<!-- generate SUSD_Cfg.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUSD_Cfg_h::Susdcfg FOR model" />
+	</component>
+
+	<!-- generate SUSD_Cfg.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUSD_Cfg_c::Susdcfg_c FOR model" />
+	</component>
+
+	<!-- generate SUSD_PBcfg.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUSD_PBcfg_h::SusdPBcfg_h FOR model" />
+	</component>
+
+	<!-- generate SUSD_PBcfg.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUSD_PBcfg_c::SusdPBcfg_c FOR model" />
+	</component>
+
+	<!-- generate SUSD_SWCD.arxml -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+	    <fileEncoding value="ISO-8859-1"/>
+        <globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="arxml::SUSD_Cfg_Swcd_arxml::Generate FOR model" />
+	</component>
+
+	<!-- generate SUM_SUSD_DID.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUM_SUSD_DID_c::SusdDID_c FOR model" />
+	</component>
+
+	<!-- generate SUM_SUSD_E0D7_Handler.h -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUM_SUSD_E0D7_Handler_h::SusdE0D7Handler_h FOR model" />
+	</component>
+
+	<!-- generate SUM_SUSD_E0D7_Handler.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUM_SUSD_E0D7_Handler_c::SusdE0D7Handler_c FOR model" />
+	</component>
+
+	<!-- generate SUM_SUSD.c -->
+	<component class="com.bosch.oawtypesystem.actions.BCTCodeGenerator">
+		<fileEncoding value="ISO-8859-1"/>
+		<globalVarDef name="AutosarVersion" value="'${AutosarVersion}'"/>
+		<metaModel id="mm" class="com.bosch.oawtypesystem.metamodel.cubec.CubecConfMetaModel" />
+		<expand value="SUM_SUSD_c::Susd_c FOR model" />
+	</component>
+</workflow>

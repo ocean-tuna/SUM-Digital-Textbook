@@ -1,0 +1,307 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+«IMPORT bsw::CanIf»
+«IMPORT bsw::Dcm»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SPM_Utils»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_Cfg.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for Spm Cfg
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef SUM_SPM_CFG_H
+#define SUM_SPM_CFG_H
+
+
+#include "Platform_Types.h"
+#include "Rte_SPM.h"
+#include "ComStack_Types.h"
+#include "Sum_SpmTypes.h"
+/*
+ *------------------------------------------------------------------------------------------------------------------------------------------------
+ * Macros Definition
+ *------------------------------------------------------------------------------------------------------------------------------------------------
+ */
+
+#define SUM_SPM_UNUSED(x)   ( (void)( x ) )
+
+#ifndef STD_ON
+#define STD_ON				1U
+#endif
+
+#ifndef STD_OFF
+#define STD_OFF				0U
+#endif
+
+typedef Std_ReturnType (* Spm_Rte_SwitchPduGroup )( SPM_SrvcPduGrState data );
+
+#define SPM_SM_PERIODICITY_MS           «spm.spmGeneral.spmSMMainFuncPeriodicity.toInteger()-»U
+#define SPM_ACT_RETRY_PERIODICITY_FAST_MS    ( Rte_CData_Spm_ActDeactRetry_Periodicity_Fast_ms() )
+#define SPM_ACT_RETRY_PERIODICITY_SLOW_MS    ( Rte_CData_Spm_ActDeactRetry_Periodicity_Slow_ms() )
+
+/* Effective retry ticks: runtime calibratable, clamped to minimum 1 tick (SM cycle) */
+#define SPM_ACT_RETRY_FAST_TICKS    ((SPM_ACT_RETRY_PERIODICITY_FAST_MS >= SPM_SM_PERIODICITY_MS) ? \
+                                     ((uint32)SPM_ACT_RETRY_PERIODICITY_FAST_MS / (uint32)SPM_SM_PERIODICITY_MS) : (uint32)1U)
+#define SPM_ACT_RETRY_SLOW_TICKS    ((SPM_ACT_RETRY_PERIODICITY_SLOW_MS >= SPM_SM_PERIODICITY_MS) ? \
+                                     ((uint32)SPM_ACT_RETRY_PERIODICITY_SLOW_MS / (uint32)SPM_SM_PERIODICITY_MS) : (uint32)1U)
+
+/* Timing period, in ms, of the SM to stay awake if a requester is in Fault or Reboot state*/
+#define SPM_STAY_AWAKE_TIME_MS		( Rte_CData_Spm_SM_Stay_Awake_Time_ms() )
+#define SPM_ERR_REQUESTER_TIMER_TICK    ((uint32) SPM_STAY_AWAKE_TIME_MS / SPM_SM_PERIODICITY_MS)
+«IF spm.spmConfigSet.spmPowPrf.spmComIPduGroupEvnt_Tx.size > 0 -»
+#define SPM_PDU_TX_SWITCHOFF_DELAY_MS   ( Rte_CData_Spm_PduTx_SwitchOff_Delay_ms() )
+#define SPM_PDU_TX_SWITCHOFF_DELAY_TICK ((uint16) SPM_PDU_TX_SWITCHOFF_DELAY_MS / SPM_SM_PERIODICITY_MS)
+«ENDIF-»
+#define SPM_CONTAINS_PP					( «spm.spmConfigSet.spmPowPrf.size» > 0 )
+#define SPM_CONF_POW_PRF_NUM			((uint16)«spm.spmConfigSet.spmPowPrf.size»U)
+
+#define SPM_SRVCS_LST_SIZE				SPM_CONF_POW_PRF_NUM
+
+«IF Spm_ECU_INTERMEDIATE(spm) == true && spm.spmGeneral.spmCANWkUpFrmRef != null -»
+#define SPM_WUF_CAN_RX_LEN			    («spm.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmRxRef.size»U)
+«ENDIF -»
+
+#define SPM_ASSERT_WKUP_CURR_NODE( rcv, wkUpbits, bIdx )  ( (rcv[bIdx] & (1U << wkUpbits)) == (1U << wkUpbits) )
+#define SPM_WKUP_BIT_ENUM     			((uint8)6U) // OLD - @todo remove this and its implications
+
+#define SPM_PERMIT_EXEC_MASK			((uint8)«spm.spmGeneral.spmPermitExecutionMask»U)
+#define SPM_EXEC_MASK_PASSED			((uint8)0xFFU)
+
+#define SPM_INVALID       				((sint16)(-1))
+#define SPM_HEARTBEAT_LOWER_INTERVAL	(0x01U)
+#define SPM_NUM_OF_PG_OUT_EDGE			(«spm.spmConfigSet.spmPgttEntries.spmTrgDvc.size»U)
+
+/* Size of the requester list is equal to the number of target device + 1 (for request coming from local SWC) */
+#define SPM_REQER_LST_SIZE				(SPM_NUM_OF_PG_OUT_EDGE + 1u)
+
+#define SPM_MAX_NUMBER_OF_HB_RX_MISSED  (0x03u)
+
+#define SPM_SHUTDOWN_TARGET_BIT         (0x02U)
+
+# define SPM_ACT_REQ					((uint8)0U)
+# define SPM_DEA_REQ					((uint8)1U)
+
+#define SPM_PROF_INVALID_INDEX       SPM_CONF_POW_PRF_NUM + 1U
+
+#define SPM_GET_LOWVOLTAGEPRIORITY_VEHOFF(i) 			(( SpmPowPrf_Cfg_WrpTable[(i)].powPrf_data->LowVoltagePriority_VEH_OFF ))
+#define SPM_GET_LOWVOLTAGEPRIORITY_VEHON(i) 			(( SpmPowPrf_Cfg_WrpTable[(i)].powPrf_data->LowVoltagePriority_VEH_ON ))
+#define SPM_GET_TIMEOUT_VEH_OFF_SECOND(i) 			(SpmPowPrf_Cfg_WrpTable[(i)].powPrf_data->TimeOutVehOff_inSecond)
+#define SPM_GET_APP_ID_FROM_CONF(i)				    ( SpmPowPrf_Cfg_WrpTable[(i)].powPrf_data->ApplIntfID )
+#define SPM_GET_BITMAPINDEX_FROM_CONF(i)		    ( SpmPowPrf_Cfg_WrpTable[(i)].powPrf_data->BitMapIndex )
+#define SPM_GET_SW_ID_FROM_CONF(i)				    ( SpmPowPrf_Cfg_WrpTable[(i)].powPrf_data->PowPrfID )
+#define SPM_GET_POW_PROF_NUMBER_FROM_CONF(i)	    ( SpmPowPrf_Cfg_WrpTable[(i)].powPrf_data->PowPrfNum )
+#define SPM_GET_LOC_ACT_ALLOWED_FROM_CONF(i)	    ( SpmPowPrf_Cfg_WrpTable[(i)].powPrf_data->LocActAllowed )
+#define SPM_GET_PROF_IS_LOC_FROM_CONF(i)	        ( SpmPowPrf_Cfg_WrpTable[(i)].powPrf_data->isLocal )
+
+#define SPM_SIZE_ERROR_CODE_LIST 		SPM_CONF_POW_PRF_NUM
+«IF AnyE0DEOrE0DFIsConfigured(spm.spmGeneral)-»
+#define SPM_DID_E0DE_E0DF_QUEUE_SIZE_U				(5U)
+#define SPM_DID_E0DE_E0DF_QUEUE_SIZE_L				(5U)
+«ENDIF-»
+/**
+ *	\brief Macro to define the MAX size of the metadata
+ */
+# define SPM_METADAT_SIZE				(0x0AU)		/* SPM metadata len without padding in structure */
+/* Number of variants */
+#define SUM_SPM_NUMBER_OF_VARIANTS   («spm.spmConfigSet.spmPgttEntries.spmVariantCfg.size»u)
+/** Number of Network configured. */
+#define SUM_SPM_NUMBER_OF_NET_CONF   («spm.spmGeneral.spmVLANCom.size»u)
+«IF Spm_ECU_INTERMEDIATE(spm) == true && spm.spmGeneral.spmCANWkUpFrmRef != null-»
+#define SPM_WKUP_ON_CAN_SUPPORT		STD_ON
+«ELSE-»
+#define SPM_WKUP_ON_CAN_SUPPORT		STD_OFF
+«ENDIF-»
+#define SPM_VLAN_COMMHNDL_SIZE		(«spm.spmGeneral.spmVLANCom.size»u)
+/* Number of configured SD client services */
+#define SPM_SD_CLIENT_SERVICE_CONFIG_NUM     (« Spm_GetUniqueSdClientServiceIds(sd.sdConfig.sdInstance.sdClientService).size »u)
+
+typedef enum SpmDevicePowerStateCodeEnum{
+	SPM_Faulted = 0x00u,
+	SPM_Off,
+	SPM_On,
+	SPM_Reboot,
+	SPM_ShutdownPending,
+    SPM_Initializing,
+	SPM_UnknownDevice = 0xFEu
+} SpmDevicePowerStateCode;
+
+typedef struct {
+	uint32 PowPrfID;
+	uint8  PowPrfNum;
+	Spm_LowVoltPriorityLevel  LowVoltagePriority_VEH_OFF;
+	Spm_LowVoltPriorityLevel  LowVoltagePriority_VEH_ON;
+	uint16 TimeOutVehOff_inSecond;
+	const uint16 * ApplIntfID;
+	const uint16 * BitMapIndex;   /* Bit position value used for DID 0xE0DD*/
+	boolean isLocal;
+	boolean LocActAllowed;
+	uint16 PrfDepLstSize;
+	const SpmPrfDepLstType * PrfDepLst;
+} SpmConfPowPrf;
+
+typedef struct {
+	SpmConfPowPrf const * 				powPrf_data;
+	uint8 								modeSwitchTableTx_Len;
+	Spm_Rte_SwitchPduGroup const *		modeSwitchTableTx_Data;
+	uint8 								modeSwitchTableRx_Len;
+	Spm_Rte_SwitchPduGroup const *		modeSwitchTableRx_Data;
+} SpmPowPrf_Cfg_Wrp;
+
+
+typedef SpmPowPrf_Cfg_Wrp SpmPowPrf_Cfg_WrpTableType[SPM_CONF_POW_PRF_NUM];
+
+/* Array of SPM_CONF_POW_PRF_NUM items */
+extern const SpmPowPrf_Cfg_WrpTableType SpmPowPrf_Cfg_WrpTable;
+
+
+
+
+typedef uint8 SpmSduDataBuffType[8U];
+
+typedef struct {
+	const PduIdType 				pduId;
+	PduInfoType						pduInfo;
+} Spm_PduInfoTypeWrpp;
+
+typedef struct{
+	uint8 prfIndex;
+	uint32 trgDvcIp;
+	uint8 errorCode;
+	uint32 swId;
+    uint8 profileNumber;
+}SpmFeedbackErrorItemType;
+
+typedef struct{
+	SpmFeedbackErrorItemType list[SPM_SIZE_ERROR_CODE_LIST];
+	uint8 size;
+}SpmFeedbackErrorListType;
+
+/**
+ * @brief SD Service Configuration Structure for Extended Learning Mode
+ *        This structure holds service configuration data to support
+ *        SPM integration with extended learning format
+ */
+typedef struct {
+    uint16 serviceId;                /* Service ID */
+    uint16 instanceId;               /* Service Instance ID */
+    uint32 majorVersionsNum;         /* Number of major versions */
+    const uint8* majorVersions;      /* Pointer to major versions array */
+} Spm_SdServiceConfigType;
+
+«IF Spm_ECU_INTERMEDIATE(spm) == true-»
+	«IF spm.spmGeneral.spmCANWkUpFrmRef.spmCANWkUpFrmRxRef.size > 0 »
+typedef struct {
+	PduIdType pduId; /* PduId */
+	uint32 	canIdLastByte; /* Last Byte of CAN ID associated to the Pdu */
+} Spm_RxPduInfoType; 
+extern const Spm_RxPduInfoType Spm_CanIf_Rx[];
+	«ENDIF-»
+
+extern Spm_PduInfoTypeWrpp Spm_CanIf_Tx_WakeUpFrame_A;
+extern Spm_PduInfoTypeWrpp Spm_CanIf_Tx_WakeUpFrame_B;
+extern Spm_PduInfoTypeWrpp Spm_CanIf_Tx_WakeUpFrame_C;
+
+extern SpmSduDataBuffType spm_sdu_Can_WuFPduData_Tx_Frame_A;
+extern SpmSduDataBuffType spm_sdu_Can_WuFPduData_Tx_Frame_B;
+extern SpmSduDataBuffType spm_sdu_Can_WuFPduData_Tx_Frame_C;
+
+«ENDIF-»
+«IF Spm_GetUniqueSdClientServiceIds(sd.sdConfig.sdInstance.sdClientService).size > 0 && spm.spmConfigSet.spmPowPrf.select(e|e.spmProfileIsLocal == false).size > 0 -»
+extern Spm_SdServiceConfigType Spm_SdServiceConfig[SPM_SD_CLIENT_SERVICE_CONFIG_NUM];
+«ENDIF-»
+typedef SpmPgttRowEntry const* SpmPgttRowEntry_Cfg;
+typedef SpmPgttRowEntry_Cfg SpmPgttRowEntry_CfgTableType[1u];
+extern SpmPgttRowEntry_CfgTableType SpmPgttRowEntry_CfgTable;
+«LET spm.spmConfigSet.spmPgttEntries.spmVariantCfg.spmVariantHBVLANCfg.spmVLANId.toSet() AS hbVlanIds-»
+«FOREACH spm.spmGeneral.spmVLANCom.select(v | !hbVlanIds.contains(v.spmVLANId)) AS vlan-»
+extern SPM_NetworkInfo Spm_NetworkInfo_VLANId_«vlan.spmVLANId»;
+«ENDFOREACH-»
+«ENDLET-»
+extern SPM_NetworkInfo_WrapType Spm_NetworkInfo_Wrap_PerVariant[SUM_SPM_NUMBER_OF_VARIANTS][SUM_SPM_NUMBER_OF_NET_CONF];
+extern SPM_NetworkInfo_WrapType SPM_NetworkInfo_Wrap[SUM_SPM_NUMBER_OF_NET_CONF];
+«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc AS trgDvc-»
+	«IF trgDvc.spmTrgDvcVariantHndlng.exists(v | v.spmTrgAssocWkUpFrm != null && v.spmTrgAssocWkupBit != null) -»
+extern const SpmTrgDvcHndlngInfo* TrgHndlInfo_«trgDvc.shortName»_PerVariant[SUM_SPM_NUMBER_OF_VARIANTS];
+	«ENDIF-»
+«ENDFOREACH-»
+extern const SpmTrgDvcHndlngInfo *Spm_WkupFrameInfo_PerVariant[SUM_SPM_NUMBER_OF_VARIANTS];
+extern const SpmTrgDvcHndlngInfo *Spm_ActiveWkupFrameInfo_p;
+
+/* PRQA S 3469 EOF # Macros are used for readability of the code */
+/* PRQA S 3472 EOF # Macros are used for readability of the code */
+#define SPM_SwMgrInfo_Req_ProfileID_SWID(src, dst, id)			((dst)->ProfileRequestPayLoad[(id)].ProfileID_SWID = (src)->ProfileRequestPayLoad[(id)].ProfileID_SWID)
+#define SPM_SwMgrInfo_Req_ProfileID_ProfileNumber(src, dst, id) ((dst)->ProfileRequestPayLoad[(id)].ProfileID_ProfileNumber = (src)->ProfileRequestPayLoad[(id)].ProfileID_ProfileNumber)
+#define SPM_SwMgrInfo_Req_RequestType(src, dst, id)				((dst)->ProfileRequestPayLoad[(id)].RequestType = (src)->ProfileRequestPayLoad[(id)].RequestType)
+
+#define SPM_SwMgrInfo_Res_ProfileID_SWID(src, dst, id)			((dst)->RequestStatusProfileStatePayLoad[(id)].ProfileID_SWID = (src)->RequestStatusProfileStatePayLoad[(id)].ProfileID_SWID)
+#define SPM_SwMgrInfo_Res_ProfileID_ProfileNumber(src, dst, id)	((dst)->RequestStatusProfileStatePayLoad[(id)].ProfileID_ProfileNumber = (src)->RequestStatusProfileStatePayLoad[(id)].ProfileID_ProfileNumber)
+#define SPM_SwMgrInfo_Res_RequestStatus(src, dst, id)			((dst)->RequestStatusProfileStatePayLoad[(id)].RequestStatus = (src)->RequestStatusProfileStatePayLoad[(id)].RequestStatus)
+#define SPM_SwMgrInfo_Res_ProfileStatus(src, dst, id)			((dst)->RequestStatusProfileStatePayLoad[(id)].ProfileStatus = (src)->RequestStatusProfileStatePayLoad[(id)].ProfileStatus)
+
+
+/**
+ * @brief	The function is the Top-Level one that is used in the SPM code to gateway/routing
+ *          the communication handling to the right RTE APIs
+ *
+ * @param[in]		vlanId				Identifier of VLAN to reach in Tx/Rx
+ * @param[in]		frameDirection		Code to address the direction of the communication (IN/OUT) - Look Spm_CommHanldeDirectionType
+ * @param[in]		frameType			Code to address the frame type to handle (PwrMgrHeartbeat/PwrMgrWakeup/SwMgrInfo) - Look Spm_CommHandleFrameType
+ * @param[inout]	data_hb				Pointer value to data structure for storing Heartbeat frame information
+ * @param[inout]	data_wkup			Pointer value to data structure for storing Wakeup frame information
+ * @param[inout]	data_sminfo			Pointer value to data structure for storing Software Manager frame information
+ * @param[inout]	metadataPtr			Pointer to metadataPtr
+ *
+ * @return			Std_ReturnType
+ * @retval			E_OK				Gateway and Rte API execution success
+ * @retval			E_NOT_OK			Gateway and Rte API execution failed
+ *
+ * @note Remove the comment for the MISRA violation or modify the violation id
+ * @note
+ */
+extern Std_ReturnType Spm_HandleVLANCommunication(
+		uint16 				        const 		vlanId,
+		Spm_CommHanldeDirectionType const		frameDirection,
+		Spm_CommHandleFrameType     const	    frameType,
+		SPM_HB_dt_Prv              *const 		data_hb,
+		SPM_WkUp_dt_Prv			   *const 		data_wkup,
+		SPM_dt_Prv				   *const 		data_sminfo,
+		uint8                      *const 		metadataPtr
+	);
+«IF Spm_ExistMultipleVariantConfigured(spm) == false -»	
+extern boolean Spm_GetHBFrameNeedsToBeSentOverThisVLAN(const uint16 vlanIndex);
+«ENDIF-»	
+
+#endif /* SUM_SPM_CFG_H */
+
+/* EOF */
+«ENDFILE-»
+«ENDDEFINE»

@@ -1,0 +1,459 @@
+import bsw;
+import bsw::SUSDModule;
+import bsw::SSFM;
+extension Util::Susd;
+extension org::eclipse::xtend::util::stdlib::io;
+
+context SUSDGeneral
+ERROR "SUSD_E001: sUSD_t_Shutdown_Refresh is a mandatory parameter (range: 0.001 to 0.5)!" :
+    (sUSD_t_Shutdown_Refresh != null) && (sUSD_t_Shutdown_Refresh >= 0.001) && (sUSD_t_Shutdown_Refresh <= 0.5)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E002 : sUSD_t_Force_Shutdown_Wait is a mandatory parameter (range: 0 to 65535)!" :
+    (sUSD_t_Force_Shutdown_Wait != null) && (sUSD_t_Force_Shutdown_Wait >= 0) && (sUSD_t_Force_Shutdown_Wait <= 65535)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E003 : sUSD_t_Battery_Periodicity is a mandatory parameter (range: 1 to 500)!" :
+    (sUSD_t_Battery_Periodicity != null) && (sUSD_t_Battery_Periodicity >= 1) && (sUSD_t_Battery_Periodicity <= 500)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E004 : sUSD_t_VehiclePowerMode_Periodicity is a mandatory parameter (range: 1 to 500)!" :
+    (sUSD_t_VehiclePowerMode_Periodicity != null) && (sUSD_t_VehiclePowerMode_Periodicity >= 1) && (sUSD_t_VehiclePowerMode_Periodicity <= 500)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E005 : sUSD_t_RunCrank_Periodicity is a mandatory parameter (range: 1 to 500)!" :
+    (sUSD_t_RunCrank_Periodicity != null) && (sUSD_t_RunCrank_Periodicity >= 1) && (sUSD_t_RunCrank_Periodicity <= 500)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E006 : sUSD_t_Wakeup_Periodicity is a mandatory parameter (range: 1 to 500)!" :
+    (sUSD_t_Wakeup_Periodicity != null) && (sUSD_t_Wakeup_Periodicity >= 1) && (sUSD_t_Wakeup_Periodicity <= 500)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E007 : sUSD_t_AppManager_Periodicity is a mandatory parameter (range: 1 to 500)!" :
+    (sUSD_t_AppManager_Periodicity != null) && (sUSD_t_AppManager_Periodicity >= 1) && (sUSD_t_AppManager_Periodicity <= 500)
+;
+
+context SUSDGeneral
+	ERROR "SUM_E008: The SUSD_C_RunningResetWaitTime must be divisible by SUSD_t_ResetExecution_Periodicity for an accurate timing.":
+	(
+		let timer = 1000 * this.sUSD_C_RunningResetWaitTime:
+		let period = (Integer)(1000.0 * this.sUSD_t_ResetExecution_Periodicity):
+			(Integer)(timer/period) * period == timer
+	)
+;
+
+context SUSDGeneral
+	ERROR "SUM_E009: The SUM_SUSD_RESETExecution_TIMER_Thresh_Init must be divisible by SUSD_t_ResetExecution_Periodicity for an accurate timing.":
+	(
+		let timer = 1000 * this.sUM_SUSD_RESETExecution_TIMER_Thresh_Init:
+		let period = (Integer)(1000.0 * this.sUSD_t_ResetExecution_Periodicity):
+			(Integer)(timer/period) * period == timer
+	)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E011 : sUSD_C_DefaultShutdownState is a mandatory parameter!" : (sUSD_C_DefaultShutdownState != null)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E014 : sUSD_PowerModing_Slave_Supported is a mandatory parameter!" : (sUSD_PowerModing_Slave_Supported != null)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E032 : sUSD_RunCrankPlausibility_Supported is a mandatory parameter!" : (sUSD_RunCrankPlausibility_Supported != null)
+;
+
+context SUSDGeneral
+if (this.sUSD_PowerModing_Slave_Supported == true && !Susd_Ssfm_IsSinglePortSupported(this.parent.eRootContainer.sSFM))
+ERROR "SUSD_E033 : SUSD_VPM_ASIL_A_Supported is a mandatory parameter whenever SSFM single port is not supported!" : (sUSD_VPM_ASIL_A_Supported != null)
+;
+
+context SUSDGeneral
+if (this.sUSD_PowerModing_Slave_Supported == true && !Susd_Ssfm_IsSinglePortSupported(this.parent.eRootContainer.sSFM))
+ERROR "SUSD_E033 : SUSD_VPM_Security_Supported is a mandatory parameter whenever SSFM single port is not supported!" : (sUSD_VPM_Security_Supported != null)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E035 : sUSD_PermitExecAvailable is a mandatory parameter!" : (sUSD_PermitExecAvailable != null)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E053 : sUSD_ECUOpStateDIDSupported is a mandatory parameter!" : (sUSD_ECUOpStateDIDSupported != null)
+;
+
+context SUSDDiagReferences
+ERROR "SUSD_E054 : SusdEcuWakeupDetectionRecordsDidRef is a mandatory parameter!" : (susdEcuWakeupDetectionRecordsDidRef != null)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E055 : SusdEcuWakeUpDetectionRecordsNvmBlockRef is a mandatory parameter!" : (susdEcuWakeUpDetectionRecordsNvmBlockRef != null)
+;
+
+context SUSDDiagReferences
+ERROR "SUSD_E056 : susdRid41ARef is a mandatory parameter!" : (susdRid41ARef != null)
+;
+
+context SUSD_C_SWCInfo
+ERROR "SUSD_E015 : sUSD_SWCName is a mandatory parameter!" : (sUSD_SWCName != null)
+;
+
+context SUSD_C_SWCInfo
+ERROR "SUSD_E016 : sUSD_C_ShutdownPermControl is a mandatory parameter!" : (sUSD_C_ShutdownPermControl != null)
+;
+
+context SUSD_C_SWCInfo
+ERROR "No duplicate wakeup sources are allowed in SUSD_SWCs_SpecificWkSrcId!" :
+    sUSD_SWCs_SpecificWkSrcId.forAll(e | sUSD_SWCs_SpecificWkSrcId.select(x | x.shortName == e.shortName).size == 1)
+;
+
+context SUSD_C_BatteryVoltageRange
+ERROR "SUSD_E017 : sUSD_C_UnderVoltage_hysteresis is a mandatory parameter!" : (sUSD_C_UnderVoltage_hysteresis != null)
+;
+
+context SUSD_C_BatteryVoltageRange
+ERROR "SUSD_E018 : sUSD_C_OverVoltage_hysteresis is a mandatory parameter!" : (sUSD_C_OverVoltage_hysteresis != null)
+;
+
+context SUSDWakeUpRelation
+ERROR "SUSD_E019 : sUSD_WakeupSourceId is a mandatory parameter!" : (sUSD_WakeupSourceId != null)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_DisNvMWriteAvailable != false)
+ERROR "SUSD_E020 : SUSD_C_DisableNVMWrite_Voltage is a mandatory calibration parameter(Range : 0 to 9)!" :
+(this.sUSD_C_DisableNVMWrite_Voltage != null) && (this.sUSD_C_DisableNVMWrite_Voltage >= 0) && (this.sUSD_C_DisableNVMWrite_Voltage < 10)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E021 : sUSD_C_PerToVoltageConvFactor is a mandatory calibration parameter(Range : 0.0 to 26.5)!" :
+(this.sUSD_C_PerToVoltageConvFactor != null) && (this.sUSD_C_PerToVoltageConvFactor >= 0) && (this.sUSD_C_PerToVoltageConvFactor <= 26.5)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E022 : sUSD_C_RunCrankInputStuckHi_Enable is a mandatory calibration parameter when Run Crank Plausibility is enabled!" :
+(this.sUSD_C_RunCrankInputStuckHi_Enable != null)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E023 : sUSD_C_RunCrankInputStuckHi_FailCount is a mandatory calibration parameter when Run Crank Plausibility is enabled (Range : 0 to 65535)!" :
+(sUSD_C_RunCrankInputStuckHi_FailCount != null) && (sUSD_C_RunCrankInputStuckHi_FailCount >= 0) && (sUSD_C_RunCrankInputStuckHi_FailCount <= 65535)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E024 : sUSD_C_RunCrankInputStuckHi_SampleCount is a mandatory calibration parameter when Run Crank Plausibility is enabled (Range : 0 to 65535)!" :
+(sUSD_C_RunCrankInputStuckHi_SampleCount != null) && (sUSD_C_RunCrankInputStuckHi_SampleCount >= 0) && (sUSD_C_RunCrankInputStuckHi_SampleCount <= 65535)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E025 : sUSD_C_RunCrankInputStuckLow_Enable is a mandatory calibration parameter when Run Crank Plausibility is enabled!" :
+(sUSD_C_RunCrankInputStuckLow_Enable != null)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E026 : sUSD_C_RunCrankInputStuckLow_FailCount is a mandatory calibration parameter when Run Crank Plausibility is enabled (Range : 0 to 65535)!" :
+(sUSD_C_RunCrankInputStuckLow_FailCount != null) && (sUSD_C_RunCrankInputStuckLow_FailCount >= 0) && (sUSD_C_RunCrankInputStuckLow_FailCount <= 65535)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E027 : sUSD_C_RunCrankInputStuckLow_SampleCount is a mandatory calibration parameter when Run Crank Plausibility is enabled (Range : 0 to 65535)!" :
+(sUSD_C_RunCrankInputStuckLow_SampleCount != null) && (sUSD_C_RunCrankInputStuckLow_SampleCount >= 0) && (sUSD_C_RunCrankInputStuckLow_SampleCount <= 65535)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E028 : sUSD_C_RunCrankInputThresholdHigh is a mandatory calibration parameter when Run Crank Plausibility is enabled (Range : 0.0 to 26.5)!" :
+(sUSD_C_RunCrankInputThresholdHigh != null) && (sUSD_C_RunCrankInputThresholdHigh >= 0) && (sUSD_C_RunCrankInputThresholdHigh <= 26.5)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E029 : sUSD_C_RunCrankInputThresholdLow is a mandatory calibration parameter when Run Crank Plausibility is enabled (Range : 0.0 to 26.5)!" :
+(sUSD_C_RunCrankInputThresholdLow != null) && (sUSD_C_RunCrankInputThresholdLow >= 0) && (sUSD_C_RunCrankInputThresholdLow <= 26.5)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E030 : sUSD_C_RunCrankInput_DebounceTime is a mandatory calibration parameter when Run Crank Plausibility is enabled (Range : 0.0 to 10.0)!" :
+(sUSD_C_RunCrankInput_DebounceTime != null) && (sUSD_C_RunCrankInput_DebounceTime >= 0) && (sUSD_C_RunCrankInput_DebounceTime <= 10)
+;
+
+context SUSDConfigSet
+if (this.parent.sUSDGeneral.sUSD_RunCrankPlausibility_Supported != false)
+ERROR "SUSD_E031 : sUSD_C_RunCrankInputType is a mandatory calibration parameter when Run Crank Plausibility is enabled!" :
+(sUSD_C_RunCrankInputType != null)
+;
+
+context SUSDConfigSet
+	ERROR "SUSD : The number of configured SWCs cannot exceed 32, as SUSD_SWCModuleWakeupBits is a uint32 bitmap!" :
+    (sUSD_C_SWCInfo.size <= 32) 
+;
+
+context SUSDConfigSet
+	ERROR "SUSD : The number of configured SUMs cannot exceed 32, as SUSD_ModuleWakeupBits is a uint32 bitmap!" :
+	(sUSD_C_SUMsInfo.size <= 32)
+;
+
+context SUSD_C_SUMsInfo
+ERROR "SUSD_E037 : sUSD_SUMsName is a mandatory parameter!" : (sUSD_SUMsName != null)
+;
+
+context SUSD_C_SUMsInfo  
+ERROR "SUSD_E038 : sUSD_PermitExecution is a mandatory parameter!" : (sUSD_PermitExecution != null)
+;
+
+context SUSD_C_SUMsInfo
+ERROR "SUSD_E039 : sUSD_ShutdownPermission is a mandatory parameter!" : (sUSD_ShutdownPermission != null)
+;
+
+context SUSD_C_SUMsInfo
+ERROR "No duplicate wakeup sources are allowed in SUSD_SUMs_SpecificWkSrcId!" :
+    sUSD_SUMs_SpecificWkSrcId.forAll(e | sUSD_SUMs_SpecificWkSrcId.select(x | x.shortName == e.shortName).size == 1)
+;
+
+context SUSDConfigSet
+ERROR "SUSD_E051 : No duplicate SUM module names are allowed in sUSD_C_SUMsInfo!" :
+    sUSD_C_SUMsInfo.forAll(s1 | sUSD_C_SUMsInfo.forAll(s2 | s1 == s2 || s1.sUSD_SUMsName != s2.sUSD_SUMsName))
+;
+
+context SUSD_C_SUMsInfo
+ERROR "SUSD_E050 : sUSD_SUMsName must be a valid SUM module name!" :
+    (sUSD_SUMsName.toString() == "SUM_PNC") ||
+    (sUSD_SUMsName.toString() == "SUM_LNM") ||
+    (sUSD_SUMsName.toString() == "SUM_SSFM_ERRH") ||
+    (sUSD_SUMsName.toString() == "SUM_SOH") ||
+    (sUSD_SUMsName.toString() == "SUM_TCS") ||
+    (sUSD_SUMsName.toString() == "SUM_SSC") ||
+    (sUSD_SUMsName.toString() == "SUM_SSFM_SSM") ||
+    (sUSD_SUMsName.toString() == "SUM_DIAG") ||
+    (sUSD_SUMsName.toString() == "SUM_SRVMGR") ||
+    (sUSD_SUMsName.toString() == "SUM_SPM")
+;
+
+context SUSD_C_BatteryVoltageRange
+ERROR "SUSD_E054 : SUSD_BatteryVoltageRange_Min is less than or equal to SUSD_BatteryVoltageRange_Max !" :
+	(sUSD_C_BatteryVoltageRange_Min <= sUSD_C_BatteryVoltageRange_Max)
+;
+
+context SUSD_BatteryVoltageRange
+ERROR "SUSD_E055 : SUSD_DefaultOverVoltage_hysteresis is a mandatory parameter!" : (sUSD_DefaultOverVoltage_hysteresis != null)
+;
+
+context SUSD_BatteryVoltageRange
+ERROR "SUSD_E056 : SUSD_DefaultUnderVoltage_hysteresis is a mandatory parameter!" : (sUSD_DefaultUnderVoltage_hysteresis != null)
+;
+
+context SUSDWakeUpRelation
+ERROR "SUSD_E053: The reference Wakeup Source ID has NOT been configured in EcuM!": sUSD_WakeupSourceId.ecuMWakeupSourceId.forAll(e|e != null)
+;
+
+context SUSDWakeUpRelation
+ERROR "No duplicate wakeup sources are allowed in sUSD_WakeupSourceId!" :
+    sUSD_WakeupSourceId.forAll(e | sUSD_WakeupSourceId.select(x | x.shortName == e.shortName).size == 1)
+;
+
+context SUSDGeneral
+ERROR "SUSD_E061 : SUM_SUSD_RESETExecution_TIMERNvmBlockRef is a mandatory parameter!" : (sUM_SUSD_RESETExecution_TIMERNvmBlockRef != null)
+;
+
+context SUSDGeneral
+if (sUSD_ECUOpStateDIDSupported == true)
+ERROR "SUSD: DcmDspDidSignal for  DID F086 ECUOperatingState_DataRecord  is not defined" : (sUSD_ECUOperatingStateDIDSigRef != null)
+;
+
+context SUSDGeneral
+if (sUSD_PowerModing_Slave_Supported == true)
+ERROR "SUSD: DcmDspDidSignal for  DID F085 PowerModingState_DataRecord  is not defined" : (sUSD_PowerModingStateDIDSigRef != null)
+;
+
+context SUSDGeneral
+if (sUSD_PowerModing_Slave_Supported == true)
+ERROR "SUSD: DcmDspDidSignal for  DID F095 VehiclePowerModeInvalidity_DataRecord  is not defined" : (sUSD_VehiclePowerModeInvalidityDIDSigRef != null)
+;
+
+context SUSDGeneral
+if (sUSD_PowerModing_Slave_Supported == true)
+ERROR "SUSD: DemDataElementClass for VPwrSetEnCondData  is not defined" : (sUSD_DemDataElementClass_VPwrSetEnCondDataSigRef != null)
+;
+
+context SUSDGeneral
+	ERROR "You shall configure the mandatory parameter SusdGenerateInitRunnable so as to generate init runnable" :
+		(this.susdGenerateInitRunnable != null)
+;
+
+context Sum_SUSD_ActivityRecords
+	if(this.sum_SUSD_Record0x01_Type == "BitMapped")
+	ERROR "When the record 0x01 is set to provide bit-mapped reason, the number of Sum_SUSD_ECU_WakeupSources could not be more than 8." :
+	(this.sum_SUSD_ECU_WakeupSource.size <= 8)
+;
+
+context Sum_SUSD_ActivityRecords
+	ERROR "No duplicate wakeup sources are allowed in sum_SUSD_ECU_WakeupSource!" :
+	sum_SUSD_ECU_WakeupSource.forAll(e | sum_SUSD_ECU_WakeupSource.select(x | x.shortName == e.shortName).size == 1)
+;
+
+context Sum_SUSD_ActivityRecords
+	ERROR "No duplicate wakeup sources are allowed in sum_SUSD_LIN_WakeupSource!" :
+	sum_SUSD_LIN_WakeupSource.forAll(e | sum_SUSD_LIN_WakeupSource.select(x | x.shortName == e.shortName).size == 1)
+;
+
+context Sum_SUSD_ActivityRecords
+	ERROR "SUSD: Reference to NvM Block Descriptor block for First Boot Post Flash block is not configured." :
+	(this.sum_SUSD_FirstBootPostFlashNvMBlockRef != null)
+;
+
+context Sum_SUSD_ActivityRecords
+	ERROR "SUSD: Reference to NvM Block Descriptor block for DID E0D7 data block is not configured." :
+	(this.sum_SUSD_E0D7NvMBlockRef != null)
+;
+
+context Sum_SUSD_ActivityRecords
+	ERROR "SUSD: Reference to NvM Block Descriptor block for E0D7 Monitor Disabled block is not configured." :
+	(this.sum_SUSD_E0D7_MonitorDisabled_NvMBlockRef != null)
+;
+
+context SUSDDiagReferences
+	ERROR "SUSD : Did_F088_Reference is a mandatory parameter!" : (this.did_F088_Reference != null)
+;
+
+context SUSDDiagReferences
+
+	ERROR "SUSD_E0D7 : Did_E0D7_Reference is a mandatory parameter!" : (this.did_E0D7_Reference != null)
+;
+
+context SUSDDiagReferences
+	ERROR "SUSD_E0D7 : Did_E0D7_Reference Should be configured with either a sync or async client server DCM port!" : (Susd_IsDIDE0D7SyncCS(this) || Susd_IsDIDE0D7AsyncCS(this))
+;
+
+context SUSDDiagReferences
+	ERROR "SUSD : Did_F089_Reference is a mandatory parameter!" : (this.did_F089_Reference != null)
+;
+
+
+
+/* Validation: PMM signal reference is mandatory */
+context SUSDGeneral
+	ERROR "Parameter Sum_SUSD_Sig_PrimaryPowerMode_Ref is mandatory!"  :
+    (this.sum_SUSD_Sig_PrimaryPowerMode_Ref != null )
+;
+
+/* Validation: ComGroupSignal cannot be used for service-based communication with PMM
+ * Service-based communication requires ComSignal (not ComGroupSignal) with UINT8_N type */
+context SUSDGeneral
+	if(this.sum_SUSD_Sig_PrimaryPowerMode_Ref != null &&
+	   this.sum_SUSD_ServiceBased_PMM_Ref != null &&
+	   this.sum_SUSD_Sig_PrimaryPowerMode_Ref.metaType.toString().contains("ComGroupSignal"))
+	ERROR "Parameter Sum_SUSD_Sig_PrimaryPowerMode_Ref: ComGroupSignal cannot be used for service-based communication. Service-based communication requires a ComSignal (not ComGroupSignal) with UINT8_N type. Please reference a ComSignal or remove sum_SUSD_ServiceBased_PMM_Ref.":
+	false
+;
+
+/* Validation: sum_SUSD_ServiceBased_PMM_Ref must NOT be configured for non-service-based signals
+ * Service-based reference is only valid when signal type is UINT8_N */
+context SUSDGeneral
+	if(this.sum_SUSD_Sig_PrimaryPowerMode_Ref != null &&
+		!this.SUSD_IsPMMServiceBased())
+	ERROR "Parameter sum_SUSD_ServiceBased_PMM_Ref must NOT be configured when PMM signal is not service-based. This reference is only valid for service-based communication.":
+	(this.sum_SUSD_ServiceBased_PMM_Ref == null)
+;
+
+/* Validation: PMM signal must use UINT8 type when not service-based
+ * Standard signal types for signal-based communication (ComSignal or ComGroupSignal without service-based reference) */
+context SUSDGeneral
+	if(this.sum_SUSD_Sig_PrimaryPowerMode_Ref != null &&
+	   !this.SUSD_IsPMMServiceBased())
+	ERROR "Parameter Sum_SUSD_Sig_PrimaryPowerMode_Ref: Invalid ComSignalType for signal-based communication. Expected UINT8, but got '" + 
+	      this.sum_SUSD_Sig_PrimaryPowerMode_Ref.comSignalType + "'. If you want to use UINT8_N, configure sum_SUSD_ServiceBased_PMM_Ref with a ComSignal reference for service-based communication.":
+	(this.sum_SUSD_Sig_PrimaryPowerMode_Ref.comSignalType == "UINT8")
+;
+
+/* Validation: PMM signal must use UINT8_N type when service-based
+ * Service-based communication requires variable-length array type for proper data serialization */
+context SUSDGeneral
+	if(this.sum_SUSD_Sig_PrimaryPowerMode_Ref != null &&
+	   this.SUSD_IsPMMServiceBased() &&
+	   !this.sum_SUSD_Sig_PrimaryPowerMode_Ref.metaType.toString().contains("ComGroupSignal"))
+	ERROR "Parameter Sum_SUSD_Sig_PrimaryPowerMode_Ref: Invalid ComSignalType for service-based propulsion system active signal. Expected UINT8_N, but got '" + 
+	      this.sum_SUSD_Sig_PrimaryPowerMode_Ref.comSignalType + "'.":
+	(this.sum_SUSD_Sig_PrimaryPowerMode_Ref.comSignalType == "UINT8_N")
+;
+
+
+/* Validation: When service-based PMM is configured, data type mapping set must also be configured
+ * Service-based communication requires proper data type transformation mappings */
+context SUSDGeneral
+	if (this.sum_SUSD_Sig_PrimaryPowerMode_Ref != null && this.sum_SUSD_ServiceBased_PMM_Ref != null)
+	ERROR "SUSD: Sum_SUSD_ServiceBased_DataTypeMappingSet must be configured when sum_SUSD_ServiceBased_PMM_Ref is set." :
+	(this.sum_SUSD_ServiceBased_DataTypeMappingSet != null && this.sum_SUSD_ServiceBased_DataTypeMappingSet.size > 0)
+;
+
+/* Validation: BPMM signal reference is mandatory */
+context SUSDGeneral
+	ERROR "Parameter Sum_SUSD_Sig_BackupPowerMode_Ref is mandatory!"  :
+    (this.sum_SUSD_Sig_BackupPowerMode_Ref != null )
+;
+
+/* Validation: ComGroupSignal cannot be used for service-based communication with BPMM
+ * Service-based communication requires ComSignal (not ComGroupSignal) with UINT8_N type */
+context SUSDGeneral
+	if(this.sum_SUSD_Sig_BackupPowerMode_Ref != null &&
+	   this.sum_SUSD_ServiceBased_BPMM_Ref != null &&
+	   this.sum_SUSD_Sig_BackupPowerMode_Ref.metaType.toString().contains("ComGroupSignal"))
+	ERROR "Parameter Sum_SUSD_Sig_BackupPowerMode_Ref: ComGroupSignal cannot be used for service-based communication. Service-based communication requires a ComSignal (not ComGroupSignal) with UINT8_N type. Please reference a ComSignal or remove sum_SUSD_ServiceBased_BPMM_Ref.":
+	false
+;
+
+/* Validation: sum_SUSD_ServiceBased_BPMM_Ref must NOT be configured for non-service-based signals
+ * Service-based reference is only valid when signal type is UINT8_N */
+context SUSDGeneral
+	if(this.sum_SUSD_Sig_BackupPowerMode_Ref != null &&
+		!this.SUSD_IsBPMMServiceBased())
+	ERROR "Parameter sum_SUSD_ServiceBased_BPMM_Ref must NOT be configured when BPMM signal is not service-based. This reference is only valid for service-based communication.":
+	(this.sum_SUSD_ServiceBased_BPMM_Ref == null)
+;
+
+/* Validation: BPMM signal must use UINT8 type when not service-based
+ * Standard signal type for signal-based communication (ComSignal or ComGroupSignal without service-based reference) */
+context SUSDGeneral
+	if(this.sum_SUSD_Sig_BackupPowerMode_Ref != null &&
+	   !this.SUSD_IsBPMMServiceBased())
+	ERROR "Parameter Sum_SUSD_Sig_BackupPowerMode_Ref: Invalid ComSignalType for signal-based communication. Expected UINT8 (for ComSignal or ComGroupSignal), but got '" + 
+	      this.sum_SUSD_Sig_BackupPowerMode_Ref.comSignalType + "'. If you want to use UINT8_N, configure sum_SUSD_ServiceBased_BPMM_Ref with a ComSignal reference for service-based communication.":
+	(this.sum_SUSD_Sig_BackupPowerMode_Ref.comSignalType == "UINT8")
+;
+
+/* Validation: BPMM signal must use UINT8_N type when service-based
+ * Service-based communication requires variable-length array type for proper data serialization */
+context SUSDGeneral
+	if(this.sum_SUSD_Sig_BackupPowerMode_Ref != null &&
+	   this.SUSD_IsBPMMServiceBased() &&
+	   !this.sum_SUSD_Sig_BackupPowerMode_Ref.metaType.toString().contains("ComGroupSignal"))
+	ERROR "Parameter Sum_SUSD_Sig_BackupPowerMode_Ref: Invalid ComSignalType for service-based BPMM signal. Expected UINT8_N, but got '" + 
+	      this.sum_SUSD_Sig_BackupPowerMode_Ref.comSignalType + "'.":
+	(this.sum_SUSD_Sig_BackupPowerMode_Ref.comSignalType == "UINT8_N")
+;
+
+/* Validation: When service-based BPMM is configured, data type mapping set must also be configured
+ * Service-based communication requires proper data type transformation mappings */
+context SUSDGeneral
+	if (this.sum_SUSD_Sig_BackupPowerMode_Ref != null && this.sum_SUSD_ServiceBased_BPMM_Ref != null)
+	ERROR "Parameter sum_SUSD_ServiceBased_DataTypeMappingSet must be configured when sum_SUSD_ServiceBased_BPMM_Ref is set." :
+	(this.sum_SUSD_ServiceBased_DataTypeMappingSet != null && this.sum_SUSD_ServiceBased_DataTypeMappingSet.size > 0)
+;
+
+/* Power Mode slave shall be true */
+context SUSDGeneral
+	ERROR "Parameter SUSD_PowerModing_Slave_Supported must be true." :
+	(this.sUSD_PowerModing_Slave_Supported == true)
+;

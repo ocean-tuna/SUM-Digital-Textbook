@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RTA-SUM SPM User Guide &mdash; RTA-SUM SPM 8.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/assets/jsonview.bundle.css?v=f6ef2277" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/common.css?v=bd9ab754" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/layouts.css?v=448c382f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/modern.css?v=ffa536d2" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/styles.css?v=6c8eb985" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-test-results\common.css?v=9ec2c1d5" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=f11826af" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=f663eb4a"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/assets/jsonview.bundle.js?v=18cd53c5"></script>
+        <script src="../../_static/assets/jsonview_loader.js?v=f7ff7e7d"></script>
+        <script src="../../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+        <script src="../../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+        <script src="../../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=f783d6a5"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="RTA-SUM SPM Release Notes" href="../ReleaseNotes/release_notes.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(to right, #164293, #89037A)" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            RTA-SUM SPM
+              <img src="../../_static/etas.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Requirements:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Requirements/10_Requirements.html">RTA-SUM SPM Software Requirements Specification Document</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM Design:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../DesignNotes/design_notes.html">RTA-SUM SPM Design Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM Release Notes:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../ReleaseNotes/release_notes.html">RTA-SUM SPM Release Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM User Guide:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RTA-SUM SPM User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#definitions-and-abbreviations">Definitions and Abbreviations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-overview">Module Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#integration-into-rta-car-project">Integration into RTA-CAR Project</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-spm-module">Create SPM module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-configuration-overview">Module Configuration Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-containers">Configuration Containers</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spm">Spm</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-hints">Configuration Hints</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spm-configset">SPM ConfigSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spm-general">SPM General</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spm-can-wake-up-frame-references">SPM CAN Wake-up Frame references</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#calibratable-parameters">Calibratable Parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#heartbeat-periodicity">Heartbeat periodicity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#wkup-frame-periodicity">WkUp frame periodicity</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bsw-modules-configuration-hints">BSW Modules Configuration Hints</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rte-configuration">Rte Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Calibratable Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cdd-for-communication">Cdd for communication</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metadata-handling-by-rte-configuration-steps">Metadata Handling by RTE Configuration Steps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#soad-configuration">SoAd Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bswm-configuration">BswM Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#bswmpdugroupswitch-action">BswMPduGroupSwitch action</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#action-list">Action List</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mode-request-port">Mode Request Port</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mode-condition">Mode Condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#logical-expressions">Logical Expressions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#action-rules">Action Rules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-settings">Data Type Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#port-connection">Port Connection</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#appendix-a-generic-component-interface">Appendix A: Generic Component Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#appendix-b-history-review">Appendix B: History Review</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#appendix-c-customer-information-in-scope-to-current-software-version">Appendix C: Customer information in scope to current software version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contacting-etas">Contacting ETAS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#technical-support">Technical Support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#general-enquiries">General Enquiries</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#etas-global-headquarters">ETAS Global Headquarters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#etas-local-sales-and-support-offices">ETAS Local Sales and Support Offices</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(to right, #164293, #89037A)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">RTA-SUM SPM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">RTA-SUM SPM User Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/doc/UserGuide/user_guide.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="rta-sum-spm-user-guide">
+<h1>RTA-SUM SPM User Guide<a class="headerlink" href="#rta-sum-spm-user-guide" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>This User Guide provides a guideline for the configuration and integration of the ETAS developed
+RTA-SUM SPM. RTA-SUM SPM module has been developed towards the Software Defined Vehicle
+requirements, specifically, the SDV-8217 specifications and related specifications listed in Section <a class="reference internal" href="#references"><span class="std std-ref">References</span></a>.
+General guidelines on the common steps and workflow for RTA-SUM integration can be found in RTA-
+SUM Getting Started Guide.</p>
+<section id="definitions-and-abbreviations">
+<h3>Definitions and Abbreviations<a class="headerlink" href="#definitions-and-abbreviations" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Terms and Abbreviations</p></th>
+<th class="head"><p>Definitions</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AUTOSAR</p></td>
+<td><p>AUTOmotive Open System ARchitecture</p></td>
+</tr>
+<tr class="row-odd"><td><p>BSW</p></td>
+<td><p>Basic Software</p></td>
+</tr>
+<tr class="row-even"><td><p>CAN</p></td>
+<td><p>Controlled Area Network</p></td>
+</tr>
+<tr class="row-odd"><td><p>CDD</p></td>
+<td><p>Complex-Device Driver</p></td>
+</tr>
+<tr class="row-even"><td><p>CanIf</p></td>
+<td><p>Can Interface AUTOSAR BSW Module</p></td>
+</tr>
+<tr class="row-odd"><td><p>PGTT</p></td>
+<td><p>Power Graph Traversal Table</p></td>
+</tr>
+<tr class="row-even"><td><p>PM</p></td>
+<td><p>Power Manager</p></td>
+</tr>
+<tr class="row-odd"><td><p>RTE</p></td>
+<td><p>Run-Time Environment AUTOSAR middleware between Application Software Layer and Basic
+Software</p></td>
+</tr>
+<tr class="row-even"><td><p>SE</p></td>
+<td><p>Software Entity (Assume it as generic software module/function or Software Service)</p></td>
+</tr>
+<tr class="row-odd"><td><p>SM</p></td>
+<td><p>Software Manager</p></td>
+</tr>
+<tr class="row-even"><td><p>SPM</p></td>
+<td><p>Software/Power manager</p></td>
+</tr>
+<tr class="row-odd"><td><p>SUM</p></td>
+<td><p>Standardized Utility Module</p></td>
+</tr>
+<tr class="row-even"><td><p>SWCD</p></td>
+<td><p>Software Component Description</p></td>
+</tr>
+<tr class="row-odd"><td><p>SoAd</p></td>
+<td><p>Soacket Adaptor AUTOSAR BSW Module</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-overview">
+<h3>Module Overview<a class="headerlink" href="#module-overview" title="Link to this heading"></a></h3>
+<p>The RTA-SUM SPM, Software/Power Manager, is a Complex-Device Driver of the standardized architecture of AUTOSAR. The SPM contains in this architecture two sub-modules: the SM and the PM. Both of them contribute to the global functionalities of the RTA-SUM SPM.
+So that they are just mentioned as generic “SPM” at the scope fo this document.
+SPM acts itself as a manager for the activation and the deactivation requests of specific Software Entities (Services) and hardware resources. A SPM instance can control the status of a remote
+Software Services (i.e. hosted on a remote device) by the means of a RPC. The RPC requires the SPM instances as interfaces for the communication messages exchange and the resource management.
+A Software Services can directly request its own activation/deactivation to the SPM (local request) or SPM activates it on base of a remote request.
+SPM instances define and maintain by configuration, a list of Software Entities and Resources to activate on the base of a received request. Each Software Entity has got its own list of dependencies that takes the name of Power Profile or Activation Profile.
+Before activating the requested Entity, the SPM shall satisfy the activation/deactivation of all the items in the <em>Activation Profile</em>. This may involves in other activation/deactivation requests
+to local Software Entities or remote host (sending message to the remote SPM instance). So that the SPM shall be able to manage a recursive communication path to satisfy the incoming request.</p>
+<p>RTA-SUM SPM knows the network topology by from the configuration and then from the calibration of a table that is called PGTT (Power Graph Traversal Table). This table contains
+the route to reach the destination host of a SPM request. Each “harbor” in the route is a remote host. Not all the hosts in the route must contain a requested entity from the source:
+the SPM instance in the host can just works as a gateway for the request. The <em>PGTT</em> also defines the command to send to the next hop of the network in order to wake-up the remote SPM instance.</p>
+<p>RTA-SUM SPM shall also monitor the status of the remote nodes in the network. RTA-SUM SPM can monitor the status of a remote host using the heartbeat communication protocol.
+This protocol forces each host in the network to send a periodic signal that contains a rolling counter, very close to a real human heartbeat. Whenever a node in the network wants to
+communicate with another node, the source node can “listen” the heartbeat of the destination one. If the destination node heartbeat is 0, then the destination node cannot be reached by the communication.
+In this case, the source of the communication starts the diagnostic procedure for raising up a <em>LossOfCom</em> condition. Same value on the opposite side: if a destination node in communication with a source loses
+the heartbeat of the source, it starts the same diagnostic.</p>
+<p>RTA-SUM SPM is a cross-domain module, so that it can exchange information among different ECU domains, by the means of SPM instances communication on different bus system.</p>
+<p>RTA-SUM SPM communicates on:</p>
+<ul class="simple">
+<li><p><strong>Ethernet</strong> for:
+* Send/Receive an activation/deactivation request to a remote host
+* Send/Receive request acknowledge and request status to a remote host
+* Perform a inner-domain selective wake-up</p></li>
+<li><p><strong>CAN</strong> to perform the selective wake-up of a remote host</p></li>
+</ul>
+<figure class="align-default" id="spmsysarch">
+<a class="reference internal image-reference" href="../../_images/spmSysArch.png"><img alt="Spm Sys Architecture" src="../../_images/spmSysArch.png" style="width: 757.1999999999999px; height: 549.0px;" /></a>
+</figure>
+</section>
+<section id="references">
+<span id="id1"></span><h3>References<a class="headerlink" href="#references" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Document Version</p></th>
+<th class="head"><p>Version</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SDV-2017 “Vehicle Power management Architecture”</p></td>
+<td><p>4.0_20231206</p></td>
+</tr>
+<tr class="row-odd"><td><p>SDV-8217 - Mechatronic Power Manager Infrastructure Specification</p></td>
+<td><p>27.174.0p0</p></td>
+</tr>
+<tr class="row-even"><td><p>SDV-8201 “Service Discovery Extension Specification_27.27.172.3p1”</p></td>
+<td><p>27.27.172.3p1 (Release date September 28, 2023)</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="integration-into-rta-car-project">
+<h2>Integration into RTA-CAR Project<a class="headerlink" href="#integration-into-rta-car-project" title="Link to this heading"></a></h2>
+<p>This chapter aims to provide a guideline for the integration of RTA-SUM SPM module into an RTA-CAR
+project.</p>
+<p>The RTA-SUMs plugin does not include the SPM module. So that you shall manually import the generation scripts of the RTA-SUM SPM into a RTA-CAR project.
+Beside you shall need to import in the RTA-CAR project the SPM EcucValues arxml file (
+the sample file <strong>spm_EcucValues.arxml</strong> is provided in the release package folder <em>30_Integration/</em> ).</p>
+<section id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h3>
+<p>In order to successfully follow this guide:</p>
+<ul class="simple">
+<li><p>you shall have the RTA-CAR toolchain installed and you must be familiar with the AUTOSAR specifications, terminology and methodology,</p></li>
+<li><p>You also must be familiar with the GM specification and GM-SUM modules functionalities</p></li>
+</ul>
+</section>
+<section id="create-spm-module">
+<h3>Create SPM module<a class="headerlink" href="#create-spm-module" title="Link to this heading"></a></h3>
+<p>In order to create the SPM module you shall follow the following steps:</p>
+<ol class="arabic">
+<li><p>Unzip the contents of the folder RTA-SUM SPM folder in your preferred location</p></li>
+<li><p>Import in your RTA-CAR project the folder <em>template</em> from SPM-released unzipped folder:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>You can copy the folder in your RTA-CAR project location OR import it as a linked resource, as you prefer.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>In RTA-CAR, go to the project <em>ECU Configuration</em> and expand the menu <em>Parameter Definition”</em>. You must see the SPM blue container. This container
+includes all the module configuration containers and parameters. If you don’t see it, try to refresh the project. If it still missing, delete the imported folder and import it again</p></li>
+<li><p>In RTA-CAR <em>ECU Configuration</em>, click with the right button on folder <em>Other Modules</em> below the root <em>Bsw Modules</em>, and choose <cite>Create Spm</cite></p></li>
+<li><p>Configure Spm module as you prefer</p></li>
+<li><p>In order to build the Spm in your RTA-CAR project, please make sure you have the building features enable (<em>Build Features</em> in RTA-CAR). You can reach it by the following path in RTA-CAR:
+Window <strong>&gt;&gt;&gt;</strong> Preferences <strong>&gt;&gt;&gt;</strong> Tool Customization <strong>&gt;&gt;&gt;</strong> Special Features, and then <em>enable</em> the checkbox <em>Build Features</em>. After that press on <em>Apply and CLose</em>.</p></li>
+<li><p>Now you are able to build the SPM and so to generate the C code and driver SWCD. If you don’t specify an output path, the SPM C code is generated in folder <strong>_out</strong>.</p></li>
+</ol>
+</section>
+</section>
+<section id="module-configuration-overview">
+<span id="id2"></span><h2>Module Configuration Overview<a class="headerlink" href="#module-configuration-overview" title="Link to this heading"></a></h2>
+<section id="configuration-containers">
+<h3>Configuration Containers<a class="headerlink" href="#configuration-containers" title="Link to this heading"></a></h3>
+<p>The SPM appears as a root configuration container as any other RTA-SUM module or Bsw module.
+The highest hierarchical level for the SPM configuration appears as follows:</p>
+<section id="spm">
+<h4>Spm<a class="headerlink" href="#spm" title="Link to this heading"></a></h4>
+</section>
+</section>
+<section id="configuration-hints">
+<h3>Configuration Hints<a class="headerlink" href="#configuration-hints" title="Link to this heading"></a></h3>
+<section id="spm-configset">
+<h4>SPM ConfigSet<a class="headerlink" href="#spm-configset" title="Link to this heading"></a></h4>
+<section id="spmconfiguredpowprf">
+<span id="spmconfpowprf"></span><h5>SpmConfiguredPowPrf<a class="headerlink" href="#spmconfiguredpowprf" title="Link to this heading"></a></h5>
+<p>Container stores all the SPM instance-known power profiles as configuration container. Each SPM instance shall store at least one
+power profile as configuration parameter. On the other hand, the upper multiplicity of this container is infinite.</p>
+<p>Please pay attention: You can have as maximum number of configured power profiles
+the value 4294967296. This value of is totally theoretical because not the whole set of combination can define a valid profile identifier (Look <a class="reference internal" href="#spmpowprfid"><span class="std std-ref">SpmPowPrfID</span></a> too)</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>No check are done on the number of configured power profile. The max allowed number is 4294967296 and this is the only performed check.</p>
+</div>
+<section id="spmpowprfid">
+<span id="id3"></span><h6>SpmPowPrfID<a class="headerlink" href="#spmpowprfid" title="Link to this heading"></a></h6>
+<p>This parameter contains the identifier of the specific power profile. The Power Profile identifier is on 4 Bytes. The power Profile identifier
+contains the power profile associated software service identifier the profile identifier 16 most-significant bits.</p>
+</section>
+<section id="spmrepresentativeprofile">
+<h6>SpmRepresentativeProfile<a class="headerlink" href="#spmrepresentativeprofile" title="Link to this heading"></a></h6>
+<p>This parameter identifies a representative power profile. A representative profile contains a list of software services as dependency list.
+Once SPM activates a representative power power profile, then all the software services in the dependency list are in active state and they are under LossOfFunction control.
+The activation of a representative profile does not look for the activation of the items in the dependency list but just activate the power profile.</p>
+</section>
+<section id="spmpowprfdeplist">
+<h6>SpmPowPrfDepList<a class="headerlink" href="#spmpowprfdeplist" title="Link to this heading"></a></h6>
+<p>This container refers or targets the reference of the <a class="reference internal" href="#spmconfpowprf"><span class="std std-ref">SpmConfiguredPowPrf</span></a>. The container shall define all the dependencies of the current father container.
+SPM needs to activate all the items (if present) in the dependencies list before putting the status of the father (requested power profile) to activate state.</p>
+<p>If a power profile is:</p>
+<ul class="simple">
+<li><p><strong>A remote one</strong>: so that SPM cannot activate it locally but it shall send a request over Ethernet to the remote SPM instance <em>OR</em></p></li>
+<li><p><strong>A Default Profile</strong>: The profile is the “tail” of the activation dependencies and it does not have any additional dependency and SPM can directly activate it.</p></li>
+</ul>
+<p>Then the Power Profile does not have any item in the dependency list.</p>
+</section>
+<section id="spmsrvcpdugrouptxref">
+<h6>SpmSrvcPduGroupTxRef<a class="headerlink" href="#spmsrvcpdugrouptxref" title="Link to this heading"></a></h6>
+<p>The paramter defines the references to the ComIpduGroup that shall be enabled in transmission once that the power profile is activated as software service PDU safety-related data.</p>
+</section>
+<section id="spmsrvcpdugrouprxref">
+<h6>SpmSrvcPduGroupRxRef<a class="headerlink" href="#spmsrvcpdugrouprxref" title="Link to this heading"></a></h6>
+<p>The paramter defines the references to the ComIpduGroup that shall be enabled in Reception once that the power profile is activated as software service PDU safety-related data.</p>
+</section>
+</section>
+<section id="spmpgttentries">
+<h5>SpmPgttEntries<a class="headerlink" href="#spmpgttentries" title="Link to this heading"></a></h5>
+<p>Container for the design of the Power-Graph Traversal Table (as specified by GM).</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/TrgDvc.png"><img alt="Spm Target Device" src="../../_images/TrgDvc.png" style="width: 607.1999999999999px; height: 334.8px;" /></a>
+</figure>
+<p>The container contains the following parameters:</p>
+<ul class="simple">
+<li><p><strong>SpmTrgDvcID</strong>: Identifier (IP address) of the device to reach from the current instance of the SPM</p></li>
+<li><p><strong>SpmTrgDvcDtcBaseID</strong>: 2-bytes identifier for the DTC associated to the Target Device</p></li>
+<li><p><strong>SpmTrgDvcTimeOut</strong>: time window for receiving the heartbeat of the target Device before setting the LossOfNode indication</p></li>
+</ul>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/WkDvc.png"><img alt="Spm Waking Device" src="../../_images/WkDvc.png" style="width: 637.1999999999999px; height: 348.0px;" /></a>
+</figure>
+<ul class="simple">
+<li><p><strong>SpmWkngDvcID</strong>: Local Ip address of the SPM instance</p></li>
+<li><p><strong>SpmWkngDvcNetMulticastAddress</strong>: Network Multicast IP of the network where to send the heartbeat</p></li>
+</ul>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/TrgDvcInfo.png"><img alt="Spm Target Device Info" src="../../_images/TrgDvcInfo.png" style="width: 582.0px; height: 367.8px;" /></a>
+</figure>
+<p>This is a wrapper container:</p>
+<ul class="simple">
+<li><p><strong>SpmTrgDvcRef</strong>: Reference to the Target Device to be reached</p></li>
+<li><p><strong>SpmWkUpSeqRef</strong>: Reference to wake-up boot sequence to use for reaching the target device</p></li>
+</ul>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/WkUpSeq.png"><img alt="Spm Sys Architecture" src="../../_images/WkUpSeq.png" style="width: 693.0px; height: 360.59999999999997px;" /></a>
+</figure>
+<ul class="simple">
+<li><p><strong>SpmComStepSeparationPeriodForShutDownInit</strong>: time separation between step in the reverse order for the shutdown</p></li>
+</ul>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/WkStep.png"><img alt="Spm Sys Architecture" src="../../_images/WkStep.png" style="width: 664.1999999999999px; height: 358.8px;" /></a>
+</figure>
+<ul class="simple">
+<li><p><strong>SpmSeqStepID</strong>: Wake-up sequence step identifier for sorting the step and define the sequence</p></li>
+<li><p><strong>SpmSeqStepDly</strong>: time separation between the current step and the next</p></li>
+<li><p><strong>SpmSeqStepWkUpComEnum</strong>: Enumerated bit to set in the wake-up frame</p></li>
+</ul>
+</section>
+</section>
+<section id="spm-general">
+<h4>SPM General<a class="headerlink" href="#spm-general" title="Link to this heading"></a></h4>
+<section id="spmmainfunctionperiodicity">
+<h5>SpmMainFunctionPeriodicity<a class="headerlink" href="#spmmainfunctionperiodicity" title="Link to this heading"></a></h5>
+<p>Parameter defines the timing period for scheduling the Spm main controller. The Spm main controller evaluates the status of the permit execution considering the SpmPermitExecutionMask
+value and the SPM instance activation criteria. The value of the parameter is in milliseconds as unit. The parameter datatype is float, this means that when you
+configure the parameter with a value in the open range (0,1), the the controller is scheduled in microseconds.</p>
+<p>If you want to schedule your SPM controller in seconds, you can configure your parameter with a value greater than 1000.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please pay attention when you configure this value. No check on the configuration has been implemented yet. According to GM specification
+the minimum value of the parameter shall be 1000. AN heartbeat might be also transmitted at a lower rate, but we strongly suggest to keep
+this value to 1 seconds = 1000 ms.</p>
+</div>
+</section>
+<section id="spmpermitexecutionmask">
+<h5>SpmPermitExecutionMask<a class="headerlink" href="#spmpermitexecutionmask" title="Link to this heading"></a></h5>
+<p>Parameter defines the permit execution mask. SPM uses this mask to transit the SPM controller in the appropriate state. The permit execution mask is one single byte that implements a bit map.
+The value of the permit execution mask is computed as follows:</p>
+<ul>
+<li><p>Each bit of the Byte value represents a specific functionality:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>If the functionality is not in scope to the SPM instance, then set a <strong>1</strong></p></li>
+<li><p>Otherwise set a <strong>0</strong></p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="spmcurrnodewkupbitenum">
+<h5>SpmCurrNodeWkUpBitEnum<a class="headerlink" href="#spmcurrnodewkupbitenum" title="Link to this heading"></a></h5>
+<p>The parameter contains the Enumerative value for representing the bit that keeps the current SPM instance awaken. This value goes from 0 to 63.</p>
+<p>e.g.: If configured value is 3, then SPM current instance stays awaken when Received wake-up frame has the Third bit set to 1 from right.</p>
+<p>The SPM evaluates bytes in this order:</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/canWkUpByteOrder.png"><img alt="Scope on SPM management of wake-up frame (Byte order)" src="../../_images/canWkUpByteOrder.png" style="width: 473.0px; height: 165.0px;" /></a>
+</figure>
+<p>All the data type are managed as bytes array. So that wake-up frame is an array with 8 items with 1 Byte.</p>
+<p>If you want to refer to bit 6th (for instance), then value 0x40 is stored in byte at array index 0. At the same time, bit 14th is value still 0x40 but in byte 1.</p>
+</section>
+<section id="spmnameofwakeuphelperfunction">
+<h5>SpmNameOfWakeUpHelperFunction<a class="headerlink" href="#spmnameofwakeuphelperfunction" title="Link to this heading"></a></h5>
+<p>The parameter allows to configure the name of the wake-up helper function, in case the Project-specific requires a device Custom wake-up. The parameter is required as per
+SDV-8217 and it is not mandatory.</p>
+</section>
+</section>
+<section id="spm-can-wake-up-frame-references">
+<h4>SPM CAN Wake-up Frame references<a class="headerlink" href="#spm-can-wake-up-frame-references" title="Link to this heading"></a></h4>
+<section id="spmcanwkupfrmref">
+<h5>SpmCANWkUpFrmRef<a class="headerlink" href="#spmcanwkupfrmref" title="Link to this heading"></a></h5>
+<p>You need to configure two parameters in this sub-containers. The values of the configuration parameters are references to CanIf configured ones as CanIf upper Layer. You can have a single reference for
+the frame in Tx side, but more than one in Rx side. Please let’s look carefully the names of the parameters for a right configuration.</p>
+<p>The periodicity of the CAN Wake Up frame is a configurable value retrieved by SpmCANWkUpFrm_Period_ms parameter (explained detailed in following section).</p>
+</section>
+<section id="spmethwkupfrmref">
+<h5>SpmETHWkUpFrmRef<a class="headerlink" href="#spmethwkupfrmref" title="Link to this heading"></a></h5>
+<p>You need to configure two parameters in this sub-containers. The values of the configuration parameters are references to SoAdIf configured ones as SoAd Upper Layer. You can have a single reference for
+the frame in Tx side, but more than one in Rx side. Please let’s look carefully the names of the parameters for a right configuration.</p>
+<p>Moreover, if the sending of the TC10 pulse is needed, it is necessary to reference a EthSMNetwork (the one configured in the EthSM associated with the Ethernet Switch) in the <em>SpmETHSwitchNetwork</em> configuration parameter.
+If no EthSMNetwork is referenced, the SPM will not send the TC10 pulse.</p>
+<p>The periodicity of the Ethernet Wake Up frame is a configurable value retrieved by SpmETHWkUpFrm_Period_ms parameter (explained detailed in following section).</p>
+</section>
+</section>
+</section>
+<section id="calibratable-parameters">
+<h3>Calibratable Parameters<a class="headerlink" href="#calibratable-parameters" title="Link to this heading"></a></h3>
+<section id="heartbeat-periodicity">
+<h4>Heartbeat periodicity<a class="headerlink" href="#heartbeat-periodicity" title="Link to this heading"></a></h4>
+<p>The HeartBeat’s initial burst phase and steady state periodicity (ms) are calibratable parameters.
+They can be assigned values in the range [5 - 65535].
+The default value of the intial burst phase periodicity is of 5ms.
+The default value of the steady state periodicity is of 1000ms.</p>
+</section>
+<section id="wkup-frame-periodicity">
+<h4>WkUp frame periodicity<a class="headerlink" href="#wkup-frame-periodicity" title="Link to this heading"></a></h4>
+<p>The WakeUp frames (CAN and ETH) periodicities (ms) are calibratable parameters.
+They can be assigned values in the range [5 - 65535].</p>
+<p>Both of them are configurable parameter (SpmCANWkUpFrm_Period_ms and SpmETHWkUpFrm_Period_ms).</p>
+<p>The default value of the CAN WkUp frame periodicity is the value of the parameter SpmCANWkUpFrm_Period_ms: if it is not configured, it will be 10ms.
+The default value of the ETH WkUp frame periodicity is the value of the parameter SpmETHWkUpFrm_Period_ms: if it is not configured, it will be 1000ms.</p>
+</section>
+</section>
+</section>
+<section id="bsw-modules-configuration-hints">
+<h2>BSW Modules Configuration Hints<a class="headerlink" href="#bsw-modules-configuration-hints" title="Link to this heading"></a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This section is under development. It will be completed internally and then released once RTA-SUM SPM will be officially released
+for production.</p>
+</div>
+<section id="rte-configuration">
+<h3>Rte Configuration<a class="headerlink" href="#rte-configuration" title="Link to this heading"></a></h3>
+<p>The RTA-SUM SPM contains several calibration parameter. These parameters resides in the RTE generated code. The RTE generated code uses Macros from
+<em>Compiler Abstraction AUTOSAR library</em>. The usage of these Macros requires an additional configuration of the <strong>Rte Os/Rte</strong> configuration container otherwise a
+compilation error can appear for Macro <em>RTE_CALPR</em>.</p>
+<p>If you use the <strong>SDK</strong> you have to just check that the following configuration is present in your RTA-CAR project. In case it is not, please add it manually as follows:</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/Rte_Spm_Conf.png"><img alt="RTE configuration for SPM" src="../../_images/Rte_Spm_Conf.png" style="width: 952.9px; height: 508.3px;" /></a>
+</figure>
+<p>As picture shows, the steps are:</p>
+<ol class="arabic simple">
+<li><p>Open your Project</p></li>
+<li><p>In ECU Configurator, expand “Bsw Modules” and go in <em>Rte Os/Rte</em></p></li>
+<li><p>Configure the <em>RteSwComponentType</em> like in the previous picture.</p></li>
+</ol>
+</section>
+<section id="id4">
+<h3>Calibratable Parameters<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<p>The HeartBeat’s initial burst phase and steady state periodicity (ms) are calibratable parameters.
+They can be set to any value within the range of [5 - 65535].
+The default value for the initial burst phase periodicity is 5 ms.
+The default value of the steady state periodicity is 1000ms.</p>
+</section>
+<section id="cdd-for-communication">
+<h3>Cdd for communication<a class="headerlink" href="#cdd-for-communication" title="Link to this heading"></a></h3>
+<p>In an integration environment, the RTA-SUM SPM needs a Complex-Device Driver configuration in order to redirect the Pdu to/from the CanIf.</p>
+<p>This is called <strong>Cdd_SPM</strong> in SDK release.</p>
+<p>The configuration of the <strong>Cdd_SPM</strong> allows the proper <strong>CanIf</strong> code generation for RTA-BSW.
+On the other side, the <strong>Cdd_SPM</strong> makes possible the proper RTA-SUM SPM code generation when you configure the Pdu references in the container
+<em>SpmGeneral/SpmCANWkUpFrmRef</em>.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>Don’t change the name of Cdd_SPM. If you want to change the Tx/Rx Pdus between RTA-SUM SPM and CanIf, please just edit the Pdu Reference.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The Complex Device Driver is statically provided at the moment in the SDK releases. If you don’t need CAN, please:</p>
+<ol class="arabic simple">
+<li><p>Remove the Cdd configuration</p></li>
+<li><p>Make sure that No container <em>CanIfTxPduCfg</em> and <em>CanIfRxPduCfg</em> have respectively parameters <em>CanIfTxPduUserRxIndicationUL</em> and <em>CanIfRxPduUserRxIndicationUL</em> different from CDD,
+otherwise you must remove or you have to change to an AUTOSAR standard module.</p></li>
+<li><p>Remove the configuration of the container <em>SpmGeneral/SpmCANWkUpFrmRef</em> in RTA-SUM SPM configuration</p></li>
+</ol>
+</div>
+<p>The configuration of teh Cdd requires some modification to the SoAd too. The scope of the Cdd is to configure the SPM as an Upper Layer of the SoAdIf. In this
+way the SPM can use the SoAd to send the wake-up frame on Ethernet. The necessary configuration are the following:</p>
+<ul>
+<li><p>For the Cdd Configuration:</p>
+<blockquote>
+<div><ul>
+<li><p>Configure <em>Cdd/CddSoAdUpperLayerContribution</em> as follows:</p>
+<blockquote>
+<div><ul>
+<li><p>For container <em>CddSoAdUpperLayerRxPdu</em></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>CddPduRApiType             : <strong>IF</strong></p></li>
+<li><p>CddSoAdUpperLayerHandleId  :</p></li>
+<li><p>CddSoAdUpperLayerPduRef    : reference to Wake-up Pdu as defined in EcuC. This Pdu is also referenced by the SoAd in Rx side</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>For container <em>CddSoAdUpperLayerTxPdu</em></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>CddPduRApiType            : <strong>IF</strong></p></li>
+<li><p>CddSoAdUpperLayerHandleId :</p></li>
+<li><p>CddSoAdUpperLayerPduRef   : reference to Wake-up Pdu as defined in EcuC. This Pdu is also referenced by the SoAd in Tx side</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="metadata-handling-by-rte-configuration-steps">
+<h3>Metadata Handling by RTE Configuration Steps<a class="headerlink" href="#metadata-handling-by-rte-configuration-steps" title="Link to this heading"></a></h3>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p><strong>PLEASE</strong>: you must consider this section <em>IF AND ONLY IF</em> you have the possibility to embed RTA-RTE version 12.3.1pr3 or above.</p>
+<p>RTA-RTE directly supports the metadata handling at RTE API level and, then RTA-RTE replaces the Com call-outs of the older SPM versions.</p>
+</div>
+<p><strong>PRE-CONDITION</strong> : If you integrate the new SUM plugin in a RTA-CAR project with a previous version, please remove the configuration of the Com Callout. You can refer
+to the previous User guide description to avoid the configuration of the Com. Otherwise let’s start to follow the next steps.</p>
+<ol class="arabic simple">
+<li><p>Open the configuration of the Com in your RTA-CAR Project AND go to path <em>/ComConfig/ComSignals</em></p></li>
+<li><p>For all SPM related signals ( they should start with S_Sig_sftpwrmgr prefix) and change the value of the parameter <em>ComSignalType</em> to <strong>UINT8_DYN</strong> (look image <a class="reference internal" href="#commetad">ComMetaD</a>)</p></li>
+<li><p>Reach the SENDER-RECEIVER interfaces <em>sftpwrmgr_Gen</em> and <em>sftpwrmgr_heartbeat_Gen</em>. For both of them right click with the mouse on the names and add <em>New Child/MetaDataItemSet</em> (If this is not provided).</p></li>
+<li><p>In the just created <em>MetaDataItemSet</em>, map in parameters <em>DataElements</em> the data-element <strong>SPM_dt</strong> for interface <em>sftpwrmgr_Gen</em> and <strong>SPM_HB_dt</strong> for interface <em>sftpwrmgr_heartbeat_Gen</em>.</p></li>
+<li><p>Add a <em>MetaDataItem</em> to the <em>MetaDataItemSets</em> and configure <strong>10</strong> as <em>Length</em> (refer to image <a class="reference internal" href="#srmetad">SrMetaD</a> for the final scenario)</p></li>
+<li><p>Now you can generate the RTE code</p></li>
+</ol>
+<figure class="align-default" id="commetad">
+<a class="reference internal image-reference" href="../../_images/com_sign_metadata.png"><img alt="Configuration of Com signal Type" src="../../_images/com_sign_metadata.png" style="width: 939.25px; height: 482.95px;" /></a>
+</figure>
+<figure class="align-default" id="srmetad">
+<a class="reference internal image-reference" href="../../_images/metadata_sr.png"><img alt="Configuration of metadata in sender receiver interface" src="../../_images/metadata_sr.png" style="width: 621.4px; height: 200.20000000000002px;" /></a>
+</figure>
+</section>
+<section id="soad-configuration">
+<h3>SoAd Configuration<a class="headerlink" href="#soad-configuration" title="Link to this heading"></a></h3>
+<p>SoAd can interface itself with a Cdd as Upper Layer. SPM needs to use the SoAd as transmitter for the Ethernet wake-up frame, so that SPM acts as SoAd Upper Layer.</p>
+<p>When a Cdd acts as Upper Layer for the SoAd, you need to properly configure the SoAd as follows:</p>
+<ul class="simple">
+<li><p>Configure the <em>SoAd/SoAdBswModule</em> container as picture <a class="reference internal" href="#soadcdd">SoAdCdd</a></p></li>
+<li><p>Make sure that Wake-up frame on Ethernet in configuration containers <em>SoAd/SoAdConfig/SoAdPduRoute</em> and <em>SoAd/SoAdConfig/SoAdSocketRoute</em> as <strong>Cdd</strong> as <em>SoAdTxUser</em>, <em>SoAdRxUser</em>. Make also sure that Upper Layer is always IF.</p></li>
+</ul>
+<figure class="align-default" id="soadcdd">
+<a class="reference internal image-reference" href="../../_images/SoAd_Cdd.png"><img alt="Configuration of the SoAd" src="../../_images/SoAd_Cdd.png" style="width: 768.3000000000001px; height: 389.35px;" /></a>
+</figure>
+</section>
+<section id="bswm-configuration">
+<h3>BswM Configuration<a class="headerlink" href="#bswm-configuration" title="Link to this heading"></a></h3>
+<p>SPM can interface itself with the BswM as Upper Layer. SPM needs to the BswM in order to enable/disable PDU groups by exploiting the BswMPduGroupSwitch action.</p>
+<p>The following are the needed steps to configure properly the BswM:</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The following is just a guidelines. Refer to the BswM specification on how to properly configure the BswM module.</p>
+</div>
+<section id="bswmpdugroupswitch-action">
+<span id="bswmpduaction"></span><h4>BswMPduGroupSwitch action<a class="headerlink" href="#bswmpdugroupswitch-action" title="Link to this heading"></a></h4>
+<p>In the container <em>Bswm/BswMConfig/BswMModeControl/BswMAction</em>:
+#. create a new action
+#. select the type <em>BswM_PduGroup_Action</em> under the <em>BswMAvailableActions</em> and
+#. set reference of the PDUGroup
+in <em>BswMEnabledPduGroup</em>.</p>
+<figure class="align-default" id="bswm-pdugroup-action">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_Action.png"><img alt="Configuration of the BswMPduGroupSwitch action" src="../../_images/BswM_PduGroup_Action.png" style="width: 704.6px; height: 473.85px;" /></a>
+</figure>
+<p>Re-do the same operation as above but set the reference of the PDUGroup in <em>BswMDisabledPduGroup</em>.</p>
+</section>
+<section id="action-list">
+<h4>Action List<a class="headerlink" href="#action-list" title="Link to this heading"></a></h4>
+<p>In the container <em>Bswm/BswMConfig/BswMModeControl/BswMActionList</em>, create a new action list with <em>BswMActionListExecution</em> set to <strong>BSWM_TRIGGER</strong>
+add a <em>BswmActionListItem</em> and then for <em>BswMActionListItemRef</em> you need to set the reference to the action created in <a class="reference internal" href="#bswmpduaction"><span class="std std-ref">BswMPduGroupSwitch action</span></a> (previous step).</p>
+<figure class="align-default" id="bswm-pdugroup-actionlist">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_ActionList.png"><img alt="Configuration of the Action List" src="../../_images/BswM_PduGroup_ActionList.png" style="width: 801.45px; height: 288.6px;" /></a>
+</figure>
+<p>Re-do the same operation as above but set the reference to <em>BswMActionListItemRef</em> with the other previous action item.</p>
+</section>
+<section id="mode-request-port">
+<h4>Mode Request Port<a class="headerlink" href="#mode-request-port" title="Link to this heading"></a></h4>
+<p>In the container <em>Bswm/BswMConfig/BswMArbitration/BswMModeRequestPort</em> create a new Mode Request Port selecting the <em>BSWM_IMMEDIATE</em> value for <em>BswMRequestProcessing</em>.
+Then, go down from previous container to <em>/BswNModeRequestSource/BswMSwcdModeNotification</em> and configure <em>BswMSwcdModeNotificationModeDeclarationGroupPrototyeRe</em> with the reference to Mode-declaration group <strong>SPM_SWCD_PDUGRP</strong>.</p>
+<figure class="align-default" id="bswm-pdugroup-moderequestport">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_ModeRequestPort.png"><img alt="Configuration of the MRP" src="../../_images/BswM_PduGroup_ModeRequestPort.png" style="width: 768.3000000000001px; height: 459.55px;" /></a>
+</figure>
+</section>
+<section id="mode-condition">
+<h4>Mode Condition<a class="headerlink" href="#mode-condition" title="Link to this heading"></a></h4>
+<p>In the container <em>BswM/BswMConfig/BswMModeArbitration/BswMModeCondition</em> create the mode condition to enable the Pdu Group.
+Set the <em>bswMConditionType</em> to <em>BSWM_EQUALS</em> and the <em>BswMConditionMode</em> to the Mode request Port previously created.</p>
+<figure class="align-default" id="bswm-pdugroup-modeconditionpre">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_ModeCondition_Pre.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_ModeCondition_Pre.png" style="width: 812.5px; height: 329.55px;" /></a>
+</figure>
+<p>Set the <em>BswMModeValueRef</em> of the other <em>BswMModeDeclaration</em> to <em>SPM_PDU_GROUP_ENABLE</em>.</p>
+<figure class="align-default" id="bswm-pdugroup-modecondition">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_ModeCondition.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_ModeCondition.png" style="width: 801.45px; height: 377.0px;" /></a>
+</figure>
+</section>
+<section id="logical-expressions">
+<h4>Logical Expressions<a class="headerlink" href="#logical-expressions" title="Link to this heading"></a></h4>
+<p>In the container <em>Bswm/BswMConfig/BswMModeArbitration/BswMLogicalExpression</em> create one logical expression.</p>
+<figure class="align-default" id="bswm-pdugroup-logicalexpression">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_LogicalExpression.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_LogicalExpression.png" style="width: 784.5500000000001px; height: 262.6px;" /></a>
+</figure>
+<p>In one <em>BswMLogicalExpression</em> set the <em>BswMArgumentRef</em> to the Mode condition previously created for enable the PDU group.</p>
+</section>
+<section id="action-rules">
+<h4>Action Rules<a class="headerlink" href="#action-rules" title="Link to this heading"></a></h4>
+<p>In the container <em>Bswm/BswMConfig/BswMModeArbitration/BswMActionRule</em> create one action rule. Set the <em>BswMRuleExpressionRef</em> to the logical expression for enable the PDU group.
+Set the <em>BswMRuleFalseActionList</em> to the action list for disable the PDU group. Set the <em>BswMRuleTrueActionList</em> to the action list for enable the PDU group.</p>
+<figure class="align-default" id="bswm-pdugroup-actionrules">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_Rule.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_Rule.png" style="width: 793.65px; height: 293.15000000000003px;" /></a>
+</figure>
+</section>
+<section id="data-type-settings">
+<h4>Data Type Settings<a class="headerlink" href="#data-type-settings" title="Link to this heading"></a></h4>
+<p>In the container <em>BswM/BswMConfig/BswMDataTypeSettings</em> add the ref to <em>DTMS_SPM_SrvcPduGroup</em>.</p>
+<figure class="align-default" id="bswm-pdugroup-dtms">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_DTMS.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_DTMS.png" style="width: 822.25px; height: 224.9px;" /></a>
+</figure>
+</section>
+<section id="port-connection">
+<h4>Port Connection<a class="headerlink" href="#port-connection" title="Link to this heading"></a></h4>
+<p>Connect the <code class="code docutils literal notranslate"><span class="pre">PP_SPM_BswM_ComIpduGroup_&lt;&lt;ShortNameOfThePDUGroup&gt;&gt;</span></code> to the Mode Request Port created previously.</p>
+<figure class="align-default" id="bswm-pdugroup-connection">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_Connection.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_Connection.png" style="width: 1051.05px; height: 103.35000000000001px;" /></a>
+</figure>
+</section>
+</section>
+</section>
+<section id="appendix-a-generic-component-interface">
+<h2>Appendix A: Generic Component Interface<a class="headerlink" href="#appendix-a-generic-component-interface" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Port Interface</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Source</p></th>
+<th class="head"><p>Destination</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>sftpwrmgr_Gen</p></td>
+<td><p>S/R</p></td>
+<td><div class="line-block">
+<div class="line">Spm</div>
+<div class="line">LdCom / Com</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">LdCom/Com</div>
+<div class="line">Spm</div>
+</div>
+</td>
+<td><p>Interface contains datatype that represents SM-to-SM message</p></td>
+</tr>
+<tr class="row-odd"><td><p>sftpwrmgr_heartbeat_Gen</p></td>
+<td><p>S/R</p></td>
+<td><div class="line-block">
+<div class="line">Spm</div>
+<div class="line">LdCom / Com</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">LdCom/Com</div>
+<div class="line">Spm</div>
+</div>
+</td>
+<td><p>Interface contains datatype that represents PM-to-PM heartbeat</p></td>
+</tr>
+<tr class="row-even"><td><p>SR_SpmSUSD_PermitExecution</p></td>
+<td><p>S/R</p></td>
+<td><p>Spm</p></td>
+<td><p>SUSD</p></td>
+<td><p>Interface contains the permit execution value from SUSD</p></td>
+</tr>
+<tr class="row-odd"><td><p>SR_SpmSUSD_ShutdownPermission</p></td>
+<td><p>S/R</p></td>
+<td><p>SUSD</p></td>
+<td><p>Spm</p></td>
+<td><p>Interface contains the shutdown permission to provide to SUSD</p></td>
+</tr>
+<tr class="row-even"><td><p>CS_SPM_ProfileRequest</p></td>
+<td><p>C/S</p></td>
+<td><p>SWC</p></td>
+<td><p>Spm</p></td>
+<td><p>Interface contains API for (de)activating request of power profile</p></td>
+</tr>
+<tr class="row-odd"><td><p>SPM_GetDTCIdentifier</p></td>
+<td><p>C/S</p></td>
+<td><p>SWC</p></td>
+<td><p>Spm</p></td>
+<td><p>Interface contains API for getting DTC for Target Device from SPM.</p></td>
+</tr>
+<tr class="row-even"><td><p>SPM_ServiceActivationStatusNotification</p></td>
+<td><p>S/R</p></td>
+<td><p>Spm</p></td>
+<td><p>SWC</p></td>
+<td><p>Interface contains API for informing with the list of all the</p></td>
+</tr>
+<tr class="row-odd"><td><p>SPM_ComIpduGroup</p></td>
+<td><p>M/S</p></td>
+<td><p>Spm</p></td>
+<td><p>BswM</p></td>
+<td><p>Interfaces for switching the ComIpduGroup modes as requested.</p></td>
+</tr>
+<tr class="row-even"><td><p>SrvcMgr_SPM_ActivateService</p></td>
+<td><p>C/S</p></td>
+<td><p>Spm</p></td>
+<td><p>SrvcMgr</p></td>
+<td><p>INterface for asking to Service Manager the activation of a service.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="appendix-b-history-review">
+<h2>Appendix B: History Review<a class="headerlink" href="#appendix-b-history-review" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Version</p></th>
+<th class="head"><p>Description of Change</p></th>
+<th class="head"><p>Author</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0.0.1</p></td>
+<td><ul class="simple">
+<li><p>Initial version for RTA-SUM SPM.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.2</p></td>
+<td><ul class="simple">
+<li><p>Added wake-up on can support.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.3</p></td>
+<td><ul class="simple">
+<li><p>Added explanation about BSW
+configuration</p></li>
+<li><p>Created APPENDIX C</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.4.4</p></td>
+<td><ul class="simple">
+<li><p>Aligned description of parameters
+and added description of Ethernet
+Wake-up frame</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.5</p></td>
+<td><ul class="simple">
+<li><p>Added Support for PDU handling
+with the BswM</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.5_1</p></td>
+<td><ul class="simple">
+<li><p>Replaced section about Com
+Configuration for the workaround
+with the RTE support</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.6</p></td>
+<td><ul class="simple">
+<li><p>Added Support for TC10 pulse
+(refere to <a class="reference internal" href="#spmethwkupfrmref">SpmETHWkUpFrmRef</a>)</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="appendix-c-customer-information-in-scope-to-current-software-version">
+<h2>Appendix C: Customer information in scope to current software version<a class="headerlink" href="#appendix-c-customer-information-in-scope-to-current-software-version" title="Link to this heading"></a></h2>
+<p>The current RTA-SUM SPM version, contains the module ports to/from RTE for sending and receiving “SPM Traffic frames”. these frames are someIP Pdu,
+that SPM generates to send/provide information/requests from/to remote(s) SPM. The SPM traffic includes:</p>
+<ul class="simple">
+<li><p>SM frame</p></li>
+<li><p>PM frame (Heartbeat)</p></li>
+</ul>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>The current version of the SPM can be integrated in the SDK 0.2.0 but the support of the metadata, in scope to RTA-SUM SPM, is not currently enabled. SO that, the metadata
+handling for these frames are in scope to the integrator.</p>
+</div>
+<p>while SDK 0.2.0 si based on ECU extract <em>IO_Aggregator2_27_27_171.3p0</em>, the current implementation of the RTA-SUM SPM allows also to build the payload of
+SM and PM frames as per <em>IO_Aggregator2_27_27_174.2p0</em>.</p>
+<p>The current version of RTA-SUM SPM requires the Queued communication for the SPM ports that contains the payloads SPM traffic. The queueing specification
+are directly generated by RTA-SUM SPM code generation. The only thing that is out-of-scope from RTA-SUM SPM code generation is the definition of the port-interfaces for
+the SPM traffic; in fact they are directly referenced from System description of the integrator.</p>
+<p>this means you shall verify that your port definitions are aligned with the following picture:</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/qeue_sr.png"><img alt="port definition" src="../../_images/qeue_sr.png" style="width: 578.0px; height: 189.60000000000002px;" /></a>
+</figure>
+</section>
+<section id="contacting-etas">
+<h2>Contacting ETAS<a class="headerlink" href="#contacting-etas" title="Link to this heading"></a></h2>
+<section id="technical-support">
+<h3>Technical Support<a class="headerlink" href="#technical-support" title="Link to this heading"></a></h3>
+</section>
+<section id="general-enquiries">
+<h3>General Enquiries<a class="headerlink" href="#general-enquiries" title="Link to this heading"></a></h3>
+<section id="etas-global-headquarters">
+<h4>ETAS Global Headquarters<a class="headerlink" href="#etas-global-headquarters" title="Link to this heading"></a></h4>
+<div class="line-block">
+<div class="line">ETAS Gmbh</div>
+<div class="line">Borsigstrasse 24</div>
+<div class="line">70469 Stuttgart</div>
+<div class="line">Germany</div>
+</div>
+<div class="line-block">
+<div class="line">Phone: +49 711 3423-0</div>
+<div class="line">Fax: +49 711 3423-2106</div>
+<div class="line"><a class="reference external" href="www.etas.com">Official Website</a></div>
+</div>
+</section>
+<section id="etas-local-sales-and-support-offices">
+<h4>ETAS Local Sales and Support Offices<a class="headerlink" href="#etas-local-sales-and-support-offices" title="Link to this heading"></a></h4>
+<p>Contact details for your local sales office and local technical support team (where available)
+can be found on the ETAS web site:</p>
+<ul class="simple">
+<li><p>ETAS subsidiaries: <a class="reference external" href="https://www.etas.com/en/contact.php">https://www.etas.com/en/contact.php</a></p></li>
+<li><p>ETAS technical support: <a class="reference external" href="https://www.etas.com/en/hotlines.php">https://www.etas.com/en/hotlines.php</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../ReleaseNotes/release_notes.html" class="btn btn-neutral float-left" title="RTA-SUM SPM Release Notes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, ETAS GmbH.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

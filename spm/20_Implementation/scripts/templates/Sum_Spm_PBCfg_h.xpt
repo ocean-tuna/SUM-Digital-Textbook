@@ -1,0 +1,223 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_PBCfg.h"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for Spm Post-Build configuration datas
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#ifndef SPM_PB_CFG_H_
+#define SPM_PB_CFG_H_
+#include "Sum_Spm_Cfg.h"
+
+
+/*-----------------------------------------------------------------------------
+ *    Include files
+ *----------------------------------------------------------------------------*/
+
+#include "Sum_Spm_PowerProfileStateMachineEventsCode.h"
+#include "Sum_SpmTypes.h"
+
+#define SPM_GET_TICKTRACKER_VEH_OFF(i)				(( SPM_PrfStsMgr_RAM[(i)].TimeOutVehOff_tickTracker ))
+«IF spm.spmConfigSet.spmPowPrf.spmComIPduGroupEvnt_Tx.size > 0 -»
+#define SPM_GET_PDUTX_SWITCHOFF_DELAY_TRACKER(i)    (( SPM_PrfStsMgr_RAM[(i)].PduTxSwitchOffDelayTracker )) 
+«ENDIF-»
+
+ /**
+ * @brief Structure to maintain information about the req received.
+ */
+struct spmReqItm{
+	uint32 requesterIP; 							    /**< Requester IP. Valued to 0u if the requester is a local SWC. */
+	SpmRequestDependencyType ReqType;   			    /**< Type of Request recevied. */
+	SpmInitialFeedbackToRequester initFeedbackProvided; /** Flag indicating if the initial feedback shall be sent. */
+};
+
+ /**
+ * @brief Structure to maintain a list of power profile requester.
+ *
+ * This structure is used to store and manage a list of power profile requester.
+ * It keeps track of the requester and the size of list's requester.
+ */
+struct SpmRequesterList_RAM_SubStruct {
+   struct spmReqItm spmReqLst[SPM_REQER_LST_SIZE]; /**< Array storing the list of requests. */
+   uint8 size; /**< Size of list's requester. */
+};
+
+typedef enum Spm_DTC_Timeout_ActionType{
+	Spm_No_Action = 0x00u,
+	Spm_PowerOn_Finished, 
+	Spm_DTCTimeoutElapsed
+}Spm_DTC_Timeout_Action;
+
+/**
+ * @brief Rejection state for a remote power profile.
+ */
+typedef struct {
+   sint8   LackOfPowerPriority; /**< defaults to -1: to be set when REJECTED_LACK_OF_POWER is received to store the VEO priority level at rejection */
+   boolean RetryNone;           /**< TRUE: activation retries suspended (any rejection type that requires retry suspension) */
+} Spm_RemotePowProf_Rejection_Type;
+
+«LET spm.spmConfigSet.spmPowPrf AS pp-»
+«IF pp.spmComIPduGroupEvnt_Tx.size > 0 || pp.spmComIPduGroupEvnt_Rx.size > 0-»
+typedef enum Spm_Pdu_StatusType{
+	Spm_Pdu_No_Action = 0x00u,
+	Spm_Switched_On,
+	Spm_Switched_Off,
+	Spm_PendingSwitchOff /* Rx disabled, Tx delayed pending timer. */
+} Spm_Pdu_Status;
+«ENDIF-»
+«ENDLET-»
+
+/**
+ * @brief Structure representing the state and data of a power profile state machine.
+ *
+ * This structure stores the state and relevant data for a power profile state machine,
+ * including the current state, event, activation state, and other related information.
+ */
+struct SpmPowerProfileStateMachine_RAM_SubStruct {
+   uint16 spmPrfStsMgrInstCode; /**< Instance code for the profile status manager. */
+   enum SpmPowerProfileStateMachineEventsCode evnt; /**< Current event code. */
+   uint8 Spm_RemotePowProf_Activation_Step; /**< Current activation state of remote profile. */
+   uint32 TrgDvcIp; /**< Target device IP address where is located the PowProf. If set to 0, means that it is a local PowProf.  */
+   uint8 CommandSend; /**< Flag indicating if a command should be sent. */
+   uint8 sm; /**< Current state machine state. */
+   boolean isStateProfileChanged;
+   uint32 TimeOutVehOff_tickTracker; 
+   Spm_RemotePowProf_Rejection_Type Rejection;          /**< RetryNone gates retries; LackOfPowerPriority stores VEO priority on lack-of-power rejection */ 
+   uint32 Spm_RemotePowProf_ActDeactRetry_OngoingTrackerInTicks;
+   uint32 Spm_RemotePowProf_ActDeactRetry_StoredPeriodicityInTicks;
+   struct SpmRequesterList_RAM_SubStruct reqLst; /**< List of requester of this PowProf. */
+   «LET spm.spmConfigSet.spmPowPrf AS pp-»
+   «IF pp.spmComIPduGroupEvnt_Tx.size > 0 || pp.spmComIPduGroupEvnt_Rx.size > 0-»
+   Spm_Pdu_Status PduStatus;
+   «ENDIF-»
+   «IF pp.spmComIPduGroupEvnt_Tx.size > 0 -»
+   uint16 PduTxSwitchOffDelayTracker; /** Tick tracker for the Tx PDU switch-off delay. */
+   «ENDIF-»
+   «ENDLET-»
+};
+
+/**
+ * @brief Enumeration tracking ongoing power sequences for a target device.
+ */
+typedef enum Spm_PowerSeqStateType {
+	Spm_PowerSeq_None = 0x00u, /**< No power sequence ongoing. */
+	Spm_PowerSeq_PowerOn,      /**< Power-on sequence ongoing. */
+	Spm_PowerSeq_PowerOff      /**< Power-off sequence ongoing. */
+} Spm_PowerSeqState;
+
+/**
+ * @brief Structure to monitor the state of a target device.
+ *
+ * This structure is used to monitor the heartbeat and state of a target device,
+ * tracking its wake-up sequence and monitoring status.
+ */
+/* [$Satisfies $DDS_SPM 0303] *//* [$Satisfies $DDS_SPM 0304] *//* [$Satisfies $DDS_SPM 0207] */
+struct MonitoringType {
+	boolean WkUpSeqHBState; /**< Wake-up sequence heartbeat state. */
+	uint8 isMonitoringActive; /**< bit map: bit 0 for REQUESTED, bit 1 for REQUESTER. */
+	SpmDevicePowerStateCode StateOfTrgDvc; /**< Power state of the target device. */
+	uint32 PreviousHB; /**< Previous heartbeat value. */
+	uint32 PenultimateHB; /**< Penultimate heartbeat value. */
+	uint32 DTCTImeoutTracker; /**< Tracker for DTC timeout. */
+};
+
+/**
+ * @brief Structure for managing the wake-up sequence of a device.
+ *
+ * This structure holds information related to the wake-up sequence of a device,
+ * including the index step in the pgtt and a delay tracker.
+ */
+struct WkUpSeqType {
+	uint8 IndexStepInPgtt; /**< Index step in the pgtt table. */
+	uint16 DlyTracker; /**< Delay tracker for the wake-up sequence. */
+	SpmPowerOnDeviceRetryType spmPowerOnDeviceDRetry; 
+	uint16 PowerOnDeviceRetry_WaitTime; 
+	uint16 PowerOnDeviceRetry_Periodicity; 
+	Spm_PowerSeqState PowerSeqState; /**< Power sequence state tracking. */
+};
+
+/**
+ * @brief Structure representing a target device info.
+ *
+ * This structure holds all necessary information about addresses (if configured) 
+ * how the current SPM shall manage the target device. Not all the target device are directly managed by the current SPM instance. 
+ * In case the current SPM runs on a INTERMEDIATE node and the Target Device is an EDGE, then whether SPM handles this edge node, this container reports the useful 
+ * information on how to consume the wake-up frame information for the current device.
+ */
+struct SpmTrgDvcHndlngType {
+	const SpmTrgDvcHndlngInfo * trgHndl_p; 
+	boolean TargetDevicerequestedByRemote; /**< TRUE if requested by remote wake-up frame, FALSE otherwise */
+};
+
+/**
+ * @brief Structure representing a target device in the power manager.
+ *
+ * This structure holds all necessary information about a target device managed by
+ * the power manager, including its IP address, DTC ID, indices in the power gating
+ * table, and its various states and requests.
+ */
+struct Spm_PowMgr_TrgDvc_Type {
+	uint8 IndexColumnInPgtt; /**< Index of the column in the pgtt table. */
+	struct WkUpSeqType WkUpSeqTypeInfo; /**< Information about the wake-up sequence. */
+	struct MonitoringType MonitoringTypeInfo; /**< Information about the monitoring status. */
+	struct SpmTrgDvcHndlngType  SpmTrgDevInfo;	
+};
+/*
+ * END: DEFINITION OF MEMORY CLASS STRUCTURE FOR CLASS SpmRequesterList_RAM_SubStruct
+ */
+extern struct SpmPowerProfileStateMachine_RAM_SubStruct SPM_PrfStsMgr_RAM[];
+extern struct Spm_PowMgr_TrgDvc_Type Spm_PowMgr_TrgDvc_List[];
+
+sint16 Spm_GetIndexTrgDvcFromIP(const uint32 Sum_Spm_IpAddressTarget);
+void Sum_Spm_SetPreviousHBval(const uint8 Sum_Spm_IndexInTheConfArray, const uint32 Sum_Spm_HBReceived);
+uint32 Sum_Spm_GetPreviousHBval(const uint8 Sum_Spm_IndexInTheConfArray);
+SpmDevicePowerStateCode Spm_GetTrgDvcState(const uint8 Sum_Spm_Index);
+/* Functions for the MonitorDevice functionality */
+void Sum_Spm_SetAsRequested(const uint8 Sum_Spm_IndexInTheConfArray);
+boolean Sum_Spm_IsRequested(const uint8 Sum_Spm_IndexInTheConfArray);
+void Sum_Spm_ResetAsRequested(const uint8 Sum_Spm_IndexInTheConfArray);
+boolean Sum_Spm_IsRequester(const uint8 Sum_Spm_IndexInTheConfArray);
+void Sum_Spm_ResetAsRequester(const uint8 Sum_Spm_IndexInTheConfArray);
+void Spm_SetRemoteDeviceAsRequester(const uint32 SrcIPRequester);
+void Sum_Spm_SetPenultimateHBval(const uint8 Sum_Spm_IndexInTheConfArray, const uint32 Sum_Spm_HBReceived);
+uint32 Sum_Spm_GetPenultimateHBval(const uint8 Sum_Spm_IndexInTheConfArray);
+void Sum_Spm_SetStateHBRemote(const uint8 Sum_Spm_IndexInTheConfArray, const  boolean WkUpSeqHBState);
+boolean Spm_IsTrgDvcRequestedToBeOn(const uint8 Sum_Spm_IndexInTheConfArray);
+
+
+#endif /* SPM_PB_CFG_H_ */
+
+/* EOF */
+
+«ENDFILE-»
+«ENDDEFINE-»

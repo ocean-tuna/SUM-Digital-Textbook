@@ -1,0 +1,49 @@
+@startuml Sum_Ssfm_NodeStsManager_SeqDiag
+
+participant SWC
+participant RTE
+participant DEM
+box SUM_SSFM
+    participant Sum_Ssfm_NodeStsManager as NodeSts
+	participant Sum_Ssfm_DTC_Enable_Manager as DtcEnbManager
+    participant Sum_Ssfm_SigStat_Av_Manager as SIG_AV
+    participant Sum_Ssfm_ReceivedSerialDataHandler as RecSigHdlr
+    participant Sum_Ssfm_MessageInfo_Handler as IH
+	participant Sum_Ssfm_CANETH_Av_Manager as CANETH_AV
+end box
+
+
+activate NodeSts
+
+	par
+		SIG_AV -> NodeSts: Ask for updating the signal status lost communication
+	else
+		RecSigHdlr -> NodeSts: Ask for updating the signal status lost communication
+	else
+		IH -> NodeSts: Ask for updating the signal status lost communication
+	end
+
+	NodeSts -> IH: Is the service or at least one PN active?
+	IH --> NodeSts
+	NodeSts -> IH: Is disable normal comm?
+	IH --> NodeSts
+	NodeSts -> IH: Is disable PDU RX?
+	IH --> NodeSts
+	
+	DtcEnbManager --> NodeSts: Provide DTC status
+	DtcEnbManager --> SWC: Notifies DTC status to SWCs
+	DtcEnbManager --> SUM_DIAG: Notifies DTC status to DIAG module
+	alt any change in the signal lost communication status
+		NodeSts -> NodeSts: Ask for updating ECU/TrgDvc lost communication status
+		NodeSts -> DEM: Notify the DEM about the new LossOfCommunication event
+		
+		alt any change in DTC status
+			DEM --> NodeSts: Notify DTC status change through callback
+			NodeSts -> SWC: Update Signal<n>_Lcfa indications to SW-components
+			NodeSts -> CANETH_AV: Update availability of the provider
+			NodeSts -> RTE: Update NodeStatusECU_<X>[_CAN_<n>] indication to CAN/ETH
+		end
+	end
+deactivate NodeSts
+
+@enduml

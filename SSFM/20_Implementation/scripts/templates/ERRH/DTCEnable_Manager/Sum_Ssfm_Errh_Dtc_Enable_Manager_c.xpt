@@ -1,0 +1,189 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::counter»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_Errh_Dtc_Enable_Manager.c"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : Source file for SSFM ERRH DTC ENABLE MANAGER
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+/* Include SSFM Top Level Library */
+#include "Sum_Ssfm.h"
+
+/*
+ *********************************************************************************************************************************************************
+ * Functions Declaration
+ *********************************************************************************************************************************************************
+ */
+static FUNC(void, SUM_SSFM_CODE) SSFM_UpdateDTCsDisabled(void);
+
+/*
+ *********************************************************************************************************************************************************
+ * Variables (Global)
+ *********************************************************************************************************************************************************
+ */
+ /**
+ *  @brief Variable related to the DTC Control Setting of DCM
+ 	FALSE = DTCs are DISABLED by DCM
+ 	TRUE = DTCs are ENABLED	by DCM
+ *  @private
+ */
+static boolean Sum_Ssfm_DcmControlDTCSetting_EnableDTC = TRUE;
+
+ /**
+ *  @brief Variable related to the status of OTA signal
+ 	FALSE = Normal Operation
+ 	TRUE = Remote Programming (OTA in progress)
+ *  @private
+ */
+static boolean Sum_Ssfm_OtaPsf_IsRemoteProg = FALSE;
+
+ /**
+ *  @brief Variable that indicates whether DTCs are disabled
+ *  @details Evalutad based on DCM ControlDTCSetting and OTA RemoteProgramming status
+ 	FALSE = DTCs are ENABLED in SSFM
+ 	TRUE = DTCs are DISABLED in SSFM
+ *  @private
+ */
+static boolean Sum_Ssfm_DTCsDisabled = FALSE;
+/*
+ *********************************************************************************************************************************************************
+ * Functions Definition
+ *********************************************************************************************************************************************************
+ */
+ /* PRQA S 3214 EOF # The Macros are defined for security and memory mapping reason              */
+/* PRQA S 1532 EOF # The functions are invoked by runnables or other functions in external file */
+/* PRQA S 5087 EOF # This is necessary for security/memory Mapping reasons                      */
+#define SUM_SSFM_START_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+
+/**
+ * @brief           SSFM/SSM runnable function to be called upon the change of the DTCs status, if disabled, through the BswM
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 1503 1 # The runnable is triggered will be called by the RTE when a mode switch occurs*/
+FUNC(void, SUM_SSFM_CODE) Runnable_SSFM_ERRH_ControlDTCSetting_DisableDTC(void){
+	/*[$Satisfies $DDS_SSFM 165]*/
+	Sum_Ssfm_DcmControlDTCSetting_EnableDTC = FALSE;
+	SSFM_UpdateDTCsDisabled();
+}
+
+/**
+ * @brief           SSFM/SSM runnable function to be called upon the change of the DTCs status, if enabled, through the BswM
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 1503 1 #The runnable is triggered will be called by the RTE when a mode switch occurs*/
+FUNC(void, SUM_SSFM_CODE) Runnable_SSFM_ERRH_ControlDTCSetting_EnableDTC(void){
+	/*[$Satisfies $DDS_SSFM 165]*/
+	Sum_Ssfm_DcmControlDTCSetting_EnableDTC = TRUE;
+	SSFM_UpdateDTCsDisabled();
+}
+
+/**
+ * @brief           SSFM/SSM function to be called that allows to recover the DTCs status
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          boolean Sum_Ssfm_DTCsDisabled = whether DTCs are disabled
+					FALSE = DTCs are ENABLED
+					TRUE = DTCs are DISABLED
+ */
+FUNC(boolean,SUM_SSFM_ERRH_CODE) Sum_Ssfm_Errh_GetDTCsDisabled(void){
+	return Sum_Ssfm_DTCsDisabled;
+}
+
+/**
+ * @brief           SSFM runnable function to be called upon the change of the RemoteProgrammingOtaPsf status.
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+/* PRQA S 1503 1 #The runnable is triggered will be called by the RTE */
+FUNC(void, SUM_SSFM_CODE) Runnable_SSFM_RemoteProgrammingOtaPsf_Status_Handler(void){
+	/*[$Satisfies $DDS_SSFM 189]*/
+    Std_ReturnType retValue;
+	boolean status;
+
+	retValue = Rte_Read_RP_DIAG_SWC_RmtPrgmOtaPsf_Status_DIAG_RemoteProgrammingOtaPsf (&status);
+	if (retValue == RTE_E_OK)
+	{
+		Sum_Ssfm_OtaPsf_IsRemoteProg = status;
+		SSFM_UpdateDTCsDisabled();
+	}
+	else
+	{
+		/* do nothing */
+	}
+}
+
+/**
+ * @brief           SSFM/SSM function to update DTC disable status
+ * @details         To be called when ControlDTCSetting is changed or OTA signal is received
+ *
+ * @param[in]       void
+ * @param[inout]    -
+ * @param[out]      -
+ * @return          void
+ */
+static FUNC(void, SUM_SSFM_CODE) SSFM_UpdateDTCsDisabled(void){
+	/* DTCs are enabled ONLY when both conditions are met:
+	   - ControlDTCSetting service indicates DTCs are ENABLED
+	   - OTA PSF signal is NOT in a remote programming state */
+	Sum_Ssfm_DTCsDisabled = ((Sum_Ssfm_DcmControlDTCSetting_EnableDTC == TRUE) && 
+							 (Sum_Ssfm_OtaPsf_IsRemoteProg == FALSE)) ? 
+							FALSE : 
+							TRUE;
+	(void) Rte_Write_PP_SUM_ERRH_SWC_DisableDTCs_TestEnable (Sum_Ssfm_DTCsDisabled);
+}
+
+
+
+#define SUM_SSFM_STOP_SEC_CODE
+#include "SUM_SSFM_MemMap.h"
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

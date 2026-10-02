@@ -1,0 +1,8 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};Runnable_BswM_ModeUser
+\cellcolor{ETASlightgray}\textbf{Type};Fixed
+\cellcolor{ETASlightgray}\textbf{Inter-runnable Variables};N\/A
+\cellcolor{ETASlightgray}\textbf{Periodicity};configured by user via DIAG_TE_BswM_ModeUser_Period parameter
+\cellcolor{ETASlightgray}\textbf{Managed Input Interfaces};DIAG_BswM_Dcm_CommunicationMode_CurrentState \newline <channel>DIAG_BswM_DiagSession
+\cellcolor{ETASlightgray}\textbf{Managed Output Interfaces};DIAG_DisableNormalComm<channel>
+\cellcolor{ETASlightgray}\textbf{Description};This runnable is responsible for: \newline Receiving current communication mode from BswM for specific channel \newline Receiving current diagnostic session mode from BswM \newline Outputting communication mode to SSM and PNC module for specific channel

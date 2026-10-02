@@ -1,0 +1,2590 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RTA-SUM SPM User Guide &mdash; RTA-SUM SPM 8.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/assets/jsonview.bundle.css?v=f6ef2277" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/libs/html/datatables.min.css?v=4b4fd840" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/common.css?v=bd9ab754" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/layouts.css?v=448c382f" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/modern.css?v=ffa536d2" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-needs/styles.css?v=6c8eb985" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=e1f95d0e" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=87b6a113"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/assets/jsonview.bundle.js?v=18cd53c5"></script>
+        <script src="../../_static/assets/jsonview_loader.js?v=f7ff7e7d"></script>
+        <script src="../../_static/sphinx-needs/libs/html/datatables.min.js?v=8a4aee21"></script>
+        <script src="../../_static/sphinx-needs/libs/html/datatables_loader.js?v=a2cae175"></script>
+        <script src="../../_static/sphinx-needs/libs/html/sphinx_needs_collapse.js?v=f783d6a5"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="RTA-SUM SPM Release Notes" href="../ReleaseNotes/release_notes.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(to right, #164293, #89037A)" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            RTA-SUM SPM
+              <img src="../../_static/ETAS_Logo_White.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Software Requirements Specification:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Requirements/10_Requirements.html">RTA-SUM SPM Software Requirements Specification Document</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Detailed Requirements Paramdef:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../DesignNotes/25_Detailed_Req_Paramdef.html">Detailed Requirements Paramdef</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Design Document:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../DesignNotes/design_notes.html">RTA-SUM SPM Design Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM Release Notes:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../ReleaseNotes/release_notes.html">RTA-SUM SPM Release Notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RTA-SUM SPM User Guide:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">RTA-SUM SPM User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#definitions-and-abbreviations">Definitions and Abbreviations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-overview">Module Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#integration-into-rta-car-project">Integration into RTA-CAR Project</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#old-create-spm-module"><strong>OLD</strong> Create SPM module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rta-car-memmap-tool">RTA-CAR MemMap Tool</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-configuration-overview">Module Configuration Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-containers">Configuration Containers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-hints">Configuration Hints</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spm-configuration-containers">SPM Configuration Containers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spm-configuration">SPM Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spm-configset-notes">SPM ConfigSet Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#spmtrgdvc">SpmTrgDvc</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spmtrgdvchndlnginfo">SpmTrgDvcHndlngInfo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spmwkngdvc">SpmWkngDvc</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spmtrgdvcinfo">SpmTrgDvcInfo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spmwkupseq">SpmWkUpSeq</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spmwkupsteq">SpmWkUpSteq</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spm-general">SPM General</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#spmdiagnostic">SpmDiagnostic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spm-did-e0dd-activationprofileactivationstatus-dcm-ref">Spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#did-0xe0de-locally-activated-activation-profile-off-power-mode-activity-records">DID 0xE0DE - Locally Activated Activation Profile Off Power Mode Activity Records</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spmdid0xe0dedcmref">SpmDID0xE0DEDcmRef</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spmdid0xe0denvmref">SpmDID0xE0DENvmRef</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#did-0xe0df-remotely-activated-activation-profile-off-power-mode-activity-records">DID 0xE0DF - Remotely Activated Activation Profile Off Power Mode Activity Records</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spmdid0xe0dfdcmref">SpmDID0xE0DFDcmRef</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spmdid0xe0dfnvmref">SpmDID0xE0DFNvmRef</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#spmmainfunctionperiodicity">SpmMainFunctionPeriodicity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spmpermitexecutionmask">SpmPermitExecutionMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spmwkuphelperfunction">SpmWkUpHelperFunction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spm-can-wake-up-frame-references">SPM CAN Wake-up Frame references</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#calibratable-parameters">Calibratable Parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#heartbeat-periodicity">Heartbeat periodicity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#own-wkup-frame-information">Own WkUp frame information</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#heartbeat-shutdown-delay">HeartBeat Shutdown Delay</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spm-smframe-queuelength">Spm_SmFrame_QueueLength</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spm-pmheartbeat-queuelength">Spm_PmHeartbeat_QueueLength</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spm-pmethwakeupunic-queuelength">Spm_PmETHwakeUpUNIC_QueueLength</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spm-pmethwakeupmultic-queuelength">Spm_PmETHwakeUpMULTIC_QueueLength</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spm-localrequests-queuelength">Spm_LocalRequests_QueueLength</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bsw-modules-configuration-hints">BSW Modules Configuration Hints</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rte-configuration">Rte Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id10">Calibratable Parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cdd-for-communication">Cdd for communication</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#metadata-handling-by-rte-configuration-steps">Metadata Handling by RTE Configuration Steps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bswm-configuration">BswM Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#enable-disable-pdu-groups">Enable/disable PDU groups</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#bswmpdugroupswitch-action">BswMPduGroupSwitch action</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mode-request-port">Mode Request Port</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mode-condition">Mode Condition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#logical-expressions">Logical Expressions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#action-rules">Action Rules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-type-settings">Data Type Settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#notification-from-bswm">Notification from BswM</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#local-activation-deactivation">Local Activation/Deactivation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#service-discovery-learning-indication-management-logic">Service discovery learning indication management logic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#profile-activation-permission">Profile Activation Permission</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#power-profile-state">Power Profile State</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sm-frame-integration">SM Frame integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#did-0xe0d7-support">DID 0xE0D7 Support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#did-0xe0de-support">DID 0xE0DE Support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#did-0xe0df-support">DID 0xE0DF Support</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#appendix-a-generic-component-interface">Appendix A: Generic Component Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#appendix-b-history-review">Appendix B: History Review</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#appendix-c-customer-information-in-scope-to-current-software-version">Appendix C: Customer information in scope to current software version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contacting-etas">Contacting ETAS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#technical-support">Technical Support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#general-enquiries">General Enquiries</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#etas-global-headquarters">ETAS Global Headquarters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#etas-local-sales-and-support-offices">ETAS Local Sales and Support Offices</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(to right, #164293, #89037A)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">RTA-SUM SPM</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">RTA-SUM SPM User Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/doc/UserGuide/user_guide.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <a class="reference internal image-reference" href="../../_images/logo.png"><img alt="Company Logo" class="align-right" src="../../_images/logo.png" style="width: 200px;" /></a>
+<section id="rta-sum-spm-user-guide">
+<h1>RTA-SUM SPM User Guide<a class="headerlink" href="#rta-sum-spm-user-guide" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>This User Guide provides a guideline for the configuration and integration of the ETAS developed
+RTA-SUM SPM. RTA-SUM SPM module has been developed towards the Software Defined Vehicle
+requirements, specifically, the SDV-8217 specifications and related specifications listed in Section <a class="reference internal" href="#references"><span class="std std-ref">References</span></a>.
+General guidelines on the common steps and workflow for RTA-SUM integration can be found in RTA-
+SUM Getting Started Guide.</p>
+<section id="definitions-and-abbreviations">
+<h3>Definitions and Abbreviations<a class="headerlink" href="#definitions-and-abbreviations" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Terms and Abbreviations</p></th>
+<th class="head"><p>Definitions</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AUTOSAR</p></td>
+<td><p>AUTOmotive Open System ARchitecture</p></td>
+</tr>
+<tr class="row-odd"><td><p>BSW</p></td>
+<td><p>Basic Software</p></td>
+</tr>
+<tr class="row-even"><td><p>CAN</p></td>
+<td><p>Controlled Area Network</p></td>
+</tr>
+<tr class="row-odd"><td><p>CDD</p></td>
+<td><p>Complex-Device Driver</p></td>
+</tr>
+<tr class="row-even"><td><p>CanIf</p></td>
+<td><p>Can Interface AUTOSAR BSW Module</p></td>
+</tr>
+<tr class="row-odd"><td><p>PGTT</p></td>
+<td><p>Power Graph Traversal Table</p></td>
+</tr>
+<tr class="row-even"><td><p>PM</p></td>
+<td><p>Power Manager</p></td>
+</tr>
+<tr class="row-odd"><td><p>RTE</p></td>
+<td><p>Run-Time Environment AUTOSAR middleware between Application Software Layer and Basic
+Software</p></td>
+</tr>
+<tr class="row-even"><td><p>SE</p></td>
+<td><p>Software Entity (Assume it as generic software module/function or Software Service)</p></td>
+</tr>
+<tr class="row-odd"><td><p>SM</p></td>
+<td><p>Software Manager</p></td>
+</tr>
+<tr class="row-even"><td><p>SPM</p></td>
+<td><p>Software/Power manager</p></td>
+</tr>
+<tr class="row-odd"><td><p>SUM</p></td>
+<td><p>Standardized Utility Module</p></td>
+</tr>
+<tr class="row-even"><td><p>SWCD</p></td>
+<td><p>Software Component Description</p></td>
+</tr>
+<tr class="row-odd"><td><p>SoAd</p></td>
+<td><p>Soacket Adaptor AUTOSAR BSW Module</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-overview">
+<h3>Module Overview<a class="headerlink" href="#module-overview" title="Link to this heading"></a></h3>
+<p>The RTA-SUM SPM, Software/Power Manager, is a Complex-Device Driver of the standardized architecture of AUTOSAR. The SPM contains in this architecture two sub-modules: the SM and the PM. Both of them contribute to the global functionalities of the RTA-SUM SPM.
+So that they are just mentioned as generic “SPM” at the scope fo this document.
+SPM acts itself as a manager for the activation and the deactivation requests of specific Software Entities (Services) and hardware resources. A SPM instance can control the status of a remote
+Software Services (i.e. hosted on a remote device) by the means of a RPC. The RPC requires the SPM instances as interfaces for the communication messages exchange and the resource management.
+A Software Services can directly request its own activation/deactivation to the SPM (local request) or SPM activates it on base of a remote request.
+SPM instances define and maintain by configuration, a list of Software Entities and Resources to activate on the base of a received request. Each Software Entity has got its own list of dependencies that takes the name of Power Profile or Activation Profile.
+Before activating the requested Entity, the SPM shall satisfy the activation/deactivation of all the items in the <em>Activation Profile</em>. This may involves in other activation/deactivation requests
+to local Software Entities or remote host (sending message to the remote SPM instance). So that the SPM shall be able to manage a recursive communication path to satisfy the incoming request.</p>
+<p>RTA-SUM SPM knows the network topology by from the configuration and then from the calibration of a table that is called PGTT (Power Graph Traversal Table). This table contains
+the route to reach the destination host of a SPM request. Each “harbor” in the route is a remote host. Not all the hosts in the route must contain a requested entity from the source:
+the SPM instance in the host can just works as a gateway for the request. The <em>PGTT</em> also defines the command to send to the next hop of the network in order to wake-up the remote SPM instance.</p>
+<p>RTA-SUM SPM shall also monitor the status of the remote nodes in the network. RTA-SUM SPM can monitor the status of a remote host using the heartbeat communication protocol.
+This protocol forces each host in the network to send a periodic signal that contains a rolling counter, very close to a real human heartbeat. Whenever a node in the network wants to
+communicate with another node, the source node can “listen” the heartbeat of the destination one. If the destination node heartbeat is 0, then the destination node cannot be reached by the communication.
+In this case, the source of the communication starts the diagnostic procedure for raising up a <em>LossOfCom</em> condition. Same value on the opposite side: if a destination node in communication with a source loses
+the heartbeat of the source, it starts the same diagnostic.</p>
+<p>RTA-SUM SPM is a cross-domain module, so that it can exchange information among different ECU domains, by the means of SPM instances communication on different bus system.</p>
+<p>RTA-SUM SPM communicates on:</p>
+<ul class="simple">
+<li><p><strong>Ethernet</strong> for:
+* Send/Receive an activation/deactivation request to a remote host
+* Send/Receive request acknowledge and request status to a remote host
+* Perform a inner-domain selective wake-up</p></li>
+<li><p><strong>CAN</strong> to perform the selective wake-up of a remote host</p></li>
+</ul>
+<figure class="align-default" id="spmsysarch">
+<a class="reference internal image-reference" href="../../_images/spmSysArch.png"><img alt="Spm Sys Architecture" src="../../_images/spmSysArch.png" style="width: 757.1999999999999px; height: 549.0px;" /></a>
+</figure>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>The Spm does not interact anymore with SoAd. Spm sends The Ethernet wake-up frame from RTE using metadata.</p>
+</div>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>The Spm modules does not interact directly with the Com Module but Spm uses the RTE with SomeIpXfrm as middleware between Spm and Com.</p>
+</div>
+</section>
+<section id="references">
+<span id="id1"></span><h3>References<a class="headerlink" href="#references" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Document Version</p></th>
+<th class="head"><p>Version</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SDV-2017 2.0 Vehicle Power Management Architecture</p></td>
+<td><p>3.4 - 27.181.2p0</p></td>
+</tr>
+<tr class="row-odd"><td><p>SDV-8217 Mechatronic Power Manager Infrastructure Specification</p></td>
+<td><p>27.181.2p1</p></td>
+</tr>
+<tr class="row-even"><td><p>SDV-8201 Service Discovery Extension Specification</p></td>
+<td><p>27.27.175.2p0</p></td>
+</tr>
+<tr class="row-odd"><td><p>SDV-6001 Diagnostic Infrastructure Specification</p></td>
+<td><p>27.27.184.1p0</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="integration-into-rta-car-project">
+<h2>Integration into RTA-CAR Project<a class="headerlink" href="#integration-into-rta-car-project" title="Link to this heading"></a></h2>
+<p>This chapter aims to provide a guideline for the integration of RTA-SUM SPM module into an RTA-CAR
+project.</p>
+<p>The RTA-SUMs plugin does not include the SPM module. So that you shall manually import the generation scripts of the RTA-SUM SPM into a RTA-CAR project.
+Beside you shall need to import in the RTA-CAR project the SPM EcucValues arxml file (
+the sample file <strong>spm_EcucValues.arxml</strong> is provided in the release package folder <em>30_Integration/</em> ).</p>
+<section id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h3>
+<p>In order to successfully follow this guide:</p>
+<ul class="simple">
+<li><p>You shall have the RTA-CAR toolchain installed as the following list and you must be familiar with the AUTOSAR specifications, terminology and methodology,</p></li>
+</ul>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Tool Name</p></th>
+<th class="head"><p>Version No.</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>RTA-BSW</p></td>
+<td><p>12.3.3pr1</p></td>
+<td><p>BSW automatic configuration and code generation.</p></td>
+</tr>
+<tr class="row-odd"><td><p>RTA-RTE</p></td>
+<td><p>12.4.0</p></td>
+<td><p>RTE generator used for testing.</p></td>
+</tr>
+<tr class="row-even"><td><p>Cantata</p></td>
+<td><p>9.5</p></td>
+<td><p>Tool is used for unit testing.</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p>You also must be familiar with the GM specification and GM-SUM modules functionalities</p></li>
+</ul>
+</section>
+<section id="old-create-spm-module">
+<h3><strong>OLD</strong> Create SPM module<a class="headerlink" href="#old-create-spm-module" title="Link to this heading"></a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please don’t consider this section. The Section will be removed in the next releases!!!</p>
+</div>
+<p>In order to create the SPM module you shall follow the following steps:</p>
+<ol class="arabic">
+<li><p>Unzip the contents of the folder RTA-SUM SPM folder in your preferred location</p></li>
+<li><p>Import in your RTA-CAR project the folder <em>template</em> from SPM-released unzipped folder:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>You can copy the folder in your RTA-CAR project location OR import it as a linked resource, as you prefer.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>In RTA-CAR, go to the project <em>ECU Configuration</em> and expand the menu <em>Parameter Definition”</em>. You must see the SPM blue container. This container
+includes all the module configuration containers and parameters. If you don’t see it, try to refresh the project. If it still missing, delete the imported folder and import it again</p></li>
+<li><p>In RTA-CAR <em>ECU Configuration</em>, click with the right button on folder <em>Other Modules</em> below the root <em>Bsw Modules</em>, and choose <cite>Create Spm</cite></p></li>
+<li><p>Configure Spm module as you prefer</p></li>
+<li><p>In order to build the Spm in your RTA-CAR project, please make sure you have the building features enable (<em>Build Features</em> in RTA-CAR). You can reach it by the following path in RTA-CAR:
+Window <strong>&gt;&gt;&gt;</strong> Preferences <strong>&gt;&gt;&gt;</strong> Tool Customization <strong>&gt;&gt;&gt;</strong> Special Features, and then <em>enable</em> the checkbox <em>Build Features</em>. After that press on <em>Apply and CLose</em>.</p></li>
+<li><p>Now you are able to build the SPM and so to generate the C code and driver SWCD. If you don’t specify an output path, the SPM C code is generated in folder <strong>_out</strong>.</p></li>
+</ol>
+</section>
+<section id="rta-car-memmap-tool">
+<h3>RTA-CAR MemMap Tool<a class="headerlink" href="#rta-car-memmap-tool" title="Link to this heading"></a></h3>
+<p>MemMapGen generator is able to generate the memory mapping header file for the RTA-SUM SPM module. If you can use the tool, you can find the following file AFTER you launch the generator by its dedicated plug-in:</p>
+<blockquote>
+<div><p><strong>&lt;Project_LOCATION&gt;/src/memmap/SPM_MemMap.h</strong></p>
+</div></blockquote>
+<p>This is an example about the generation of the MemMap file:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> **********************************************************************************************************************</span>
+<span class="cm"> *</span>
+<span class="cm"> * Copyright (c) ETAS GmbH 2023, all rights reserved.</span>
+<span class="cm"> * The reproduction, distribution and utilization of this document as well as the communication of its contents to</span>
+<span class="cm"> * others without explicit authorization is prohibited. Offenders will be held liable for the payment of damages.</span>
+<span class="cm"> * All rights reserved in the event of the grant of a patent, utility model or design.</span>
+<span class="cm"> *</span>
+<span class="cm"> **********************************************************************************************************************</span>
+
+<span class="cm"> **********************************************************************************************************************</span>
+<span class="cm"> Machine Type: MCU_RB_GENERIC</span>
+<span class="cm"> Generated by MEMMAPGEN 12.3.0</span>
+<span class="cm"> **********************************************************************************************************************</span>
+<span class="cm"> */</span>
+<span class="cm">/* MR12 DIR 4.10 VIOLATION: Memmap file must be included multiple times */</span>
+<span class="cm">/* MR12 RULE 20.5 VIOLATION: AUTOSAR MemMap concept requires #undef, AUTOSAR MemMap requirements are incompatible to MISRA */</span>
+<span class="cp">#if defined SPM_START_SEC_CODE</span>
+<span class="cm">/* CODE pragma configuration not available, please update the respective template file */</span>
+<span class="cp">#undef SPM_START_SEC_CODE</span>
+<span class="cp">#elif defined SPM_STOP_SEC_CODE</span>
+<span class="cm">/* CODE pragma configuration not available, please update the respective template file */</span>
+<span class="cp">#undef SPM_STOP_SEC_CODE</span>
+<span class="cp">#else</span>
+<span class="cp">#error &quot;SPM_MemMap.h, wrong pragma command&quot;</span>
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>In case you cannot use the MemMap tool from RTA-CAR, please make sure the file SPM_MemMap.h is present in your project, otherwise you CANNOT
+build successfully your SPM code.</p>
+<p>SPM does not provide anymore the file Sum_Spm_MemMap.h as part of its release package.</p>
+</div>
+</section>
+</section>
+<section id="module-configuration-overview">
+<span id="id2"></span><h2>Module Configuration Overview<a class="headerlink" href="#module-configuration-overview" title="Link to this heading"></a></h2>
+<section id="configuration-containers">
+<h3>Configuration Containers<a class="headerlink" href="#configuration-containers" title="Link to this heading"></a></h3>
+<p>The SPM appears as a root configuration container as any other RTA-SUM module or Bsw module.
+The highest hierarchical level for the SPM configuration appears as follows:</p>
+</section>
+<section id="configuration-hints">
+<h3>Configuration Hints<a class="headerlink" href="#configuration-hints" title="Link to this heading"></a></h3>
+<section id="spm-configuration-containers">
+<h4>SPM Configuration Containers<a class="headerlink" href="#spm-configuration-containers" title="Link to this heading"></a></h4>
+<p class="plantuml">
+<object data="../../_images/plantuml-082720eeac34618ecfcc69122400c199922952bb.svg" type="image/svg+xml" style="width:5003px;height:612px;background:#FFFFFF;"></object></p>
+</section>
+<section id="spm-configuration">
+<h4>SPM Configuration<a class="headerlink" href="#spm-configuration" title="Link to this heading"></a></h4>
+<table class="docutils align-default" id="id19">
+<caption><span class="caption-text">The description of configuration parameters are the following:</span><a class="headerlink" href="#id19" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 28.6%" />
+<col style="width: 71.4%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Container Name</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmConfigSet</p></td>
+<td><p>Container for the configuration of module instance specific set</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmGeneral</p></td>
+<td><p>Container for the Configuration of project specific settings</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmDiagnostic</p></td>
+<td><p>Container with the reference needed for DIDs</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmETHWkUpFrmRef</p></td>
+<td><p>Container with the reference to the ETH wake-up frame.</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmCANWkUpFrmRef</p></td>
+<td><p>Container for the configuration of the SPM used CAN wake-up frames</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmVLANCom</p></td>
+<td><p>Container for the configuration of VLAN communication for configurable interfaces.</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmVLANComPwrMgrHeartbeat</p></td>
+<td><p>Container for the configuration of VLAN communication items for heartbeat frames.</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmVLANComPwrMgrWakeupFrames</p></td>
+<td><p>Container for the configuration of VLAN communication items for wakeup frames.</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmVLANComPwrMgrWakeupFramesMulticast</p></td>
+<td><p>Container for the configuration of VLAN communication items for Multicast wakeup frames.</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmVLANComSwrMgrInfo</p></td>
+<td><p>Container for the configuration of VLAN communication items for software manager info frames.</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmPowPrf</p></td>
+<td><p>Container for the configuration of Power Profile. At least one power profile needs to be configured for the ECU.</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmProfileSwDep</p></td>
+<td><p>Container for the configuration of Power Profile Software Dependency</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmPgttEntries</p></td>
+<td><p>Container for the configuration of Power Graph. SPM uses it for getting network information for its inter-ECU communication. Mandatory container.</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmTrgDvc</p></td>
+<td><p>Container for the configuration of Remote device information. At least one target device needs to be in communication with the current SPM instance.</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmTrgDvcHndlngInfo</p></td>
+<td><p>The current container addresses (if configured) how the current SPM shall manage the target device. Not all the target device are directly managed by the current SPM instance. In case the current SPM runs on a INTERMEDIATE node and the Target Device is an EDGE, then whether SPM handles this edge node, this container reports the useful information on how to consume the wake-up frame information for the current device.</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmWkngDvc</p></td>
+<td><p>Container for the configuration of local node network configurations.</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmTrgDvcInfo</p></td>
+<td><p>Container for the configuration of Power Profile</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmWkUpSeq</p></td>
+<td><p>Container for the configuration of a wake-up sequence.</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmWkUpStep</p></td>
+<td><p>Container for the configuration of a specific step for a wake-up sequence.</p></td>
+</tr>
+</tbody>
+</table>
+<section id="spmgeneral-parameter-definition">
+<h5>SpmGeneral parameter definition<a class="headerlink" href="#spmgeneral-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id20">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id20" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmSMMainFuncPeriodicity</p></td>
+<td><p>Periodicity in milliseconds for the execution of SPM Software Manager functionalities.</p></td>
+<td><p>FLOAT</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmPMMainFuncPeriodicity</p></td>
+<td><p>(CURRENTLY NOT SUPPORTED. VALUE Fixed to 5ms) Periodicity in milliseconds for the execution of the SPM Power manager functionalities.</p></td>
+<td><p>FLOAT</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmBurstPhsPeriodicity</p></td>
+<td><p>BurstPhsPeriodicity is a period less than the usual one, that happens as soon as SPM starts counting and sharing its heartbeat and the wake-up frame. This period is maintained for the first 3 counts. The parameter configures the message periodicity in milliseconds for this phase before switching to the normal one.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmPermitExecutionMask</p></td>
+<td><p>The parameter is a bitmap (1 Byte length) that defines the DON’T CARE wake-up sources that trigger the SPM execution. The DON’T CARE wake-up sources needs to be configured as 1.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmWkUpHelperFunction</p></td>
+<td><p>The parameter defines the name of the wake-up helper function to be used by SPM, in case the ECU support the SDV-8217 defined Custom wake-up mechanism. The support of this function is valid only for intermediate nodes as CHM MCU.</p></td>
+<td><p>STRING</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmInitFuncPeriodicity</p></td>
+<td><p>Period in milliseconds that configures the runnable init function periodicity. This parameter is required when SpmGenerateInitRunnable is set to TRUE.</p></td>
+<td><p>FLOAT</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmActDeactRetryPeriodicity</p></td>
+<td><p>Period in milliseconds for retries of activation/deactivation requests.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmGenerateInitRunnable</p></td>
+<td><p>The parameter shall generate SPM init runnable if it is configured as TRUE. Otherwise the SPM_Init() function shall be called by a BswM action list during startup</p></td>
+<td><p>BOOLEAN</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>Spm_SmFrame_QueueLength</p></td>
+<td><p>Maximum queue length of SM Frame Rx messages. If the parameter is not configured it takes the number of target devices * number of local profiles as default value.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>Spm_PmHeartbeat_QueueLength</p></td>
+<td><p>Maximum queue length of PM heartbeat Rx messages. If the parameter is not configured it takes the number of target devices as default value.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>Spm_PmETHwakeUpUNIC_QueueLength</p></td>
+<td><p>Maximum queue length of PM eth wakeup Unicast Rx messages. If the parameter is not configured it takes the number of target devices as default value.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>Spm_PmETHwakeUpMULTIC_QueueLength</p></td>
+<td><p>Maximum queue length of PM eth wakeup Multicast Rx messages. If the parameter is not configured it takes the following as a default value ((SM main function periodicity / 5) + 1) SM main function periodicity.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>Spm_LocalRequests_QueueLength</p></td>
+<td><p>Maximum queue length of local activation/deactivatino requests as well as diagnostic requests. If the parameter is not configured it take the number of active profiles * 2 as default value.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmWakeupFrame</p></td>
+<td><p>Wake up frame for the device.</p></td>
+<td><p>ENUMERATION</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmWakeupBit</p></td>
+<td><p>Indicates the related bit for wake up in the frame.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmHBShutdownDelayMs</p></td>
+<td><p>Initial value for the calibration parameter indicating the time (in ms) the PM has to wait, after the last burst HeartBeat has been sent, before allowing the shutdown (Keep-Awake Timer)</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmSMStayAwakeTimeMs</p></td>
+<td><p>Calibration parameter value indicating the time (in ms) during which the SM should stay awake if the only requester is in fault or restart state, before allowing shutdown.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmdiagnostic-parameter-definition">
+<h5>SpmDiagnostic parameter definition<a class="headerlink" href="#spmdiagnostic-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id21">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id21" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref</p></td>
+<td><p>Reference to the DcmDspDid for supporting DID 0xE0DD Activation Profile Activation Status</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmDID0xE0DEDcmRef</p></td>
+<td><p>Reference to the DcmDspDid for supporting DID 0xE0DE Locally Activated Activation Profile Off Power Mode Activity Records</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmDID0xE0DFDcmRef</p></td>
+<td><p>Reference to the DcmDspDid for supporting DID 0xE0DF Remotely Activated Activation Profile Off Power Mode Activity Records</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmDID0xE0DENvmRef</p></td>
+<td><p>Reference to the NvM block for DID 0xE0DE Locally Activated Activation Profile Off Power Mode Activity Records</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmDID0xE0DFNvmRef</p></td>
+<td><p>Reference to the NvM block for DID 0xE0DF Remotely Activated Activation Profile Off Power Mode Activity Records</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmethwkupfrmref-parameter-definition">
+<h5>SpmETHWkUpFrmRef parameter definition<a class="headerlink" href="#spmethwkupfrmref-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id22">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id22" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmETHSwitchNetwork</p></td>
+<td><p>Reference to the network handle ID</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 0</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmETHWkUpFrmTxRef</p></td>
+<td><p>Reference to the SOAd Pdu in Tx</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 0</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmETHWkUpFrmRxRef</p></td>
+<td><p>Reference to the SOAd Pdu in Rx</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 0</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmcanwkupfrmref-parameter-definition">
+<h5>SpmCANWkUpFrmRef parameter definition<a class="headerlink" href="#spmcanwkupfrmref-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id23">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id23" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmCANWkUpFrmTxRef</p></td>
+<td><p>parameters defines the references to CanIfPdu in Tx side for SPM CAN wake-up frames</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 3</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmCANWkUpFrmRxRef</p></td>
+<td><p>parameters defines the references to CanIfPdu in Rx side for SPM CAN wake-up frames</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. Inf</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmpowprf-parameter-definition">
+<h5>SpmPowPrf parameter definition<a class="headerlink" href="#spmpowprf-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id24">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id24" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmSrvcAndInstID</p></td>
+<td><p>The parameter defines the Profile associated software service identifier and the service instance number. Software service represents the 16 most significant bits of the configured number. The instance number the 16 less significant ones. It is assumed at least one profile is managed by the current node.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmProfNumber</p></td>
+<td><p>The parameter defines the Profile number.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmProfileIsLocal</p></td>
+<td><p>The parameter addresses if the current Power Profile is Local to the ECU or it is a remote service. For Local profile the value is TRUE.</p></td>
+<td><p>BOOLEAN</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmLocActivationAllowed</p></td>
+<td><p>The parameter defines if the profile can be locally activated. This means that the activation request can be done by an ECU-local SWC using CLIENT/SERVER operation. Only local profile can be activated from a local SWC. So the default value is FALSE.</p></td>
+<td><p>BOOLEAN</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmApplIntfID</p></td>
+<td><p>The parameter defines the profile enumeration value to be used for asking the profile activation locally. This parameter is configured only in case SpmLocActivationAllowed is TRUE. Lower multiplicity is 0 because it is valid only for local profiles</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmProfBitMapIndex</p></td>
+<td><p>The parameter maps the profile status as a specific bit of value. This value is reported by the DID E0DD and specified in SDV-6001.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmProfActivationTimeOut</p></td>
+<td><p>OBSOLETE - NAMING MISMATCH</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 0</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmProfActivationTimeOutVehOff</p></td>
+<td><p>The parameter defines the duration in Seconds of a valid timing-window before deactivating the profile automatically. Valid only for local profiles. The default value is 0, meaning that the profile is automatically deactivated when VehiclePowerMode is OFF.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmVehONDefActPriorON</p></td>
+<td><p>OBSOLETE - NAMING MISMATCH</p></td>
+<td><p>ENUMERATION</p></td>
+<td><p>0 .. 0</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmVehDefActPriorON</p></td>
+<td><p>The parameter defines the profile activation priority when vehicle is going to ON. The Lower multiplicity  is 0 because it is valid only for local profiles, while the Upper multiplicity is 1 because it is unique for each profile. Default value is SPM_PRF_AP_NOTAPP.</p></td>
+<td><p>ENUMERATION</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmVehDefActPriorOFF</p></td>
+<td><p>The parameter defines the profile activation priority when vehicle is going to OFF. The Lower multiplicity is 0 because it is valid only for local profiles, while the Upper multiplicity is 1 because it is unique for each profile. The default value is SPM_PRF_AP_NOTAPP.</p></td>
+<td><p>ENUMERATION</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmComIPduGroupEvnt_Tx</p></td>
+<td><p>The parameter defines the reference to data PDU to enable/disable in Tx once a profile request has been satisfied if the configuration requires profile to be consumed.</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. Inf</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmComIPduGroupEvnt_Rx</p></td>
+<td><p>The parameter defines the references to data PDU to enable/disable in Rx once a profile request has been satisfied if the configuration requires profile to be consumed.</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. Inf</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmprofileswdep-parameter-definition">
+<h5>SpmProfileSwDep parameter definition<a class="headerlink" href="#spmprofileswdep-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id25">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id25" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmProfDepType</p></td>
+<td><p>The parameter defines the type of dependency for the power profile. If SPM_PRF_DEP_ACT_AND_CONS then the profile is activated as services and services-data PDU are switched ON in RX by the current ECU instance. If SPM_PRF_ACTIVATED only service is activated. If SPM_PRF_CONSUMED only service-data pdu are switched ON in RX for the current ECU instance. All the dependencies need to be identified by this parameter (mandatory).</p></td>
+<td><p>ENUMERATION</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmProfRef</p></td>
+<td><p>The parameter defines the reference to configured profile that acts as current profile dependency.</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmtrgdvc-parameter-definition">
+<h5>SpmTrgDvc parameter definition<a class="headerlink" href="#spmtrgdvc-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id26">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id26" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmTrgDvcID</p></td>
+<td><p>The parameter defines all the IPv4 address for the target device. Each Target device could have more IP addresses since it can be reached from different VLAN.</p></td>
+<td><p>STRING</p></td>
+<td><p>1 .. Inf</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmTrgDvcDtcBaseID</p></td>
+<td><p>The parameter defines the base DTC (2 bytes) to set when the target communication is lost.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmTrgDvcDtcTimeOut</p></td>
+<td><p>The parameter defines the maturation time to set when the target communication is lost.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmTrgDvcPowerOnDeviceRetryPeriodicity</p></td>
+<td><p>This parameter defines the periodicity of the PowerOnDevice retry. Please, configure a value that it is greater than the sum of the SpmSeqStepDly of the wake-up sequence steps PLUS the value of SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence PLUS the sum of the delay values between steps in the sequence PLUS the SpmTrgDvcDtcTimeOut of this TargetDevice. The value is in milliseconds.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence</p></td>
+<td><p>The parameter defines the time in milliseconds to wait between the OFF and ON sequence of the target device during the PowerOnDevice retry. Please, configure a value that it is greater than 250 ms to see changes in the WUF. The value it is in milliseconds.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmTrgDvcDiagAddr</p></td>
+<td><p>The parameter defines the diagnostic address associated to the target for the diagnostic sessions.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmtrgdvchndlnginfo-parameter-definition">
+<h5>SpmTrgDvcHndlngInfo parameter definition<a class="headerlink" href="#spmtrgdvchndlnginfo-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id27">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id27" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmTrgAssocWkUpFrm</p></td>
+<td><p>The parameter addresses which wake-up frame contains the information for waking it. The possibilities are wake-up frame A, B or C. Mandatory parameters so no default value is provided.</p></td>
+<td><p>ENUMERATION</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmTrgAssocWkupBit</p></td>
+<td><p>The parameter addresses which bit shall be asserted in the previous wake-up frame so that SPM shall activate the target device. Mandatory parameter.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmwkngdvc-parameter-definition">
+<h5>SpmWkngDvc parameter definition<a class="headerlink" href="#spmwkngdvc-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id28">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id28" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmNodeType</p></td>
+<td><p>(IMPLEMENTATION NOT-SUPPORTED YET) The parameter defines the type of dependency for the power profile. The possibilities are SPM_NODE_EDGE and SPM_NODE_INTERMEDIATE. The default value is considering the node as an intermediate. Mandatory parameter.</p></td>
+<td><p>ENUMERATION</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmIntermediateDstAddrs</p></td>
+<td><p>The parameter defines list of IP address(es) of destination nodes that receive the wake-up commands and frames. For SPM_NODE_EDGE, this contains the intermediate node addresses. For SPM_NODE_INTERMEDIATE with ETH WUF support, this contains the target edge node addresses.</p></td>
+<td><p>STRING</p></td>
+<td><p>0 .. Inf</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmSrcIp</p></td>
+<td><p>The parameter defines all the IPv4 configuration of the Source Node to communicate over the network. A single SPM instance can communicate on different VLAN, so that more source addresses can be configured and supported by one single SPM.</p></td>
+<td><p>STRING</p></td>
+<td><p>1 .. Inf</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmDstIp</p></td>
+<td><p>The parameter defines all the IPv4 configuration for the Destination Node in order to communicate over the network.</p></td>
+<td><p>STRING</p></td>
+<td><p>1 .. Inf</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmVLANId</p></td>
+<td><p>parameter defines the destination address VLAN identifier</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. Inf</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmVLANComRef</p></td>
+<td><p>The parameter defines the reference to the container in which all the communication interfaces and datat types information are reported.</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. Inf</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmtrgdvcinfo-parameter-definition">
+<h5>SpmTrgDvcInfo parameter definition<a class="headerlink" href="#spmtrgdvcinfo-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id29">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id29" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmTrgDvcRef</p></td>
+<td><p>parameters defines the references to the target device to reach</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmWkUpSeqRef</p></td>
+<td><p>The parameter defines the reference to the wake-up sequence to use. In case this value is not configured, then it means the target device is a requester for the current SPM.</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmwkupseq-parameter-definition">
+<h5>SpmWkUpSeq parameter definition<a class="headerlink" href="#spmwkupseq-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id30">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id30" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmComStepSeparatPeridoForShutDownInit</p></td>
+<td><p>(OBSOLETE - NOT SUPPORTED ANYMORE)parameter defines the type of command in the step</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 0</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmwkupstep-parameter-definition">
+<h5>SpmWkUpStep parameter definition<a class="headerlink" href="#spmwkupstep-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id31">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id31" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmStepID</p></td>
+<td><p>parameter defines the type of command in the step</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmCommandType</p></td>
+<td><p>The parameter defines the type of command in the step. Each command type will address a different way to wake-up a target device.</p></td>
+<td><p>ENUMERATION</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmCommandValue</p></td>
+<td><p>parameter defines the value for the command step</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmSeqStepDly</p></td>
+<td><p>The parameter defines the delay in milliseconds to spend before executing the next step in the sequence. The value is mandatory but it is assumed 0 as default value.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmvlancompwrmgrheartbeat-parameter-definition">
+<h5>SpmVLANComPwrMgrHeartbeat parameter definition<a class="headerlink" href="#spmvlancompwrmgrheartbeat-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id32">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id32" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmHbTxAbsPth</p></td>
+<td><p>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface is defined.</p></td>
+<td><p>STRING</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmHbRxAbsPth</p></td>
+<td><p>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</p></td>
+<td><p>STRING</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmPwrMgrHeartbeatTxImpDataTypeRef</p></td>
+<td><p>parameters defines the references to PwrMgrHeartbeat Tx Implementation Data Type</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmPwrMgrHeartbeatRxImpDataTypeRef</p></td>
+<td><p>parameters defines the references to PwrMgrHeartbeat Rx Implementation Data Type</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmPwrMgrHeartbeatTxSendRecvIntRef</p></td>
+<td><p>parameters defines the references to PwrMgrHeartbeat Tx Sender Receiver Interface</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmPwrMgrHeartbeatRxSendRecvIntRef</p></td>
+<td><p>parameters defines the references to PwrMgrHeartbeat Rx Sender Receiver Interface</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmvlancompwrmgrwakeupframes-parameter-definition">
+<h5>SpmVLANComPwrMgrWakeupFrames parameter definition<a class="headerlink" href="#spmvlancompwrmgrwakeupframes-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id33">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id33" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmWkupTxAbsPth</p></td>
+<td><p>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface is defined.</p></td>
+<td><p>STRING</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmWkupRxAbsPth</p></td>
+<td><p>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</p></td>
+<td><p>STRING</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmPwrMgrWakeupTxImpDataTypeRef</p></td>
+<td><p>parameters defines the references to PwrMgrWakeup Tx Implementation Data Type</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmPwrMgrWakeupRxImpDataTypeRef</p></td>
+<td><p>parameters defines the references to PwrMgrWakeup Rx Implementation Data Type</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmPwrMgrWakeupTxSendRecvIntRef</p></td>
+<td><p>parameters defines the references to PwrMgrWakeup Tx Sender Receiver Interface</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmPwrMgrWakeupRxSendRecvIntRef</p></td>
+<td><p>parameters defines the references to PwrMgrWakeup Rx Sender Receiver Interface</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmvlancompwrmgrwakeupframesmulticast-parameter-definition">
+<h5>SpmVLANComPwrMgrWakeupFramesMulticast parameter definition<a class="headerlink" href="#spmvlancompwrmgrwakeupframesmulticast-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id34">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id34" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmWkupRxAbsPthMulticast</p></td>
+<td><p>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</p></td>
+<td><p>STRING</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmPwrMgrWakeupRxImpDataTypeMulticastRef</p></td>
+<td><p>parameters defines the references to PwrMgrWakeup Rx Multicast Implementation Data Type</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmPwrMgrWakeupRxSendRecvIntMulticastRef</p></td>
+<td><p>parameters defines the references to PwrMgrWakeup Rx Multicast Sender Receiver Interface</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmvlancomswrmgrinfo-parameter-definition">
+<h5>SpmVLANComSwrMgrInfo parameter definition<a class="headerlink" href="#spmvlancomswrmgrinfo-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id35">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id35" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmSmTxAbsPth</p></td>
+<td><p>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface is defined.</p></td>
+<td><p>STRING</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmSmRxAbsPth</p></td>
+<td><p>The parameter defines absolute XML path in the extract in which the VLAN sender-receiver interface Implementation Data Type is defined.</p></td>
+<td><p>STRING</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmSwMgrInfoTxImpDataTypeRef</p></td>
+<td><p>parameters defines the references to SwMgrInfo Tx Implementation Data Type</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmSwMgrInfoRxImpDataTypeRef</p></td>
+<td><p>parameters defines the references to SwMgrInfo Rx Implementation Data Type</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmSwMgrInfoTxSendRecvIntRef</p></td>
+<td><p>parameters defines the references to SwMgrInfo Tx Sender Receiver Interface</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmSwMgrInfoRxSendRecvIntRef</p></td>
+<td><p>parameters defines the references to SwMgrInfo Rx Sender Receiver Interface</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>1 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="spmlowvoltagepowerinfo-parameter-definition">
+<h5>SpmLowVoltagePowerInfo parameter definition<a class="headerlink" href="#spmlowvoltagepowerinfo-parameter-definition" title="Link to this heading"></a></h5>
+<table class="docutils align-default" id="id36">
+<caption><span class="caption-text">The description of configuration parameters for :</span><a class="headerlink" href="#id36" title="Link to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Multiplicity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SpmLowVoltSwActPrioReqSignal</p></td>
+<td><p>Reference to the ComSignal (Service Based) that carries the LowVoltageSoftwareActivationPriorityRequest information.</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmLowVoltSwActPrioReqDataServiceBased</p></td>
+<td><p>Reference to the implementation data type element for service based LowVoltageSoftwareActivationPriorityRequest.</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmLowVoltSwActPrioReqDataTypeMappingSet</p></td>
+<td><p>Reference to the DATA-TYPE-MAPPING-SET in the system extract for service-based operations.</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>SpmLowVoltSwActPrioNvmRef</p></td>
+<td><p>Reference to NvM LowVoltageSoftwareActivationPriorityRequest NvMBlockDescriptor.</p></td>
+<td><p>REFERENCE</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+<tr class="row-even"><td><p>SpmLowVoltLVOptmzerChkApplicationInterfaceID</p></td>
+<td><p>LVOptmzerChk Application Interface ID of the power profile associated with the LV Energy Optimizer.</p></td>
+<td><p>INTEGER</p></td>
+<td><p>0 .. 1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="spm-configset-notes">
+<h4>SPM ConfigSet Notes<a class="headerlink" href="#spm-configset-notes" title="Link to this heading"></a></h4>
+<section id="spmlowvoltagepowerinfo">
+<span id="id3"></span><h5>SpmLowVoltagePowerInfo<a class="headerlink" href="#spmlowvoltagepowerinfo" title="Link to this heading"></a></h5>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/SpmLowVoltagePowerInfo.png"><img alt="SpmLowVoltagePowerInfo" src="../../_images/SpmLowVoltagePowerInfo.png" style="width: 678.6px; height: 273.59999999999997px;" /></a>
+</figure>
+<p>The container contains the configuration parameters for the LowVoltageSoftwareActivationPriorityRequest information.
+The SPM uses this information to compare the Low Voltage Priority level received by the energy optimizer
+with the Low Voltage Priority level of each configured Power Profile in order to decide whether a local activation request
+can be accepted or not OR whether to send the deactivation request for each requester.
+Moreover, the SPM uses this container in order to understand which is the LV Energy Optimizer
+with the Application Interface ID: LVOptmzerChk.</p>
+<p>The following lines summarise what to configure to retrieve Low Voltage Priority service information from the power optimizer:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>ComSignal (Service-based) with UINT8_N as ComSignalType</p></li>
+<li><p>Valid implementation data type</p></li>
+<li><p>Valid DataTypeMappingSet</p></li>
+</ol>
+</div></blockquote>
+<p>If the Low Voltage Priority service is configured:</p>
+<div class="line-block">
+<div class="line">- configure <cite>SpmLowVoltSwActPrioNvmRef</cite> and set <cite>NvMSelectBlockForReadAll</cite> to <cite>TRUE</cite> in the corresponding <cite>NvMBlockDescriptor</cite> so data is copied from NvM to the RAM mirror block during <cite>NvM_ReadAll</cite>.</div>
+<div class="line">- configure <cite>SpmLowVoltSwActPrioNvmRef</cite> and set <cite>NvMSelectBlockForWriteAll</cite> to <cite>TRUE</cite> in the corresponding <cite>NvMBlockDescriptor</cite> so the most recent RAM mirror block content is copied to NvM during <cite>NvM_WriteAll</cite>.</div>
+<div class="line">- set <cite>SpmLowVoltLVOptmzerChkApplicationInterfaceID</cite> to the same value as <cite>SpmApplIntfID</cite> of the Power Profile that represents the LV Optimizer Check profile.</div>
+</div>
+<p>In order to use this feature, the integrator SHALL connect:</p>
+<div class="line-block">
+<div class="line">- RP_SSFM_SPM_LowVoltSwActPrioReqAvailability to the SSFM port that reports the availability of the Low Voltage priority service.</div>
+<div class="line">- RP_Com_Spm_LowVoltSwActPrioReq to the Com in order to receive the payload of the Low Voltage priority service.</div>
+<div class="line">- RP_SPM_NvmService_LowVoltageActivationPriority to the Nvm in order to allow the SPM to trigger the NvM_WriteAll when it receives a new Low Voltage priority level from the energy optimizer.</div>
+</div>
+</section>
+<section id="spmconfpowprf">
+<span id="id4"></span><h5>SpmConfPowPrf<a class="headerlink" href="#spmconfpowprf" title="Link to this heading"></a></h5>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/SpmPowProfRef.png"><img alt="Spm Sys Architecture" src="../../_images/SpmPowProfRef.png" style="width: 665.4px; height: 389.4px;" /></a>
+</figure>
+<p>Container stores all the SPM instance-known power profiles as configuration container. Each SPM instance shall store at least one
+power profile as configuration parameter. On the other hand, the upper multiplicity of this container is infinite.</p>
+<p>Please pay attention: You can have as maximum number of configured power profiles
+the value 4294967296. This value of is totally theoretical because not the whole set of combination can define a valid profile identifier (Look <a class="reference internal" href="#spmpowprfid"><span class="std std-ref">SpmSrvcAndInstID</span></a> too)</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>No check are done on the number of configured power profile. The max allowed number is 4294967296 and this is the only performed check.</p>
+</div>
+<section id="spmsrvcandinstid">
+<span id="spmpowprfid"></span><h6>SpmSrvcAndInstID<a class="headerlink" href="#spmsrvcandinstid" title="Link to this heading"></a></h6>
+<p>This parameter contains the identifier of the specific power profile. It consists of 4 bytes: the 16 most significant bits
+denote the software service identifier of the power profile, while the 16 least significant bits denote the instance
+identifier of the power profile.</p>
+</section>
+<section id="spmprofnumber">
+<h6>SpmProfNumber<a class="headerlink" href="#spmprofnumber" title="Link to this heading"></a></h6>
+<p>This parameter represent the Profile Number of the Power Profile.</p>
+</section>
+<section id="spmprofileislocal">
+<h6>SpmProfileIsLocal<a class="headerlink" href="#spmprofileislocal" title="Link to this heading"></a></h6>
+<p>The parameter determines whether the current Power Profile is local to the ECU or a remote service.</p>
+</section>
+<section id="spmprofbitmapindex">
+<span id="id5"></span><h6>SpmProfBitMapIndex<a class="headerlink" href="#spmprofbitmapindex" title="Link to this heading"></a></h6>
+<p>The parameter defines which bits corresponds to configured local power profiles in order to set the bit-map buffer for DID 0xE0DD.</p>
+<p>Since the DID 0xE0DD can support at maximum 512 profiles, this parameter can be configured with a unique value between 0 and 511.</p>
+<p>This parameter is mandatory for local profile, while optional for remote profiles.</p>
+<p>Please, take into account that Confgen will populate this parameter field if the profile is local.
+So, if the profile is remote, this parameter will be NOT automatically populated.</p>
+</section>
+<section id="spmlocactivationallowed">
+<h6>SpmLocActivationAllowed<a class="headerlink" href="#spmlocactivationallowed" title="Link to this heading"></a></h6>
+<p>This parameter specifies if the Power Profile can be locally activated.
+Set to <em>true</em> if this Power Profile can be locally activated (i.e. the C/S operation SPM_ActivateProfile accept the request and trigger the activation routine).
+Set to <em>false</em> if this Power Profile can NOT be locally activated (i.e. the C/S operation SPM_ActivateProfile discard the request).</p>
+</section>
+<section id="spmapplintfid">
+<h6>SpmApplIntfID<a class="headerlink" href="#spmapplintfid" title="Link to this heading"></a></h6>
+<p>This parameter specifies the ApplicationInterfaceID (i.e. the value that SHALL be passed as input parameter to the C/S SPM_ActivateProfile/SPM_DeactivateProfile
+in order to activate/deactivate the Power Profile locally.)</p>
+</section>
+<section id="spmvehdefactprioron">
+<h6>SpmVehDefActPriorON<a class="headerlink" href="#spmvehdefactprioron" title="Link to this heading"></a></h6>
+<p>The parameter defines the profile activation priority when vehicle is going to ON. If not configured, the Power Profile will be not
+subject to any LowBatteryVoltage Priority constraints.</p>
+<p>Moreover, the SPM will ignore the LowBatteryVoltage Priority until it receives it from the Energy Optimizer on the RP_Com_Spm_LowVoltSwActPrioReq port.</p>
+</section>
+<section id="spmvehdefactprioroff">
+<h6>SpmVehDefActPriorOFF<a class="headerlink" href="#spmvehdefactprioroff" title="Link to this heading"></a></h6>
+<p>The parameter defines the profile activation priority when vehicle is OFF. If not configured, the Power Profile will be not
+subject to any LowBatteryVoltage Priority constraints.</p>
+<p>Moreover, the SPM will ignore the LowBatteryVoltage Priority until it receives it from the Energy Optimizer on the RP_Com_Spm_LowVoltSwActPrioReq port.</p>
+</section>
+<section id="spmcomipdugroupevnt-tx">
+<h6>SpmComIPduGroupEvnt_Tx<a class="headerlink" href="#spmcomipdugroupevnt-tx" title="Link to this heading"></a></h6>
+<p>The paramter defines the references to the ComIpduGroup that shall be enabled in transmission once that the power profile is activated (as root of the power profile) or if this
+Power Profile appears as CONSUMED dependency in a Power Profile dependency list. The same ComIpduGroup can be referenced by different Power Profiles.</p>
+</section>
+<section id="spmcomipdugroupevnt-rx">
+<h6>SpmComIPduGroupEvnt_Rx<a class="headerlink" href="#spmcomipdugroupevnt-rx" title="Link to this heading"></a></h6>
+<p>The paramter defines the references to the ComIpduGroup that shall be enabled in Reception once that the power profile is activated (as root of the power profile) or if this
+Power Profile appears as CONSUMED dependency in a Power Profile dependency list. The same ComIpduGroup can be referenced by different Power Profiles.</p>
+</section>
+<section id="spmprofileswdeps">
+<h6>SpmProfileSwDeps<a class="headerlink" href="#spmprofileswdeps" title="Link to this heading"></a></h6>
+<p>This sub-container represent a list of the Power Profile dependencies.</p>
+<p>Each Power Profile depedency has the following parameter:</p>
+</section>
+<section id="spmprofdeptype">
+<h6>SpmProfDepType<a class="headerlink" href="#spmprofdeptype" title="Link to this heading"></a></h6>
+<p>Type of the dependency type. It can be:</p>
+<div class="line-block">
+<div class="line">- <strong>SUM_PRF_DEP_ACT_AND_CONS</strong>: the Power Profile associated needs to be activated and the PDU associated to it needs to be enabled.</div>
+<div class="line">- <strong>SUM_PRF_ACITVATED</strong>: the Power Profile associtated needs to be activated only.</div>
+<div class="line">- <strong>SUM_PRF_CONSUMED</strong>: the Pdu associated to the Power Profile dependency needs to be enabled.</div>
+</div>
+</section>
+<section id="spmprfref">
+<h6>SpmPrfRef<a class="headerlink" href="#spmprfref" title="Link to this heading"></a></h6>
+<p>Reference to a Power Profile that is a dependency of the pather Power Profile.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/SpmSwDeps.png"><img alt="Power Profile dependencies list" src="../../_images/SpmSwDeps.png" style="width: 670.1999999999999px; height: 262.8px;" /></a>
+</figure>
+</section>
+</section>
+<section id="spmpgttentries">
+<h5>SpmPgttEntries<a class="headerlink" href="#spmpgttentries" title="Link to this heading"></a></h5>
+<p id="id6">Container for the design of the Power-Graph Traversal Table (as specified by GM).</p>
+</section>
+</section>
+</section>
+<section id="spmtrgdvc">
+<h3>SpmTrgDvc<a class="headerlink" href="#spmtrgdvc" title="Link to this heading"></a></h3>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/TrgDvc.png"><img alt="Spm Target Device" src="../../_images/TrgDvc.png" style="width: 622.1999999999999px; height: 331.2px;" /></a>
+</figure>
+<p>The container contains the following parameters:</p>
+<div class="line-block">
+<div class="line">- <strong>SpmTrgDvcDtcBaseID</strong>: 2-bytes identifier for the DTC associated to the Target Device</div>
+<div class="line">- <strong>SpmTrgDvcTimeOut</strong>: time window for receiving the HeartBeat of the target Device before setting the LossOfNode indication.</div>
+<div class="line">- <strong>SpmTrgDvcPowerOnDeviceRetryPeriodicity</strong>: 2-bytes value that define the periodicity in milliseconds for the PowerOnDevice retry. Default values 10000 ms.</div>
+<div class="line">- <strong>SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence</strong>: 2-bytes value that define the milliseconds that must occur between PowerOff and PowerOn sequence during the PowerOnDevice retry. Default value 1000 ms.</div>
+<div class="line">- <strong>SpmTrgDvcID</strong>: List of identifier (IP address) of the device to reach from the current instance of the SPM.</div>
+</div>
+<p>The following constraint is present on this container:</p>
+<div class="line-block">
+<div class="line">- the <strong>SpmTrgDvcID</strong> configured SHALL be unique (i.e. it is not possible to set the same SpmTrgDvcID in different SpmTrgDvc);</div>
+<div class="line">- each <strong>SpmTrgDvcID</strong> SHALL belongs to one VLANId configured in the <strong>SpmWkngDvc</strong> / <strong>SpmVLANId</strong> list. I.e. the second MSB octet of each <strong>SpmTrgDvcID</strong> SHALL be equal to one item of the <strong>SpmVLANId</strong> list;</div>
+<div class="line">- the <strong>SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence</strong> value SHALL be greater than 250 ms.</div>
+</div>
+<p>Moreover, the <strong>SpmTrgDvcPowerOnDeviceRetryPeriodicity</strong> should be greater than the total time required to:</p>
+<div class="line-block">
+<div class="line">- perform the PowerOff sequence,</div>
+<div class="line">- wait for the <strong>SpmTrgDvcPowerOnDeviceWaitTimeBetweenOffandOnSequence</strong> to elapse,</div>
+<div class="line">- perform the PowerOn sequence,</div>
+<div class="line">- account for the DTC Timeout (which is necessary to determine if the Target Device has recovered)</div>
+</div>
+<p>If this condition is not met, and the PowerOnDevice retry does not successfully recover the Target Device, the device will be immediately restarted.</p>
+</section>
+<section id="spmtrgdvchndlnginfo">
+<h3>SpmTrgDvcHndlngInfo<a class="headerlink" href="#spmtrgdvchndlnginfo" title="Link to this heading"></a></h3>
+<p>The container defines information that are proper for each target device. The container assumes a sense only in case the SPM instance is on a intermediate network node,
+so that a MCU1 ECU basically.</p>
+<p>SPM uses the container information to understand if a remote device asks for a wake-up or a shutdown of an edge node that the SPM intermediate node itself directly handles.</p>
+<p>The information about the wake-up or the shutdown of the edge node is part of the CAN/ETH wake-up frame that SPM intermediate node can receive.</p>
+<p>As per SDV-2017 specification, SPM can receive three different CAN wake-up frames:</p>
+<ul class="simple">
+<li><p>wake-up frame A</p></li>
+<li><p>wake-up frame B</p></li>
+<li><p>wake-up frame C</p></li>
+</ul>
+<p>Both of the wake-up frame defines a bit-map buffer information and each bit represents a specific target device over the network. In case the bit is asserted, the associated-bit
+target is requested to be up, otherwise down. When the SPM intermediate node receives the wake-up information by CAN/ETH wake-up frame, it needs to check which of its controlled nodes
+could be requested to be up. In case, one of the controlled edge node is requested to be up by respective bit assertion in the received frame, the SPM starts executing the wake-up sequence for
+that edge node, using the Power Graph.</p>
+<p>The previous information about the controlled edge node by SPM intermediate one are exactly reported in the <em>SpmTrgDvcHndlngInfo</em> container.</p>
+<p>In particular, this container owns the following information:</p>
+<ul class="simple">
+<li><p><em>SpmTrgAssocWkUpFrm</em>: CAN/ETH wake-up frame in which the Target device (father container) is mapped. The value is an enumeration one in which three values are allowed (frame A, B or C)</p></li>
+<li><p><em>SpmTrgAssocWkupBit</em>: CAN/ETH wake-up frame bit to be checked as asserted or not, in order to understand if the target device is requested or not. The value is in closed range 0 to 64 due to the size of the CAN wake-up frame.</p></li>
+</ul>
+<p>The previous mentioned configuration parameters cover the following keys of input YAML file of Power Graph that is used by confgen:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Intermediate Node Wakeup Frame Handling Information</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">Directly Managed by the Waking Device</span><span class="p">:</span><span class="w"> </span><span class="c1"># true/false</span>
+<span class="w">  </span><span class="nt">Wakeup Frame</span><span class="p">:</span><span class="w"> </span><span class="c1"># A, B or C</span>
+<span class="w">  </span><span class="nt">Wakeup Bit</span><span class="p">:</span><span class="w"> </span><span class="c1"># which bit in the frame</span>
+</pre></div>
+</div>
+<p>As mentioned before, the configuration of the current container is only required in two cases:</p>
+<ul class="simple">
+<li><p>SPM current instance is for an Intermediate node</p></li>
+<li><p>SPM directly handles the target as one of its edge node.</p></li>
+</ul>
+<p>Please be careful: the container is part of the SUM SPM configuration that is generation by ETAS confgen tool, so that <strong>NO MANUALLY CHANGE IS RECOMMENDED FOR THE CURRENT CONTAINER VALUES</strong>.
+The rightness of the configuration data for the following container, for all the instances, just depends from the information the User/integrator defines in the YAML file.</p>
+<p>ETAS tools just perform the following checks with respect to the current container:</p>
+<ul class="simple">
+<li><p>Container is configured only in case the SPM node type is intermediate (Spm/SpmConfigutSet/SpmPgttEntries/SpmWkngDvc/SpmNodeType)</p></li>
+<li><p>SpmTrgAssocWkUpFrm allows three values to address wake-up frame A, B or C</p></li>
+<li><p>SpmTrgAssocWkupBit allows only values in the closed range 0 and 63</p></li>
+</ul>
+<p>The following picture reports an example to understand how the container information can be used:</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/Diapositiva1.PNG"><img alt="Spm SpmTrgDvcHndlngInfo" src="../../_images/Diapositiva1.PNG" style="width: 1088.0px; height: 612.0px;" /></a>
+</figure>
+<p>In the figure use case, the SPM is an intermediate node that manages only Target A as own edge node. For this one, SPM contains the configuration of a wake-up sequence and handling information.</p>
+<p>From the handling information we can see the Target A is mapped in:</p>
+<ul class="simple">
+<li><p>CAN wake-up frame B</p></li>
+<li><p>in the 14TH bit</p></li>
+</ul>
+<p>Always considering the use case in the pictures, SPM receives wake-up frame B in which the 14TH bit is asserted. In this case, SPM starts the execution of the wake-up sequence for Target A.</p>
+</section>
+<section id="spmwkngdvc">
+<span id="id7"></span><h3>SpmWkngDvc<a class="headerlink" href="#spmwkngdvc" title="Link to this heading"></a></h3>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/WkDvc.png"><img alt="Spm Waking Device" src="../../_images/WkDvc.png" style="width: 655.1999999999999px; height: 373.2px;" /></a>
+</figure>
+<div class="line-block">
+<div class="line">- <strong>SpmNodeType</strong>: describes if the SPM is on a Edge Node or Remote Node.</div>
+<div class="line">- <strong>SpmIntermediateDstAddrs</strong>: list of IP addresses for ETH WUF transmission. For Edge nodes, contains intermediate node addresses. For Intermediate nodes with ETH WUF support, contains target edge node addresses.</div>
+<div class="line">- <strong>SpmSrcIp</strong>: Source IP of the HeartBeat.</div>
+<div class="line">- <strong>SpmDstIp</strong>: Network Multicast IP of the network where to send the HeartBeat.</div>
+<div class="line">- <strong>SpmVLANId</strong>: VLAN identifier. For each configured VlanID, a port is created for sending and receiving frames SM/WUF frame. Furthermore, for the WUF, both edge and intermediate nodes can now send ETH WUF frames, while intermediate nodes can also receive them. Edge nodes typically only send ETH WUF.</div>
+<div class="line">- <strong>SpmVLANComRef</strong>: reference to an instance of SpmGeneral/SpmVLANCom container that defines a set of Interface and Data-Type to be used..</div>
+</div>
+<p>The following constraints are present on this container:</p>
+<div class="line-block">
+<div class="line">- the number of the <strong>SpmSrcIp</strong>, <strong>SpmDstIp</strong>, <strong>SpmVLANId</strong> and <strong>SpmVLANComRef</strong> configured SHALL be the same;</div>
+<div class="line">- the <strong>SpmSrcIp</strong>, <strong>SpmDstIp</strong>, <strong>SpmVLANId</strong>  and <strong>SpmVLANComRef</strong> are paired w.r.t. the index in the list. I.e. the first <strong>SpmSrcIp</strong> (12.10.2.1), <strong>SpmDstIp</strong> (12.10.0.0),  <strong>SpmVLANId</strong> (10) and <strong>SpmVLANComRef</strong> are paired together. The <strong>SpmVLANComRef</strong> instance is exploited to access the corresponding VLAN.</div>
+<div class="line">- the <strong>SpmIntermediateDstAddrs</strong> SHALL be configured for nodes that support ETH WUF transmission (both <strong>SPM_NODE_EDGE</strong> and <strong>SPM_NODE_INTERMEDIATE</strong> with ETH WUF support);</div>
+<div class="line">- each item of the list <strong>SpmIntermediateDstAddrs</strong> SHALL belong to one VLANId configured in the <strong>SpmVLANId</strong> list. This implies that the second MSB octet of <strong>SpmIntermediateDstAddrs</strong> SHALL be equal to one item of the <strong>SpmVLANId</strong> list.</div>
+</div>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/Wkngdvc_Couple_info.png"><img alt="WkngDvc's info for HeartBeat" src="../../_images/Wkngdvc_Couple_info.png" style="width: 654.0px; height: 375.59999999999997px;" /></a>
+</figure>
+</section>
+<section id="spmtrgdvcinfo">
+<h3>SpmTrgDvcInfo<a class="headerlink" href="#spmtrgdvcinfo" title="Link to this heading"></a></h3>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/TrgDvcInfo.png"><img alt="Spm Target Device Info" src="../../_images/TrgDvcInfo.png" style="width: 588.6px; height: 277.8px;" /></a>
+</figure>
+<p>This is a wrapper container:</p>
+<div class="line-block">
+<div class="line">- <strong>SpmTrgDvcRef</strong>: Reference to the Target Device to be reached</div>
+<div class="line">- <strong>SpmWkUpSeqRef</strong>: Reference to wake-up boot sequence to use for reaching the target device</div>
+</div>
+<p>The following constraint is present on this container:</p>
+<div class="line-block">
+<div class="line">- each <strong>SpmTrgDvc</strong> SHALL be reference one and only one times in the <strong>SpmTrgDvcInfo</strong> container;</div>
+</div>
+</section>
+<section id="spmwkupseq">
+<span id="id8"></span><h3>SpmWkUpSeq<a class="headerlink" href="#spmwkupseq" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="../DesignNotes/design_notes.html#pod"><span class="std std-ref">PowerOnDevice/PowerOffDevice and WakeUp Sequence</span></a> to have information on how this information are used by SPM.</p>
+<p>This container contains a list of <strong>SpmWkUpSteq</strong> necessary to be performed in order to turn On a <strong>SpmTrgDvc</strong>.</p>
+</section>
+<section id="spmwkupsteq">
+<span id="wkupstep"></span><h3>SpmWkUpSteq<a class="headerlink" href="#spmwkupsteq" title="Link to this heading"></a></h3>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/WkStep.png"><img alt="Spm Sys Architecture" src="../../_images/WkStep.png" style="width: 621.0px; height: 307.2px;" /></a>
+</figure>
+<div class="line-block">
+<div class="line">- <strong>SpmSeqStepID</strong>: Wake-up sequence step identifier for sorting the step and define the sequence</div>
+<div class="line">- <strong>SpmSeqStepDly</strong>: time separation between the current step and the next</div>
+<div class="line">- <strong>SpmCommandType</strong>: type of action to be performed in the step</div>
+<div class="line">- <strong>SpmCommandValue</strong>: describe the value of the action to be performed. Its meaning is related to the <strong>SpmCommandType</strong>.</div>
+</div>
+<p>The <strong>SpmCommandType</strong> can have the following values:</p>
+<div class="line-block">
+<div class="line">- <strong>SEND_TC10_SWTCH_1</strong>: Send TC10 wakeup through ethernet switch 1 on the host. <strong>SpmCommandValue</strong> represents the Port Number.</div>
+<div class="line">- <strong>SEND_TC10_SWTCH_2</strong>: Send TC10 wakeup through ethernet switch 2 on the host. <strong>SpmCommandValue</strong> represents the Port Number.</div>
+<div class="line">- <strong>SEND_ETH_WKUP_FRM_A</strong>: Unicast Wakeup Frame A on Ethernet to the specific intermediate MCU used by this waking device. <strong>SpmCommandValue</strong> represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).</div>
+<div class="line">- <strong>SEND_ETH_WKUP_FRM_B</strong>: Unicast Wakeup Frame B on Ethernet to the specific intermediate MCU used by this waking device. <strong>SpmCommandValue</strong> represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).</div>
+<div class="line">- <strong>SEND_ETH_WKUP_FRM_C</strong>: Unicast Wakeup Frame C on Ethernet to the specific intermediate MCU used by this waking device. <strong>SpmCommandValue</strong> represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).</div>
+<div class="line">- <strong>SEND_CAN_WKUP_FRM_A</strong>: Broadcast CAN wakeup frame A. <strong>SpmCommandValue</strong> represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).</div>
+<div class="line">- <strong>SEND_CAN_WKUP_FRM_B</strong>: Broadcast CAN wakeup frame B. <strong>SpmCommandValue</strong> represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).</div>
+<div class="line">- <strong>SEND_CAN_WKUP_FRM_C</strong>: Broadcast CAN wakeup frame C. <strong>SpmCommandValue</strong> represents the bit position in the wakeup frame that needs to be set (0x00 - 0x3F).</div>
+<div class="line">- <strong>SEND_BOARD_LV_WKUP_GPIO</strong>: Assert hardware GPIO to perform the wakeup. <strong>SpmCommandValue</strong> represents the GPIO number to be asserted (0x00- max GPIO number)</div>
+</div>
+<p>The following constraint are present on this container:</p>
+<div class="line-block">
+<div class="line">- commands <strong>SEND_TC10_SWTCH_1</strong> and <strong>SEND_TC10_SWTCH_2</strong> can be used if EthSMNetwork associated with the Ethernet Switch is configured in the EthSM;</div>
+<div class="line">- commands <strong>SEND_ETH_WKUP_FRM_A</strong>, <strong>SEND_ETH_WKUP_FRM_B</strong> and <strong>SEND_ETH_WKUP_FRM_C</strong> can be used for both EDGE and INTERMEDIATE nodes that support ETH WUF transmission;</div>
+<div class="line">- commands <strong>SEND_CAN_WKUP_FRM_A</strong>, <strong>SEND_CAN_WKUP_FRM_B</strong> and <strong>SEND_CAN_WKUP_FRM_C</strong> can be used if the SPM is deployed as INTERMEDIATE node;</div>
+<div class="line">- command <strong>SEND_BOARD_LV_WKUP_GPIO</strong> can be used if the SpmGeneral/SpmWkUpHelperFunction is configured;</div>
+</div>
+<p><strong>NOTE</strong>: SPM module is agnostic about the real Switch AND Switch port on which the TC10 pulse will be sent. The SPM just interfaces itself with the EthSM module. The interface between SPM and EthSM is possible thanks to API EthSM_RequestComMode that receives from SPM the EthSM Network Handle Identifier for the network that maps the EthIf virtual controller on the same VLAN of the Target Device IP address. By the usage of this API AND IF the EthSM is properly configured to support the wake-up on data-line, the SPM can request the sending of TC10.</p>
+<section id="spm-general">
+<h4>SPM General<a class="headerlink" href="#spm-general" title="Link to this heading"></a></h4>
+</section>
+</section>
+<section id="spmdiagnostic">
+<h3>SpmDiagnostic<a class="headerlink" href="#spmdiagnostic" title="Link to this heading"></a></h3>
+<p>This container handles the diagnostic DID related to the SPM module. The container contains the following parameters:</p>
+</section>
+<section id="spm-did-e0dd-activationprofileactivationstatus-dcm-ref">
+<span id="dide0dd"></span><h3>Spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref<a class="headerlink" href="#spm-did-e0dd-activationprofileactivationstatus-dcm-ref" title="Link to this heading"></a></h3>
+<p>This parameter defines the reference to the DCM DID that is used to report the activation status of the Activation Profile. The value of this parameter is a reference to a DcmDspDid.
+If NO reference is present, the SPM will not generate the related code.</p>
+<p>The SPM expects the configuration of the module as following:</p>
+<div class="line-block">
+<div class="line">- the DcmDspDataUsePort is set to USE_DATA_SYNCH_CLIENT_SERVER or USE_DATA_ASYNCH_CLIENT_SERVER;</div>
+<div class="line">- the DcmDspDataConditionCheckReadFncUsed can be set either to TRUE or FALSE;</div>
+</div>
+<p>This DID exploits the <strong>SpmProfBitMapIndex</strong> in order to define the bitmap of the activation status of the Activation Profile.
+So, refer to section <a class="reference internal" href="#spmprofbitmapindex"><span class="std std-ref">SpmProfBitMapIndex</span></a> for major details.</p>
+<p>Please, connect the <code class="code docutils literal notranslate"><span class="pre">PPort</span> <span class="pre">PP_SPM_DCM_DID_E0DD_ActivationProfileActivationStatus</span></code> to the DCM in order to exploit the SPM DID E0DD functionality.</p>
+</section>
+<section id="did-0xe0de-locally-activated-activation-profile-off-power-mode-activity-records">
+<span id="dide0de"></span><h3>DID 0xE0DE - Locally Activated Activation Profile Off Power Mode Activity Records<a class="headerlink" href="#did-0xe0de-locally-activated-activation-profile-off-power-mode-activity-records" title="Link to this heading"></a></h3>
+<section id="spmdid0xe0dedcmref">
+<h4>SpmDID0xE0DEDcmRef<a class="headerlink" href="#spmdid0xe0dedcmref" title="Link to this heading"></a></h4>
+<p>This parameter defines the reference to the DCM DID that is used to report the Locally Activated Activation Profile Off Power Mode Activity Records. The value of this parameter is a reference to a DcmDspDid.
+If NO reference is present, the SPM will not generate the related code.</p>
+<p>The SPM expects the configuration of the module as following:</p>
+<div class="line-block">
+<div class="line">- the DcmDspDataUsePort is set to USE_DATA_SYNCH_CLIENT_SERVER or USE_DATA_ASYNCH_CLIENT_SERVER;</div>
+<div class="line">- the DcmDspDataConditionCheckReadFncUsed can be set either to TRUE or FALSE;</div>
+</div>
+<p>Please, connect the <code class="code docutils literal notranslate"><span class="pre">PPort</span> <span class="pre">PP_SPM_Dcm_DataDidE0DE</span></code> to the DCM in order to exploit the SPM DID E0DE functionality.</p>
+</section>
+<section id="spmdid0xe0denvmref">
+<h4>SpmDID0xE0DENvmRef<a class="headerlink" href="#spmdid0xe0denvmref" title="Link to this heading"></a></h4>
+<p>This parameter defines the reference to the NvM block that is used to store the Locally Activated Activation Profile Off Power Mode Activity Records for DID 0xE0DE. The value of this parameter is a reference to a NvMBlockDescriptor.
+If NO reference is present, the SPM will not generate the related code.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>This parameter is <strong>MANDATORY</strong> if <strong>SpmDID0xE0DEDcmRef</strong> is configured. The NvM block is required to provide persistent storage for the DID 0xE0DE activity records data.</p>
+</div>
+<p>The SPM expects the configuration of the NvM block as following:</p>
+<div class="line-block">
+<div class="line">- the NvMNvBlockLength shall be set to 35 bytes to accommodate the DID 0xE0DE activity records data structure;</div>
+<div class="line">- the NvMRamBlockDataAddress is referenced as a global variable used by SPM to store the data DID 0xE0DE.</div>
+</div>
+<p>Please, ensure the NvM block is properly configured with these requirements for DID E0DE data persistence.</p>
+</section>
+</section>
+<section id="did-0xe0df-remotely-activated-activation-profile-off-power-mode-activity-records">
+<span id="dide0df"></span><h3>DID 0xE0DF - Remotely Activated Activation Profile Off Power Mode Activity Records<a class="headerlink" href="#did-0xe0df-remotely-activated-activation-profile-off-power-mode-activity-records" title="Link to this heading"></a></h3>
+<section id="spmdid0xe0dfdcmref">
+<h4>SpmDID0xE0DFDcmRef<a class="headerlink" href="#spmdid0xe0dfdcmref" title="Link to this heading"></a></h4>
+<p>This parameter defines the reference to the DCM DID that is used to report the Remotely Activated Activation Profile Off Power Mode Activity Records. The value of this parameter is a reference to a DcmDspDid.
+If NO reference is present, the SPM will not generate the related code.</p>
+<p>The SPM expects the configuration of the module as following:</p>
+<div class="line-block">
+<div class="line">- the DcmDspDataUsePort is set to USE_DATA_SYNCH_CLIENT_SERVER or USE_DATA_ASYNCH_CLIENT_SERVER;</div>
+<div class="line">- the DcmDspDataConditionCheckReadFncUsed can be set either to TRUE or FALSE;</div>
+</div>
+<p>Please, connect the <code class="code docutils literal notranslate"><span class="pre">PPort</span> <span class="pre">PP_SPM_Dcm_DataDidE0DF</span></code> to the DCM in order to exploit the SPM DID E0DF functionality.</p>
+</section>
+<section id="spmdid0xe0dfnvmref">
+<h4>SpmDID0xE0DFNvmRef<a class="headerlink" href="#spmdid0xe0dfnvmref" title="Link to this heading"></a></h4>
+<p>This parameter defines the reference to the NvM block that is used to store the Remotely Activated Activation Profile Off Power Mode Activity Records for DID 0xE0DF. The value of this parameter is a reference to a NvMBlockDescriptor.
+If NO reference is present, the SPM will not generate the related code.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>This parameter is <strong>MANDATORY</strong> if <strong>SpmDID0xE0DFDcmRef</strong> is configured. The NvM block is required to provide persistent storage for the DID 0xE0DF activity records data.</p>
+</div>
+<p>The SPM expects the configuration of the NvM block as following:</p>
+<div class="line-block">
+<div class="line">- the NvMNvBlockLength shall be set to 40 bytes to accommodate the DID 0xE0DE activity records data structure;</div>
+<div class="line">- the NvMRamBlockDataAddress is referenced as a global variable used by SPM to store the data DID 0xE0DF.</div>
+</div>
+<p>Please, ensure the NvM block is properly configured with these requirements for DID E0DF data persistence.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/DiagDID.png"><img alt="Spm DID Diagnostic Management" src="../../_images/DiagDID.png" style="width: 624.0px; height: 262.8px;" /></a>
+</figure>
+</section>
+</section>
+<section id="spmmainfunctionperiodicity">
+<h3>SpmMainFunctionPeriodicity<a class="headerlink" href="#spmmainfunctionperiodicity" title="Link to this heading"></a></h3>
+<p>Parameter defines the timing period for scheduling the Spm main controller. The Spm main controller evaluates the status of the permit execution considering the SpmPermitExecutionMask
+value and the SPM instance activation criteria. The value of the parameter is in milliseconds as unit. The parameter datatype is float, this means that when you
+configure the parameter with a value in the open range (0,1), the the controller is scheduled in microseconds.</p>
+<p>If you want to schedule your SPM controller in seconds, you can configure your parameter with a value greater than 1000.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Please pay attention when you configure this value. No check on the configuration has been implemented yet. According to GM specification
+the minimum value of the parameter shall be 1000. AN heartbeat might be also transmitted at a lower rate, but we strongly suggest to keep
+this value to 1 seconds = 1000 ms.</p>
+</div>
+</section>
+<section id="spmpermitexecutionmask">
+<h3>SpmPermitExecutionMask<a class="headerlink" href="#spmpermitexecutionmask" title="Link to this heading"></a></h3>
+<p>Parameter defines the permit execution mask. SPM uses this mask to transit the SPM controller in the appropriate state. The permit execution mask is one single byte that implements a bit map.
+The value of the permit execution mask is computed as follows:</p>
+<ul>
+<li><p>Each bit of the Byte value represents a specific functionality:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>If the functionality is not in scope to the SPM instance, then set a <strong>1</strong></p></li>
+<li><p>Otherwise set a <strong>0</strong></p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="spmwkuphelperfunction">
+<h3>SpmWkUpHelperFunction<a class="headerlink" href="#spmwkuphelperfunction" title="Link to this heading"></a></h3>
+<p>The parameter allows to configure the name of the wake-up helper function, in case the Project-specific requires a device Custom wake-up. The parameter is required as per
+SDV-8217 and it is not mandatory. If the function name is present, the function will take the received 64-bit buffer (a byte buffer) as input.
+When the SPM receives the CAN wake-up frame, it scans for the asserted bits in the message. Each bit corresponds to a specific target.
+If the target device is awaken by Board-Level wake-up (GPIO wake-up), the SPM forwards the received buffer to the helper function by invoking it using this configured name.</p>
+<section id="spm-can-wake-up-frame-references">
+<h4>SPM CAN Wake-up Frame references<a class="headerlink" href="#spm-can-wake-up-frame-references" title="Link to this heading"></a></h4>
+<section id="spmcanwkupfrmref">
+<span id="wuf"></span><span id="id9"></span><h5>SpmCANWkUpFrmRef<a class="headerlink" href="#spmcanwkupfrmref" title="Link to this heading"></a></h5>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/CanWkUpRef.png"><img alt="Spm Sys Architecture" src="../../_images/CanWkUpRef.png" style="width: 473.0px; height: 206.0px;" /></a>
+</figure>
+<p><strong>If the SPM is deployed as INTERMEDIATE node</strong>, the user need to configure two parameters in this sub-container: SpmCANWkUpFrmRxRef to receive Can Frame(s) or SpmCANWkUpFrmTxReftransmit to transmit Can frame(s).
+The values configured in these two parameters refers to those configured in the CanIf upper Layer.</p>
+<p>The <em>SpmCANWkUpFrmRefTx</em> parameter represent the reference to the CanIfTxPduCfg that is used to send the CAN wake up frame.
+(The values of the configuration parameters are references to CanIf configured ones as CanIf upper Layer).
+Three reference are expected: WUF A, WUF B and WUF C.
+As per GM specification, the SPM will be deployed on <strong>CHM</strong> so the three references configured here SHALL have CanIfTxCanId 339 (WUF A), CanIfTxCanId 355 (WUF B) and CanIfTxCanId 371 (WUF C).</p>
+<p>The <em>SpmCANWkUpFrmRefRx</em> parameter represent the reference to one or more CanIfRxPduCfg that are used to receive the CAN wake up frame.
+As per GM specification, the SPM will be deployed on <strong>CHM</strong> so the references configured here SHALL have a CanIfRxCanId in range [336-351] (WUF A only).</p>
+<p>In addition, to receive multiple CAN Frames, careful configuration is required for proper functioning. Specifically, in the CanIf module, the user need to configure:</p>
+<ul class="simple">
+<li><p>the same name for the &lt;User_RxIndication&gt; in the CanIfRxPduUserRxIndicationName parameter, enabled by selecting CDD in the CanIfRxPduUserRxIndicationUL parameter, to allow receiving CAN Frames in the &lt;User_RxIndication&gt; function.</p></li>
+<li><p>CanIfRxPduRef and CanIfRxPduHrhIdRef to reference different Pdu (CanIfRxPduRef) and HRH (CanIfRxPduHrhIdRef).</p></li>
+</ul>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/SPM_CANWUF.png"><img alt="Can wakeUp frame configuration" src="../../_images/SPM_CANWUF.png" style="width: 389.20000000000005px; height: 250.0px;" /></a>
+</figure>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/SPM_CANWUFTest.png"><img alt="Can wakeUp frame configuration" src="../../_images/SPM_CANWUFTest.png" style="width: 384.8px; height: 238.4px;" /></a>
+</figure>
+</section>
+<section id="spmgenerateinitrunnable">
+<h5>SpmGenerateInitRunnable<a class="headerlink" href="#spmgenerateinitrunnable" title="Link to this heading"></a></h5>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/SpmGenerateInitRunnable.PNG"><img alt="Spm Sys Architecture" src="../../_images/SpmGenerateInitRunnable.PNG" style="width: 610.8px; height: 460.2px;" /></a>
+</figure>
+<p>You need to configure this parameter to determine whether to generate the initial runnable. The SPM_Init function will be called just once at startup.</p>
+<p>If it is true, you shall need to configure parameter SpmInitFuncPeriodicity for the periodicity of SPM init runnable. Otherwise, the SPM_Init functions shall be configured in the BswM init action list and to be called during the startup.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/SPM_Init_BswMActionList.PNG"><img alt="Spm Init initialization" src="../../_images/SPM_Init_BswMActionList.PNG" style="width: 580.1999999999999px; height: 459.0px;" /></a>
+</figure>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/SPM_Init_BswMActionListRef.PNG"><img alt="Spm Init initialization" src="../../_images/SPM_Init_BswMActionListRef.PNG" style="width: 624.0px; height: 457.2px;" /></a>
+</figure>
+<p>Ensure that this header file Sum_Spm.h is included correctly in the BswM configuration file for declarations related to SPM_Init.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/Spm_Init_BswM_Included.PNG"><img alt="Spm Init initialization" src="../../_images/Spm_Init_BswM_Included.PNG" style="width: 628.8px; height: 456.59999999999997px;" /></a>
+</figure>
+</section>
+<section id="spminitfuncperiodicity">
+<h5>SpmInitFuncPeriodicity<a class="headerlink" href="#spminitfuncperiodicity" title="Link to this heading"></a></h5>
+<p>Parameter defines the periodic fixed runnable for scheduling the SPM initialization phase. By default, this timing period is 1000 (ms).</p>
+<p>You shall need to map this generated runnable to the highest priority order task when the parameter <em>SpmGenerateInitRunnable</em> is set to true.</p>
+</section>
+<section id="spmactdeactretryperiodicity">
+<h5>SpmActDeactRetryPeriodicity<a class="headerlink" href="#spmactdeactretryperiodicity" title="Link to this heading"></a></h5>
+<p>Parameter defines the periodicity of activation/deactivation requests to be sent until they are correctly acknowledged by the requested (remote) SM. By default, this timing period is 1000 (ms).</p>
+</section>
+</section>
+</section>
+<section id="calibratable-parameters">
+<span id="calibratable"></span><h3>Calibratable Parameters<a class="headerlink" href="#calibratable-parameters" title="Link to this heading"></a></h3>
+<section id="heartbeat-periodicity">
+<h4>Heartbeat periodicity<a class="headerlink" href="#heartbeat-periodicity" title="Link to this heading"></a></h4>
+<p>The HeartBeat’s initial burst phase and steady state periodicity (ms) are calibratable parameters.
+They can be assigned values in the range [5 - 65535].
+The default value of the intial burst phase periodicity is of 5ms.
+The default value of the steady state periodicity is of 1000ms.</p>
+</section>
+<section id="own-wkup-frame-information">
+<h4>Own WkUp frame information<a class="headerlink" href="#own-wkup-frame-information" title="Link to this heading"></a></h4>
+<p>The own WakeUp frame and the corresponding bit on it are calibratable parameters.</p>
+<p>Both of them are configurable parameter (SpmWakeupFrame and SpmWakeupBit).
+The WakeUp frame can be selected among enum literals for WUF A, B or C.
+The WakeUp bit can be assigned a value in the range {0, …, 63}, with the default value of 0.</p>
+<p>SPM will prevent shutdown if the own WakeUp frame bit is asserted in the received WakeUp frame.</p>
+</section>
+<section id="heartbeat-shutdown-delay">
+<h4>HeartBeat Shutdown Delay<a class="headerlink" href="#heartbeat-shutdown-delay" title="Link to this heading"></a></h4>
+<p>Time delay (in ms) the PM has to wait, after the last burst HeartBeat has been sent, before allowing the shutdown.
+It can be assigned a value in the range {0, …, 65000}.
+The default value of the time delay is 2000 (2s).</p>
+</section>
+<section id="spm-smframe-queuelength">
+<h4>Spm_SmFrame_QueueLength<a class="headerlink" href="#spm-smframe-queuelength" title="Link to this heading"></a></h4>
+<p>Maximum queue length of SM Frame Rx messages. If this value is not set then the default value used is (number of target devices * number of local profiles).</p>
+</section>
+<section id="spm-pmheartbeat-queuelength">
+<h4>Spm_PmHeartbeat_QueueLength<a class="headerlink" href="#spm-pmheartbeat-queuelength" title="Link to this heading"></a></h4>
+<p>Maximum queue length of Heartbeat Rx messages. If this value is not set then the default value is number of target devices.</p>
+</section>
+<section id="spm-pmethwakeupunic-queuelength">
+<h4>Spm_PmETHwakeUpUNIC_QueueLength<a class="headerlink" href="#spm-pmethwakeupunic-queuelength" title="Link to this heading"></a></h4>
+<p>Maximum queue length of unicast Eth wakeup messages. If this value is not set then the default value is number of target devices.</p>
+</section>
+<section id="spm-pmethwakeupmultic-queuelength">
+<h4>Spm_PmETHwakeUpMULTIC_QueueLength<a class="headerlink" href="#spm-pmethwakeupmultic-queuelength" title="Link to this heading"></a></h4>
+<p>Maximum queue length of multicast Eth wakeup messages. If this value is not set then the default value is (PowerMgrMainFunctionPeriodicity / 5 + 1).</p>
+</section>
+<section id="spm-localrequests-queuelength">
+<h4>Spm_LocalRequests_QueueLength<a class="headerlink" href="#spm-localrequests-queuelength" title="Link to this heading"></a></h4>
+<p>Maximum queue length of local and diagnostic messages. If this value is not set then the default value is (number of power profiles * 2).</p>
+<p><strong>NOTE</strong>: The ideal value to configure any of the queue lengths is to use the same calculation as the default values while putting in mind the RAM and busload of the system.
+eg: ideal value for Spm_SmFrame_QueueLength = (number of target devices * number of local profiles) as the default value but if the RAM is a constraint then a lower value shall be used.</p>
+</section>
+</section>
+</section>
+<section id="bsw-modules-configuration-hints">
+<h2>BSW Modules Configuration Hints<a class="headerlink" href="#bsw-modules-configuration-hints" title="Link to this heading"></a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This section is under development. It will be completed internally and then released once RTA-SUM SPM will be officially released
+for production.</p>
+</div>
+<section id="rte-configuration">
+<h3>Rte Configuration<a class="headerlink" href="#rte-configuration" title="Link to this heading"></a></h3>
+<p>The RTA-SUM SPM contains several calibration parameter. These parameters resides in the RTE generated code. The RTE generated code uses Macros from
+<em>Compiler Abstraction AUTOSAR library</em>. The usage of these Macros requires an additional configuration of the <strong>Rte Os/Rte</strong> configuration container otherwise a
+compilation error can appear for Macro <em>RTE_CALPR</em>.</p>
+<p>If you use the <strong>SDK</strong> you have to just check that the following configuration is present in your RTA-CAR project. In case it is not, please add it manually as follows:</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/Rte_Spm_Conf.png"><img alt="RTE configuration for SPM" src="../../_images/Rte_Spm_Conf.png" style="width: 952.9px; height: 508.3px;" /></a>
+</figure>
+<p>As picture shows, the steps are:</p>
+<ol class="arabic simple">
+<li><p>Open your Project</p></li>
+<li><p>In ECU Configurator, expand “Bsw Modules” and go in <em>Rte Os/Rte</em></p></li>
+<li><p>Configure the <em>RteSwComponentType</em> like in the previous picture.</p></li>
+</ol>
+</section>
+<section id="id10">
+<h3>Calibratable Parameters<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
+</section>
+<section id="cdd-for-communication">
+<h3>Cdd for communication<a class="headerlink" href="#cdd-for-communication" title="Link to this heading"></a></h3>
+<p>In an integration environment, the RTA-SUM SPM needs a Complex-Device Driver configuration in order to redirect the Pdu to/from the CanIf.</p>
+<p>This is called <strong>Cdd_SPM</strong> in SDK release.</p>
+<p>The configuration of the <strong>Cdd_SPM</strong> allows the proper <strong>CanIf</strong> code generation for RTA-BSW.
+On the other side, the <strong>Cdd_SPM</strong> makes possible the proper RTA-SUM SPM code generation when you configure the Pdu references in the container
+<em>SpmGeneral/SpmCANWkUpFrmRef</em>.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>Don’t change the name of Cdd_SPM. If you want to change the Tx/Rx Pdus between RTA-SUM SPM and CanIf, please just edit the Pdu Reference.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The Complex Device Driver is statically provided at the moment in the SDK releases. If you don’t need CAN, please:</p>
+<ol class="arabic simple">
+<li><p>Remove the Cdd configuration</p></li>
+<li><p>Make sure that No container <em>CanIfTxPduCfg</em> and <em>CanIfRxPduCfg</em> have respectively parameters <em>CanIfTxPduUserRxIndicationUL</em> and <em>CanIfRxPduUserRxIndicationUL</em> different from CDD,
+otherwise you must remove or you have to change to an AUTOSAR standard module.</p></li>
+<li><p>Remove the configuration of the container <em>SpmGeneral/SpmCANWkUpFrmRef</em> in RTA-SUM SPM configuration</p></li>
+</ol>
+</div>
+</section>
+<section id="metadata-handling-by-rte-configuration-steps">
+<h3>Metadata Handling by RTE Configuration Steps<a class="headerlink" href="#metadata-handling-by-rte-configuration-steps" title="Link to this heading"></a></h3>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p><strong>PLEASE</strong>: you must consider this section <em>IF AND ONLY IF</em> you have the possibility to embed RTA-RTE version 12.3.1pr3 or above.</p>
+<p>RTA-RTE directly supports the metadata handling at RTE API level and, then RTA-RTE replaces the Com call-outs of the older SPM versions.</p>
+</div>
+<p><strong>PRE-CONDITION</strong> : If you integrate the new SUM plugin in a RTA-CAR project with a previous version, please remove the configuration of the Com Callout. You can refer
+to the previous User guide description to avoid the configuration of the Com. Otherwise let’s start to follow the next steps.</p>
+<ol class="arabic simple">
+<li><p>Open the configuration of the Com in your RTA-CAR Project AND go to path <em>/ComConfig/ComSignals</em></p></li>
+<li><p>For all SPM related signals ( they should start with S_Sig_sftpwrmgr prefix) and change the value of the parameter <em>ComSignalType</em> to <strong>UINT8_DYN</strong> (look image <a class="reference internal" href="#commetad">ComMetaD</a>)</p></li>
+<li><p>Reach the SENDER-RECEIVER interfaces <em>sftpwrmgr_Gen</em>, <em>sftpwrmgr_heartbeat_Gen</em> and <em>SR_SPM_ETHWakeUpFrame</em>. For both of them right click with the mouse on the names and add <em>New Child/MetaDataItemSet</em> (If this is not provided).</p></li>
+<li><p>In the just created <em>MetaDataItemSet</em>, map in parameters <em>DataElements</em> the data-element <strong>SPM_dt</strong> for interface <em>sftpwrmgr_Gen</em> and <strong>SPM_HB_dt</strong> for interface <em>sftpwrmgr_heartbeat_Gen</em>, the data-element <strong>PwrMgrWakeupTxEventImpType</strong> for interface <em>SR_SPM_ETHWakeUpFrame</em>.</p></li>
+<li><p>Add a <em>MetaDataItem</em> to the <em>MetaDataItemSets</em> and configure <strong>10</strong> as <em>Length</em> (refer to image <a class="reference internal" href="#srmetad">SrMetaD</a> for the final scenario)</p></li>
+<li><p>Now you can generate the RTE code</p></li>
+</ol>
+<figure class="align-default" id="commetad">
+<a class="reference internal image-reference" href="../../_images/com_sign_metadata.png"><img alt="Configuration of Com signal Type" src="../../_images/com_sign_metadata.png" style="width: 939.25px; height: 482.95px;" /></a>
+</figure>
+<figure class="align-default" id="srmetad">
+<a class="reference internal image-reference" href="../../_images/metadata_sr.png"><img alt="Configuration of metadata in sender receiver interface" src="../../_images/metadata_sr.png" style="width: 621.4px; height: 200.20000000000002px;" /></a>
+</figure>
+</section>
+<section id="bswm-configuration">
+<span id="id11"></span><h3>BswM Configuration<a class="headerlink" href="#bswm-configuration" title="Link to this heading"></a></h3>
+<p>SPM can interface itself with the BswM as Upper Layer for the following features</p>
+<section id="enable-disable-pdu-groups">
+<h4>Enable/disable PDU groups<a class="headerlink" href="#enable-disable-pdu-groups" title="Link to this heading"></a></h4>
+<p>BswM defines the BswMPduGroupSwitch action. This action allows the handling of PDU communication status. SPM acts as a Mode requester for this specific handler to the BswM.</p>
+<p>The following are the needed steps to configure properly the BswM:</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The following is just a guidelines. Refer to the BswM specification on how to properly configure the BswM module.</p>
+</div>
+</section>
+<section id="bswmpdugroupswitch-action">
+<span id="bswmpduaction"></span><h4>BswMPduGroupSwitch action<a class="headerlink" href="#bswmpdugroupswitch-action" title="Link to this heading"></a></h4>
+<p>In the container <em>Bswm/BswMConfig/BswMModeControl/BswMAction</em>:
+#. create a new action
+#. select the type <em>BswM_PduGroup_Action</em> under the <em>BswMAvailableActions</em> and
+#. set reference of the PDUGroup
+in <em>BswMEnabledPduGroup</em>.</p>
+<figure class="align-default" id="bswm-pdugroup-action">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_Action.png"><img alt="Configuration of the BswMPduGroupSwitch action" src="../../_images/BswM_PduGroup_Action.png" style="width: 704.6px; height: 473.85px;" /></a>
+</figure>
+<p>Re-do the same operation as above but set the reference of the PDUGroup in <em>BswMDisabledPduGroup</em>.</p>
+<section id="action-list">
+<h5>Action List<a class="headerlink" href="#action-list" title="Link to this heading"></a></h5>
+<p>In the container <em>Bswm/BswMConfig/BswMModeControl/BswMActionList</em>, create a new action list with <em>BswMActionListExecution</em> set to <strong>BSWM_CONDITION</strong>
+add a <em>BswmActionListItem</em> and then for <em>BswMActionListItemRef</em> you need to set the reference to the action created in <a class="reference internal" href="#bswmpduaction"><span class="std std-ref">BswMPduGroupSwitch action</span></a> (previous step).</p>
+<figure class="align-default" id="bswm-pdugroup-actionlist">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_ActionList.png"><img alt="Configuration of the Action List" src="../../_images/BswM_PduGroup_ActionList.png" style="width: 801.45px; height: 288.6px;" /></a>
+</figure>
+<p>Re-do the same operation as above but set the reference to <em>BswMActionListItemRef</em> with the other previous action item.</p>
+</section>
+</section>
+<section id="mode-request-port">
+<h4>Mode Request Port<a class="headerlink" href="#mode-request-port" title="Link to this heading"></a></h4>
+<p>In the container <em>Bswm/BswMConfig/BswMArbitration/BswMModeRequestPort</em> create a new Mode Request Port selecting the <em>BSWM_IMMEDIATE</em> value for <em>BswMRequestProcessing</em>.
+Then, go down from previous container to <em>/BswNModeRequestSource/BswMSwcdModeNotification</em> and configure <em>BswMSwcdModeNotificationModeDeclarationGroupPrototyeRe</em> with the reference to Mode-declaration group <strong>SPM_SWCD_PDUGRP</strong>.</p>
+<figure class="align-default" id="bswm-pdugroup-moderequestport">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_ModeRequestPort.png"><img alt="Configuration of the MRP" src="../../_images/BswM_PduGroup_ModeRequestPort.png" style="width: 768.3000000000001px; height: 459.55px;" /></a>
+</figure>
+</section>
+<section id="mode-condition">
+<h4>Mode Condition<a class="headerlink" href="#mode-condition" title="Link to this heading"></a></h4>
+<p>In the container <em>BswM/BswMConfig/BswMModeArbitration/BswMModeCondition</em> create the mode condition to enable the Pdu Group.
+Set the <em>bswMConditionType</em> to <em>BSWM_EQUALS</em> and the <em>BswMConditionMode</em> to the Mode request Port previously created.</p>
+<figure class="align-default" id="bswm-pdugroup-modeconditionpre">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_ModeCondition_Pre.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_ModeCondition_Pre.png" style="width: 812.5px; height: 329.55px;" /></a>
+</figure>
+<p>Set the <em>BswMModeValueRef</em> of the other <em>BswMModeDeclaration</em> to <em>SPM_PDU_GROUP_ENABLE</em>.</p>
+<figure class="align-default" id="bswm-pdugroup-modecondition">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_ModeCondition.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_ModeCondition.png" style="width: 801.45px; height: 377.0px;" /></a>
+</figure>
+</section>
+<section id="logical-expressions">
+<h4>Logical Expressions<a class="headerlink" href="#logical-expressions" title="Link to this heading"></a></h4>
+<p>In the container <em>Bswm/BswMConfig/BswMModeArbitration/BswMLogicalExpression</em> create one logical expression.</p>
+<figure class="align-default" id="bswm-pdugroup-logicalexpression">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_LogicalExpression.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_LogicalExpression.png" style="width: 784.5500000000001px; height: 262.6px;" /></a>
+</figure>
+<p>In one <em>BswMLogicalExpression</em> set the <em>BswMArgumentRef</em> to the Mode condition previously created for enable the PDU group.</p>
+</section>
+<section id="action-rules">
+<h4>Action Rules<a class="headerlink" href="#action-rules" title="Link to this heading"></a></h4>
+<p>In the container <em>Bswm/BswMConfig/BswMModeArbitration/BswMActionRule</em> create one action rule. Set the <em>BswMRuleExpressionRef</em> to the logical expression for enable the PDU group.
+Set the <em>BswMRuleFalseActionList</em> to the action list for disable the PDU group. Set the <em>BswMRuleTrueActionList</em> to the action list for enable the PDU group.</p>
+<figure class="align-default" id="bswm-pdugroup-actionrules">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_Rule.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_Rule.png" style="width: 793.65px; height: 293.15000000000003px;" /></a>
+</figure>
+</section>
+<section id="data-type-settings">
+<h4>Data Type Settings<a class="headerlink" href="#data-type-settings" title="Link to this heading"></a></h4>
+<p>In the container <em>BswM/BswMConfig/BswMDataTypeSettings</em> add the ref to <em>DTMS_SPM_SrvcPduGroup</em>.</p>
+<figure class="align-default" id="bswm-pdugroup-dtms">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_DTMS.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_DTMS.png" style="width: 822.25px; height: 224.9px;" /></a>
+</figure>
+<section id="port-connection">
+<h5>Port Connection<a class="headerlink" href="#port-connection" title="Link to this heading"></a></h5>
+<p>Connect the <code class="code docutils literal notranslate"><span class="pre">PP_SPM_BswM_ComIpduGroup_&lt;&lt;ShortNameOfThePDUGroup&gt;&gt;</span></code> to the Mode Request Port created previously.</p>
+<figure class="align-default" id="bswm-pdugroup-connection">
+<a class="reference internal image-reference" href="../../_images/BswM_PduGroup_Connection.png"><img alt="Configuration of the MC" src="../../_images/BswM_PduGroup_Connection.png" style="width: 1051.05px; height: 103.35000000000001px;" /></a>
+</figure>
+</section>
+</section>
+<section id="notification-from-bswm">
+<h4>Notification from BswM<a class="headerlink" href="#notification-from-bswm" title="Link to this heading"></a></h4>
+<p>WHEN the communication stack for Ethernet is ready, BswM notifies the SPM. SPM needs the notification from BswM to start the counting of the Heartbeat counter to embed in the PM frames.</p>
+<section id="bswmcommunicationstate-switch-port">
+<h5>BswMCommunicationState switch port<a class="headerlink" href="#bswmcommunicationstate-switch-port" title="Link to this heading"></a></h5>
+<p>In the container <em>Bswm/BswMConfig/BswMModeControl/BswMSwitchPorts</em>:
+#. create a new BswMSwitchPort
+#. set reference of the BswMRbModeGroupRef to SPM_MDG_CR as shown:</p>
+<figure class="align-default" id="bswm-communicationstate-switch-port">
+<a class="reference internal image-reference" href="../../_images/BswM_CommunicationState_SwitchPort.png"><img alt="Configuration of the MSP_CommunicationState switch port" src="../../_images/BswM_CommunicationState_SwitchPort.png" style="width: 973.0500000000001px; height: 505.05px;" /></a>
+</figure>
+</section>
+<section id="bswmcommunicationstate-ready-action">
+<span id="bswmcommunicationreadyaction"></span><h5>BswMCommunicationState ready action<a class="headerlink" href="#bswmcommunicationstate-ready-action" title="Link to this heading"></a></h5>
+<p>In the container <em>Bswm/BswMConfig/BswMModeControl/BswMAction</em>:
+#. create a new action
+#. select the type <em>BswM_Rte_Switch_Action</em> under the <em>BswMAvailableActions</em> and
+#. set reference of the MSP created above and ready mode
+in <em>BswMRteSwitchPortRef</em> and <em>BswMSwitchedMode</em>.</p>
+<figure class="align-default" id="bswm-communicationstate-ready-action">
+<a class="reference internal image-reference" href="../../_images/BswM_CommunicationState_ReadyAction.png"><img alt="Configuration of the BswMPduGroupSwitch action" src="../../_images/BswM_CommunicationState_ReadyAction.png" style="width: 972.4px; height: 502.45000000000005px;" /></a>
+</figure>
+<p>Re-do the same operation as above for NOT ready action but set the reference of the SPM_COM_NOT_READY in <em>BswMSwitchedMode</em>.</p>
+</section>
+<section id="id12">
+<h5>Action List<a class="headerlink" href="#id12" title="Link to this heading"></a></h5>
+<p>In the container <em>Bswm/BswMConfig/BswMModeControl/BswMActionList</em>, create a new action list with <em>BswMActionListExecution</em> set to <strong>BSWM_CONDITION</strong>
+add a <em>BswmActionListItem</em> and then for <em>BswMActionListItemRef</em> you need to set the reference to the action created in <a class="reference internal" href="#bswmcommunicationreadyaction"><span class="std std-ref">BswMCommunicationState ready action</span></a> (previous step).</p>
+<figure class="align-default" id="bswm-communicationstate-ready-actionlist">
+<a class="reference internal image-reference" href="../../_images/BswM_CommunicationState_ReadyActionList.png"><img alt="Configuration of the Action List" src="../../_images/BswM_CommunicationState_ReadyActionList.png" style="width: 969.15px; height: 502.45000000000005px;" /></a>
+</figure>
+<p>Re-do the same operation as above but set the reference to <em>BswMActionListItemRef</em> with the other previous action item.</p>
+</section>
+<section id="id13">
+<h5>Mode Request Port<a class="headerlink" href="#id13" title="Link to this heading"></a></h5>
+<p>1. In the container <em>Bswm/BswMConfig/BswMArbitration/BswMModeRequestPort</em> create a new Mode Request Port selecting the <em>BSWM_IMMEDIATE</em> value for <em>BswMRequestProcessing</em>.
+Then, go down from previous container to <em>/BswNModeRequestSource/BswMSoAdSoConModeChg</em> and configure <em>BswMSoAdSocketIdRef</em> with the reference to HB message socket.</p>
+<figure class="align-default" id="bswm-communicationstate-moderequestport">
+<a class="reference internal image-reference" href="../../_images/BswM_CommunicationState_MRP.png"><img alt="Configuration of the MRP" src="../../_images/BswM_CommunicationState_MRP.png" style="width: 1041.3px; height: 510.90000000000003px;" /></a>
+</figure>
+<p>2. In the container <em>Bswm/BswMConfig/BswMArbitration/BswMModeRequestPort</em> create a new Mode Request Port selecting the <em>BSWM_IMMEDIATE</em> value for <em>BswMRequestProcessing</em>.
+Then, go down from previous container to <em>/BswNModeRequestSource/BswMComMIndication</em> and configure <em>BswMComMChannelRef</em> with the reference to ComMChannel.</p>
+<figure class="align-default" id="bswm-hbcommchannelstate-moderequestport">
+<a class="reference internal image-reference" href="../../_images/BswM_ComMChannelState_MRP.png"><img alt="Configuration of the MRP" src="../../_images/BswM_ComMChannelState_MRP.png" style="width: 997.75px; height: 440.05px;" /></a>
+</figure>
+<p>Note_1 : Integrator can check the SoAdPduRoutes container in the SoAd module to obtain the socket that reference HeartBeat_Tx_PDU</p>
+<p>Note_2 : Integrator can check the EthSMComMNetworkHandleRef in the EthSM module to obtain the ComMChannel linked to HeartBeat_Tx_PDU</p>
+<p>Note_3 : It’s up to the integrator to choose what is the kind of the mode request and logical expression that can notify the SPM once Ethernet stack and HB socket are ready for communication.</p>
+</section>
+<section id="id14">
+<h5>Mode Condition<a class="headerlink" href="#id14" title="Link to this heading"></a></h5>
+<p>1. In the container <em>BswM/BswMConfig/BswMModeArbitration/BswMModeCondition</em> create the mode condition to switch the socket MRP to socket online.
+Set the <em>bswMConditionType</em> to <em>BSWM_EQUALS</em> and the <em>BswMConditionMode</em> to the Mode request Port previously created for the SocketState.</p>
+<figure class="align-default" id="bswm-communicationstate-modeconditionpre">
+<a class="reference internal image-reference" href="../../_images/BswM_CommunicationState_MC_Pre.png"><img alt="Configuration of the MC" src="../../_images/BswM_CommunicationState_MC_Pre.png" style="width: 1046.5px; height: 515.45px;" /></a>
+</figure>
+<p>Set the <em>BswMBswRequestMode</em> of the other <em>BswMBswMode</em> to <em>SOAD_SOCON_ONLINE</em>.</p>
+<figure class="align-default" id="bswm-communicationstate-modecondition">
+<a class="reference internal image-reference" href="../../_images/BswM_CommunicationState_MC.png"><img alt="Configuration of the MC" src="../../_images/BswM_CommunicationState_MC.png" style="width: 1042.6000000000001px; height: 525.2px;" /></a>
+</figure>
+<p>2. In the container <em>BswM/BswMConfig/BswMModeArbitration/BswMModeCondition</em> create the mode condition to switch the ComMChannel MRP to full communication.
+Set the <em>bswMConditionType</em> to <em>BSWM_EQUALS</em> and the <em>BswMConditionMode</em> to the Mode request Port previously created for the ComMChannel.</p>
+<figure class="align-default" id="bswm-hbcommchannelstate-modeconditionpre">
+<a class="reference internal image-reference" href="../../_images/BswM_HBComMChannelState_MC_Pre.png"><img alt="Configuration of the MC" src="../../_images/BswM_HBComMChannelState_MC_Pre.png" style="width: 1006.2px; height: 441.35px;" /></a>
+</figure>
+<p>Set the <em>BswMBswRequestMode</em> of the other <em>BswMBswMode</em> to <em>COMM_FULL_COMMUNICATION</em>.</p>
+<figure class="align-default" id="bswm-hbcommchannelstate-modecondition">
+<a class="reference internal image-reference" href="../../_images/BswM_HBComMChannelState_MC.png"><img alt="Configuration of the MC" src="../../_images/BswM_HBComMChannelState_MC.png" style="width: 1003.6px; height: 441.35px;" /></a>
+</figure>
+</section>
+<section id="id15">
+<h5>Logical Expressions<a class="headerlink" href="#id15" title="Link to this heading"></a></h5>
+<p>In the container <em>Bswm/BswMConfig/BswMModeArbitration/BswMLogicalExpression</em> create one logical expression, set the BswMLogicalOperator to AND.</p>
+<figure class="align-default" id="bswm-communicationstate-logicalexpression">
+<a class="reference internal image-reference" href="../../_images/BswM_CommunicationState_LE.png"><img alt="Configuration of the MC" src="../../_images/BswM_CommunicationState_LE.png" style="width: 1007.5px; height: 441.35px;" /></a>
+</figure>
+<p>In one <em>BswMLogicalExpression</em> set the <em>BswMArgumentRef</em> to both of the Mode conditions previously created for switching port to communication ready.</p>
+</section>
+<section id="id16">
+<h5>Action Rules<a class="headerlink" href="#id16" title="Link to this heading"></a></h5>
+<p>In the container <em>Bswm/BswMConfig/BswMModeArbitration/BswMActionRule</em> create one action rule. Set the <em>BswMRuleExpressionRef</em> to the logical expression for swtiching communication.
+Set the <em>BswMRuleFalseActionList</em> to the action list for switching communication to not ready. Set the <em>BswMRuleTrueActionList</em> to the action list for switching communication to ready.</p>
+<figure class="align-default" id="bswm-communicationstate-actionrules">
+<a class="reference internal image-reference" href="../../_images/BswM_CommunicationState_Rule.png"><img alt="Configuration of the MC" src="../../_images/BswM_CommunicationState_Rule.png" style="width: 1039.3500000000001px; height: 514.15px;" /></a>
+</figure>
+</section>
+<section id="id17">
+<h5>Data Type Settings<a class="headerlink" href="#id17" title="Link to this heading"></a></h5>
+<p>In the container <em>BswM/BswMConfig/BswMDataTypeSettings</em> add the ref to <em>DTMS_SPM_CommunicationReady</em>.</p>
+<figure class="align-default" id="bswm-communicationstate-dtms">
+<a class="reference internal image-reference" href="../../_images/BswM_CommunicationState_DTMS.png"><img alt="Configuration of the MC" src="../../_images/BswM_CommunicationState_DTMS.png" style="width: 895.0500000000001px; height: 342.55px;" /></a>
+</figure>
+</section>
+<section id="id18">
+<h5>Port Connection<a class="headerlink" href="#id18" title="Link to this heading"></a></h5>
+<p>Connect the <code class="code docutils literal notranslate"><span class="pre">PP_SPM_BswM_CommunicationState</span></code> to the Mode Request Port created previously.</p>
+<figure class="align-default" id="bswm-communicationstate-connection">
+<a class="reference internal image-reference" href="../../_images/BswM_CommunicationState_Connection.png"><img alt="Configuration of the MC" src="../../_images/BswM_CommunicationState_Connection.png" style="width: 891.15px; height: 223.6px;" /></a>
+</figure>
+</section>
+</section>
+</section>
+<section id="local-activation-deactivation">
+<h3>Local Activation/Deactivation<a class="headerlink" href="#local-activation-deactivation" title="Link to this heading"></a></h3>
+<p id="localactivationdeactivation">SPM receives local request to activate/deactivate a Power Profile through the C/S interface <em>CS_SPM_ProfileRequest</em>, C/S operation <em>SPM_ActivateProfile()/SPM_Deactivate()</em> profile.</p>
+<p>It is necessary to connect the <code class="code docutils literal notranslate"><span class="pre">PP_SPM_RequestProfile</span></code> and <code class="code docutils literal notranslate"><span class="pre">PP_SPM_RequestProfile_Deact</span></code> ports in order to exploit the operation.</p>
+<p>Please, take into account that the method expect as input parameter an uint16 value that shall match with the SpmApplIntID related to the desired Power Profile.</p>
+</section>
+<section id="service-discovery-learning-indication-management-logic">
+<h3>Service discovery learning indication management logic<a class="headerlink" href="#service-discovery-learning-indication-management-logic" title="Link to this heading"></a></h3>
+<p id="learningstatusindication">SPM is notified about current Learning Session status through the C/S interface <em>SPM_SDLearningStatusIndication</em>, C/S operation <em>Runnable_SPM_SdLearningStatusIndication()</em>.</p>
+<p>It is necessary to connect the <code class="code docutils literal notranslate"><span class="pre">PP_SPM_SrvcMgr_SdLearningStatusIndication</span></code> in order to exploit the operation.</p>
+</section>
+<section id="profile-activation-permission">
+<h3>Profile Activation Permission<a class="headerlink" href="#profile-activation-permission" title="Link to this heading"></a></h3>
+<p id="getprofileactivationpermission">SPM receives queries for activation permission of a Power Profile through the C/S interface <em>CS_SPM_ProfileActivationPermission</em>, C/S operation <em>SPM_GetProfileActivationPermission</em>.</p>
+<p>It is necessary to connect the <code class="code docutils literal notranslate"><span class="pre">PP_SPM_ProfileActivationPermission</span></code> port in order to exploit the operation.</p>
+<p>Please, take into account that the method expect as input parameter an uint16 value that shall match with the SpmApplIntID related to the desired Power Profile.</p>
+</section>
+<section id="power-profile-state">
+<h3>Power Profile State<a class="headerlink" href="#power-profile-state" title="Link to this heading"></a></h3>
+<p id="getpowerprofilestate">SPM receives queries for current state of a Power Profile through the C/S interface <em>CS_SPM_RequestStatusProfileState</em>, C/S operation <em>SPM_GetProfileState</em>.</p>
+<p>It is necessary to connect the <code class="code docutils literal notranslate"><span class="pre">PP_SPM_RequestStatusProfileState</span></code> port in order to exploit the operation.</p>
+<p>Please, take into account that the method expect as input parameter an uint16 value that shall match with the SpmApplIntID related to the desired Power Profile.</p>
+</section>
+<section id="sm-frame-integration">
+<h3>SM Frame integration<a class="headerlink" href="#sm-frame-integration" title="Link to this heading"></a></h3>
+<p>The data structure SM frame is defined inside the ECU-EXTRACT. Since the size of the item contained by it can change, the integrator shall set correctly the macro SPM_NUMBER_ITEM_IN_SM_FRAME
+defined in the static file Sum_Spm_Integration.h.</p>
+</section>
+<section id="did-0xe0d7-support">
+<span id="did-e0d7-ug"></span><h3>DID 0xE0D7 Support<a class="headerlink" href="#did-0xe0d7-support" title="Link to this heading"></a></h3>
+<p>DID 0xE0D7 is handled by SUSD. SPM communicates with SUSD through the C/S interfaces:</p>
+<ol class="arabic simple">
+<li><p><em>SUSD_SPM_UpdateRecord</em>: to update the DID 0xE0D7 record;</p></li>
+<li><p><em>SPM_SUSD_ActivityRecordCmd</em>: to obtain information about the state of DID 0xE0D7 record and perform additional actions on its behalf.</p></li>
+</ol>
+<p>So, if needed, please connect the <code class="code docutils literal notranslate"><span class="pre">RP_SUSD_SPM_UpdateRecord</span></code> and <code class="code docutils literal notranslate"><span class="pre">PP_SPM_SUSD_ActivityRecordCmd</span></code> ports to the SUSD module.</p>
+</section>
+<section id="did-0xe0de-support">
+<h3>DID 0xE0DE Support<a class="headerlink" href="#did-0xe0de-support" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Configure the DCM DID reference in the SPM diagnostic container (see <a class="reference internal" href="#dide0de"><span class="std std-ref">DID 0xE0DE - Locally Activated Activation Profile Off Power Mode Activity Records</span></a> for details)</p></li>
+<li><p>Connect the <code class="code docutils literal notranslate"><span class="pre">RP_SPM_Dcm_E0DE_Write</span></code> port to the NvM module to enable persistent storage of the activity records</p></li>
+<li><p>Ensure proper NvM block configuration for storing the DID data</p></li>
+</ol>
+</section>
+<section id="did-0xe0df-support">
+<h3>DID 0xE0DF Support<a class="headerlink" href="#did-0xe0df-support" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Configure the DCM DID reference in the SPM diagnostic container (see <a class="reference internal" href="#dide0df"><span class="std std-ref">DID 0xE0DF - Remotely Activated Activation Profile Off Power Mode Activity Records</span></a> for details)</p></li>
+<li><p>Connect the <code class="code docutils literal notranslate"><span class="pre">RP_SPM_Dcm_E0DF_Write</span></code> port to the NvM module to enable persistent storage of the activity records</p></li>
+<li><p>Ensure proper NvM block configuration for storing the DID data</p></li>
+</ol>
+</section>
+</section>
+<section id="appendix-a-generic-component-interface">
+<span id="generic-component-interface"></span><h2>Appendix A: Generic Component Interface<a class="headerlink" href="#appendix-a-generic-component-interface" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Port Interface</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Source</p></th>
+<th class="head"><p>Destination</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>sftpwrmgr_Gen</p></td>
+<td><p>S/R</p></td>
+<td><div class="line-block">
+<div class="line">Spm</div>
+<div class="line">LdCom / Com</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">LdCom/Com</div>
+<div class="line">Spm</div>
+</div>
+</td>
+<td><p>Interface contains datatype that represents SM-to-SM message</p></td>
+</tr>
+<tr class="row-odd"><td><p>sftpwrmgr_heartbeat_Gen</p></td>
+<td><p>S/R</p></td>
+<td><div class="line-block">
+<div class="line">Spm</div>
+<div class="line">LdCom / Com</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">LdCom/Com</div>
+<div class="line">Spm</div>
+</div>
+</td>
+<td><p>Interface contains datatype that represents PM-to-PM heartbeat</p></td>
+</tr>
+<tr class="row-even"><td><p>SUSD_PermitExecution</p></td>
+<td><p>S/R</p></td>
+<td><p>SUSD</p></td>
+<td><p>Spm</p></td>
+<td><p>Interface contains the permit execution value from SUSD</p></td>
+</tr>
+<tr class="row-odd"><td><p>SPM_ShutdownPermission</p></td>
+<td><p>S/R</p></td>
+<td><p>Spm</p></td>
+<td><p>SUSD</p></td>
+<td><p>Interface contains the shutdown permission to provide to SUSD</p></td>
+</tr>
+<tr class="row-even"><td><p>CS_SPM_ProfileRequest</p></td>
+<td><p>C/S</p></td>
+<td><p>SWC</p></td>
+<td><p>Spm</p></td>
+<td><p>Interface contains API for (de)activating request of power profile</p></td>
+</tr>
+<tr class="row-odd"><td><p>CS_SPM_RequestStatusProfileState</p></td>
+<td><p>C/S</p></td>
+<td><p>SWC</p></td>
+<td><p>Spm</p></td>
+<td><p>Interface contains API for getting state of power profile</p></td>
+</tr>
+<tr class="row-even"><td><p>CS_SPM_ProfileActivationPermission</p></td>
+<td><p>C/S</p></td>
+<td><p>SWC</p></td>
+<td><p>Spm</p></td>
+<td><p>Interface contains API for getting activation permission for power profile</p></td>
+</tr>
+<tr class="row-odd"><td><p>SPM_GetDTCIdentifier</p></td>
+<td><p>C/S</p></td>
+<td><p>SWC</p></td>
+<td><p>Spm</p></td>
+<td><p>Interface contains API for getting DTC for Target Device from SPM.</p></td>
+</tr>
+<tr class="row-even"><td><p>SPM_ServiceActivationStatusNotification</p></td>
+<td><p>S/R</p></td>
+<td><p>Spm</p></td>
+<td><p>SWC</p></td>
+<td><p>Interface contains API for informing with the list of all the</p></td>
+</tr>
+<tr class="row-odd"><td><p>SPM_ComIpduGroup</p></td>
+<td><p>M/S</p></td>
+<td><p>Spm</p></td>
+<td><p>BswM</p></td>
+<td><p>Interfaces for switching the ComIpduGroup modes as requested.</p></td>
+</tr>
+<tr class="row-even"><td><p>SPM_CommunicationReady</p></td>
+<td><p>M/S</p></td>
+<td><p>BswM</p></td>
+<td><p>Spm</p></td>
+<td><p>Interfaces for switching the communication state for the SPM to start sending HB frames.</p></td>
+</tr>
+<tr class="row-odd"><td><p>SrvcMgr_SPM_ActivateService</p></td>
+<td><p>C/S</p></td>
+<td><p>Spm</p></td>
+<td><p>SrvcMgr</p></td>
+<td><p>Interface for asking to Service Manager the activation of a service.</p></td>
+</tr>
+<tr class="row-even"><td><p>SR_SPM_ETHWakeUpFrame</p></td>
+<td><p>S/R</p></td>
+<td><div class="line-block">
+<div class="line">Spm</div>
+<div class="line">LdCom/Com</div>
+</div>
+</td>
+<td><div class="line-block">
+<div class="line">LdCom/Com</div>
+<div class="line">Spm</div>
+</div>
+</td>
+<td><p>Interface for sending/receiving the Ethernet Wake-up Frame</p></td>
+</tr>
+<tr class="row-odd"><td><p>SUSD_SPM_UpdateRecord</p></td>
+<td><p>C/S</p></td>
+<td><p>SPM</p></td>
+<td><p>SUSD</p></td>
+<td><p>Interface for updating the DID 0xE0D7 record in SUSD.</p></td>
+</tr>
+<tr class="row-even"><td><p>SPM_SUSD_ActivityRecordCmd</p></td>
+<td><p>C/S</p></td>
+<td><p>SUSD</p></td>
+<td><p>SPM</p></td>
+<td><p>Interface for getting the state of DID 0xE0D7 in SUSD and additional commands on its behalf</p></td>
+</tr>
+<tr class="row-odd"><td><p>DataServices_&lt;DID&gt;</p></td>
+<td><p>C/S</p></td>
+<td><p>Dcm</p></td>
+<td><p>SPM</p></td>
+<td><p>Interfaces to provide data from SPM to Dcm for the following DIDs:</p>
+<ul class="simple">
+<li><p>DID 0xE0DD</p></li>
+<li><p>DID 0xE0DE</p></li>
+<li><p>DID 0xE0DF</p></li>
+</ul>
+<p>Each DID has its own DataServices_Interface</p>
+</td>
+</tr>
+<tr class="row-even"><td><p>&lt;VLAN&gt;_PwrMgrHeartbeatTx_Evt</p></td>
+<td><p>S/R</p></td>
+<td><p>Spm</p></td>
+<td><p>LdCom/Com</p></td>
+<td><p>Interface for sending the Power Manager Heartbeat frame to the specific VLAN</p></td>
+</tr>
+<tr class="row-odd"><td><p>&lt;VLAN&gt;_PwrMgrHeartbeatRx_Evt</p></td>
+<td><p>S/R</p></td>
+<td><p>Spm</p></td>
+<td><p>LdCom/Com</p></td>
+<td><p>Interface for receiving the Power Manager Heartbeat frame to the specific VLAN</p></td>
+</tr>
+<tr class="row-even"><td><p>&lt;VLAN&gt;_PwrMgrWakeupTx_Evt</p></td>
+<td><p>S/R</p></td>
+<td><p>Spm</p></td>
+<td><p>LdCom/Com</p></td>
+<td><p>Interface for sending the Power Manager Wakeup frame to the specific VLAN</p></td>
+</tr>
+<tr class="row-odd"><td><p>&lt;VLAN&gt;_PwrMgrWakeupRx_Evt</p></td>
+<td><p>S/R</p></td>
+<td><p>Spm</p></td>
+<td><p>LdCom/Com</p></td>
+<td><p>Interface for receiving the Power Manager Wakeup frame to the specific VLAN</p></td>
+</tr>
+<tr class="row-even"><td><p>&lt;VLAN&gt;_SwMgrInfoTx_Evt</p></td>
+<td><p>S/R</p></td>
+<td><p>Spm</p></td>
+<td><p>LdCom/Com</p></td>
+<td><p>Interface for sending the Switch Manager Info frame to the specific VLAN</p></td>
+</tr>
+<tr class="row-odd"><td><p>&lt;VLAN&gt;_SwMgrInfoRx_Evt</p></td>
+<td><p>S/R</p></td>
+<td><p>Spm</p></td>
+<td><p>LdCom/Com</p></td>
+<td><p>Interface for receiving the Switch Manager Info frame to the specific VLAN</p></td>
+</tr>
+<tr class="row-even"><td><p>RxMonitoredSignal_Av</p></td>
+<td><p>S/R</p></td>
+<td><p>SSFM</p></td>
+<td><p>SPM</p></td>
+<td><p>Interface for receiving the availability of the Low Voltage priority service</p></td>
+</tr>
+<tr class="row-odd"><td><p>SPM_LowVoltSwActPrioReq</p></td>
+<td><p>S/R</p></td>
+<td><p>COM</p></td>
+<td><p>SPM</p></td>
+<td><p>Interface for receiving the payload of the Low Voltage priority service</p></td>
+</tr>
+<tr class="row-even"><td><p>NvMService</p></td>
+<td><p>C/S</p></td>
+<td><p>SPM</p></td>
+<td><p>NvM</p></td>
+<td><p>Interface for triggering NvM_WriteAll when a new Low Voltage priority level is received</p></td>
+</tr>
+<tr class="row-odd"><td><p>SPM_SDLearningStatusIndication</p></td>
+<td><p>C/S</p></td>
+<td><p>SrvcMgr</p></td>
+<td><p>SPM</p></td>
+<td><p>Interface for requesting SPM to react on Learning Session Status</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="appendix-b-history-review">
+<h2>Appendix B: History Review<a class="headerlink" href="#appendix-b-history-review" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Version</p></th>
+<th class="head"><p>Description of Change</p></th>
+<th class="head"><p>Author</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0.0.1</p></td>
+<td><ul class="simple">
+<li><p>Initial version for RTA-SUM SPM.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.2</p></td>
+<td><ul class="simple">
+<li><p>Added wake-up on can support.</p></li>
+<li><p>Incremental version of RTA-SUM SPM.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.3</p></td>
+<td><ul class="simple">
+<li><p>Added explanation about BSW
+configuration.</p></li>
+<li><p>Created APPENDIX C.</p></li>
+<li><p>Incremental version of RTA-SUM SPM.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.4.4</p></td>
+<td><ul class="simple">
+<li><p>Aligned description of parameters
+and added description of Ethernet
+Wake-up frame.</p></li>
+<li><p>Incremental version of RTA-SUM SPM.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.5</p></td>
+<td><ul class="simple">
+<li><p>Added Support for PDU handling
+with the BswM.</p></li>
+<li><p>Incremental version of RTA-SUM SPM.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.5_1</p></td>
+<td><ul class="simple">
+<li><p>Replaced section about Com
+Configuration for the workaround
+with the RTE support.</p></li>
+<li><p>Incremental version of RTA-SUM SPM.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.6</p></td>
+<td><ul class="simple">
+<li><p>Added Support for TC10 pulse
+(refere to SpmETHWkUpFrmRef).</p></li>
+<li><p>Incremental version of RTA-SUM SPM.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.0.7</p></td>
+<td><ul class="simple">
+<li><p>Incremental version of RTA-SUM SPM.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>0.0.8</p></td>
+<td><ul class="simple">
+<li><p>Incremental version of RTA-SUM SPM.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr1</p></td>
+<td><ul class="simple">
+<li><p>First prototype release of
+RTA-SUM SPM 8.1.0 (RTA-SUM 3.1.0)
+for SDV 2.0.</p></li>
+<li><p>Updated Permit Execution and Shutdown
+Permission of port interface of SPM
+to consistent with SUSD.</p></li>
+<li><p>Checked compatibility with
+RTA-BSW 12.3.3pr1.</p></li>
+<li><p>The tools version have been Updated.</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr2</p></td>
+<td><ul class="simple">
+<li><p>Update section <a class="reference internal" href="#spmconfpowprf">SpmConfPowPrf</a></p></li>
+<li><p>Added section <a class="reference internal" href="#localactivationdeactivation">LocalActivationDeactivation</a></p></li>
+<li><p>Added section <a class="reference internal" href="#id6">SpmPgttEntries</a></p></li>
+<li><p>Added section <a class="reference internal" href="#wuf">WUF</a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr3</p></td>
+<td><ul class="simple">
+<li><p>Added section <a class="reference internal" href="#spmgenerateinitrunnable">SpmGenerateInitRunnable</a></p></li>
+<li><p>Added section <a class="reference internal" href="#spminitfuncperiodicity">SpmInitFuncPeriodicity</a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr4</p></td>
+<td><ul class="simple">
+<li><p>Added section <a class="reference internal" href="#spmtrgdvchndlnginfo">SpmTrgDvcHndlngInfo</a></p></li>
+<li><p>Updated configuration for TC10 pulse</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr5</p></td>
+<td><ul class="simple">
+<li><p>Added section <a class="reference internal" href="#spmprofbitmapindex">SpmProfBitMapIndex</a></p></li>
+<li><p>Modified section SpmETHWkUpFrmRef</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr6</p></td>
+<td><ul class="simple">
+<li><p>Added section <a class="reference internal" href="#rta-car-memmap-tool">RTA-CAR MemMap Tool</a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr11</p></td>
+<td><ul class="simple">
+<li><p>Added section <a class="reference internal" href="#spmactdeactretryperiodicity">SpmActDeactRetryPeriodicity</a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr12</p></td>
+<td><ul class="simple">
+<li><p>Update section <a class="reference internal" href="#id6">SpmPgttEntries</a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr13</p></td>
+<td><ul class="simple">
+<li><p>Added section <a class="reference internal" href="#did-e0d7-ug"><span class="std std-ref">DID 0xE0D7 Support</span></a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr15</p></td>
+<td><ul class="simple">
+<li><p>Added section <a class="reference internal" href="#dide0dd"><span class="std std-ref">Spm_DID_E0DD_ActivationProfileActivationStatus_DCM_Ref</span></a></p></li>
+<li><p>Update section <a class="reference internal" href="#spmprofbitmapindex"><span class="std std-ref">SpmProfBitMapIndex</span></a></p></li>
+<li><p>Added section to explain SPM VALCom and
+description/Diagram of configuration
+containers</p></li>
+<li><p>Updated section <a class="reference internal" href="#did-e0d7-ug"><span class="std std-ref">DID 0xE0D7 Support</span></a></p></li>
+<li><p>Modified description of Appendix C</p></li>
+<li><p>Modified <a class="reference internal" href="#generic-component-interface"><span class="std std-ref">Appendix A: Generic Component Interface</span></a></p></li>
+<li><p>Added section <a class="reference internal" href="#dide0de"><span class="std std-ref">DID 0xE0DE - Locally Activated Activation Profile Off Power Mode Activity Records</span></a> and
+<a class="reference internal" href="#dide0df"><span class="std std-ref">DID 0xE0DF - Remotely Activated Activation Profile Off Power Mode Activity Records</span></a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr16</p></td>
+<td><ul class="simple">
+<li><p>Updated section <a class="reference internal" href="#spmwkngdvc"><span class="std std-ref">SpmWkngDvc</span></a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr17</p></td>
+<td><ul class="simple">
+<li><p>Updated section <a class="reference internal" href="#calibratable"><span class="std std-ref">Calibratable Parameters</span></a></p></li>
+<li><p>Updated section <a class="reference internal" href="#spmwkngdvc"><span class="std std-ref">SpmWkngDvc</span></a></p></li>
+<li><p>Updated section SpmETHWkUpFrmRef</p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr20</p></td>
+<td><ul class="simple">
+<li><p>Updated section <a class="reference internal" href="#spmwkupseq"><span class="std std-ref">SpmWkUpSeq</span></a>:</p></li>
+<li><p>Removed an old parameter description</p></li>
+<li><dl class="simple">
+<dt>Removed the picture since no parameter</dt><dd><p>belongs to the container anymore.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr21</p></td>
+<td><ul class="simple">
+<li><p>Updated Appendix A</p></li>
+<li><p>Added sections <a class="reference internal" href="#getpowerprofilestate">GetPowerProfileState</a>
+and <a class="reference internal" href="#getprofileactivationpermission">GetProfileActivationPermission</a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr22</p></td>
+<td><ul class="simple">
+<li><p>Updated section <a class="reference internal" href="#bswm-configuration"><span class="std std-ref">BswM Configuration</span></a></p></li>
+<li><dl class="simple">
+<dt>Modified <a class="reference internal" href="#generic-component-interface"><span class="std std-ref">Appendix A: Generic Component Interface</span></a></dt><dd><ul>
+<li><p>Updated section <a class="reference internal" href="#spmcanwkupfrmref"><span class="std std-ref">SpmCANWkUpFrmRef</span></a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr23</p></td>
+<td><ul class="simple">
+<li><p>Updated section <a class="reference internal" href="#spmlowvoltagepowerinfo"><span class="std std-ref">SpmLowVoltagePowerInfo</span></a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-odd"><td><p>8.1.0_Pr27</p></td>
+<td><ul class="simple">
+<li><p>Added section <a class="reference internal" href="#learningstatusindication">LearningStatusIndication</a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+<tr class="row-even"><td><p>8.1.0_Pr28</p></td>
+<td><ul class="simple">
+<li><p>Updated section <a class="reference internal" href="#spmcanwkupfrmref"><span class="std std-ref">SpmCANWkUpFrmRef</span></a></p></li>
+</ul>
+</td>
+<td><p>RTA-SUM Development Team</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="appendix-c-customer-information-in-scope-to-current-software-version">
+<h2>Appendix C: Customer information in scope to current software version<a class="headerlink" href="#appendix-c-customer-information-in-scope-to-current-software-version" title="Link to this heading"></a></h2>
+<p>The current RTA-SUM SPM version, contains the module ports to/from RTE for sending and receiving “SPM Traffic frames”. these frames are someIP Pdu,
+that SPM generates to send/provide information/requests from/to remote(s) SPM. The SPM traffic includes:</p>
+<ul class="simple">
+<li><p>SM frame</p></li>
+<li><p>PM frame (Heartbeat)</p></li>
+</ul>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>The current version of the SPM can be integrated in the SDK 0.2.0 but the support of the metadata, in scope to RTA-SUM SPM, is not currently enabled. SO that, the metadata
+handling for these frames are in scope to the integrator.</p>
+</div>
+<p>while SDK 0.2.0 si based on ECU extract <em>IO_Aggregator2_27_27_171.3p0</em>, the current implementation of the RTA-SUM SPM allows also to build the payload of
+SM and PM frames as per <em>IO_Aggregator2_27_27_174.2p0</em>.</p>
+<p>The current version of RTA-SUM SPM requires the Queued communication for the SPM ports that contains the payloads SPM traffic. The queueing specification
+are directly generated by RTA-SUM SPM code generation. The only thing that is out-of-scope from RTA-SUM SPM code generation is the definition of the port-interfaces for
+the SPM traffic; in fact they are directly referenced from System description of the integrator.</p>
+<p>this means you shall verify that your port definitions are aligned with the following picture:</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../../_images/qeue_sr.png"><img alt="port definition" src="../../_images/qeue_sr.png" style="width: 578.0px; height: 189.60000000000002px;" /></a>
+</figure>
+</section>
+<section id="contacting-etas">
+<h2>Contacting ETAS<a class="headerlink" href="#contacting-etas" title="Link to this heading"></a></h2>
+<section id="technical-support">
+<h3>Technical Support<a class="headerlink" href="#technical-support" title="Link to this heading"></a></h3>
+</section>
+<section id="general-enquiries">
+<h3>General Enquiries<a class="headerlink" href="#general-enquiries" title="Link to this heading"></a></h3>
+<section id="etas-global-headquarters">
+<h4>ETAS Global Headquarters<a class="headerlink" href="#etas-global-headquarters" title="Link to this heading"></a></h4>
+<div class="line-block">
+<div class="line">ETAS Gmbh</div>
+<div class="line">Borsigstrasse 24</div>
+<div class="line">70469 Stuttgart</div>
+<div class="line">Germany</div>
+</div>
+<div class="line-block">
+<div class="line">Phone: +49 711 3423-0</div>
+<div class="line">Fax: +49 711 3423-2106</div>
+<div class="line"><a class="reference external" href="www.etas.com">Official Website</a></div>
+</div>
+</section>
+<section id="etas-local-sales-and-support-offices">
+<h4>ETAS Local Sales and Support Offices<a class="headerlink" href="#etas-local-sales-and-support-offices" title="Link to this heading"></a></h4>
+<p>Contact details for your local sales office and local technical support team (where available)
+can be found on the ETAS web site:</p>
+<ul class="simple">
+<li><p>ETAS subsidiaries: <a class="reference external" href="https://www.etas.com/en/contact.php">https://www.etas.com/en/contact.php</a></p></li>
+<li><p>ETAS technical support: <a class="reference external" href="https://www.etas.com/en/hotlines.php">https://www.etas.com/en/hotlines.php</a></p></li>
+</ul>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../ReleaseNotes/release_notes.html" class="btn btn-neutral float-left" title="RTA-SUM SPM Release Notes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, ETAS GmbH.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

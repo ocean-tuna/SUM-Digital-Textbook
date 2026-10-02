@@ -1,0 +1,863 @@
+\chapter{Runtime View (Dynamic View)}
+
+\Requirement{003}
+{
+SUM_LNM implements common interfaces. The implementation of these common interfaces, that together build the LNM Collector, are distributed in the Main Function and Dcm Services, specified in the following sections. 
+}
+{\Satisfies{SRS_LNM 012}}
+
+\section{System Initialization}
+\label{sec:Lnm_init}
+\Requirement{093}
+{ The Initialization phase can follow two distinct paths based on the  configuration of the parameter \code{LnmGenerateInitRunnable}.   If its value is :
+  
+\begin{itemize}
+\item False : the \code{LNM_Init} function must be invoked by BswM to initialize SUM_LNM functions
+\item True  : the runnable \code{Runnable_LNM_Init} must be scheduled to initialize SUM_LNM functions. The \code{LNM_Init} function is called from this runnable only the first time the runnable is invoked.
+\end{itemize}
+}
+{\Satisfies{SRS_LNM 466} \Satisfies{SRS_LNM 467} \Satisfies{SRS_LNM 490}}
+
+\Requirement{001}
+{
+The \code{LNM_Init} function is called either directly by the BswM or through the \code{Runnable_LNM_Init}. This function is responsible for initializing all the SUM_LNM internal variables and transitioning
+from uninitialized status to initialized status; it also initializes the relevant network communication data structures for each LIN channel. 
+}
+{\Satisfies{SRS_LNM 021} \Satisfies{SRS_LNM 023} \Satisfies{SRS_LNM 100} \Satisfies{SRS_LNM 110} \Satisfies{SRS_LNM 490}}
+
+\Requirement{002}
+{
+If CyberFill functionality is configured, this function is responsible to publish the CyberFill value.
+}
+{\Satisfies{SRS_LNM 025}}
+
+\Function{LNM_Init}
+{}
+{}
+{}
+{\code{void}}
+{Initialization of SUM_LNM functions and CyberFill value publication.}
+
+\Runnable{Runnable_LNM_Init}
+{Periodic}
+{}
+{}
+{}
+{}
+{\code{void}}
+{This runnable is responsible for calling the \code{LNM_Init} function only the first time it is invoked.
+}
+
+\section{LNM MainFunction}
+\label{sec:LNMMainFunction}
+
+\code{LNM_MainFunction} is a periodic runnable, which periodicity is configurable by the user. It manages the execution of SUM_LNM functionalities, and is responsible for SUM_LNM aliveness mechanism.
+
+\Requirement{010}
+{
+SUM_LNM checks the PermitExecution interface. If the relevant bits selected by the PermitExecution mask are set to 1, SUM_LNM transitions to the running state, and allows the execution of all its functionalities.
+For example, if the PermitExecution mask is set to default value (0xFE), it means that only the LSB (Wakeup bit) is significant to allow the execution of SUM_LNM functionalities. Then, when this bit is set by SUM_SUSD,
+SUM_LNM will transition to the running state.
+}
+{\Satisfies{SRS_LNM 021} \Satisfies{SRS_LNM 341} \Satisfies{SRS_LNM 342} \Satisfies{SRS_LNM 344} \Satisfies{SRS_LNM 430}}
+
+\Requirement{011}
+{
+SUM_LNM checks the Reset bit. If this bit is set to 0 by SUM_SUSD, it will immediately transition to the shutdown state, setting its ShutdownPermission to 0xFF (allow shutdown).
+}
+{\Satisfies{SRS_LNM 021} \Satisfies{SRS_LNM 343}}
+
+\Requirement{012}
+{
+SUM_LNM is a supervised entity of WdgM. It informs WdgM with the periodicity of the MainFunction that the checkpoint is reached. It is assumed that SUM_LNM is a supervised entity that has a single checkpoint.
+}
+{\Satisfies{SRS_LNM 347}}
+
+\Requirement{013}
+{
+If at least one LIN network is active or a FULL_COMMUNICATION request is ongoing for at least one LIN network, SUM_LNM implements an active rolling counter mechanism for the ShutdownPermission interface, publishing a counter rolling from 0 to 3.
+}
+{\Satisfies{SRS_LNM 345} \Satisfies{SRS_LNM 346}}
+
+\Requirement{014}
+{
+SUM_LNM checks vehicle power mode to be in Run or Propulsion for 5 seconds. This is used for diagnostic of Loss of Communication with Bus.
+}
+{\Satisfies{SRS_LNM 191}}
+
+\Requirement{015}
+{
+	SUM_LNM checks vehicle power mode to be changed since the last read and triggers runnable that evaluates activation rules including vehicle power mode.
+}
+{\Satisfies{SRS_LNM 489}}
+	
+\Runnable{LNM_MainFunction}
+{Periodic}
+{}
+{PermitExecution \newline WdgM_LocalSupervision}
+{LNM_ShutdownPermission}
+{}
+{\code{void}}
+{This runnable is responsible for:
+\begin{itemize}
+\item Management of SUM_LNM execution status
+\item WdgM aliveness mechanism 
+\item Checking vehicle power mode 
+\end{itemize}
+}
+
+\section{LNM Network Management}
+\label{sec:lnm_network_management}
+LNM Network Management is realized by means of a periodic runnable \code{LNM_NetworkStatus}, triggered runnables \code{LNM_Activation_<network name>} and two internal functions \code{LNM_ActivationManager}, 
+\code{LNM_Activation_Timer_Management}.
+
+\Requirement{027}
+{
+LNM manages activation based on the type of activation. For the networks that are activated based on a single signal, the activation is evaluated comparing the signal with the configurable activation/deactivationv mask. If the activation criteria is a set of conditions linked together, the activation and deactivation are evaluated checking the result of the rule that considers all the signals involved.
+}
+{\Satisfies{SRS_LNM 064} \Satisfies{SRS_LNM 065} \Satisfies{SRS_LNM 488}}
+
+\Requirement{020}
+{
+LNM reads the value of the activation signal as a Data Received Event, triggering the runnable responsible to manage the current request.
+}
+{\Satisfies{SRS_LNM 062}}
+
+\Requirement{021}
+{
+If Com is the source of the activation signal, SUM_LNM checks the availability of the signal. If it is impossible to read the signal availability or the signal is not available, the current request is discarded.
+}
+{\Satisfies{SRS_LNM 063} \Satisfies{SRS_LNM 066}}
+
+\Requirement{022}
+{
+SUM_LNM firstly checks that the current request is an activation request. SUM_LNM evaluates activation based on activation type. For the networks activated with a Rule, it checks the result of the rule to be true for the activation. For the networks activated with the activation signal, it computes the OR between the configurable activation mask and the received activation signal. If the result is 0xFF, the request is
+recognized as an activation request. 
+
+Example: Activation bit mask configured to 254, i.e. 0xFE, means that only the LSB of the activation signal is relevant for the activation request. 
+An activation signal with value 0x01 will be recognized as an activation request.
+}
+{\Satisfies{SRS_LNM 064} \Satisfies{SRS_LNM 065} \Satisfies{SRS_LNM 488}}
+
+\Requirement{023}
+{
+If the request is not recognized as an activation request, SUM_LNM checks if the current activation signal leads to a deactivation request. 
+SUM_LNM evaluates activation based on activation type. For the networks activated with a Rule, it checks the result of the rule to be false for the deactivation. For the networks activated with the activation signal, it computes the AND between the configurable deactivation mask and the received activation signal. If the result matches the configurable mask, the request is recognized as a deactivation request.
+
+Example: Deactivation bit mask configured to 254, i.e. 0xFE, means that only the LSB of the activation signal is relevant for the activation request. 
+An activation signal with value 0x00 will be recognized as a deactivation request.
+}
+{\Satisfies{SRS_LNM 064} \Satisfies{SRS_LNM 065} \Satisfies{SRS_LNM 488}}
+
+\Requirement{024}
+{
+If an activation has been requested, SUM_LNM immediately requires the \code{FULL COMMUNICATION} of the LIN channel and starts the \code{commander_timer} with the configurable value \code{LNM_TWuDelay_Commander}. When this timer expires,
+SUM_LNM allows the scheduling on the LIN channel.
+}
+{\Satisfies{SRS_LNM 113} \Satisfies{SRS_LNM 112} \Satisfies{SRS_LNM 450} \Satisfies{SRS_LNM 451}}
+
+\Requirement{025}
+{
+If a deactivation has been requested or the reset bit has been set to 0, SUM_LNM immediately requires the \code{NO COMMUNICATION} of the LIN channel.
+}
+{\Satisfies{SRS_LNM 064} \Satisfies{SRS_LNM 065}}
+
+\Requirement{026}
+{
+SUM_LNM monitors for LNM responder wakeup requests. A transition of the LIN channel from \code{NO COMMUNICATION} to \code{FULL COMMUNICATION}, when the commander did not required for the channel activation, 
+is recognized as a responder wakeup. SUM_LNM immediately requires the \code{FULL COMMUNICATION} of the LIN channel (to allow the transmission of the wakeup signal on the LIN bus) and starts the \code{responder_timer}
+with the configurable value \code{LNM_TWuDelay_Responder}. When this timer expires, SUM_LNM allows the scheduling on the LIN channel.
+}
+{\Satisfies{SRS_LNM 114} \Satisfies{SRS_LNM 112} \Satisfies{SRS_LNM 450} \Satisfies{SRS_LNM 452}}
+
+Note: When the \code{FULL COMMUNICATION} of the channel is requested by SUM_LNM, the value of the flag \code{FULL_COMM_requested} is set to \code{TRUE}. This flag is needed as input for DTC Loss of Communication With Bus. 
+The management function for this DTC is responsible to unset this flag.
+
+\Runnable{LNM_NetworkStatus}
+{Periodic}
+{}
+{CurrentComMode<n>}
+{RequestComMode<n>}
+{}
+{\code{void}}
+{This runnable is responsible for:
+\begin{itemize}
+\item Management of LIN Network communication status
+\item Commander delay and responder delay timers and schedule enable
+\item Detection of responder wakeup
+\end{itemize}
+}
+
+\Runnable{LNM_Activation_<n>}
+{Triggered}
+{}
+{ActivationSignal<n> \newline
+ActivationSignal_Av<n>}
+{RequestComMode<n>}
+{}
+{\code{void}}
+{This runnable is responsible for:
+\begin{itemize}
+\item Management of activation and deactivation requests of the LIN channel
+\end{itemize}
+}
+
+\Function{LNM_ActivationManager}
+{\code{network_index}}
+{}
+{}
+{\code{void}}
+{Management of the received activation request}
+
+\Function{LNM_Activation_Timer_Management}
+{\code{network_index}}
+{}
+{}
+{\code{void}}
+{Management of the commander delay and responder delay timers of the network}
+
+\subsection{Optional User Function LNM_GetRequiredChannelState()}
+\label{subsec:usrfunc_network}
+\Requirement{513}
+{
+The motivation to use the user function LNM_GetRequiredChannelState() is to allow another SW-C to conduct the arbitration logic to set the requested channel state of LIN network <n>, whereas in the traditional implementation this arbitration logic is performed directly in SUM_LNM.
+
+The use of user functions is configurable by using a configuration parmeter named  \textbf{Sum_Lnm_ScheduleChannelUserFuncs_Enabled}.
+
+When the user function is active, the dedicated SW-C shall be responsible for receiving the signals corresponding to the <LNMActivationSignal><n> signals and for performing the arbitration logic inside the user function LNM_GetRequiredChannelState() instead of SUM_LNM.
+
+SUM_LNM shall request the required communication mode for LIN Network<n> by calling the user function LNM_GetRequiredChannelState() in LNM_ActivationManager<n> which processes all the activation / deactivation requests in the communication channels and passes the corresponding ComM_UserHandleType User ID.
+
+SUM LNM is able to set the LNM_ComM_ModeType parameter of LNM_BswM_ComM_RequestComMode<n> to the same ComM_ModeType value returned by LNM_GetRequiredChannelState()) user function.
+
+When the user function is inactive, the standard implementation is kept in SUM_LNM as traditonal way.
+}
+{\Satisfies{SRS_LNM 086}}
+
+\Requirement{514}
+{
+\Function{LNM_GetRequiredChannelState}
+{NetworkHandleType ID (00...255)}
+{}
+{}
+{\code{LNM_ComModeType}}
+{Function is to request from SUM_LNM to separate software component for required communication mode of Lin Network <n>.}
+}
+{\Satisfies{SRS_LNM 469}}
+
+\section{LNM Schedule Management}
+\label{sec:lnm_schedule_management}
+
+SUM_LNM provides the possibility to configure the support several schedule tables for the LIN network and the schedule switch logic.
+
+\Requirement{030}
+{
+SUM_LNM implements a FSM for each configured network channel. Each state of this FSM is associated to a project specific schedule table. The transitions between the different states represent the logic of 
+the schedule switch. 
+Two special states will always be present:
+\begin{itemize}
+    \item START: This particular state is not associated to any schedule table. It is entered when the schedule logic is started.
+	\item SLEEP: This state is associated to the NULL schedule. When this state is entered, the NULL schedule will be requested as well the NO COMMUNICATION of the LIN channel.
+\end{itemize}
+The logic to switch across the different schedule is configurable, and shall be based on schedule signals.
+}
+{\Satisfies{SRS_LNM 011} \Satisfies{SRS_LNM 140} \Satisfies{SRS_LNM 160}}
+
+\Requirement{031}
+{
+SUM_LNM provides the possibility to configure multiple schedule signals to configure the project specific logic to switch among the different schedules.
+Three different sources for this signals are supported: Com, SWC and Rule.
+}
+{\Satisfies{SRS_LNM 085} \Satisfies{SRS_LNM 489}}
+
+\Requirement{032}
+{
+SUM_LNM checks periodically the project specific condition to to transition from the current state to another state. In case that the schedule signal is provided by the Com, the signal availability of the
+signal is checked. If the signal is not available the condition is considered not satisfied.
+}
+{\Satisfies{SRS_LNM 085}}
+
+\Requirement{033}
+{
+SUM_LNM monitors continuously the current schedule of the LIN network. When a transition to a new state happens, SUM_LNM will require the associated schedule table, until this schedule table is activated in the LIN network.
+}
+{\Satisfies{SRS_LNM 084} \Satisfies{SRS_LNM 111}}
+
+\Requirement{515}
+{
+If Pre-Sleep phase is used on a LIN network, then SUM LNM shall use LNM_PreSleepDelay calibration, to delay the transition to the NULL schedule table from the instance the SUM LNM determines the project specific conditions for the LIN network to transition to sleep.}
+{\Satisfies{SRS_LNM 143}}
+
+\Runnable{LNM_ScheduleManagement}
+{Periodic}
+{}
+{CurrentSchedule<n> \newline
+ScheduleSignal<n> \newline
+ScheduleSignal_Availability<n>}
+{RequestSchedule<n>}
+{}
+{\code{void}}
+{This runnable is responsible for:
+\begin{itemize}
+\item Periodically invoke all the project specific LIN network schedule management functions
+\end{itemize}
+}
+
+\Function{LNM_ScheduleTable_Request}
+{\code{network_index}}
+{}
+{}
+{\code{void}}
+{Function that manages the schedule feedback and requests for the selected network}
+
+\Function{LNM_CheckRule_<n>}
+{}
+{}
+{}
+{\code{boolean}}
+{Function that checks if a project specific complex rule is satisfied or not. The result is returned to the caller.}
+
+\Function{LNM_CheckCondition_<n>}
+{}
+{}
+{}
+{\code{boolean}}
+{Function that checks if a project specific simple condition is satisfied or not. The result is returned to the caller.}
+
+\Function{LNM_Get_ScheduleSignal_<n>}
+{\code{schedule_signal}}
+{}
+{}
+{\code{boolean}}
+{Get the current value of the schedule signal, that is stored in the addressed memory of the pointer given as input. The return value represents if an error occurred during the read operation or if the
+signal is unavailable (Com schedule signal source).}
+
+\Function{LNM_PreSleep_Timer_Management}
+{\code{network_index}}
+{}
+{}
+{\code{void}}
+{Function that manages presleep timer for the selected network}
+
+\subsection{Optional User Function LNM_GetRequiredSchedule()}
+\label{subsec:usrfunc_schedule}
+\Requirement{511}
+{
+The motivation to use the user function LNM_GetRequiredSchedule() is to allow another SW-C conducts the arbitration logic to set the requested LIN schedule table of LIN network <n>, whereas in the traditional implementation this arbitration logic is performed directly in SUM_LNM.
+
+The use of user functions is configurable by using a configuration parmeter named \textbf{Sum_Lnm_ScheduleChannelUserFuncs_Enabled}.
+
+When the user function is active, the dedicated SW-C shall be responsible for receiving the signals corresponding to the <LNMScheduleSignal><n> signals and perfromed the arbitration logic inside the user function LNM_GetRequiredSchedule() instead of SUM_LNM.
+
+SUM_LNM shall request the required schedule table index for LIN Network<n> by calling the user function LNM_GetRequiredSchedule() in LNM_ScheduleManagement_<n> which executes schedule FSM of the network and passing the corresponding NetworkHandleType Channel ID.
+
+SUM_LNM is able to set the LNM_SchHandleType parameter of LNM_BswM_LinSM_Schedule Request<n> to the same LNM_SchHandleType value returned by LNM_GetRequiredSchedule() user function.
+
+When the user function is inactive, the standard implementation is kept in SUM_LNM as traditonal way.
+}
+{\Satisfies{SRS_LNM 067}}
+
+\Requirement{512}
+{
+\Function{LNM_GetRequiredSchedule}
+{NetworkHandleType ID (00...255)}
+{}
+{}
+{\code{LNM_SchHandleType}}
+{Function is to request from SUM_LNM to separate software component for required communication mode of Lin Network <n>.}
+}
+{\Satisfies{SRS_LNM 486}}
+
+\section {LNM MSCL}
+\label{sec:MSCL}
+\Requirement{040}
+{
+SUM_LNM supports a 16 bit Commander Subnet Configuration List. Two different variants are supported for MSCL determination: via Calibration and via Evaluation. MSCL is used to identify which responders of the network are active
+for diagnostic functions.
+}
+{\Satisfies{SRS_LNM 470}}
+
+\Requirement{041}
+{
+MSCL is stored in Non Volatile Memory. For multichannel LIN ECUs, a single NvM block is used to store all the MSCLs in a contiguous block of memory. Thus, the size of NvM block varies according to the number of LIN
+channels configured. In particular, the size in byte of the block is 2*n, where n is the number of LIN channels configured.
+}
+{\Satisfies{SRS_LNM 040} \Satisfies{SRS_LNM 472} \Satisfies{SRS_LNM 473}}
+
+\Requirement{042}
+{
+MSCL is a 2 byte bitmask, where each of the bit can be associated to one LIN Responder, except for the MSB (Config bit). 
+\begin{itemize}
+    \item Bit set to 1: the corresponding responder is active on the network
+	\item Bit set to 0: the corresponding responder is not active on the network or no responders are associated to this bit
+\end{itemize}
+}
+{\Satisfies{SRS_LNM 410} \Satisfies{SRS_LNM 474} \Satisfies{SRS_LNM 475} \Satisfies{SRS_LNM 476} \Satisfies{SRS_LNM 480}}
+
+\Requirement{043}
+{
+The MSB of the MSCL is the Config bit.
+\begin{itemize}
+    \item Bit set to 1: the MSCL has been correctly computed for the selected channel
+	\item Bit set to 0: the MSCL has not been computed for the selected channel yet, or the channel is calibrated off
+\end{itemize}
+}
+{\Satisfies{SRS_LNM 477} \Satisfies{SRS_LNM 478} \Satisfies{SRS_LNM 480}}
+
+\Requirement{044}
+{
+At init time, MSCL is set to 0x0000. If the channel has been calibrated off through the calibration parameter "ChannelEnabled", this value is unchanged.
+}
+{\Satisfies{SRS_LNM 041} \Satisfies{SRS_LNM 479}}
+
+\Requirement{045}
+{
+If the channel has not been calibrated off, the MSCL procedure is started, and for each responder it is checked if the responder is present or not. If the responder is present, the corresponding MSCL responder bit is set to 1.
+\begin{itemize}
+    \item Calibration: an LNM internal calibration parameter is checked to determine if the responder is present.
+	\item Evaluation: a Parameter interface is generated for each responder. The value provided by these ports are used to determine if the responder is present. 
+\end{itemize}
+At the end of this procedure, the MSCL is stored in NvM and its value is published to SSM through the corresponding interface.
+}
+{\Satisfies{SRS_LNM 471} \Satisfies{SRS_LNM 481} \Satisfies{SRS_LNM 482} \Satisfies{SRS_LNM 483}}
+
+\Function{LNM_Get_MSCL_ChannelEnable}
+{\code network_index}
+{}
+{}
+{\code{boolean}}
+{Function that returns the value of the ChannelEnable calibration parameter for the selected network}
+
+\Function{LNM_Get_Cal_ResponderPresent}
+{\code network_index, responder_index}
+{}
+{}
+{\code{boolean}}
+{Function that returns if the selected responder of the selected network is currently active or not}
+
+\section{Dcm Services}
+In this section are listed all the services supported by SUM_LNM
+
+\subsection{MSCL DID F1BE}
+\label{subsec:MSCL_DID_F1BE}
+\Requirement{050}
+{
+SUM_LNM supports ReadData and ConditionCheckRead functions for the Read-Only 0xF1BE DID. This is a 128 Byte Data Identifier where are reported the different MSCLs for all the LIN networks.
+The updated value of the MSCL is reported for each configured network, and positioned in the DID according to the configured network identifier.
+}
+{\Satisfies{SRS_LNM 042} \Satisfies{SRS_LNM 290} \Satisfies{SRS_LNM 291} \Satisfies{SRS_LNM 292} \Satisfies{SRS_LNM 484} \Satisfies{SRS_LNM 485}}
+
+\Function{LNM_DID_MSCL_ConditionCheckRead}
+{\code OpStatus, ErrorCode}
+{}
+{}
+{\code{Std_ReturnType}}
+{Function that returns to Dcm if some error condition is present during a read request of the DID F1BE}
+
+\Function{LNM_DID_MSCL_ReadData}
+{\code OpStatus, Data}
+{}
+{}
+{\code{Std_ReturnType}}
+{Function that returns to Dcm the data to be sent for DID F1BE response}
+
+\section{LNM Diagnostic}
+SUM_LNM supports the detection of the following DTCs:
+\begin{itemize}
+    \item Lost Communication with LIN Responder Device
+	\item Loss of Communication with Bus
+	\item Internal Electronic Failure
+	\item Responder Device Not Configured
+\end{itemize}
+The management runnable responsible for the detection of the DTCs, periodically invokes all the functions that handle each DTC only if SUM_LNM is allowed to run its functions. 
+An exception is made for Responder Device Not Configured, which management is not centralized in this periodic runnable.
+
+\Runnable{LNM_NetworkFaultManager}
+{Periodic}
+{}
+{Fault indications \newline
+DTCs status}
+{Event notifications \newline
+Fault Active notifications}
+{}
+{\code{void}}
+{This runnable is responsible for:
+\begin{itemize}
+\item Periodically invoke all the functions that are responsible of the diagnostic of the LIN networks
+\end{itemize}
+}
+
+\subsection{Lost Communication with LIN Responder Device}
+This DTC must be set when the LIN Commander is not able to communicate with one of its responder. The function \code{LNM_LossOfCommunication_Device} is responsible to periodically detect, for every LIN responder on any LIN network, any fault conditions. 
+\label{subsec:lostcommwithLIN}
+\Requirement{060}
+{
+Before performing a Missing Message with Responder Device test, SUM_LNM checks the enable criteria as specified in SDV-6001 and ECU ODX file.
+More specifically, SUM_LNM starts by inspecting the calibration parameter \code{LNM_C_DTC_LostCommWithLinResp} through the getter function \code{LNM_Get_CalibPar_LNM_C_DTC_LostCommWithLinResp}, telling whether the DTC aggregation is enabled. If that's the case, the module iterates over all LIN responders of every LIN network making sure that:
+\begin{itemize}
+\item the actual LIN responder is present (via MSCL table);
+\item the LIN channel for the actual LIN responder is in full communication.
+\end{itemize}
+If any of the above conditions are not valid, the function \code{LNM_LossOfCommunication_Device} terminates
+}
+{\Satisfies{SRS_LNM 174}}
+
+\Requirement{061}
+{
+If all test enable criteria are valid, SUM_LNM reads the timeout status of a COM-monitored signal through the \code{SSM_LNM_NodeTimeout} interface.
+}
+{\Satisfies{SRS_LNM 175}	\Satisfies{SRS_LNM 179}}
+
+
+For each network, SUM_LNM stores the status of all the Loss of Communication with Device into the variable \code{LoC_WithDevice_Status}. This information is needed as input for the detection of Loss of Communication with Bus.
+\code{LoC_WithDevice_Status} is an \code{uint16} bit mask that keeps the same association of bit index -> responder of the MSCL (the MSB is always 0, since the Config bit is not associated to any responder). Bit set to 1 indicates 
+that the Loss of Communication with the corresponding responder is active, while bit set to 0 indicates that LIN Commander is correctly communicating with the corresponding responder.
+
+If SUM_SSM reports that the signal timed out, SUM_LNM sets \code{LoC_WithDevice_Status} corresponding bit to 1, storing the information that it lost the communication with the responder. In the case that the 
+signal has not timed out SUM_LNM sets \code{LoC_WithDevice_Status} corresponding bit to 0, storing the information that it is able to communicate with the responder.
+
+\Requirement{062}
+{
+Together with update of \code{LoC_WithDevice_Status}, SUM_LNM updates the error indication to SUM_ERRH through the interface \code{LNM_ERRH_NodeStatusIdx}, so that SUM_ERRH can collect all the test results notified by 
+SUM_LNM and request to set Loss of Communication with Responder DTC if needed.
+}
+{\Satisfies{SRS_LNM 180}}
+
+\Function{LNM_LossOfCommunication_Device}
+{}
+{}
+{}
+{\code{void}}
+{Function that manages Lost Communication with LIN Responder Device for all responders of every LIN network}
+
+\Function{LNM_Get_CalibPar_LNM_C_DTC_LostCommWithLinResp}
+{}
+{}
+{}
+{\code{boolean}}
+{Function that reads the LNM_C_DTC_LostCommWithLinResp calibration parameter telling whether the Lost Communication with LIN Responder Device DTC setting is enabled}
+
+\subsection{Loss of Communication with Bus}
+\label{subsec:LossCommBus}
+This DTC must be set when LIN Commander loses the communication with the LIN channel. Two different conditions can generate the setting of the DTC:
+\begin{itemize}
+    \item It is not possible to communicate with all the responders of the channel
+	\item Channel does not switch to \code{FULL_COMMUNICATION} even if requested
+\end{itemize}
+
+\Requirement{070}
+{
+SUM_LNM checks the \code{ChannelEnable} calibration parameter and \code{LNM_C_DTC_LINBusOff} configuration parameter to be enabled and vehicle power mode to be in Run or Propulsion for 5 seconds. If one of the conditions is not satisfied, the diagnostic for that channel has been calibrated off, thus any detection of Loss of Communication with Bus is inhibited.
+}
+{\Satisfies{SRS_LNM 191}}
+
+\Requirement{071}
+{
+To detect that the communication is lost with all the responders, the \code{LoC_WithDevice_Status} information is used. Due to its construction, it is possible to notice that if the value of \code{LoC_WithDevice_Status} matches
+the value of the MSCL (with exception of the Config Bit), it is possible to conclude immediately that the LIN Commander lost the communication with all its responders. In this case the event is considered as FAILED.
+}
+{\Satisfies{SRS_LNM 192}}
+
+\Requirement{072}
+{
+SUM_LNM monitors the channel status if the \code{FULL_COMMUNICATION} of the channel has been requested (\code{FULL_COMM_requested} is set to \code{TRUE}). If the channel does not switch to \code{FULL_COMMUNICATION} within a
+calibratable number of retries \code{LNM_WupTxRetries_Commander}, the event is considered as FAILED. 
+}
+{\Satisfies{SRS_LNM 192} \Satisfies{SRS_LNM 193} \Satisfies{SRS_LNM 194}}
+
+\Requirement{073}
+{
+The test result is reported to SUM_ERRH through the interface \code{LNM_ERRH_LossCommBus}. The test is considered FAILED if at least one of the two monitored events failed. The test is considered PASSED if both the events did
+not failed.
+}
+{\Satisfies{SRS_LNM 194} \Satisfies{SRS_LNM 195}}
+
+\Function{LNM_LossOfCommunication_Bus}
+{}
+{}
+{}
+{\code{void}}
+{Function that manages Loss of Communication with Bus of each LIN network}
+
+\subsection{Internal Electronic Failure}
+\label{subsec:IEF}
+This DTC must be set when a failure in the responder device is detected. This DTC is not mandatory for all the responders, and it is possible to configure which one of the following detection mechanism must be used for each responder 
+(even both of them):
+
+\begin{itemize}
+    \item A certain number of consecutive reset request is notified by the responder (through \code{APINFO2} interface)
+	\item A failure status is reported by the responder (through \code{APINFO4} interface)
+\end{itemize}
+
+\Requirement{080}
+{
+SUM_LNM checks that the responder is currently active in the network. It checks that the MSCL bit corresponding to that responder is correctly set to 1. If the bit is set to 0, the responder is not currently active in
+the LIN network, thus any detection of Internal Electronic Failure for that responder is inhibited.
+}
+{\Satisfies{SRS_LNM 213}}
+
+\Requirement{081}
+{
+If supported SUM_LNM periodically checks \code{APINFO4} status. If this value is set to 1, the event is considered as FAILED.
+
+If supported SUM_LNM checks \code{APINFO2} as a data received event, updating the counter of consecutive resets \code{ief_reset_counter}. If \code{APINFO2} is set to 1, the counter is increased by one,
+otherwise it is reset to zero. SUM_LNM periodically checks the value of this counter and if it reaches the maximum number of acceptable reset requests, the event is considered as FAILED.
+}
+{\Satisfies{SRS_LNM 214} \Satisfies{SRS_LNM 462} \Satisfies{SRS_LNM 465}}
+
+\Requirement{082}
+{
+The test result is reported to SUM_ERRH through the interface \code{LNM_ERRH_IntElectFault}. The test is considered FAILED if at least one of the two monitored events failed. The test is considered PASSED if both 
+the events did not failed.
+}
+{\Satisfies{SRS_LNM 215} \Satisfies{SRS_LNM 487}}
+
+
+\Function{LNM_APINFO2_<n>}
+{}
+{}
+{}
+{\code{void}}
+{Function updates consecutive reset counter for the selected responder}
+
+\Function{LNM_InternalElectronicFailure}
+{}
+{}
+{}
+{\code{void}}
+{Function that manages Internal Electronic Failure for all the responders of each LIN network}
+
+\subsection{Responder Device Not Configured}
+This DTC must be set when a failure in the responder Configuration is detected. This DTC is not mandatory far all the responders.
+
+\Requirement{090}
+{
+SUM_LNM checks that the responder is currently active in the network. It checks that the MSCL bit corresponding to that responder is correctly set to 1. If the bit is set to 0, the responder is not currently active in
+the LIN network, thus any detection of Responder Device Not Configured for that responder is inhibited.
+}
+{\Satisfies{SRS_LNM 232}}
+
+\Requirement{091}
+{
+SUM_LNM checks \code{APINFO3} as a data received event to monitor the configuration status of the responder. If \code{APINFO3} is set to 1, a failure in the configuration is detected. If the failure condition is not healed
+within a calibratable amount of retries \code{LNM_Config_Retries_<n>}, the event is considered FAILED.
+}
+{\Satisfies{SRS_LNM 233} \Satisfies{SRS_LNM 235} \Satisfies{SRS_LNM 463} \Satisfies{SRS_LNM 464}}
+
+\Requirement{092}
+{
+SUM_LNM reports to SUM_ERRH the status of the responder calibration at each notification through the interface \code{LNM_ERRH_NotConfigured}. 
+}
+{\Satisfies{SRS_LNM 234}}
+
+\Function{LNM_APINFO3_<n>}
+{}
+{}
+{}
+{\code{void}}
+{Function updates counter of configuration failures. Notifies to SUM_ERRH the error status}
+
+\section{Software Defined Vehicle (SDV)}
+\label{sec:sdv}
+
+\Requirement{509}
+{
+SUM_LNM shall allow the automatic BswM configuration for the Lin ComMode and Schedule Table. To implement this, the file Sum_Lnm_SWCD.arxml will contain
+the interfaces, modes and data type mappings related to the two mentioned Bsw items. Sum_Lnm_SWCD.arxml will be generated by the SUM ConfGen (an UBSW toolchain). 
+To avoid duplication, the parameter Sum_Lnm_ConfGen_Enabled will allow the SUM_LNM CodeGen whether to create the Sum_Lnm_SWCD.arxml file or not.
+}
+{\Satisfies{SRS_LNM 468}}
+
+
+\section{Data Design}
+
+\subsection{Macro Definitions}
+\label{sec:macro}
+
+\Requirement{501}
+{
+\Macro{LNM_UNINIT}
+{0x00}
+{SUM_LNM uninitialized status}
+
+\Macro{LNM_INIT}
+{0x01}
+{SUM_LNM initialized status}
+
+\Macro{LNM_RUNNING}
+{0x02}
+{SUM_LNM running status}
+
+\Macro{LNM_SHUTDOWN}
+{0x03}
+{SUM_LNM shutdown status}
+}
+{\Satisfies{SRS_LNM 021}}
+
+\Requirement{502}
+{
+\Macro{LNM_EXECUTION_ALLOWED}
+{0xFF}
+{Result of OR operation between PermitExecution and PermitExecution mask to allow the execution of SUM_LNM functionalities}
+
+\Macro{LNM_RESET_BIT}
+{0x40}
+{Bit mask for selection of the reset bit}
+}
+{\Satisfies{SRS_LNM 362}}
+
+\Requirement{503}
+{
+\Macro{LNM_SHUTDOWN_ENABLE}
+{0xFF}
+{ShutdownPermission interface to allow shutdown}
+
+\Macro{LNM_MIN_ROLLING_COUNTER}
+{0x00}
+{ShutdownPermission interface minimum value of the aliveness rolling counter}
+
+\Macro{LNM_MAX_ROLLING_COUNTER}
+{0x03}
+{ShutdownPermission interface maximum value of the aliveness rolling counter}
+}
+{\Satisfies{SRS_LNM 363}}
+
+\Requirement{504}
+{
+\Macro{LNM_NO_COMMUNICATION}
+{0x00}
+{Macro for network status interface}
+
+\Macro{LNM_FULL_COMMUNICATION}
+{0x01}
+{Macro for network status interface}
+}
+{\Satisfies{SRS_LNM 361} \Satisfies{SRS_LNM 372} \Satisfies{SRS_LNM 373}}
+
+\Requirement{505}
+{
+\Macro{LNM_NULL_SCHEDULE}
+{0x00}
+{Macro for NULL schedule index}
+}
+{\Satisfies{SRS_LNM 360} \Satisfies{SRS_LNM 370} \Satisfies{SRS_LNM 371}}
+
+\Requirement{506}
+{
+\Macro{LNM_MSCL_OFF}
+{0x0000u}
+{Macro that identifies the initial value of MSCL}
+
+\Macro{LNM_RESPONDER_PRESENT}
+{0x01u}
+{Macro that identifies the value for which the responder is considered present in the network}
+
+\Macro{LNM_CONFIGSTATUS_BIT}
+{0x0Fu}
+{Macro that identifies the bit position of the Config bit in MSCL}
+}
+{\Satisfies{SRS_LNM 374}}
+
+\Requirement{507}
+{
+\Macro{LNM_DTC_INACTIVE}
+{0x00u}
+{Macro to identify inactive DTC status}
+
+\Macro{LNM_DTC_ACTIVE}
+{0x01u}
+{Macro to identify active DTC status}
+}
+{\Satisfies{SRS_LNM 366} \Satisfies{SRS_LNM 378}}
+
+\Requirement{508}
+{
+\Macro{LNM_ERROR_EVENT_INACTIVE}
+{0x00u}
+{Macro to identify inactive error events}
+
+\Macro{LNM_ERROR_EVENT_ACTIVE}
+{0x01u}
+{Macro to identify active error events}
+}
+{\Satisfies{SRS_LNM 364} \Satisfies{SRS_LNM 368} \Satisfies{SRS_LNM 369} \Satisfies{SRS_LNM 376} \Satisfies{SRS_LNM 377}}
+
+\Macro{LNM_START_STATUS}
+{0x01}
+{Macro that identifies the common start status for each LIN network}
+
+\Macro{LNM_SIGNAL_AVAILABLE}
+{0x03}
+{Macro for signal availability interface}
+
+\Macro{LNM_MASK_FF}
+{0xFF}
+{Internal macro for 0xFF value}
+
+\Macro{LNM_E_OK}
+{0x00}
+{Internal macro for RTE return values}
+
+\Macro{LNM_OFF}
+{0x00}
+{Internal macro for disabling of features}
+
+\Macro{LNM_ON}
+{0x01}
+{Internal macro for enabling of features}
+
+\Macro{LNM_DID_F1BE_LENGTH}
+{0x20}
+{Internal macro that defines the length of the F1BE DID}
+
+\Macro{LNM_BYTE_SHIFT}
+{0x08}
+{Internal macro used to perform a byte shift}
+
+\Macro{LNM_ZERO}
+{0x00}
+{Internal macro for 0x00 value}
+
+\Macro{LNM_VEH_POWER_MODE_MAX_RESET_TIMER}
+{5000u}
+{Internal macro for Bus off test enable criteria}
+
+\Macro{LNM_MS_TO_US_UNIT}
+{1000u}
+{Internal macro for time unit conversion}
+
+\section{Type Definitions}
+
+
+%\subsection{Structures}
+%N/A
+
+%\subsection{Enums}
+%N/A
+
+%\section{Wakeup procedure}
+%N/A
+
+%\section{Sleep procedure}
+%N/A
+
+%\section{Boot loading procedure}
+%N/A
+
+%\section{Failure handling strategy}
+%N/A
+
+%\section{Critical timing constraints}
+%N/A
+\section{Task management}
+
+\subsection{Periodic Runnables}
+\label{sec:periodic_runnables}
+
+\subsection{Event-Triggered Runnables}
+
+\clearpage
+
+\section{Runtime Scenario}
+
+\clearpage 

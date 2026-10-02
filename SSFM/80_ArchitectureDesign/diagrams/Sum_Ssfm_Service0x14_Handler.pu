@@ -1,0 +1,62 @@
+@startuml Sum_Ssfm_Service0x14_Handler
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_Service0x14_Handler"
+
+**Interfaces Legend**
+    //ri107 //: ServiceRequestNotification
+    //II152 //: ERRH_ExecutionStatus / SSM_ExecutionStatus
+	//pi103 //: SerialData<n>_FcFA
+	//pi106 //: SerialData<n>_FoFA
+	//pi109 //: SerialData<n>_FpFA
+	//pi112 //: SerialData<n>_FsFA
+	//pi138 //: RunCrankInputStuckHigh_FA_StatusRequest
+	//pi139 //: RunCrankInputStuckLow_FA_StatusRequest
+	//II12  //: Signal<n>_LcFA
+	//pi116 //: LIN_Signal<n>_LcFA
+	//II13  //:  Signal<n>_Inv
+	//pi118 //: SSFM_ClearDiagReq
+	//II182 //: Service14requested
+endlegend
+
+note top of EC
+It is responsible for handling the SSFM part of service 0x14. Hence, it updates all the interfaces according to the fact that all DTCs have been cleared. 
+It communicates the occurrence of a confirmed service 0x14 to the SOH. 
+end note
+
+component [SSFM::Sum_Ssfm_Service0x14_Handler] as EC{
+    portin ri107
+    portout pi103
+	portout pi106
+	portout pi109
+	portout pi112
+	portout pi113
+	portout pi114
+	portout pi116
+	portout pi118
+    portout pi130
+	
+    [Sum_Ssfm_Service_0x14_Handler]  as E
+}
+    interface II152
+	interface II12
+	interface II13
+
+    ri107 -> E
+	II152 -> E
+    E -> pi103
+    E -> pi106
+    E -> pi109
+    E -> pi112
+    E -> pi113
+    E -> pi114
+	E -> II12
+    E -> pi116 
+    E -> pi118
+    E -> pi130
+    E -> II13	
+
+
+@enduml

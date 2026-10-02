@@ -1,0 +1,29 @@
+[
+   {
+      "Name": "DID_F129_TotalVehicleTimeValue_Reference",
+      "Father": "TcsGeneral",
+      "Description": "Reference to DCM DID 0xF129 Total Vehicle Time Value",
+      "Multiplicity": "0..1",
+      "Destination": "/AUTOSAR_Dcm/EcucModuleDefs/Dcm/DcmConfigSet/DcmDsp/D\\newline cmDspDid",
+      "Category": "ECUC-REFERENCE-DEF",
+      "Range": "N/A"
+   },
+   {
+      "Name": "TcsDemTimestampRef",
+      "Father": "TcsGeneral",
+      "Description": "Reference to Dem Timestamp",
+      "Multiplicity": "0..1",
+      "Destination": "/AUTOSAR_Dem/EcucModuleDefs/Dem/DemGeneral/DemDidClas\\newline s",
+      "Category": "ECUC-REFERENCE-DEF",
+      "Range": "N/A"
+   },
+   {
+      "Name": "TCSInitValueNvmRef",
+      "Father": "TcsGeneral",
+      "Description": "Reference to NVM Block for storing TCS Init time value",
+      "Multiplicity": "0..1",
+      "Destination": "/AUTOSAR_NvM/EcucModuleDefs/NvM/NvMBlockDescriptor",
+      "Category": "ECUC-REFERENCE-DEF",
+      "Range": "N/A"
+   }
+]

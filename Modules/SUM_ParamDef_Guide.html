@@ -1,0 +1,1995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RTA-SUM Parameter Definition Guide</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1a1a2e;
+    --heading: #0f3460;
+    --accent: #e67e22;
+    --accent-light: #fef5e7;
+    --border: #d4dce6;
+    --code-bg: #f4f6f9;
+    --table-header: #0f3460;
+    --table-stripe: #f8fafc;
+    --sidebar-bg: #f1f5f9;
+    --sidebar-active: #1687a7;
+    --int-color: #2980b9;
+    --bool-color: #27ae60;
+    --float-color: #8e44ad;
+    --enum-color: #d35400;
+    --str-color: #16a085;
+    --ref-color: #c0392b;
+    --func-color: #2c3e50;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.7; color: var(--text); background: var(--bg);
+    display: flex; min-height: 100vh;
+  }
+
+  /* Sidebar */
+  nav.sidebar {
+    position: fixed; top: 0; left: 0;
+    width: 280px; height: 100vh; overflow-y: auto;
+    background: var(--sidebar-bg); border-right: 1px solid var(--border);
+    padding: 24px 0; z-index: 100; font-size: 0.85rem;
+  }
+  nav.sidebar .nav-title {
+    font-size: 1rem; font-weight: 700; color: var(--heading);
+    padding: 0 20px 16px; border-bottom: 2px solid var(--accent); margin-bottom: 12px;
+  }
+  nav.sidebar a {
+    display: block; padding: 6px 20px; color: #475569;
+    text-decoration: none; border-left: 3px solid transparent; transition: all 0.15s;
+  }
+  nav.sidebar a:hover, nav.sidebar a.active {
+    color: var(--sidebar-active); background: white; border-left-color: var(--sidebar-active);
+  }
+  nav.sidebar a.sub { padding-left: 36px; font-size: 0.82rem; color: #64748b; }
+  nav.sidebar .nav-section {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.2px;
+    color: #94a3b8; padding: 14px 20px 4px; font-weight: 700;
+  }
+
+  /* Main content */
+  main {
+    margin-left: 280px; max-width: 1100px; padding: 40px 48px;
+    width: calc(100% - 280px);
+  }
+  h1 { font-size: 2rem; color: var(--heading); margin-bottom: 8px; }
+  h1 span { color: var(--accent); }
+  .subtitle { color: #64748b; font-size: 1rem; margin-bottom: 32px; }
+  h2 {
+    font-size: 1.5rem; color: var(--heading); margin: 48px 0 16px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+  }
+  h3 { font-size: 1.15rem; color: var(--heading); margin: 28px 0 12px; }
+  h4 { font-size: 1rem; color: #475569; margin: 20px 0 8px; }
+
+  /* Intro box */
+  .intro-box {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 24px;
+    font-size: 0.92rem;
+  }
+  .intro-box strong { color: var(--heading); }
+
+  /* Module card */
+  .module-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 32px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .module-header {
+    background: linear-gradient(135deg, var(--heading), #1a3a5c);
+    color: #fff; padding: 16px 24px; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between; user-select: none;
+  }
+  .module-header:hover { filter: brightness(1.15); }
+  .module-header h2 { color: #fff; margin: 0; border: none; padding: 0; font-size: 1.2rem; }
+  .module-header .badge {
+    background: var(--accent); padding: 3px 12px; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 700;
+  }
+  .module-header .arrow { transition: transform 0.3s; font-size: 0.85rem; }
+  .module-header.open .arrow { transform: rotate(90deg); }
+  .module-body { display: none; padding: 24px; }
+  .module-body.open { display: block; }
+  .module-desc {
+    font-size: 0.92rem; color: #475569; margin-bottom: 16px;
+    padding: 12px 16px; background: #f8fafc; border-radius: 6px;
+    border-left: 3px solid var(--accent);
+  }
+
+  /* Container hierarchy */
+  .container-tree { margin: 16px 0; }
+  .container-node {
+    background: #f0f4f8; border: 1px solid #d1d9e6; border-radius: 8px;
+    padding: 16px 20px; margin-bottom: 12px;
+  }
+  .container-node.sub { margin-left: 28px; background: #f8fafc; border-color: #e2e8f0; }
+  .container-node.sub-sub { margin-left: 56px; background: #fafbfc; border-color: #edf2f7; }
+  .container-name {
+    font-weight: 700; color: var(--heading); font-size: 1rem;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+  }
+  .mult-badge {
+    background: #e2e8f0; color: #475569; padding: 1px 8px;
+    border-radius: 4px; font-size: 0.72rem; font-weight: 600;
+  }
+  .container-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 12px; }
+
+  /* Parameter table */
+  .param-table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 0.82rem; }
+  .param-table th {
+    background: var(--table-header); color: #fff; padding: 8px 12px;
+    text-align: left; font-weight: 600; font-size: 0.78rem;
+  }
+  .param-table td { padding: 8px 12px; border-bottom: 1px solid #edf2f7; vertical-align: top; }
+  .param-table tr:nth-child(even) { background: var(--table-stripe); }
+  .param-table tr:hover { background: #eef3f8; }
+  .param-name { font-weight: 600; color: var(--heading); word-break: break-word; }
+
+  /* Type badges */
+  .type-badge {
+    display: inline-block; padding: 1px 8px; border-radius: 4px;
+    font-size: 0.72rem; font-weight: 700; color: #fff;
+  }
+  .type-int { background: var(--int-color); }
+  .type-bool { background: var(--bool-color); }
+  .type-float { background: var(--float-color); }
+  .type-enum { background: var(--enum-color); }
+  .type-str { background: var(--str-color); }
+  .type-ref { background: var(--ref-color); }
+  .type-func { background: var(--func-color); }
+
+  /* Explanation boxes */
+  .explain-box {
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;
+    padding: 12px 16px; margin: 12px 0; font-size: 0.88rem;
+  }
+  .explain-box .title { font-weight: 700; color: #1e40af; margin-bottom: 4px; }
+  .warn-box {
+    background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px;
+    padding: 12px 16px; margin: 12px 0; font-size: 0.88rem;
+  }
+  .warn-box .title { font-weight: 700; color: #c2410c; margin-bottom: 4px; }
+
+  /* Hierarchy diagram */
+  .hierarchy-diagram {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 20px; margin: 16px 0; font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.82rem; line-height: 1.8; overflow-x: auto;
+  }
+  .hierarchy-diagram .h-root { color: var(--heading); font-weight: 700; }
+  .hierarchy-diagram .h-container { color: var(--accent); font-weight: 600; }
+  .hierarchy-diagram .h-sub { color: #475569; }
+  .hierarchy-diagram .h-param { color: #64748b; font-style: italic; }
+
+  /* Search */
+  .search-bar {
+    position: sticky; top: 0; background: #fff; z-index: 50;
+    padding: 12px 0; margin-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .search-bar input {
+    width: 100%; padding: 10px 16px; border: 2px solid var(--border);
+    border-radius: 8px; font-size: 0.92rem; outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+
+  /* Summary stats */
+  .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0 24px; }
+  .stat-card {
+    background: #f8fafc; border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 20px; min-width: 140px; text-align: center;
+  }
+  .stat-card .num { font-size: 1.8rem; font-weight: 800; color: var(--heading); }
+  .stat-card .label { font-size: 0.78rem; color: #64748b; }
+
+  /* Legend */
+  .type-legend { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+  .type-legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; }
+
+  /* ===== Interactive ParamDef Tree ===== */
+  .pd-tree { margin: 12px 0 16px; }
+  .pd-node {
+    position: relative; margin-left: 0;
+  }
+  .pd-node .pd-node { margin-left: 24px; }
+  .pd-node .pd-node .pd-node { margin-left: 24px; }
+
+  /* Connecting lines */
+  .pd-node .pd-node::before {
+    content: ''; position: absolute; left: -16px; top: 0; bottom: 0;
+    width: 1px; background: #cbd5e1;
+  }
+  .pd-node .pd-node::after {
+    content: ''; position: absolute; left: -16px; top: 18px;
+    width: 12px; height: 1px; background: #cbd5e1;
+  }
+  .pd-node .pd-node:last-child::before { height: 18px; }
+
+  .pd-header {
+    display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+    cursor: pointer; border-radius: 6px; transition: all 0.15s;
+    border: 1px solid transparent; user-select: none; flex-wrap: wrap;
+  }
+  .pd-header:hover { background: #eef3f8; border-color: #d1d9e6; }
+  .pd-header.active { background: #e8f0fe; border-color: #93b4e8; }
+
+  .pd-toggle {
+    width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; color: #64748b; transition: transform 0.2s;
+    background: #f1f5f9; border-radius: 3px; flex-shrink: 0;
+  }
+  .pd-header.active .pd-toggle { transform: rotate(90deg); color: var(--heading); }
+  .pd-header.leaf .pd-toggle { visibility: hidden; }
+
+  .pd-icon {
+    width: 22px; height: 22px; border-radius: 4px; display: flex;
+    align-items: center; justify-content: center; font-size: 0.7rem;
+    font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .pd-icon.root { background: var(--heading); }
+  .pd-icon.container { background: var(--accent); }
+  .pd-icon.sub { background: #64748b; }
+  .pd-icon.param { background: var(--int-color); font-size: 0.6rem; }
+  .pd-icon.ref { background: var(--ref-color); font-size: 0.6rem; }
+
+  .pd-name { font-weight: 600; color: var(--heading); font-size: 0.88rem; }
+  .pd-mult {
+    background: #e2e8f0; color: #475569; padding: 1px 7px;
+    border-radius: 3px; font-size: 0.68rem; font-weight: 600; white-space: nowrap;
+  }
+  .pd-brief { color: #64748b; font-size: 0.8rem; }
+  .pd-count {
+    background: #dbeafe; color: #1e40af; padding: 1px 6px;
+    border-radius: 3px; font-size: 0.65rem; font-weight: 600; white-space: nowrap;
+  }
+
+  /* Expandable content panel */
+  .pd-body {
+    display: none; margin: 2px 0 8px 42px; padding: 12px 16px;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); animation: pdSlideIn 0.2s ease;
+  }
+  .pd-body.open { display: block; }
+  @keyframes pdSlideIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .pd-section-title {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px;
+    color: #94a3b8; font-weight: 700; margin: 10px 0 6px; padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+  }
+  .pd-section-title:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  /* Param rows inside expanded panel */
+  .pd-param {
+    display: grid; grid-template-columns: minmax(200px, 1.5fr) auto auto auto auto 2fr;
+    gap: 6px 10px; padding: 6px 8px; border-radius: 4px; font-size: 0.82rem;
+    align-items: center;
+  }
+  .pd-param:nth-child(even) { background: #f8fafc; }
+  .pd-param:hover { background: #eef3f8; }
+  .pd-param .pn { font-weight: 600; color: var(--heading); word-break: break-all; }
+  .pd-param .pm { color: #64748b; font-size: 0.78rem; white-space: nowrap; }
+  .pd-param .pr { color: #475569; font-size: 0.78rem; white-space: nowrap; }
+  .pd-param .pdef { color: #475569; font-size: 0.78rem; white-space: nowrap; }
+  .pd-param .pdesc { color: #64748b; font-size: 0.78rem; }
+
+  /* Ref rows */
+  .pd-ref {
+    display: grid; grid-template-columns: minmax(200px, 1.5fr) auto auto auto 2fr;
+    gap: 6px 10px; padding: 6px 8px; border-radius: 4px; font-size: 0.82rem;
+    align-items: center;
+  }
+  .pd-ref:nth-child(even) { background: #fef5f5; }
+  .pd-ref:hover { background: #fdeaea; }
+  .pd-ref .pn { font-weight: 600; color: var(--ref-color); word-break: break-all; }
+
+  /* Param/Ref header row */
+  .pd-hdr {
+    display: grid; gap: 6px 10px; padding: 4px 8px; font-size: 0.7rem;
+    font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .pd-hdr.param-hdr { grid-template-columns: minmax(200px, 1.5fr) auto auto auto auto 2fr; }
+  .pd-hdr.ref-hdr { grid-template-columns: minmax(200px, 1.5fr) auto auto auto 2fr; }
+
+  /* Container description in expanded body */
+  .pd-desc {
+    font-size: 0.85rem; color: #475569; margin-bottom: 10px;
+    padding: 8px 12px; background: #f8fafc; border-radius: 4px;
+    border-left: 3px solid var(--accent);
+  }
+
+  /* Note box inside tree */
+  .pd-note {
+    font-size: 0.8rem; color: #1e40af; background: #eff6ff;
+    border: 1px solid #bfdbfe; border-radius: 4px; padding: 6px 10px;
+    margin: 6px 0;
+  }
+
+  /* Children container */
+  .pd-children { margin-top: 2px; }
+  .pd-children.hidden { display: none; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    nav.sidebar { display: none; }
+    main { margin-left: 0; padding: 20px; }
+    .pd-param, .pd-ref { grid-template-columns: 1fr; }
+    .pd-hdr { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="nav-title">ParamDef Guide</div>
+  <div class="nav-section">Overview</div>
+  <a href="#overview">What is ParamDef?</a>
+  <a href="#concepts">Key Concepts</a>
+  <a href="#stats">Summary Statistics</a>
+  <div class="nav-section">Modules</div>
+  <a href="#mod-tcs">TCS</a>
+  <a href="#mod-diag">DIAG</a>
+  <a href="#mod-pnc">PNC</a>
+  <a href="#mod-srvcmgr">SrvcMgr</a>
+  <a href="#mod-spm">SPM</a>
+  <a href="#mod-lnm">LNM</a>
+  <a href="#mod-soh">SOH</a>
+  <a href="#mod-ssfm">SSFM</a>
+  <a href="#mod-susd">SUSD</a>
+  <div class="nav-section">Reference</div>
+  <a href="#common-params">Common Patterns</a>
+  <a href="#glossary">Glossary</a>
+</nav>
+
+<main>
+<h1>RTA-SUM <span>Parameter Definition</span> Guide</h1>
+<p class="subtitle">Understanding ECUC Parameter Definitions across all SUM modules</p>
+
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Search parameters, containers, or descriptions..." oninput="filterAll(this.value)">
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<section id="overview">
+<h2>What is a ParamDef?</h2>
+<div class="intro-box">
+  <strong>ECUC Parameter Definition (EcucParamDef)</strong> is the AUTOSAR mechanism for defining configurable parameters of a software module.
+  Each SUM module ships an <code>.arxml</code> file (the ParamDef) that declares which parameters exist, their types, valid ranges, defaults, and multiplicities.
+  The RTA toolchain (ISOLAR, RTA-CFG) reads these definitions and presents them as configuration forms to the integrator.
+</div>
+
+<h3 id="concepts">Key Concepts</h3>
+<table class="param-table">
+  <tr><th style="width:180px">Concept</th><th>Description</th></tr>
+  <tr><td class="param-name">Container</td><td>A logical grouping of parameters. Containers can be nested (sub-containers). Each container has a multiplicity that says how many instances are allowed (e.g., 1..1 = exactly one, 1..* = one or more).</td></tr>
+  <tr><td class="param-name">Parameter</td><td>A single configuration value inside a container. Types include INTEGER, BOOLEAN, FLOAT, ENUMERATION, STRING, and FUNCTION-NAME.</td></tr>
+  <tr><td class="param-name">Reference</td><td>A pointer to another AUTOSAR container (e.g., referencing a DCM DID, NvM block, or Com signal). Types: ECUC-REFERENCE-DEF, ECUC-CHOICE-REFERENCE-DEF (multiple targets), ECUC-FOREIGN-REFERENCE-DEF (cross-module).</td></tr>
+  <tr><td class="param-name">Multiplicity</td><td><code>LOWER-MULTIPLICITY</code> / <code>UPPER-MULTIPLICITY</code> define how many instances are required/allowed. <code>0..1</code> = optional, <code>1..1</code> = mandatory, <code>1..*</code> = at least one.</td></tr>
+  <tr><td class="param-name">Config Variant</td><td>When the parameter is resolved: <code>VARIANT-PRE-COMPILE</code> (at compile time) or <code>VARIANT-POST-BUILD</code> (loadable at runtime).</td></tr>
+</table>
+
+<div class="type-legend">
+  <div class="type-legend-item"><span class="type-badge type-int">INTEGER</span> Numeric value</div>
+  <div class="type-legend-item"><span class="type-badge type-bool">BOOLEAN</span> True/False</div>
+  <div class="type-legend-item"><span class="type-badge type-float">FLOAT</span> Decimal value</div>
+  <div class="type-legend-item"><span class="type-badge type-enum">ENUM</span> Fixed choices</div>
+  <div class="type-legend-item"><span class="type-badge type-str">STRING</span> Text value</div>
+  <div class="type-legend-item"><span class="type-badge type-ref">REFERENCE</span> Pointer to another element</div>
+</div>
+</section>
+
+<!-- ==================== STATS ==================== -->
+<section id="stats">
+<h2>Summary Statistics</h2>
+<div class="stats-row">
+  <div class="stat-card"><div class="num">9</div><div class="label">Modules</div></div>
+  <div class="stat-card"><div class="num">130+</div><div class="label">Containers</div></div>
+  <div class="stat-card"><div class="num">305+</div><div class="label">Parameters</div></div>
+  <div class="stat-card"><div class="num">185+</div><div class="label">References</div></div>
+</div>
+</section>
+
+<!-- ==================== TCS ==================== -->
+<section id="mod-tcs" class="module-section">
+<div class="module-card">
+  <div class="module-header" onclick="toggleModule(this)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge">TCS</span>
+      <h2>Timing Client Service</h2>
+    </div>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="module-body">
+    <div class="module-desc">
+      <strong>TCS</strong> (Timing Client Service) provides global time synchronization for the ECU.
+      It polls a master clock signal, converts it to local time, and manages NvM-backed timestamps for the DEM subsystem.
+      The ParamDef is simple: a single <strong>TcsGeneral</strong> container with timing and initialization parameters.
+    </div>
+
+    <div class="pd-tree">
+      <div class="pd-node">
+        <div class="pd-header" onclick="toggleTree(this)">
+          <span class="pd-toggle">&#9654;</span>
+          <span class="pd-icon root">M</span>
+          <span class="pd-name">Tcs</span>
+          <span class="pd-mult">0..1</span>
+          <span class="pd-brief">&mdash; Timing Client Service module</span>
+        </div>
+        <div class="pd-children hidden">
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span>
+              <span class="pd-icon container">C</span>
+              <span class="pd-name">TcsGeneral</span>
+              <span class="pd-mult">1..1</span>
+              <span class="pd-count">6 params</span>
+              <span class="pd-count">6 refs</span>
+              <span class="pd-brief">&mdash; timing, execution mask, init config</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">General configuration of the TCS module. All timing periodicities and references reside here.</div>
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">MasterClockPollingPeriodicity</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;1000</span><span class="pdef">100</span><span class="pdesc">Time in ms for MasterClockPolling periodicity.</span></div>
+              <div class="pd-param"><span class="pn">PermitExecutionMask</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">254</span><span class="pdesc">PermitExecution mask to start TCS.</span></div>
+              <div class="pd-param"><span class="pn">SumTCSGlobalTimePrecision</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;1000</span><span class="pdef">100</span><span class="pdesc">Local time source accuracy in ms. Must be multiple of TimeManagementPeriodicity.</span></div>
+              <div class="pd-param"><span class="pn">TimeManagementPeriodicity</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;1000</span><span class="pdef">100</span><span class="pdesc">Time in ms for TimeManagement periodicity.</span></div>
+              <div class="pd-param"><span class="pn">TcsGenerateInitRunnable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">If TRUE, generates periodic runnable for RE_TCS_Init. Otherwise called by BswM.</span></div>
+              <div class="pd-param"><span class="pn">TcsInitFuncPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">1&ndash;5000</span><span class="pdef">1000</span><span class="pdesc">Periodicity in ms of RE_TCS_Init. Required when TcsGenerateInitRunnable=TRUE.</span></div>
+              <div class="pd-section-title">References</div>
+              <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+              <div class="pd-ref"><span class="pn">DID_F129_TotalVehicleTimeValue_Reference</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DCM DID 0xF129 Total Vehicle Time Value.</span></div>
+              <div class="pd-ref"><span class="pn">TcsDemTimestampRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dem &rarr; DemDidClass</span><span class="pdesc">Dem Timestamp reference.</span></div>
+              <div class="pd-ref"><span class="pn">TCSInitValueNvmRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">NvM &rarr; NvMBlockDescriptor</span><span class="pdesc">NVM Block for TCS Init time value.</span></div>
+              <div class="pd-ref"><span class="pn">TCS_TimeSyncMessageSignalRef</span><span class="type-badge type-ref">CHOICE</span><span class="pm">1..1</span><span class="pr">Com &rarr; ComSignal/ComGroupSignal</span><span class="pdesc">TimeSyncMessage signal reference.</span></div>
+              <div class="pd-ref"><span class="pn">TCS_ServiceBased_TimeSyncMessage_DataTypeMappingSet</span><span class="type-badge type-ref">FREF</span><span class="pm">0..1</span><span class="pr">DATA-TYPE-MAPPING-SET</span><span class="pdesc">Service-based data type mapping. Required when service-based ref is configured.</span></div>
+              <div class="pd-ref"><span class="pn">TCS_ServiceBased_TimeSyncMessage_Ref</span><span class="type-badge type-ref">FREF</span><span class="pm">0..1</span><span class="pr">IMPL-DATA-TYPE-ELEMENT</span><span class="pdesc">Service-based TimeSyncMessage. Presence activates service-based mode.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="explain-box">
+      <div class="title">How TCS ParamDef works with the module</div>
+      The timing parameters control how often TCS polls the master clock and processes time management.
+      References link TCS to DCM DIDs (vehicle time), DEM (timestamping), NvM (persistent storage), and COM (time sync messages).
+      The PermitExecutionMask defines which SUSD wakeup bits must be set before this module starts.
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ==================== DIAG ==================== -->
+<section id="mod-diag" class="module-section">
+<div class="module-card">
+  <div class="module-header" onclick="toggleModule(this)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge">DIAG</span>
+      <h2>Diagnostics</h2>
+    </div>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="module-body">
+    <div class="module-desc">
+      <strong>DIAG</strong> handles diagnostic services including MEC (Manufacturer Enable Counter) management, OTA PSF (Programming Session Flag), communication channel monitoring, and BswM mode control.
+      Its ParamDef has two top-level containers: <strong>DiagConfigSet</strong> (for comm channels) and <strong>DiagGeneral</strong> (for all runtime parameters and references).
+    </div>
+
+    <div class="pd-tree">
+      <div class="pd-node">
+        <div class="pd-header" onclick="toggleTree(this)">
+          <span class="pd-toggle">&#9654;</span>
+          <span class="pd-icon root">M</span>
+          <span class="pd-name">Diag</span>
+          <span class="pd-mult">0..1</span>
+          <span class="pd-brief">&mdash; Diagnostics module</span>
+        </div>
+        <div class="pd-children hidden">
+
+          <!-- DiagConfigSet -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span>
+              <span class="pd-icon container">C</span>
+              <span class="pd-name">DiagConfigSet</span>
+              <span class="pd-mult">1..1</span>
+              <span class="pd-brief">&mdash; communication channel config</span>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span>
+                  <span class="pd-icon sub">S</span>
+                  <span class="pd-name">CommChannels &rarr; CommChannel</span>
+                  <span class="pd-mult">1..*</span>
+                  <span class="pd-count">1 ref</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Each CommChannel references a ComM channel DIAG monitors for communication state.</div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-ref"><span class="pn">CommChannelRef</span><span class="type-badge type-ref">CHOICE</span><span class="pm">1..1</span><span class="pr">ComM &rarr; ComMChannel</span><span class="pdesc">ComM channel reference.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DiagGeneral -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span>
+              <span class="pd-icon container">C</span>
+              <span class="pd-name">DiagGeneral</span>
+              <span class="pd-mult">1..1</span>
+              <span class="pd-count">15 params</span>
+              <span class="pd-count">8 refs</span>
+              <span class="pd-brief">&mdash; addresses, feature flags, periodicities</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">General DIAG configuration: ECU address, MEC management, feature flags, runnable periodicities, DCM/NvM references.</div>
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">EcuAddress</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;255</span><span class="pdef">16</span><span class="pdesc">ECU diagnostic address on the network.</span></div>
+              <div class="pd-param"><span class="pn">MecInitialValue</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;254</span><span class="pdef">254</span><span class="pdesc">Manufacturer Enable Counter initial value.</span></div>
+              <div class="pd-param"><span class="pn">PermitExecutionMask</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">254</span><span class="pdesc">PermitExecution mask for DIAG startup.</span></div>
+              <div class="pd-param"><span class="pn">RMBA_Support</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Enables Read Memory By Address DCM service.</span></div>
+              <div class="pd-param"><span class="pn">DDDI_Support</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Enables Dynamically Define Data By Memory Address.</span></div>
+              <div class="pd-param"><span class="pn">DiagGenerateInitRunnable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">If TRUE, generates periodic runnable for DIAG_Init.</span></div>
+              <div class="pd-param"><span class="pn">MecStorageInHsm</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">TRUE: MEC in HSM. FALSE: MEC in NvM.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Diag_EnableDID_E0CC</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Enables DID 0xE0CC (SD Learning Table Status).</span></div>
+              <div class="pd-param"><span class="pn">HsmMecWriteTimeout</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">100&ndash;10000</span><span class="pdef">200</span><span class="pdesc">HSM MEC write polling timeout in ms.</span></div>
+              <div class="pd-param"><span class="pn">DIAG_TE_Runnable_DIAG_Init_Period</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">1&ndash;10000</span><span class="pdef">1000</span><span class="pdesc">Init runnable periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">DIAG_TE_Main_Period</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;10000</span><span class="pdef">100</span><span class="pdesc">DiagMain runnable periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">DIAG_TE_Shutdown_Permission_Period</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;10000</span><span class="pdef">100</span><span class="pdesc">ShutdownPermission runnable periodicity.</span></div>
+              <div class="pd-param"><span class="pn">DIAG_TE_BswM_ModeUser_Period</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;10000</span><span class="pdef">100</span><span class="pdesc">BswMModeUser runnable periodicity.</span></div>
+              <div class="pd-param"><span class="pn">DIAG_TE_MEC_Handler_Period</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;10000</span><span class="pdef">100</span><span class="pdesc">MecHandler runnable periodicity.</span></div>
+              <div class="pd-param"><span class="pn">DIAG_TE_OTA_PSF_Period</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;10000</span><span class="pdef">100</span><span class="pdesc">OtaPsf runnable periodicity.</span></div>
+              <div class="pd-section-title">References</div>
+              <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+              <div class="pd-ref"><span class="pn">DIAG_DID_F1A0_MEC_Reference</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspData</span><span class="pdesc">DCM MEC value data.</span></div>
+              <div class="pd-ref"><span class="pn">DIAG_DID_F1B0_Reference</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">Dcm &rarr; DcmDspData</span><span class="pdesc">DCM DID F1B0 data.</span></div>
+              <div class="pd-ref"><span class="pn">DIAG_DID_E0CC_Reference</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">Dcm &rarr; DcmDspData</span><span class="pdesc">DID E0CC (Learning Table Status).</span></div>
+              <div class="pd-ref"><span class="pn">DIAG_MEC_NvMRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">NvM &rarr; NvMBlockDescriptor</span><span class="pdesc">NvM MEC block.</span></div>
+              <div class="pd-ref"><span class="pn">DIAG_OTA_PSF_NvMRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">NvM &rarr; NvMBlockDescriptor</span><span class="pdesc">NvM OTA PSF block.</span></div>
+              <div class="pd-ref"><span class="pn">DIAG_BSPMP_RmtProgmActvAuthRef</span><span class="type-badge type-ref">CHOICE</span><span class="pm">1..1</span><span class="pr">Com &rarr; ComSignal/ComGroupSignal</span><span class="pdesc">Remote Programming Active Authenticated signal.</span></div>
+              <div class="pd-ref"><span class="pn">DIAG_ServiceBased_OTA_DataTypeMappingSet</span><span class="type-badge type-ref">FREF</span><span class="pm">0..1</span><span class="pr">DATA-TYPE-MAPPING-SET</span><span class="pdesc">OTA service-based data type mapping.</span></div>
+              <div class="pd-ref"><span class="pn">DIAG_ServiceBased_OTA_Ref</span><span class="type-badge type-ref">FREF</span><span class="pm">0..1</span><span class="pr">IMPL-DATA-TYPE-ELEMENT</span><span class="pdesc">Service-Based OTA reference.</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <div class="explain-box">
+      <div class="title">How DIAG ParamDef works with the module</div>
+      <strong>DiagConfigSet</strong> defines ComM channels for bus state monitoring.
+      <strong>DiagGeneral</strong> controls ECU address, MEC (HSM/NvM), feature flags (RMBA, DDDI, E0CC), and 6 runnable periodicities.
+      References connect to DCM data, NvM blocks, and COM signals for OTA/remote programming.
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ==================== PNC ==================== -->
+<section id="mod-pnc" class="module-section">
+<div class="module-card">
+  <div class="module-header" onclick="toggleModule(this)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge">PNC</span>
+      <h2>Partial Network Controller</h2>
+    </div>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="module-body">
+    <div class="module-desc">
+      <strong>PNC</strong> manages Partial Networks (PNs), handling activation/deactivation of network segments based on sensors and signals.
+      It coordinates Rx/Tx PDU groups, deadline monitoring timers, and DTC reporting for each PN.
+      The ParamDef has two top-level containers: <strong>PNCConfigSet</strong> (per-PN configuration) and <strong>PNCGeneral</strong> (global timing and mode settings).
+    </div>
+
+    <div class="pd-tree">
+      <div class="pd-node">
+        <div class="pd-header" onclick="toggleTree(this)">
+          <span class="pd-toggle">&#9654;</span>
+          <span class="pd-icon root">M</span>
+          <span class="pd-name">PNC</span>
+          <span class="pd-mult">0..1</span>
+          <span class="pd-brief">&mdash; Partial Network Controller module</span>
+        </div>
+        <div class="pd-children hidden">
+
+          <!-- PNCConfigSet -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span>
+              <span class="pd-icon container">C</span>
+              <span class="pd-name">PNCConfigSet</span>
+              <span class="pd-mult">1..1</span>
+              <span class="pd-brief">&mdash; per-PN configuration</span>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span>
+                  <span class="pd-icon sub">S</span>
+                  <span class="pd-name">SUM_PNC_PARTIAL_NETWORK_PARAMETER</span>
+                  <span class="pd-mult">1..*</span>
+                  <span class="pd-count">7 params</span>
+                  <span class="pd-count">2 refs</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">One instance per Partial Network. Defines PN-specific activation, timing, and references.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">IsRxEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Creates RxPDU/RxPduGroup interfaces for this PN.</span></div>
+                  <div class="pd-param"><span class="pn">IsTxEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Creates TxPDU/TxPduGroup interfaces for this PN.</span></div>
+                  <div class="pd-param"><span class="pn">Number_of_PNC_Activation_Sensors</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">1</span><span class="pdesc">Number of activation sensors per PN.</span></div>
+                  <div class="pd-param"><span class="pn">Number_of_PNC_Activation_Signals</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">1</span><span class="pdesc">Number of activation signals per PN.</span></div>
+                  <div class="pd-param"><span class="pn">SUM_PN_DM_Timer</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;8000</span><span class="pdef">7000</span><span class="pdesc">Deadline monitoring deactivation timer (ms).</span></div>
+                  <div class="pd-param"><span class="pn">SUM_PN_DTC_TIMER</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;5000</span><span class="pdef">5000</span><span class="pdesc">DTC reporting frequency timer (ms).</span></div>
+                  <div class="pd-param"><span class="pn">PartialNetworkName</span><span class="type-badge type-enum">ENUM</span><span class="pm">0..1</span><span class="pr">All Nodes, Wireless Charging, ...</span><span class="pdef">&mdash;</span><span class="pdesc">Name/identifier of the Partial Network.</span></div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-ref"><span class="pn">ComM_PNC_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">ComM &rarr; ComMPnc</span><span class="pdesc">ComM PNC configuration reference.</span></div>
+                  <div class="pd-ref"><span class="pn">Repeat_Message_Time_Ref</span><span class="type-badge type-ref">CHOICE</span><span class="pm">1..1</span><span class="pr">CanNm/UdpNm &rarr; ChannelConfig</span><span class="pdesc">Repeat Message State timeout value.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PNCGeneral -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span>
+              <span class="pd-icon container">C</span>
+              <span class="pd-name">PNCGeneral</span>
+              <span class="pd-mult">1..1</span>
+              <span class="pd-count">15 params</span>
+              <span class="pd-count">1 ref</span>
+              <span class="pd-brief">&mdash; global timing, execution, channel mapping</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">Global PNC timing, record type config, execution settings, and ComM channel mappings.</div>
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">SUM_PNC_ACTIVE_SYNCH_TIME</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;100</span><span class="pdef">60</span><span class="pdesc">Tx PDU group activation time after local activation (ms).</span></div>
+              <div class="pd-param"><span class="pn">SUM_PNC_PASSIVE_SYNCH_TIME</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;100</span><span class="pdef">10</span><span class="pdesc">Tx PDU group activation time after remote activation (ms).</span></div>
+              <div class="pd-param"><span class="pn">PNC_t_Activation_Req_Timer</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;100</span><span class="pdef">10</span><span class="pdesc">PN activation verification timer (ms).</span></div>
+              <div class="pd-param"><span class="pn">PNC_PermitExecution_Mask</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">190</span><span class="pdesc">PermitExecution mask for PNC startup.</span></div>
+              <div class="pd-param"><span class="pn">Number_of_Retries</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;50</span><span class="pdef">1</span><span class="pdesc">Number of activation retries.</span></div>
+              <div class="pd-param"><span class="pn">SUM_PN_Coordinator_Node_ID</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">69</span><span class="pdesc">ECU ID (NM PDU) for CGM deadline monitoring.</span></div>
+              <div class="pd-param"><span class="pn">PNC_t_RemoteSignals_Periodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;100</span><span class="pdef">12.5</span><span class="pdesc">Activation Signal polling periodicity (ms).</span></div>
+              <div class="pd-param"><span class="pn">PNC_t_MainFunction_Periodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;100</span><span class="pdef">12.5</span><span class="pdesc">PNC state change polling periodicity (ms).</span></div>
+              <div class="pd-param"><span class="pn">PNC_t_PNsPNsStatusMonitoring_Periodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;100</span><span class="pdef">12.5</span><span class="pdesc">PN status monitoring periodicity (ms).</span></div>
+              <div class="pd-param"><span class="pn">Shutdown_permission_SUSD_Periodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;100</span><span class="pdef">10</span><span class="pdesc">Shutdown_permission_SUSD runnable periodicity.</span></div>
+              <div class="pd-param"><span class="pn">Sum_PNC_Local_RecordID_Type</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">Enumerated, BitMapped</span><span class="pdef">Enumerated</span><span class="pdesc">Record store type for local PN.</span></div>
+              <div class="pd-param"><span class="pn">AR_GMSUM_4_2_X_SUPPORT</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">ComM version support (PncId range).</span></div>
+              <div class="pd-param"><span class="pn">PncGenerateInitRunnable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Generate periodic init runnable.</span></div>
+              <div class="pd-param"><span class="pn">PncInitFuncPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">1&ndash;5000</span><span class="pdef">1000</span><span class="pdesc">Init runnable periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">ComMPncIdLongRangeSupport</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">If true, ComMPncId starts from 0.</span></div>
+              <div class="pd-section-title">References</div>
+              <div class="pd-ref"><span class="pn">SSFMConfigSet_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">SSFM &rarr; Sum_Ssfm_ConfigSet</span><span class="pdesc">SSFM ConfigSet for PN status coordination.</span></div>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span>
+                  <span class="pd-icon sub">S</span>
+                  <span class="pd-name">ComM_PNC_Channel</span>
+                  <span class="pd-mult">1..8</span>
+                  <span class="pd-count">1 param</span>
+                  <span class="pd-count">1 ref</span>
+                  <span class="pd-brief">&mdash; channel-to-CAN mapping</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Maps ComM channels to CAN channel numbers. Up to 8 channels.</div>
+                  <div class="pd-param"><span class="pn">CAN_Channel_Number</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;7</span><span class="pdef">0</span><span class="pdesc">CAN number for this ComM channel.</span></div>
+                  <div class="pd-ref"><span class="pn">ComM_Channel_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">ComM &rarr; ComMChannel</span><span class="pdesc">ComM channel reference.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <div class="explain-box">
+      <div class="title">How PNC ParamDef works with the module</div>
+      Each PN gets its own <strong>SUM_PNC_PARTIAL_NETWORK_PARAMETER</strong> instance for per-PN Rx/Tx, sensors/signals, and DM/DTC timing.
+      <strong>PNCGeneral</strong> defines global sync timing, execution mask, retry logic, and 4 runnable periodicities.
+      <strong>ComM_PNC_Channel</strong> (1..8) maps ComM channels to CAN numbers.
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ==================== SrvcMgr ==================== -->
+<section id="mod-srvcmgr" class="module-section">
+<div class="module-card">
+  <div class="module-header" onclick="toggleModule(this)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge">SrvcMgr</span>
+      <h2>Service Manager</h2>
+    </div>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="module-body">
+    <div class="module-desc">
+      <strong>SrvcMgr</strong> (Service Manager) manages the Service Discovery Learning Table - it handles learning sessions, tracks propulsion system active status, and monitors vehicle speed.
+      It coordinates with DCM DIDs (E0CC, E0CD, E0CE) and RIDs (0654, 0612) for diagnostic interactions.
+    </div>
+
+    <div class="pd-tree">
+      <div class="pd-node">
+        <div class="pd-header" onclick="toggleTree(this)">
+          <span class="pd-toggle">&#9654;</span>
+          <span class="pd-icon root">M</span>
+          <span class="pd-name">SrvcMgr</span>
+          <span class="pd-mult">0..1</span>
+          <span class="pd-brief">&mdash; Service Manager module</span>
+        </div>
+        <div class="pd-children hidden">
+
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span>
+              <span class="pd-icon container">C</span>
+              <span class="pd-name">Sum_SrvcMgr_General</span>
+              <span class="pd-mult">1..1</span>
+              <span class="pd-count">4 params</span>
+              <span class="pd-brief">&mdash; execution mask, periodicities, init</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">Sum_SrvcMgr_PermitExecutionMask</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;255</span><span class="pdef">&mdash;</span><span class="pdesc">PermitExecution mask for SrvcMgr.</span></div>
+              <div class="pd-param"><span class="pn">Sum_SrvcMgr_ExecutionManagerPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;65535</span><span class="pdef">100</span><span class="pdesc">Execution Manager Runnable period (ms).</span></div>
+              <div class="pd-param"><span class="pn">Sum_SrvcMgr_GenerateInitRunnable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Generate periodic runnable for RE_SrvcMgr_Init.</span></div>
+              <div class="pd-param"><span class="pn">Sum_SrvcMgr_InitFuncPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">1&ndash;5000</span><span class="pdef">1000</span><span class="pdesc">Init runnable periodicity (ms).</span></div>
+            </div>
+          </div>
+
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span>
+              <span class="pd-icon container">C</span>
+              <span class="pd-name">Sum_SrvcMgr_ConfigSet</span>
+              <span class="pd-mult">1..1</span>
+              <span class="pd-brief">&mdash; DCM references</span>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span>
+                  <span class="pd-icon sub">S</span>
+                  <span class="pd-name">Sum_SrvcMgr_DcmReferences</span>
+                  <span class="pd-mult">1..1</span>
+                  <span class="pd-count">10 refs</span>
+                  <span class="pd-brief">&mdash; DID/RID, COM, ServiceBased refs</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">All DCM DID/RID references and COM signal references for the Service Manager.</div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SrvcMgr_Did_E0CC_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DID E0CC (Learning Table Status).</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SrvcMgr_Did_E0CD_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DID E0CD (Incomplete LT - Client).</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SrvcMgr_Did_E0CE_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DID E0CE (Incomplete LT - Server).</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SrvcMgr_Rid_0654_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspRoutine</span><span class="pdesc">RID 0654 (trigger Learning Session).</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SrvcMgr_Rid_0612_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspRoutine</span><span class="pdesc">RID 0612 (Retrieve Learning Table).</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SrvcMgr_Sig_PropSysActv_Ref</span><span class="type-badge type-ref">CHOICE</span><span class="pm">1..1</span><span class="pr">Com &rarr; ComSignal/ComGroupSignal</span><span class="pdesc">Propulsion System Active signal.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref</span><span class="type-badge type-ref">CHOICE</span><span class="pm">1..1</span><span class="pr">Com &rarr; ComSignal/ComGroupSignal</span><span class="pdesc">Vehicle Speed Average Driven signal.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SrvcMgr_ServiceBased_DataTypeMappingSet</span><span class="type-badge type-ref">FREF</span><span class="pm">0..*</span><span class="pr">DATA-TYPE-MAPPING-SET</span><span class="pdesc">Service-based data type mapping.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SrvcMgr_ServiceBased_PropSysActv_Ref</span><span class="type-badge type-ref">FREF</span><span class="pm">0..1</span><span class="pr">IMPL-DATA-TYPE-ELEMENT</span><span class="pdesc">Service-Based PSA reference.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref</span><span class="type-badge type-ref">FREF</span><span class="pm">0..1</span><span class="pr">IMPL-DATA-TYPE-ELEMENT</span><span class="pdesc">Service-Based VehSpeed reference.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <div class="explain-box">
+      <div class="title">How SrvcMgr ParamDef works with the module</div>
+      DID references (E0CC/E0CD/E0CE) for Learning Table diagnostics, RID references (0654/0612) for session control.
+      COM signals (PropSysActv, VehSpdAvgDrvn) provide runtime inputs. Service-Based refs support SOME/IP architectures.
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ==================== SPM ==================== -->
+<section id="mod-spm" class="module-section">
+<div class="module-card">
+  <div class="module-header" onclick="toggleModule(this)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge">SPM</span>
+      <h2>Software/Power Manager</h2>
+    </div>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="module-body">
+    <div class="module-desc">
+      <strong>SPM</strong> manages power profiles, target device wake-up sequences, and network VLAN communications.
+      It has the most complex ParamDef with 14 containers covering general settings, power profiles, profile dependencies, target/waking devices, and wake-up sequences.
+    </div>
+
+    <div class="pd-tree">
+      <div class="pd-node">
+        <div class="pd-header" onclick="toggleTree(this)">
+          <span class="pd-toggle">&#9654;</span>
+          <span class="pd-icon root">M</span>
+          <span class="pd-name">Spm</span>
+          <span class="pd-mult">0..1</span>
+          <span class="pd-brief">&mdash; Software/Power Manager (45 params, 30 refs, 16 containers)</span>
+        </div>
+        <div class="pd-children hidden">
+
+          <!-- SpmGeneral -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span>
+              <span class="pd-icon container">C</span>
+              <span class="pd-name">SpmGeneral</span>
+              <span class="pd-mult">1..1</span>
+              <span class="pd-count">14 params</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">General SPM timing, execution, queue sizing, and calibration parameters.</div>
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">SpmSMMainFuncPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">Min: 5.0</span><span class="pdef">10.0</span><span class="pdesc">Software Manager main function periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">SpmPMMainFuncPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">Min: 5.0</span><span class="pdef">5.0</span><span class="pdesc">Power Manager main function periodicity in ms (currently fixed to 5ms).</span></div>
+              <div class="pd-param"><span class="pn">SpmBurstPhsPeriodicity</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">Min: 5</span><span class="pdef">5</span><span class="pdesc">Burst phase message periodicity in ms (first 3 counts).</span></div>
+              <div class="pd-param"><span class="pn">SpmPermitExecutionMask</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">254</span><span class="pdesc">Bitmap defining wakeup sources for SPM execution.</span></div>
+              <div class="pd-param"><span class="pn">SpmWkUpHelperFunction</span><span class="type-badge type-str">STRING</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">Custom wake-up helper function name. For intermediate nodes only.</span></div>
+              <div class="pd-param"><span class="pn">SpmGenerateInitRunnable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">False</span><span class="pdesc">If TRUE, generates SPM init runnable. Otherwise called by BswM.</span></div>
+              <div class="pd-param"><span class="pn">SpmInitFuncPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">1.0&ndash;5000.0</span><span class="pdef">1000.0</span><span class="pdesc">Init runnable periodicity in ms. Required when SpmGenerateInitRunnable = TRUE.</span></div>
+              <div class="pd-param"><span class="pn">Spm_SmFrame_QueueLength</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">0</span><span class="pdesc">Max queue length of SM Frame Rx messages.</span></div>
+              <div class="pd-param"><span class="pn">Spm_PmHeartbeat_QueueLength</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">0</span><span class="pdesc">Max queue length of PM heartbeat Rx messages.</span></div>
+              <div class="pd-param"><span class="pn">Spm_PmETHwakeUpUNIC_QueueLength</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">0</span><span class="pdesc">Max queue length of PM ETH wakeup Unicast Rx messages.</span></div>
+              <div class="pd-param"><span class="pn">Spm_PmETHwakeUpMULTIC_QueueLength</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">0</span><span class="pdesc">Max queue length of PM ETH wakeup Multicast Rx messages.</span></div>
+              <div class="pd-param"><span class="pn">Spm_LocalRequests_QueueLength</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">0</span><span class="pdesc">Max queue length of local activation/deactivation + diagnostic requests.</span></div>
+              <div class="pd-param"><span class="pn">SpmHBShutdownDelayMs</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65000</span><span class="pdef">2000</span><span class="pdesc">Time in ms PM waits after last burst HeartBeat before allowing shutdown.</span></div>
+              <div class="pd-param"><span class="pn">SpmSMStayAwakeTimeMs</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65000</span><span class="pdef">2000</span><span class="pdesc">Time in ms SM stays awake if only requester is in fault/restart state.</span></div>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span>
+                  <span class="pd-icon sub">S</span>
+                  <span class="pd-name">SpmDiagnostic</span>
+                  <span class="pd-mult">0..1</span>
+                  <span class="pd-count">5 refs</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">DCM DID and NvM references for SPM diagnostic data.</div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">spm_DID_E0DD_...DCM_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DID 0xE0DD Activation Profile Activation Status.</span></div>
+                  <div class="pd-ref"><span class="pn">SpmDID0xE0DEDcmRef</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DID 0xE0DE Local Activated Profile Off Power Mode Records.</span></div>
+                  <div class="pd-ref"><span class="pn">SpmDID0xE0DFDcmRef</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DID 0xE0DF Remote Activated Profile Off Power Mode Records.</span></div>
+                  <div class="pd-ref"><span class="pn">SpmDID0xE0DENvmRef</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">NvM &rarr; NvMBlockDescriptor</span><span class="pdesc">NvM block for DID 0xE0DE local activation records.</span></div>
+                  <div class="pd-ref"><span class="pn">SpmDID0xE0DFNvmRef</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">NvM &rarr; NvMBlockDescriptor</span><span class="pdesc">NvM block for DID 0xE0DF remote activation records.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header leaf"><span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmCANWkUpFrmRef</span><span class="pd-mult">0..1</span><span class="pd-brief">&mdash; CAN wake-up frame references</span></div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header leaf"><span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmVLANCom</span><span class="pd-mult">1..*</span><span class="pd-brief">&mdash; per-VLAN communication (Heartbeat, WakeupFrames, SwrMgrInfo)</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SpmConfigSet -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span>
+              <span class="pd-icon container">C</span>
+              <span class="pd-name">SpmConfigSet</span>
+              <span class="pd-mult">1..1</span>
+              <span class="pd-brief">&mdash; power profiles, power graph, target devices</span>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span>
+                  <span class="pd-icon sub">S</span>
+                  <span class="pd-name">SpmPowPrf</span>
+                  <span class="pd-mult">1..*</span>
+                  <span class="pd-count">10 params</span>
+                  <span class="pd-brief">&mdash; power profiles</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Core SPM container defining each power profile with service IDs, priorities, activation rules, and COM PDU group references.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">SpmSrvcAndInstID</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">Max: 4294967291</span><span class="pdef">&mdash;</span><span class="pdesc">Service and Instance ID for the profile.</span></div>
+                  <div class="pd-param"><span class="pn">SpmProfNumber</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">&mdash;</span><span class="pdesc">Profile number.</span></div>
+                  <div class="pd-param"><span class="pn">SpmProfileIsLocal</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">False</span><span class="pdesc">Whether this profile is local to the ECU.</span></div>
+                  <div class="pd-param"><span class="pn">SpmLocActivationAllowed</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">False</span><span class="pdesc">Whether local activation is allowed.</span></div>
+                  <div class="pd-param"><span class="pn">SpmProfBitMapIndex</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;511</span><span class="pdef">&mdash;</span><span class="pdesc">Bitmap index for profile status reported by DID E0DD.</span></div>
+                  <div class="pd-param"><span class="pn">SpmApplIntfID</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;65535</span><span class="pdef">&mdash;</span><span class="pdesc">Application interface ID for the profile.</span></div>
+                  <div class="pd-param"><span class="pn">SpmProfActivationTimeOutVehOff</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;65535</span><span class="pdef">0</span><span class="pdesc">Activation timeout when vehicle is OFF.</span></div>
+                  <div class="pd-param"><span class="pn">SpmVehDefActPriorON</span><span class="type-badge type-enum">ENUM</span><span class="pm">0..1</span><span class="pr">NOTAPP..ACCESS</span><span class="pdef">SPM_PRF_AP_NOTAPP</span><span class="pdesc">Default activation priority when vehicle is ON.</span></div>
+                  <div class="pd-param"><span class="pn">SpmVehDefActPriorOFF</span><span class="type-badge type-enum">ENUM</span><span class="pm">0..1</span><span class="pr">NOTAPP..EMERGENCY</span><span class="pdef">SPM_PRF_AP_NOTAPP</span><span class="pdesc">Default activation priority when vehicle is OFF.</span></div>
+                  <div class="pd-param"><span class="pn">SpmComIPduGroupEvnt_Tx/Rx</span><span class="type-badge type-ref">REF</span><span class="pm">0..*</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">References to COM IPdu group events for Tx and Rx.</span></div>
+                </div>
+                <div class="pd-children hidden">
+                  <div class="pd-node"><div class="pd-header leaf"><span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmProfileSwDep</span><span class="pd-mult">0..*</span><span class="pd-brief">&mdash; profile software dependencies</span></div></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span>
+                  <span class="pd-icon sub">S</span>
+                  <span class="pd-name">SpmPgttEntries</span>
+                  <span class="pd-mult">1..1</span>
+                  <span class="pd-brief">&mdash; Power Graph / network topology</span>
+                </div>
+                <div class="pd-children hidden">
+                  <div class="pd-node">
+                    <div class="pd-header" onclick="toggleTree(this)">
+                      <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmTrgDvc</span><span class="pd-mult">1..*</span><span class="pd-count">6 params</span>
+                    </div>
+                    <div class="pd-body">
+                      <div class="pd-desc">Defines target devices that SPM can wake up, with DTC reporting and diagnostic addressing.</div>
+                      <div class="pd-section-title">Parameters</div>
+                      <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                      <div class="pd-param"><span class="pn">SpmTrgDvcID</span><span class="type-badge type-str">STRING</span><span class="pm">1..*</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">Target device identifier(s).</span></div>
+                      <div class="pd-param"><span class="pn">SpmTrgDvcDtcBaseID</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">&mdash;</span><span class="pdesc">DTC base ID for this target device.</span></div>
+                      <div class="pd-param"><span class="pn">SpmTrgDvcDtcTimeOut</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">&mdash;</span><span class="pdesc">DTC timeout for this target device.</span></div>
+                      <div class="pd-param"><span class="pn">SpmTrgDvcDiagAddr</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;255</span><span class="pdef">0</span><span class="pdesc">Diagnostic address for diagnostic sessions.</span></div>
+                      <div class="pd-param"><span class="pn">SpmTrgDvcPowerOnDeviceRetryPeriodicity</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;65535</span><span class="pdef">10000</span><span class="pdesc">Periodicity in ms of PowerOnDevice retry.</span></div>
+                      <div class="pd-param"><span class="pn">SpmTrgDvcPowerOnDevice...OffandOnSequence</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1000</span><span class="pdesc">Wait time in ms between OFF and ON sequence during retry (&gt;250ms).</span></div>
+                    </div>
+                    <div class="pd-children hidden">
+                      <div class="pd-node"><div class="pd-header leaf"><span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmTrgDvcVariantHndlng</span><span class="pd-mult">0..*</span><span class="pd-brief">&mdash; per-variant wakeup config</span></div></div>
+                    </div>
+                  </div>
+                  <div class="pd-node"><div class="pd-header leaf"><span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmWkngDvc</span><span class="pd-mult">1..1</span><span class="pd-brief">&mdash; local node type (EDGE/INTERMEDIATE)</span></div></div>
+                  <div class="pd-node">
+                    <div class="pd-header" onclick="toggleTree(this)">
+                      <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmVariantCfg</span><span class="pd-mult">1..*</span><span class="pd-count">3 params</span>
+                    </div>
+                    <div class="pd-body">
+                      <div class="pd-desc">Hardware variant configuration. Defines wakeup frame/bit, intermediate node addresses, and per-VLAN heartbeat IPs.</div>
+                      <div class="pd-section-title">Parameters</div>
+                      <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                      <div class="pd-param"><span class="pn">SpmVariantWkupFrame</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">WKUP_FRM_A/B/C</span><span class="pdef">&mdash;</span><span class="pdesc">Wake-up frame for this variant.</span></div>
+                      <div class="pd-param"><span class="pn">SpmVariantWkupBit</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;63</span><span class="pdef">0</span><span class="pdesc">Wake-up bit position for this variant.</span></div>
+                      <div class="pd-param"><span class="pn">SpmVariantIntermediateDstAddr</span><span class="type-badge type-str">STRING</span><span class="pm">0..*</span><span class="pr">IPv4</span><span class="pdef">&mdash;</span><span class="pdesc">IP addresses of intermediate nodes for this variant.</span></div>
+                    </div>
+                    <div class="pd-children hidden">
+                      <div class="pd-node"><div class="pd-header leaf"><span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmVariantHBVLANCfg</span><span class="pd-mult">1..*</span><span class="pd-brief">&mdash; per-VLAN heartbeat IPs</span></div></div>
+                    </div>
+                  </div>
+                  <div class="pd-node">
+                    <div class="pd-header" onclick="toggleTree(this)">
+                      <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmWkUpSeq</span><span class="pd-mult">0..*</span><span class="pd-brief">&mdash; wake-up sequences</span>
+                    </div>
+                    <div class="pd-children hidden">
+                      <div class="pd-node">
+                        <div class="pd-header" onclick="toggleTree(this)">
+                          <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmWkUpStep</span><span class="pd-mult">1..*</span><span class="pd-count">4 params</span>
+                        </div>
+                        <div class="pd-body">
+                          <div class="pd-desc">Individual steps in a wake-up sequence, specifying command type, value, and delay.</div>
+                          <div class="pd-section-title">Parameters</div>
+                          <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                          <div class="pd-param"><span class="pn">SpmStepID</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;255</span><span class="pdef">&mdash;</span><span class="pdesc">Step identifier in the sequence.</span></div>
+                          <div class="pd-param"><span class="pn">SpmCommandType</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">TC10_SWTCH, ETH/CAN_WKUP, LV_GPIO</span><span class="pdef">&mdash;</span><span class="pdesc">Type of wake-up command to send.</span></div>
+                          <div class="pd-param"><span class="pn">SpmCommandValue</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">&mdash;</span><span class="pdesc">Value associated with the command.</span></div>
+                          <div class="pd-param"><span class="pn">SpmSeqStepDly</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">0</span><span class="pdesc">Delay in ms before executing this step.</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="pd-node"><div class="pd-header leaf"><span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SpmLowVoltagePowerInfo</span><span class="pd-mult">0..1</span><span class="pd-brief">&mdash; LV Energy Optimizer integration</span></div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="explain-box">
+      <div class="title">How SPM ParamDef    <div class="explain-box">
+      <div class="title">How SPM ParamDef works with the module</div>
+      SPM is the most configuration-heavy SUM module (45 params, 30 refs, 16 containers).
+      <br><br>
+      <strong>SpmConfigSet</strong> contains the three core subsystems:<br>
+      1. <strong>Power Profiles (SpmPowPrf)</strong> - define services/features needing power, their activation priorities (NOTAPP through EMERGENCY), and COM IPdu group references for enabling/disabling network Tx/Rx per profile. Profiles can have software dependencies (SpmProfileSwDep).<br>
+      2. <strong>Power Graph (SpmPgttEntries)</strong> - the network topology: target devices (with IPv4 addresses, DTC reporting), waking device config (EDGE vs INTERMEDIATE node), HW variants (SpmVariantCfg with per-VLAN heartbeat IPs), and wake-up sequences.<br>
+      3. <strong>LowVoltagePowerInfo</strong> - optional LV Energy Optimizer integration.<br><br>
+      <strong>SpmGeneral</strong> provides timing (SM/PM periodicities), queue sizes for Rx message buffering, calibration timers (HeartBeat shutdown delay, SM stay-awake time), and sub-containers for diagnostics (DID E0DD/E0DE/E0DF), CAN wake-up frame references, and VLAN communication interfaces (heartbeat, wakeup frames, SW manager info - each with Tx/Rx FOREIGN-REFs to IMPLEMENTATION-DATA-TYPE and SENDER-RECEIVER-INTERFACE).
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ==================== LNM ==================== -->
+<section id="mod-lnm" class="module-section">
+<div class="module-card">
+  <div class="module-header" onclick="toggleModule(this)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge">LNM</span>
+      <h2>LIN Network Manager</h2>
+    </div>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="module-body">
+    <div class="module-desc">
+      <strong>LNM</strong> manages the local network schedule states and transitions.
+      It implements a configurable state machine for network scheduling with arbitration logic based on inputs, conditions, and rules.
+      The ParamDef defines a rich hierarchy of containers for building project-specific network management logic.
+    </div>
+
+    <div class="pd-tree">
+      <div class="pd-node">
+        <div class="pd-header" onclick="toggleTree(this)">
+          <span class="pd-toggle">&#9654;</span><span class="pd-icon root">M</span><span class="pd-name">LNM</span><span class="pd-mult">0..1</span>
+          <span class="pd-brief">&mdash; LIN Network Manager</span>
+        </div>
+        <div class="pd-children hidden">
+
+          <!-- LNM_General -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">LNM_General</span><span class="pd-mult">1..1</span><span class="pd-count">15 params</span><span class="pd-count">1 ref</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">General configuration parameters of SUM_LNM - periodicities, execution mask, wakeup delays, CyberFill, and initialization settings.</div>
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">LNM_MainFunction_Period</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0.001&ndash;0.2</span><span class="pdef">0.1</span><span class="pdesc">Time in sec for the periodicity of the MainFunction runnable.</span></div>
+              <div class="pd-param"><span class="pn">LNM_NetworkStatus_Period</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0.001&ndash;0.2</span><span class="pdef">0.1</span><span class="pdesc">Time in sec for the periodicity of NetworkStatus.</span></div>
+              <div class="pd-param"><span class="pn">LNM_ScheduleManagement_Period</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0.001&ndash;0.2</span><span class="pdef">0.1</span><span class="pdesc">Time in sec for the periodicity of ScheduleManagement.</span></div>
+              <div class="pd-param"><span class="pn">LNM_NetworkFaultManager_Period</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0.001&ndash;0.2</span><span class="pdef">0.1</span><span class="pdesc">Time in sec for the periodicity of NetworkFaultManager.</span></div>
+              <div class="pd-param"><span class="pn">LNM_PermitExecution_Mask</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">254</span><span class="pdesc">Mask checked by SUM_LNM to execute its functions.</span></div>
+              <div class="pd-param"><span class="pn">LNM_TWuDelay_Commander</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;200</span><span class="pdef">100</span><span class="pdesc">Delay in ms before schedule activation when wakeup requested by Commander.</span></div>
+              <div class="pd-param"><span class="pn">LNM_TWuDelay_Responder</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;200</span><span class="pdef">100</span><span class="pdesc">Delay in ms before schedule activation when wakeup requested by Responder.</span></div>
+              <div class="pd-param"><span class="pn">LNM_WupTxRetries_Commander</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">10</span><span class="pdesc">Retries before Loss of Communication notification.</span></div>
+              <div class="pd-param"><span class="pn">CyberFill_Supported</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Enable CyberFill value support.</span></div>
+              <div class="pd-param"><span class="pn">LNM_CyberFillValue</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">0</span><span class="pdesc">CyberFill value provided by SUM_LNM at initialization.</span></div>
+              <div class="pd-param"><span class="pn">LnmGenerateInitRunnable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">If TRUE, generates periodic runnable for init().</span></div>
+              <div class="pd-param"><span class="pn">LnmInitFuncPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">1.0&ndash;5000.0</span><span class="pdef">1000.0</span><span class="pdesc">Periodicity in ms of RE_Lnm_Init.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Lnm_ConfGen_Enabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">If true, ConfGen generates Sum_Lnm_SWCD.arxml.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Lnm_ScheduleChannelUserFuncs_Enabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Enable user functions for changing Schedule Table and Channel State.</span></div>
+              <div class="pd-param"><span class="pn">lNM_C_DTC_LostCommWithLinResp_Enabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Calibration parameter to enable/disable Lost Communication with LIN Responder DTC.</span></div>
+              <div class="pd-section-title">References</div>
+              <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+              <div class="pd-ref"><span class="pn">LNM_DID_F1BE_Reference</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">Reference to DCM service for DID F1BE.</span></div>
+            </div>
+          </div>
+
+          <!-- LNM_Arbitration -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">LNM_Arbitration</span><span class="pd-mult">0..1</span>
+              <span class="pd-brief">&mdash; project-specific arbitration logic</span>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">LNM_ScheduleSignal</span><span class="pd-mult">0..*</span><span class="pd-count">2 params</span><span class="pd-brief">&mdash; under LNM_Inputs</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Defines schedule signals used as inputs to the arbitration logic.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">LNM_ScheduleSignalSource</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">SWC, Com, VPM</span><span class="pdef">SWC</span><span class="pdesc">Source of the schedule signal.</span></div>
+                  <div class="pd-param"><span class="pn">LNM_ScheduleSignalType</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">boolean, uint8, uint16</span><span class="pdef">uint8</span><span class="pdesc">Data type of the schedule signal.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">LNM_Condition</span><span class="pd-mult">1..*</span><span class="pd-count">3 params</span><span class="pd-count">1 ref</span><span class="pd-brief">&mdash; under LNM_Conditions</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Simple logic operation comparing a single input against a value.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">LNM_CompareOperator</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">==, !=, &lt;, &gt;, &lt;=, &gt;=</span><span class="pdef">==</span><span class="pdesc">Compare operation to apply.</span></div>
+                  <div class="pd-param"><span class="pn">LNM_CompareValue</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">0</span><span class="pdesc">Value compared against the input.</span></div>
+                  <div class="pd-param"><span class="pn">LNM_CompareVPMValue</span><span class="type-badge type-enum">ENUM</span><span class="pm">0..1</span><span class="pr">OFF, ACCESSORY, RUN, etc.</span><span class="pdef">&mdash;</span><span class="pdesc">Compare value for VPM mode inputs.</span></div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">LNM_InputRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">LNM_ScheduleSignal</span><span class="pdesc">Reference to the input to compare.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">LNM_Rule</span><span class="pd-mult">0..*</span><span class="pd-count">1 param</span><span class="pd-count">1 ref</span><span class="pd-brief">&mdash; under LNM_Rules</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Complex logic combining conditions and/or other rules.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">LNM_LogicOperator</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">&amp; (AND), | (OR)</span><span class="pdef">&amp;</span><span class="pdesc">Logic operator relating the conditions.</span></div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">LNM_ConditionRef</span><span class="type-badge type-ref">CHOICE-REF</span><span class="pm">0..*</span><span class="pr">LNM_Condition / LNM_Rule</span><span class="pdesc">Reference to Condition or Rule.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LNM_Networks -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">LNM_Networks</span><span class="pd-mult">1..1</span>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">LNMNetwork</span><span class="pd-mult">0..*</span><span class="pd-count">8 params</span><span class="pd-count">2 refs</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Per-LIN-network configuration: network ID, MSCL strategy, activation, and DTC settings.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">LNM_Network_ID</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;16</span><span class="pdef">1</span><span class="pdesc">Network ID (1-16). Needed for F1BE DID.</span></div>
+                  <div class="pd-param"><span class="pn">LNM_MSCL_Strategy</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">Calibration, Evaluation</span><span class="pdef">Calibration</span><span class="pdesc">Strategy used for MSCL.</span></div>
+                  <div class="pd-param"><span class="pn">LNM_ChannelEnable_InitValue</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Init value for calibration parameter enabling MSCL execution.</span></div>
+                  <div class="pd-param"><span class="pn">LNM_ActivationSignalType</span><span class="type-badge type-enum">ENUM</span><span class="pm">0..1</span><span class="pr">SWC, Com, Rule</span><span class="pdef">SWC</span><span class="pdesc">Source of the activation signal.</span></div>
+                  <div class="pd-param"><span class="pn">LNM_ActivationMask</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;255</span><span class="pdef">&mdash;</span><span class="pdesc">Bit mask for channel activation.</span></div>
+                  <div class="pd-param"><span class="pn">LNM_DeactivationMask</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;255</span><span class="pdef">&mdash;</span><span class="pdesc">Bit mask for channel deactivation.</span></div>
+                  <div class="pd-param"><span class="pn">LNM_C_DTC_LINBusOff</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Enable DTC for LIN Bus off.</span></div>
+                  <div class="pd-param"><span class="pn">LNM_C_PreSleepDelay</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;4000</span><span class="pdef">25</span><span class="pdesc">Delay in ms before transition to NULL schedule when SLEEP issued.</span></div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_LNM_LinSMNetworkId_ref</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">LinSM &rarr; LinSMChannel</span><span class="pdesc">Reference to the unique LIN network index.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_LNM_Rule_ref</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">LNM_Rule</span><span class="pdesc">Reference to the activation rule.</span></div>
+                </div>
+                <div class="pd-children hidden">
+                  <div class="pd-node">
+                    <div class="pd-header" onclick="toggleTree(this)">
+                      <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">LNM_Responders</span><span class="pd-mult">1..*</span><span class="pd-count">10 params</span>
+                    </div>
+                    <div class="pd-body">
+                      <div class="pd-desc">Configuration of LIN Responder devices. Handles MSCL, DTC, and IEF settings per responder.</div>
+                      <div class="pd-section-title">Parameters</div>
+                      <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                      <div class="pd-param"><span class="pn">LNM_MSCL_ByteIndex</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">MSCL_BYTE_1/2</span><span class="pdef">MSCL_BYTE_1</span><span class="pdesc">MSCL byte related to this Responder.</span></div>
+                      <div class="pd-param"><span class="pn">LNM_MSCL_BitIndex</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;7</span><span class="pdef">0</span><span class="pdesc">Bit index in the MSCL byte.</span></div>
+                      <div class="pd-param"><span class="pn">LNM_C_ResponderPresent_InitValue</span><span class="type-badge type-bool">BOOL</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Init value for MSCL via Calibration.</span></div>
+                      <div class="pd-param"><span class="pn">LNM_LossOfComm_withDevice_Timer</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">0</span><span class="pdesc">Timer for ERRH debouncing of Lost Communication.</span></div>
+                      <div class="pd-param"><span class="pn">LNM_Internal_Electronic_Failure_Supported</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Enable IEF DTC for this Responder.</span></div>
+                      <div class="pd-param"><span class="pn">LNM_IEF_APINFO2_Supported</span><span class="type-badge type-bool">BOOL</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Enable APINFO2 (Reset Status) for IEF.</span></div>
+                      <div class="pd-param"><span class="pn">LNM_IEF_Reset_Threshold</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">1&ndash;255</span><span class="pdef">3</span><span class="pdesc">Reset notification threshold before setting IEF DTC.</span></div>
+                      <div class="pd-param"><span class="pn">LNM_IEF_APINFO4_Supported</span><span class="type-badge type-bool">BOOL</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Enable APINFO4 (Application Status) for IEF.</span></div>
+                      <div class="pd-param"><span class="pn">LNM_Responder_Device_Not_Configured_Supported</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Enable Device Not Configured DTC.</span></div>
+                      <div class="pd-param"><span class="pn">LNM_Config_Retries</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;7</span><span class="pdef">3</span><span class="pdesc">Config retries before Device Not Configured DTC.</span></div>
+                    </div>
+                  </div>
+                  <div class="pd-node">
+                    <div class="pd-header" onclick="toggleTree(this)">
+                      <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">LNM_ScheduleManagement</span><span class="pd-mult">0..1</span>
+                    </div>
+                    <div class="pd-children hidden">
+                      <div class="pd-node">
+                        <div class="pd-header" onclick="toggleTree(this)">
+                          <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">LNM_ScheduleState</span><span class="pd-mult">0..*</span><span class="pd-count">1 ref</span>
+                        </div>
+                        <div class="pd-body">
+                          <div class="pd-desc">Configuration of a schedule state. Each state references a LinSM schedule.</div>
+                          <div class="pd-section-title">References</div>
+                          <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                          <div class="pd-ref"><span class="pn">LNM_ScheduleRef</span><span class="type-badge type-ref">CHOICE-REF</span><span class="pm">0..1</span><span class="pr">LinSM &rarr; LinSMSchedule</span><span class="pdesc">Reference to LinSM schedule for this state.</span></div>
+                        </div>
+                      </div>
+                      <div class="pd-node">
+                        <div class="pd-header" onclick="toggleTree(this)">
+                          <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">LNM_ScheduleTransition</span><span class="pd-mult">0..*</span><span class="pd-count">3 refs</span>
+                        </div>
+                        <div class="pd-body">
+                          <div class="pd-desc">Defines a state transition between schedule states, linking start/end states to a rule.</div>
+                          <div class="pd-section-title">References</div>
+                          <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                          <div class="pd-ref"><span class="pn">LNM_StartStateRef</span><span class="type-badge type-ref">CHOICE-REF</span><span class="pm">1..1</span><span class="pr">ScheduleState / StartState / SleepState</span><span class="pdesc">Starting state of the transition.</span></div>
+                          <div class="pd-ref"><span class="pn">LNM_EndStateRef</span><span class="type-badge type-ref">CHOICE-REF</span><span class="pm">1..1</span><span class="pr">ScheduleState / StartState / SleepState</span><span class="pdesc">End state of the transition.</span></div>
+                          <div class="pd-ref"><span class="pn">LNM_TransitionRuleRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">LNM_Rule</span><span class="pdesc">Rule that triggers this transition.</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="explain-box">
+      <div class="title">How LNM ParamDef    <div class="explain-box">
+      <div class="title">How LNM ParamDef works with the module</div>
+      LNM (LIN Network Manager) manages LIN bus networks with a layered configuration:
+      <br><br>
+      <strong>1. Inputs &rarr; Conditions &rarr; Rules</strong>: Schedule signals (from SWC, COM, or VPM) serve as inputs. Conditions compare inputs against values using operators (==, !=, &lt;, &gt;). Rules combine conditions with AND/OR logic.
+      <br><br>
+      <strong>2. Networks &rarr; Schedule States &rarr; Transitions</strong>: Each LIN network has its own schedule state machine. Transitions between states are triggered by Rules. States reference LinSM schedules.
+      <br><br>
+      <strong>3. Responders</strong>: Each network has LIN responder devices with MSCL (Master Schedule Control List) bit assignments, DTC configurations for loss-of-communication, and Internal Electronic Failure monitoring.
+      <br><br>
+      The wakeup delays (Commander/Responder) control timing when transitioning from sleep. The MSCL strategy (Calibration vs Evaluation) determines how responder presence is managed.
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ==================== SOH ==================== -->
+<section id="mod-soh" class="module-section">
+<div class="module-card">
+  <div class="module-header" onclick="toggleModule(this)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge">SOH</span>
+      <h2>State of Health</h2>
+    </div>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="module-body">
+    <div class="module-desc">
+      <strong>SOH</strong> monitors the "state of health" of ECU subsystems and communication interfaces.
+      It is the largest SUM ParamDef (182KB arxml, 33 containers, 66 params, 52 refs), reflecting its extensive monitoring across
+      resets, NvM, OS errors, communications, watchdog supervision, and platform shutdown.
+    </div>
+
+    <div class="pd-tree">
+      <div class="pd-node">
+        <div class="pd-header" onclick="toggleTree(this)">
+          <span class="pd-toggle">&#9654;</span><span class="pd-icon root">M</span><span class="pd-name">SOH</span><span class="pd-mult">0..1</span>
+          <span class="pd-brief">&mdash; State of Health (66 params, 52 refs, 33 containers)</span>
+        </div>
+        <div class="pd-children hidden">
+
+          <!-- SOHGeneral -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">SOHGeneral</span><span class="pd-mult">1..1</span><span class="pd-count">5 params + 21 flags</span><span class="pd-count">2 refs</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">General configuration: runnable periodicities, permit execution mask, initialization mode, and 21 boolean flags to enable/disable individual detector classes.</div>
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">SOH_RunnableSOHMainPeriod</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0.001&ndash;0.2 s</span><span class="pdef">0.1</span><span class="pdesc">Periodicity of Runnable_SOH_Main.</span></div>
+              <div class="pd-param"><span class="pn">SOH_RunnableSOHTimingPeriod</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0.001&ndash;0.2 s</span><span class="pdef">0.1</span><span class="pdesc">Periodicity of Runnable_SOH_Timing.</span></div>
+              <div class="pd-param"><span class="pn">SOH_PermitExecution_Mask</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">190</span><span class="pdesc">PermitExecution bitmask for SOH startup control.</span></div>
+              <div class="pd-param"><span class="pn">SohGenerateInitRunnable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">When TRUE, generates periodic runnable for init().</span></div>
+              <div class="pd-param"><span class="pn">SohInitFuncPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">1&ndash;5000 ms</span><span class="pdef">1000</span><span class="pdesc">Periodicity of Runnable_SOH_Init.</span></div>
+              <div class="pd-section-title">Detector Enable Flags (all BOOL, default: true)</div>
+              <div class="pd-hdr param-hdr"><span>Flag</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Enables</span></div>
+              <div class="pd-param"><span class="pn">SOH_StatNvM_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">NvM Status class detector</span></div>
+              <div class="pd-param"><span class="pn">SOH_ActNvM_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">NvM Action class detector</span></div>
+              <div class="pd-param"><span class="pn">SOH_PrivNvM_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">NvM Privilege class detector</span></div>
+              <div class="pd-param"><span class="pn">SOH_ExcepOS_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">OS HW Protection Exceptions</span></div>
+              <div class="pd-param"><span class="pn">SOH_ServOS_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">OS Service/Trusted Function Protection</span></div>
+              <div class="pd-param"><span class="pn">SOH_StackOS_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">OS Stack Fault detector</span></div>
+              <div class="pd-param"><span class="pn">SOH_MemProtOS_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">OS Memory Protection detector</span></div>
+              <div class="pd-param"><span class="pn">SOH_TimeProtOS_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">OS Time Protection detector</span></div>
+              <div class="pd-param"><span class="pn">SOH_ErrOS_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Other OS Errors detector</span></div>
+              <div class="pd-param"><span class="pn">SOH_ImmediateDelayed_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Immediate &amp; Delayed Reset detectors</span></div>
+              <div class="pd-param"><span class="pn">SOH_DiagnosticReset_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Diagnostic Reset detector</span></div>
+              <div class="pd-param"><span class="pn">SOH_ClearDiagnosticInformation_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Clear Diagnostic Info detectors</span></div>
+              <div class="pd-param"><span class="pn">SOH_DiagnosticSessionControl_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Diagnostic Session Control detectors</span></div>
+              <div class="pd-param"><span class="pn">SOH_MACFailures_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">MAC Failures Types 1/2/3 detectors</span></div>
+              <div class="pd-param"><span class="pn">SOH_SecurityAccessFailures_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">SecurityAccess (0x27) Failures detector</span></div>
+              <div class="pd-param"><span class="pn">SOH_SecPErrors_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">SecP Errors detector</span></div>
+              <div class="pd-param"><span class="pn">SOH_LocalSupervisionFailures_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">WdgM Local Supervision Failures</span></div>
+              <div class="pd-param"><span class="pn">SOH_WdgMDEMSupervisionErrors_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">WdgM DEM Supervision Errors</span></div>
+              <div class="pd-param"><span class="pn">SOH_ERRHLocalSupervision_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">ERRH Local Supervision from SOH side</span></div>
+              <div class="pd-param"><span class="pn">ERRH_SOHLocalSupervision_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">SOH Local Supervision from ERRH side</span></div>
+              <div class="pd-param"><span class="pn">SOH_ShutdownDelay_SupportEnabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Shutdown delay detector in Platform monitor</span></div>
+              <div class="pd-section-title">References</div>
+              <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+              <div class="pd-ref"><span class="pn">SOH_RID_02C0_SOH_Clear_Log_Reference</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">DcmDspRoutine</span><span class="pdesc">RID 02C0 routine for clearing SOH log.</span></div>
+              <div class="pd-ref"><span class="pn">SOH_OsCounterRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">OsCounter</span><span class="pdesc">SOH specific OS counter reference.</span></div>
+            </div>
+          </div>
+
+          <!-- SOHConfigSet -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">SOHConfigSet</span><span class="pd-mult">1..1</span>
+              <span class="pd-brief">&mdash; 5 Reliability Monitor sub-containers</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">Contains 5 Reliability Monitor sub-containers. Each monitor groups related detectors following a consistent pattern:</div>
+              <div class="pd-note"><strong>Detector Pattern</strong> (repeated ~20 times):<br>&bull; <span class="type-badge type-int">INT</span> Thresh_Init &mdash; fault threshold counter init (def: 1, 0&ndash;65535)<br>&bull; <span class="type-badge type-int">INT</span> TW_Thresh_Init &mdash; time window threshold in seconds (def: 3600, 0&ndash;16777215)<br>&nbsp;&nbsp;&nbsp;&nbsp;<em>Variations:</em> MACfailTenAct TW def=2; WdgM TW def=10; MACfail/ReplayCount/SecP TW max=65535<br>&bull; <span class="type-badge type-ref">REF</span> NvM block reference &mdash; persistent storage<br>&bull; <span class="type-badge type-ref">REF</span> DcmDspData DID reference &mdash; diagnostic readout (F08F/F090/F091/F092/F093)</div>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SOH_ResetReliabilityMonitor</span><span class="pd-mult">1..1</span><span class="pd-count">3 detectors</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Monitors ECU reset patterns for reliability.</div>
+                  <div class="pd-section-title">Detectors (DID F08F)</div>
+                  <div class="pd-hdr param-hdr"><span>Detector</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Details</span></div>
+                  <div class="pd-param"><span class="pn">SOH_ImmediateReset</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">Thresh_Init=1, TW=3600. NvM + DcmDspData refs.</span></div>
+                  <div class="pd-param"><span class="pn">SOH_DelayedReset</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">Thresh_Init=1, TW=3600. NvM + DcmDspData refs.</span></div>
+                  <div class="pd-param"><span class="pn">SOH_DiagnosticReset</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">Thresh_Init=1. 2 NvM refs (counter + DID) + DcmDspData ref.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SOH_MemoryStatusReliabilityMonitor</span><span class="pd-mult">1..1</span><span class="pd-count">2 sub-groups</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Monitors NvM and OS error patterns. DID F090.</div>
+                  <div class="pd-section-title">Detectors</div>
+                  <div class="pd-hdr param-hdr"><span>Sub-group</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Detectors</span></div>
+                  <div class="pd-param"><span class="pn">NVMErrorsDetector</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">SOH_StatusNVM, SOH_ActionNVM, SOH_PrivilegeNVM (each Thresh + TW + NvM + DcmDspData)</span></div>
+                  <div class="pd-param"><span class="pn">OSErrorsDetector</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">SOH_ExcepOS, ServOS, StackOS, MemProtOS, TimeProtOS, ErrOS (same pattern &times;6)</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SOH_CommunicationReliabilityMonitor</span><span class="pd-mult">1..1</span><span class="pd-count">8 detectors</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Monitors diagnostic communication health. DID F092.</div>
+                  <div class="pd-section-title">Detectors</div>
+                  <div class="pd-hdr param-hdr"><span>Detector</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Notes</span></div>
+                  <div class="pd-param"><span class="pn">SOH_ClearDiagInfo</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">Thresh_Init only (no TW).</span></div>
+                  <div class="pd-param"><span class="pn">SOH_RejectClearDiag</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">Thresh_Init only.</span></div>
+                  <div class="pd-param"><span class="pn">SOH_DiagSession</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">2 NvM refs (counter + DID).</span></div>
+                  <div class="pd-param"><span class="pn">SOH_Accept_DiagSession</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">2 NvM refs (counter + DID).</span></div>
+                  <div class="pd-param"><span class="pn">SOH_SecurityAccess</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">SecurityAccess (0x27) Failures. 2 NvM refs.</span></div>
+                  <div class="pd-param"><span class="pn">SOH_MACfailTenAct</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">MAC Failures Types 1&amp;2. TW def=2.</span></div>
+                  <div class="pd-param"><span class="pn">SOH_ReplayCount</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">3 INTs: Thresh=1, TW=3600, Start_Thresh=5 (max:255).</span></div>
+                  <div class="pd-param"><span class="pn">SOH_SecP</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">Standard Thresh + TW pattern.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SOH_WatchdogManagerReliabilityMonitor</span><span class="pd-mult">1..1</span><span class="pd-count">3 detectors</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Monitors WdgM supervision status. DID F093.</div>
+                  <div class="pd-section-title">Detectors</div>
+                  <div class="pd-hdr param-hdr"><span>Detector</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Notes</span></div>
+                  <div class="pd-param"><span class="pn">Local_Supervision_Failures_Detector</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">Standard + Supervised_Entity_Reference (0..*, WdgMSupervisedEntity).</span></div>
+                  <div class="pd-param"><span class="pn">WdgM_DEM_Supervision_Errors_Detector</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">Standard Thresh + TW pattern.</span></div>
+                  <div class="pd-param"><span class="pn">SUM_ERRH_Local_Supervision_Detector</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">Standard + extra DcmDspData ref for ERRH Local Supervision.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SOH_PlatformReliabilityMonitor</span><span class="pd-mult">1..1</span><span class="pd-count">1 detector</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Monitors platform-level reliability events. DID F091.</div>
+                  <div class="pd-section-title">Detectors</div>
+                  <div class="pd-hdr param-hdr"><span>Detector</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Details</span></div>
+                  <div class="pd-param"><span class="pn">SOH_Shutdown</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">Thresh=1, Timer_Thresh=60 (max:65535). 2 NvM refs + DcmDspData ref.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="explain-box">
+      <div class="title">How SOH ParamDef    <div class="explain-box">
+      <div class="title">How SOH ParamDef works with the module</div>
+      SOH's paramdef is built around a <strong>Reliability Monitor</strong> architecture with 5 monitor categories:
+      <ul style="margin:8px 0 4px 18px">
+        <li><strong>Reset Monitor</strong>: Tracks immediate, delayed, and diagnostic resets. Each detector counts occurrences within a time window (TW) and reports via DID F08F.</li>
+        <li><strong>Memory Status Monitor</strong>: Tracks NvM errors (Status/Action/Privilege classes) and OS errors (6 OS error categories). Reports via DID F090.</li>
+        <li><strong>Communication Monitor</strong>: Tracks diagnostic session activity, security access failures, MAC failures, replay attacks, and SecP errors. Reports via DID F092.</li>
+        <li><strong>Watchdog Monitor</strong>: Tracks WdgM local supervision failures and DEM supervision errors, including ERRH-reported supervision status. Reports via DID F093.</li>
+        <li><strong>Platform Monitor</strong>: Tracks shutdown delay patterns. Reports via DID F091.</li>
+      </ul>
+      The 21 <em>SupportEnabled</em> flags in SOHGeneral allow project-specific detector selection. Each detector's Thresh_Init and TW_Thresh_Init are calibratable, and NvM blocks ensure data persists across power cycles. This modular architecture lets integrators enable only the health monitoring relevant to their ECU.
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ==================== SSFM ==================== -->
+<section id="mod-ssfm" class="module-section">
+<div class="module-card">
+  <div class="module-header" onclick="toggleModule(this)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge">SSFM</span>
+      <h2>Signal Status &amp; Fault Monitor</h2>
+    </div>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="module-body">
+    <div class="module-desc">
+      <strong>SSFM</strong> manages startup sequences, serial data monitoring, and error handling.
+      It has two sub-modules: <strong>SSM</strong> (Startup/Shutdown Manager) and <strong>ERRH</strong> (Error Handler).
+      The ParamDef is the second-largest in SUM (~40 containers, ~55 params, ~40 refs), reflecting the module's extensive serial data and error monitoring capabilities.
+    </div>
+
+    <div class="pd-tree">
+      <div class="pd-node">
+        <div class="pd-header" onclick="toggleTree(this)">
+          <span class="pd-toggle">&#9654;</span><span class="pd-icon root">M</span><span class="pd-name">SSFM</span><span class="pd-mult">0..1</span>
+          <span class="pd-brief">&mdash; Signal Status &amp; Fault Monitor (~40 containers, ~55 params, ~40 refs)</span>
+        </div>
+        <div class="pd-children hidden">
+
+          <!-- Sum_Ssfm_General -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">Sum_Ssfm_General</span><span class="pd-mult">1..1</span><span class="pd-count">15 params</span><span class="pd-count">3 refs</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">General configuration: periodicities for all runnables, permit execution masks (separate for SSM and ERRH), and feature flags.</div>
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_SsmPermitExecutionMask</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">254</span><span class="pdesc">PermitExecution mask for SSM sub-module.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_ErrhPermitExecutionMask</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">254</span><span class="pdesc">PermitExecution mask for ERRH sub-module.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_ExecutionManagerPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;65535 ms</span><span class="pdef">100</span><span class="pdesc">Period of Main Function Runnables.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_DTCTriggeredRunnablePeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;65535 ms</span><span class="pdef">100</span><span class="pdesc">Period of DTC Triggered Message Handler.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_KeySlotVerify_RunnablePeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;65535 ms</span><span class="pdef">1.0</span><span class="pdesc">Period of KeySlotVerifyErrors runnable.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_NodeLossError_RunnablePeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;65535 ms</span><span class="pdef">1.0</span><span class="pdesc">Period of NodeLossError runnable.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_MissingMsg_Periodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1&ndash;65535 ms</span><span class="pdef">100</span><span class="pdesc">Period of LIN Missing Message runnable.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_MissingMsg_CalibratableTime</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;65535 s</span><span class="pdef">5</span><span class="pdesc">Test enable timer for LIN missing message error.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_FxI_FxFA_SinglePortsSupport</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Enable single-port indication for FxI/FxFA.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_IsThisECUGateway</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Indicates ECU acts as a gateway.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_DtcTriggerMessageSupport</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Enables DTC Trigger Message function.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_DTCNotificationQueueSize</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;32767</span><span class="pdef">32</span><span class="pdesc">DTC queue size. Final = value + 22 reserved for U007x.</span></div>
+              <div class="pd-param"><span class="pn">SsfmGenerateInitRunnable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">When TRUE, generates RE_SSFM_Init periodic runnable.</span></div>
+              <div class="pd-param"><span class="pn">SsfmInitFuncPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">1&ndash;5000 ms</span><span class="pdef">1000</span><span class="pdesc">Periodicity of RE_SSFM_Init.</span></div>
+              <div class="pd-param"><span class="pn">SSFM_QoS_Enabled</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Enable consolidated QoS indication interfaces.</span></div>
+              <div class="pd-section-title">References</div>
+              <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+              <div class="pd-ref"><span class="pn">Sum_Ssfm_Os_Counter_1ms_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">OsCounter</span><span class="pdesc">SSFM specific 1ms OS Counter.</span></div>
+              <div class="pd-ref"><span class="pn">Sum_Ssfm_ComMPNCRef</span><span class="type-badge type-ref">REF</span><span class="pm">0..*</span><span class="pr">ComMPnc</span><span class="pdesc">PNCs with TX enabled (for DTC trigger).</span></div>
+              <div class="pd-ref"><span class="pn">Sum_Ssfm_QoS_DataTypeMappingSet</span><span class="type-badge type-ref">FREF</span><span class="pm">0..1</span><span class="pr">DATA-TYPE-MAPPING-SET</span><span class="pdesc">Foreign ref for QoS data type mapping.</span></div>
+            </div>
+          </div>
+
+          <!-- Sum_Ssfm_Channel -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">Sum_Ssfm_Channel</span><span class="pd-mult">0..*</span><span class="pd-count">1 param</span><span class="pd-count">1 ref</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">Defines communication channels. Each maps to a ComM channel for detecting Disable Normal Comm requests.</div>
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_Ssm_C_UsageOfCanBusOffDTC</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">When true, Loss of Com based on CAN BUS OFF DTC.</span></div>
+              <div class="pd-section-title">References</div>
+              <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+              <div class="pd-ref"><span class="pn">Sum_Ssfm_Channel_ID_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">ComMChannel</span><span class="pdesc">ComM channel reference.</span></div>
+            </div>
+          </div>
+
+          <!-- Sum_Ssfm_ConfigSet -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">Sum_Ssfm_ConfigSet</span><span class="pd-mult">1..1</span>
+              <span class="pd-brief">&mdash; main configuration set</span>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">Sum_Ssfm_SerialData</span><span class="pd-mult">1..*</span><span class="pd-count">1 param</span><span class="pd-count">8 refs</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Defines each CAN/Ethernet serial data signal to monitor. Links to RteSerialData, optional SecOC, channel, partial network, and SD service refs. Contains FcI/FoI/FpI/FsI debouncer sub-containers.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">Sum_Ssfm_IsNonDiscoverable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Non-discoverable SOME/IP service (signal-based PDU).</span></div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_Ssfm_RteSerialData_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">RteSerialData</span><span class="pdesc">Link to Rte serial data config.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_Ssfm_SecOCRxPdu_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">SecOCRxPduProcessing</span><span class="pdesc">SecOC Rx PDU reference.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_Ssfm_Channel_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">Sum_Ssfm_Channel</span><span class="pdesc">Channel this serial data belongs to.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_Ssfm_Partial_Network_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">0..*</span><span class="pr">ComMPnc</span><span class="pdesc">Partial network association.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_Ssfm_SDService_Ref</span><span class="type-badge type-ref">CHOICE</span><span class="pm">0..1</span><span class="pr">SdClientService / SdServerService</span><span class="pdesc">SD service instance ref.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_Ssfm_C_SsmDisable_Rx_PDURef</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">ComIPdu</span><span class="pdesc">CAN serial data PDU ref.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_Ssfm_MessageID_Ref</span><span class="type-badge type-ref">CHOICE</span><span class="pm">0..1</span><span class="pr">CanIfRxPduCfg / SoAdSocketRoute</span><span class="pdesc">Message ID ref for CAN or Ethernet.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_Ssfm_QoS_Ref</span><span class="type-badge type-ref">FREF</span><span class="pm">0..*</span><span class="pr">IMPL-DATA-TYPE-ELEMENT</span><span class="pdesc">QoS payload member reference.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">RteSerialData</span><span class="pd-mult">0..*</span><span class="pd-count">3 params</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Configures serial data callbacks. Contains RteSignal &rarr; RteSignalChoice (ISignal or ISignalGroup).</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">RteSerialDataE2EInTransformerChain</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Set TRUE when E2E transformer is configured.</span></div>
+                  <div class="pd-param"><span class="pn">RteSerialDataHeaderInclude</span><span class="type-badge type-str">STR</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">Header file providing callback declarations.</span></div>
+                  <div class="pd-param"><span class="pn">RteCallBackFunction</span><span class="type-badge type-str">FUNC</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">NULL</span><span class="pdesc">Callback function name for serial data notification.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">Sum_Ssfm_GroupInfo</span><span class="pd-mult">0..1</span><span class="pd-count">1 ref</span>
+                  <span class="pd-brief">&mdash; ECU/LIN/TrgDvc grouping</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Groups serial data by ECU, LIN responder, or service-based target device.</div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_Ssfm_DemDataElementClass_XXXX87_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">DemDataElementClass</span><span class="pdesc">DEM data element class ref for XXXX87 MissingMessage DTCs.</span></div>
+                </div>
+                <div class="pd-children hidden">
+                  <div class="pd-node">
+                    <div class="pd-header" onclick="toggleTree(this)">
+                      <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">Sum_Ssfm_ECUInfo</span><span class="pd-mult">0..*</span><span class="pd-count">4 params</span>
+                    </div>
+                    <div class="pd-body">
+                      <div class="pd-desc">Per-ECU configuration with loss-of-communication parameters and DEM event mappings.</div>
+                      <div class="pd-section-title">Parameters</div>
+                      <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                      <div class="pd-param"><span class="pn">Sum_Ssfm_Errh_C_DTCProcess_SsmNodeLoss</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Process DTC for SSM Node Loss Error.</span></div>
+                      <div class="pd-param"><span class="pn">Sum_Ssfm_LossCommID</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">&mdash;</span><span class="pdesc">ECU ID for Loss of Communication.</span></div>
+                      <div class="pd-param"><span class="pn">Sum_Ssfm_LC_ECU_Timer_Ref</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;12000 ms</span><span class="pdef">0</span><span class="pdesc">Node Lost Communication debounce timer.</span></div>
+                      <div class="pd-param"><span class="pn">Sum_Ssfm_IsGateway</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Indicates ECU acts as a gateway.</span></div>
+                      <div class="pd-note">Sub-containers: <strong>ECUInfo_SerialData</strong> (0..*) with FaultDetectionUsage ENUM + RoutingMethod ENUM; <strong>ECUInfo_Event</strong> (0..*) mapping channels to DEM events.</div>
+                    </div>
+                  </div>
+                  <div class="pd-node">
+                    <div class="pd-header" onclick="toggleTree(this)">
+                      <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">Sum_Ssfm_TrgDvcInfo</span><span class="pd-mult">0..*</span><span class="pd-count">2 params</span><span class="pd-count">1 ref</span>
+                    </div>
+                    <div class="pd-body">
+                      <div class="pd-desc">Service-based target device configuration. References SPM SpmTrgDvc.</div>
+                      <div class="pd-section-title">Parameters</div>
+                      <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                      <div class="pd-param"><span class="pn">Sum_Ssfm_Errh_C_DTCProcess_TrgDvc_SsmNodeLoss</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Process DTC for target device Node Loss.</span></div>
+                      <div class="pd-param"><span class="pn">Sum_Ssfm_LF_TrgDvc_Timer</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;12000 ms</span><span class="pdef">0</span><span class="pdesc">Loss of Function debounce timer.</span></div>
+                      <div class="pd-section-title">References</div>
+                      <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                      <div class="pd-ref"><span class="pn">Sum_Ssfm_SpmTargetDevice_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">Spm &rarr; SpmTrgDvc</span><span class="pdesc">SPM target device reference.</span></div>
+                    </div>
+                  </div>
+                  <div class="pd-node">
+                    <div class="pd-header" onclick="toggleTree(this)">
+                      <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">Sum_Ssfm_LINInfo</span><span class="pd-mult">0..*</span><span class="pd-count">1 param</span><span class="pd-count">2 refs</span>
+                    </div>
+                    <div class="pd-body">
+                      <div class="pd-desc">LIN responder serial data config. Contains LINInfo_Event and LINInfo_SerialData sub-containers.</div>
+                      <div class="pd-section-title">Parameters</div>
+                      <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                      <div class="pd-param"><span class="pn">Sum_Ssfm_LINResponderOBD_Supported</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Defines if OBD is supported by LIN Responder.</span></div>
+                      <div class="pd-section-title">References</div>
+                      <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                      <div class="pd-ref"><span class="pn">Sum_Ssfm_LNM_ResponderInfo_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">LNM &rarr; LNM_Responders</span><span class="pdesc">LNM Responder info reference.</span></div>
+                      <div class="pd-ref"><span class="pn">Sum_Ssfm_Channel_Ref</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Sum_Ssfm_Channel</span><span class="pdesc">Channel reference.</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">Sum_Ssfm_ErrorsHandlers</span><span class="pd-mult">0..1</span><span class="pd-count">6 categories</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">All error categories handled by ERRH sub-module.</div>
+                  <div class="pd-section-title">Error Sub-containers</div>
+                  <div class="pd-hdr param-hdr"><span>Sub-container</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Source &amp; Key Params</span></div>
+                  <div class="pd-param"><span class="pn">Sum_Ssfm_Errh_BswError</span><span class="type-badge type-enum">ENUM</span><span class="pm">0..*</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">BSW events (NvM, WdgM). BswEventType ENUM, C_BswDTCProcess, EventFilter + DemEvent refs.</span></div>
+                  <div class="pd-param"><span class="pn">Sum_Ssfm_Errh_LNMErrors</span><span class="type-badge type-enum">ENUM</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">LNM responder events. ErrorType (IEF, MISSING_MSG, etc.).</span></div>
+                  <div class="pd-param"><span class="pn">Sum_Ssfm_Errh_SUSDErrors</span><span class="type-badge type-bool">BOOL</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">SUSD RunCrank events. HIGH/LOW DiagStatus.</span></div>
+                  <div class="pd-param"><span class="pn">Sum_Ssfm_Errh_SSCError</span><span class="type-badge type-bool">BOOL</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">SSC security events. 7 DTC sub-containers with CodeGen_Enabled.</span></div>
+                  <div class="pd-param"><span class="pn">Sum_Ssfm_Errh_SrvcMgrErrors</span><span class="type-badge type-bool">BOOL</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">SrvcMgr events: U19A6_54, U19A6_57, U19A6_87 DTCs.</span></div>
+                  <div class="pd-param"><span class="pn">Sum_Ssfm_Errh_SafetySecurityErrors</span><span class="type-badge type-bool">BOOL</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">Safety &amp; Security: UXXXX_83, UXXXX_87 DTCs.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">Sum_Ssfm_ErrorFilter</span><span class="pd-mult">0..1</span><span class="pd-count">1 param</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Defines error filtering methods used across all error handlers.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">Sum_Ssfm_Errh_MovingWindow_XofY_Periodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">1&ndash;65535</span><span class="pdef">&mdash;</span><span class="pdesc">Periodicity of X-of-Y moving window filter runnable.</span></div>
+                  <div class="pd-note">Sub-containers: <strong>GeneralEventsFilter</strong> (0..*) with FilterType ENUM (NONE/BLOCK/X_OF_Y), ThrX, ThrY; <strong>KeySlotVerifyFilter</strong> (0..1) with KeySlotNumber sub-containers.</div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">Sum_Ssfm_C_SsmDisable_Tx_PDU</span><span class="pd-mult">0..*</span><span class="pd-count">1 param</span><span class="pd-count">1 ref</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Controls whether SSM disables specific TX PDUs during init.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">Sum_Ssfm_Ssm_C_DisablePDU</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">When TRUE, PDU is disabled for transmit.</span></div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_Ssfm_C_SsmDisable_Tx_PDURef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Com/ComConfig/ComIPdu</span><span class="pdesc">COM IPdu reference.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sum_Ssfm_Errh_DID -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">Sum_Ssfm_Errh_DID</span><span class="pd-mult">0..1</span>
+              <span class="pd-brief">&mdash; DID config &amp; NvM references</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">DID configuration and NvM block references for ERRH diagnostic data storage.</div>
+              <div class="pd-section-title">Sub-containers</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Details</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_Errh_F094_LocalSupWdgMStsSOH</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;65535</span><span class="pdef">1</span><span class="pdesc">SUM_ERRH_SOHSupFail_Thresh_Init=1, TW=10. Ref to DcmDspDid for DID 0xF094.</span></div>
+              <div class="pd-param"><span class="pn">Sum_Ssfm_NvM_References</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">NvM block refs for DIDs: E0B8, E0B9, E0BA, E0BB, F094.</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="explain-box">
+      <div class="title">How SSFM ParamDef    <div class="explain-box">
+      <div class="title">How SSFM ParamDef works with the module</div>
+      SSFM's ParamDef mirrors its complex dual sub-module architecture:
+      <ul style="margin:8px 0 4px 18px">
+        <li><strong>SSM side</strong>: <em>Sum_Ssfm_SerialData</em> instances define every CAN/Ethernet signal the module monitors. Each links to an <em>RteSerialData</em> callback, a <em>Channel</em>, optional SecOC/PN/SD references, and FcI/FoI/FpI/FsI debouncers. <em>GroupInfo</em> organizes these by ECU, LIN responder, or target device with per-group DEM event mappings and debounce timers.</li>
+        <li><strong>ERRH side</strong>: <em>ErrorsHandlers</em> categorizes errors by source (BSW, LNM, SUSD, SSC, SrvcMgr, Safety/Security) with individual DTC process flags. <em>ErrorFilter</em> provides reusable filtering methods (X_OF_Y windowing or BLOCK) that any error handler can reference.</li>
+        <li><strong>DID/NvM</strong>: <em>Errh_DID</em> configures diagnostic DIDs (E0B8&ndash;E0BB, F094) and their NvM block storage for persistent error data across power cycles.</li>
+      </ul>
+      The two separate PermitExecutionMasks (SSM vs ERRH) allow SUSD to independently control startup of each sub-module based on wakeup source.
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ==================== SUSD ==================== -->
+<section id="mod-susd" class="module-section">
+<div class="module-card">
+  <div class="module-header" onclick="toggleModule(this)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge">SUSD</span>
+      <h2>Start Up / Shut Down Coordinator</h2>
+    </div>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="module-body">
+    <div class="module-desc">
+      <strong>SUSD</strong> is the startup orchestrator for all SUM modules. It manages wakeup source identification, Permit Execution distribution, and SUM interface initialization.
+      It determines which wakeup event triggered the ECU start and distributes execution permissions to other SUM modules via PermitExecutionMask.
+    </div>
+
+    <div class="pd-tree">
+      <div class="pd-node">
+        <div class="pd-header" onclick="toggleTree(this)">
+          <span class="pd-toggle">&#9654;</span><span class="pd-icon root">M</span><span class="pd-name">SUSD</span><span class="pd-mult">0..1</span>
+          <span class="pd-brief">&mdash; Start Up / Shut Down Coordinator (51 params, 24 refs, 9 containers)</span>
+        </div>
+        <div class="pd-children hidden">
+
+          <!-- SUSDGeneral -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">SUSDGeneral</span><span class="pd-mult">1..1</span><span class="pd-count">23 params</span><span class="pd-count">7 refs</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">General SUSD configuration: timing periodicities, VPM determination, RunCrank settings, feature flags, and diagnostic DID references.</div>
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">SUSD_t_Shutdown_Refresh</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0.001&ndash;0.5</span><span class="pdef">0.1</span><span class="pdesc">ShutdownPermission signal refresh time in sec.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_t_Force_Shutdown_Wait</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0&ndash;65.535</span><span class="pdef">0</span><span class="pdesc">Wait time before requesting Shutdown from BswM.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_t_Battery_Periodicity</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;500</span><span class="pdef">100</span><span class="pdesc">Battery Monitor notification periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_t_VehiclePowerMode_Periodicity</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;500</span><span class="pdef">100</span><span class="pdesc">Vehicle Power Mode notification periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_t_ResetExecution_Periodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">1.0&ndash;65.535</span><span class="pdef">1.0</span><span class="pdesc">Reset Execution timer periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_t_RunCrank_Periodicity</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;500</span><span class="pdef">100</span><span class="pdesc">Run Crank notification periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_t_Wakeup_Periodicity</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;500</span><span class="pdef">100</span><span class="pdesc">Wakeup polling periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_t_AppManager_Periodicity</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">1&ndash;500</span><span class="pdef">100</span><span class="pdesc">AppStateManager periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">SusdGenerateInitRunnable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">False</span><span class="pdesc">If TRUE, generates SUSD init runnable.</span></div>
+              <div class="pd-param"><span class="pn">SusdInitFuncPeriodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">0..1</span><span class="pr">1.0&ndash;5000.0</span><span class="pdef">1000.0</span><span class="pdesc">Init runnable periodicity in ms.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_PowerModing_Slave_Supported</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">True if ECU is not the Power Mode Master.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_RunCrankPlausibility_Supported</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">True if RunCrank Input available from SWC.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_DefaultShutdownState</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">Off, Sleep</span><span class="pdef">&mdash;</span><span class="pdesc">Default ECU operation state when shutting down.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_VPM_SPM_Initial</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">SUM_PMS_OFF..TRANSPORT</span><span class="pdef">SUM_PMS_OFF</span><span class="pdesc">Initial System Power Mode for VPM.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_VPM_SBPM_Initial</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">SUM_PMS_OFF..TRANSPORT</span><span class="pdef">SUM_PMS_OFF</span><span class="pdesc">Initial Backup Power Mode for VPM.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_VPM_Security_Supported</span><span class="type-badge type-enum">ENUM</span><span class="pm">0..1</span><span class="pr">NOT_Applicable, With_OBD, etc.</span><span class="pdef">&mdash;</span><span class="pdesc">VPM determination with/without Cybersecurity.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_PermitExecAvailable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Permit Execution Interface for this SWC.</span></div>
+              <div class="pd-param"><span class="pn">SUM_SUSD_RESETExecution_TIMER_Thresh_Init</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;10</span><span class="pdef">10</span><span class="pdesc">Reset execution timer threshold init value.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunningResetWaitTime</span><span class="type-badge type-int">INT</span><span class="pm">0..1</span><span class="pr">0&ndash;65535</span><span class="pdef">625</span><span class="pdesc">Wait time before running reset.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_Battery_State_of_Charge_Supported</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">false</span><span class="pdesc">Enable Battery State of Charge support.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_VPM_ASIL_A_Supported</span><span class="type-badge type-bool">BOOL</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">Enable ASIL-A support for VPM.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_DisNvMWriteAvailable</span><span class="type-badge type-bool">BOOL</span><span class="pm">0..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Enable Disable NvM Write interface.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_ECUOpStateDIDSupported</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Enable ECU Operation State DID support.</span></div>
+              <div class="pd-section-title">References</div>
+              <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+              <div class="pd-ref"><span class="pn">Sum_SUSD_Sig_PrimaryPowerMode_Ref</span><span class="type-badge type-ref">CHOICE-REF</span><span class="pm">1..1</span><span class="pr">Com &rarr; ComSignal/ComGroupSignal</span><span class="pdesc">Primary Power Mode COM signal.</span></div>
+              <div class="pd-ref"><span class="pn">Sum_SUSD_Sig_BackupPowerMode_Ref</span><span class="type-badge type-ref">CHOICE-REF</span><span class="pm">1..1</span><span class="pr">Com &rarr; ComSignal/ComGroupSignal</span><span class="pdesc">Backup Power Mode COM signal.</span></div>
+              <div class="pd-ref"><span class="pn">SusdEcuWakeUpDetectionRecordsNvmBlockRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">NvM &rarr; NvMBlockDescriptor</span><span class="pdesc">NvM block for ECU Wakeup Detection Records.</span></div>
+              <div class="pd-ref"><span class="pn">SUM_SUSD_RESETExecution_TIMERNvmBlockRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">NvM &rarr; NvMBlockDescriptor</span><span class="pdesc">NvM block for RESETExecution TIMER.</span></div>
+              <div class="pd-ref"><span class="pn">Sum_SUSD_ServiceBased_DataTypeMappingSet</span><span class="type-badge type-ref">FREF</span><span class="pm">0..*</span><span class="pr">DATA-TYPE-MAPPING-SET</span><span class="pdesc">Service-based data type mapping.</span></div>
+              <div class="pd-ref"><span class="pn">Sum_SUSD_ServiceBased_PMM_Ref</span><span class="type-badge type-ref">FREF</span><span class="pm">0..1</span><span class="pr">IMPL-DATA-TYPE-ELEMENT</span><span class="pdesc">Service-based Primary Power Mode ref.</span></div>
+              <div class="pd-ref"><span class="pn">Sum_SUSD_ServiceBased_BPMM_Ref</span><span class="type-badge type-ref">FREF</span><span class="pm">0..1</span><span class="pr">IMPL-DATA-TYPE-ELEMENT</span><span class="pdesc">Service-based Backup Power Mode ref.</span></div>
+            </div>
+          </div>
+
+          <!-- SUSDConfigSet -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">SUSDConfigSet</span><span class="pd-mult">1..1</span><span class="pd-count">12 params</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">Configuration set with RunCrank diagnostics, battery voltage, and per-SUM/SWC interface definitions.</div>
+              <div class="pd-section-title">Parameters</div>
+              <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_DisableNVMWrite_Voltage</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;9</span><span class="pdef">5</span><span class="pdesc">Disable NVM writes if battery below this voltage.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunCrankInputStuckHi_Enable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Enable RunCrank Stuck High diagnostic.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunCrankInputStuckHi_FailCount</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">16</span><span class="pdesc">Fault maturation failure counter (Stuck High).</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunCrankInputThresholdHigh</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0&ndash;26.5</span><span class="pdef">5</span><span class="pdesc">RunCrank Active High threshold voltage.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunCrankInputThresholdLow</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0&ndash;26.5</span><span class="pdef">2</span><span class="pdesc">RunCrank Active Low threshold voltage.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunCrankInput_DebounceTime</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0.0&ndash;10.0</span><span class="pdef">0.03</span><span class="pdesc">Debounce time in sec for RunCrank input.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunCrankInputType</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">TRUE=DISCRETE, FALSE=ANALOG.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_PerToVoltageConvFactor</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0&ndash;0.5</span><span class="pdef">0.04</span><span class="pdesc">Percentage to voltage conversion factor.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunCrankInputStuckHi_SampleCount</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">20</span><span class="pdesc">Sample count for Stuck High detection.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunCrankInputStuckLow_Enable</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">true</span><span class="pdesc">Enable RunCrank Stuck Low diagnostic.</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunCrankInputStuckLow_FailCount</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">16</span><span class="pdesc">Fault maturation failure counter (Stuck Low).</span></div>
+              <div class="pd-param"><span class="pn">SUSD_C_RunCrankInputStuckLow_SampleCount</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;65535</span><span class="pdef">20</span><span class="pdesc">Sample count for Stuck Low detection.</span></div>
+            </div>
+            <div class="pd-children hidden">
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SUSD_C_SUMsInfo</span><span class="pd-mult">1..*</span><span class="pd-count">4 params</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Per-SUM module interface configuration. One instance per SUM module.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">SUSD_SUMsName</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">SUM_SPM, LNM, SSFM_ERRH/SSM, SSC, PNC, DIAG, TCS, SRVMGR, SOH</span><span class="pdef">&mdash;</span><span class="pdesc">Which SUM component this interface is for.</span></div>
+                  <div class="pd-param"><span class="pn">SUSD_PermitExecution</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">Enable PermitExecution interface for this SUM.</span></div>
+                  <div class="pd-param"><span class="pn">SUSD_ShutdownPermission</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">Enable ShutdownPermission interface for this SUM.</span></div>
+                  <div class="pd-param"><span class="pn">SUSD_SUMs_SpecificWkSrcId</span><span class="type-badge type-ref">REF</span><span class="pm">0..*</span><span class="pr">EcuM &rarr; EcuMWakeupSource</span><span class="pdef">&mdash;</span><span class="pdesc">Module-specific wakeup source identifiers.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SUSDDiagReferences</span><span class="pd-mult">1..1</span><span class="pd-count">5 refs</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Diagnostic service references for SUSD.</div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">SusdEcuWakeupDetectionRecordsDidRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DID 0xF09E ECU Wakeup Detection Records.</span></div>
+                  <div class="pd-ref"><span class="pn">SusdRid41ARef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspRoutine</span><span class="pdesc">RID 0x41A Clear ECU Wakeup Detection Records.</span></div>
+                  <div class="pd-ref"><span class="pn">Did_E0D7_Reference</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DID 0xE0D7 Wakeup/Off Power Mode Activity Records.</span></div>
+                  <div class="pd-ref"><span class="pn">Did_F088_Reference</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DID 0xF088 Control Module Input Voltage.</span></div>
+                  <div class="pd-ref"><span class="pn">Did_F089_Reference</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">Dcm &rarr; DcmDspDid</span><span class="pdesc">DID 0xF089 Application Shutdown Prohibit.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SUSD_BatteryVoltageRange</span><span class="pd-mult">1..1</span>
+                </div>
+                <div class="pd-children hidden">
+                  <div class="pd-node">
+                    <div class="pd-header" onclick="toggleTree(this)">
+                      <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SUSD_C_BatteryVoltageRange</span><span class="pd-mult">0..*</span><span class="pd-count">3 params</span>
+                    </div>
+                    <div class="pd-body">
+                      <div class="pd-desc">Custom battery voltage range definitions.</div>
+                      <div class="pd-section-title">Parameters</div>
+                      <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                      <div class="pd-param"><span class="pn">SUSD_C_BatteryVoltageRange_Min</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">3&ndash;28.5</span><span class="pdef">9</span><span class="pdesc">Minimum voltage of this range.</span></div>
+                      <div class="pd-param"><span class="pn">SUSD_C_BatteryVoltageRange_Max</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">3&ndash;28.5</span><span class="pdef">16</span><span class="pdesc">Maximum voltage of this range.</span></div>
+                      <div class="pd-param"><span class="pn">SUSD_C_BatteryVoltageRange_AccuracyHSV</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">0&ndash;0.5</span><span class="pdef">0</span><span class="pdesc">Accuracy hysteresis value.</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">Sum_SUSD_ActivityRecords</span><span class="pd-mult">0..1</span><span class="pd-count">4 params</span><span class="pd-count">5 refs</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Wakeup activity records configuration for DID E0D7 tracking.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">Sum_SUSD_AR_Periodicity</span><span class="type-badge type-float">FLOAT</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">1.0</span><span class="pdesc">Periodicity of activity records runnable.</span></div>
+                  <div class="pd-param"><span class="pn">Sum_SUSD_k_AR_Active_Delay</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;255</span><span class="pdef">120</span><span class="pdesc">Active delay for activity records.</span></div>
+                  <div class="pd-param"><span class="pn">Sum_SUSD_k_AR_Init_Delay</span><span class="type-badge type-int">INT</span><span class="pm">1..1</span><span class="pr">0&ndash;2550</span><span class="pdef">500</span><span class="pdesc">Init delay for activity records.</span></div>
+                  <div class="pd-param"><span class="pn">Sum_SUSD_Record0x01_Type</span><span class="type-badge type-enum">ENUM</span><span class="pm">1..1</span><span class="pr">Enumerated</span><span class="pdef">&mdash;</span><span class="pdesc">Record type for 0x01 activity records.</span></div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SUSD_E0D7NvMBlockRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">NvM &rarr; NvMBlockDescriptor</span><span class="pdesc">NvM block for DID E0D7 data.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SUSD_FirstBootPostFlashNvMBlockRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">NvM &rarr; NvMBlockDescriptor</span><span class="pdesc">NvM block for first boot post-flash data.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SUSD_E0D7_MonitorDisabled_NvMBlockRef</span><span class="type-badge type-ref">REF</span><span class="pm">1..1</span><span class="pr">NvM &rarr; NvMBlockDescriptor</span><span class="pdesc">NvM block for E0D7 monitor disabled state.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SUSD_LIN_WakeupSource</span><span class="type-badge type-ref">REF</span><span class="pm">0..*</span><span class="pr">EcuM &rarr; EcuMWakeupSource</span><span class="pdesc">LIN wakeup source references.</span></div>
+                  <div class="pd-ref"><span class="pn">Sum_SUSD_ECU_WakeupSource</span><span class="type-badge type-ref">REF</span><span class="pm">0..*</span><span class="pr">EcuM &rarr; EcuMWakeupSource</span><span class="pdesc">ECU wakeup source references.</span></div>
+                </div>
+              </div>
+              <div class="pd-node">
+                <div class="pd-header" onclick="toggleTree(this)">
+                  <span class="pd-toggle">&#9654;</span><span class="pd-icon sub">S</span><span class="pd-name">SUSD_C_SWCInfo</span><span class="pd-mult">0..*</span><span class="pd-count">2 params</span><span class="pd-count">2 refs</span>
+                </div>
+                <div class="pd-body">
+                  <div class="pd-desc">Per-SWC shutdown permission and wakeup source configuration.</div>
+                  <div class="pd-section-title">Parameters</div>
+                  <div class="pd-hdr param-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Range</span><span>Default</span><span>Description</span></div>
+                  <div class="pd-param"><span class="pn">SUSD_SWCName</span><span class="type-badge type-str">STRING</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">Name of the SWC.</span></div>
+                  <div class="pd-param"><span class="pn">SUSD_C_ShutdownPermControl</span><span class="type-badge type-bool">BOOL</span><span class="pm">1..1</span><span class="pr">&mdash;</span><span class="pdef">&mdash;</span><span class="pdesc">Enable shutdown permission control for this SWC.</span></div>
+                  <div class="pd-section-title">References</div>
+                  <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+                  <div class="pd-ref"><span class="pn">SUSD_BatteryVoltageRangeRef</span><span class="type-badge type-ref">REF</span><span class="pm">0..1</span><span class="pr">SUSD_C_BatteryVoltageRange</span><span class="pdesc">Battery voltage range for this SWC.</span></div>
+                  <div class="pd-ref"><span class="pn">SUSD_SWCs_SpecificWkSrcId</span><span class="type-badge type-ref">REF</span><span class="pm">0..*</span><span class="pr">EcuM &rarr; EcuMWakeupSource</span><span class="pdesc">SWC-specific wakeup source identifiers.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUSDWakeUpRelation -->
+          <div class="pd-node">
+            <div class="pd-header" onclick="toggleTree(this)">
+              <span class="pd-toggle">&#9654;</span><span class="pd-icon container">C</span><span class="pd-name">SUSDWakeUpRelation</span><span class="pd-mult">1..1</span><span class="pd-count">1 ref</span>
+            </div>
+            <div class="pd-body">
+              <div class="pd-desc">Maps wakeup events to execution permissions. References EcuM wakeup sources.</div>
+              <div class="pd-section-title">References</div>
+              <div class="pd-hdr ref-hdr"><span>Name</span><span>Type</span><span>Mult</span><span>Target</span><span>Description</span></div>
+              <div class="pd-ref"><span class="pn">SUSD_WakeupSourceId</span><span class="type-badge type-ref">REF</span><span class="pm">1..*</span><span class="pr">EcuM &rarr; EcuMWakeupSource</span><span class="pdesc">Wakeup source IDs determining PermitExecution values.</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="explain-box">
+      <div class="title">How SUSD ParamDef    <div class="explain-box">
+      <div class="title">How SUSD ParamDef works with the module</div>
+      SUSD is the first SUM module to execute. It reads the wakeup source from EcuM, matches it against <strong>SUSDWakeUpRelation</strong> to determine which modules should start,
+      then distributes PermitExecution bitmasks through <strong>SUSD_C_SUMsInfo</strong> (one instance per SUM module: SPM, LNM, SSFM, PNC, DIAG, TCS, etc.).
+      <br><br>
+      <strong>SUSDGeneral</strong> handles Vehicle Power Mode (VPM) determination from Primary/Backup Power Mode COM signals, with configurable security level and initial power mode values.
+      Multiple periodicities control how often SUSD polls battery voltage, wakeup sources, RunCrank status, and VPM changes.
+      <br><br>
+      <strong>SUSDConfigSet</strong> configures RunCrank input diagnostics (stuck high/low with fault maturation counters), battery voltage ranges with hysteresis, and Activity Records (DID E0D7) for tracking wakeup history in NvM.
+    </div>
+
+    <div class="warn-box">
+      <div class="title">Key relationship: SUSD &harr; PermitExecutionMask</div>
+      Every SUM module has a <code>PermitExecutionMask</code> parameter (INTEGER, 0..255, default 254).
+      SUSD sets a PermitExecution value based on the wakeup source, and each module checks:
+      <code>if (PermitExecution &amp; PermitExecutionMask) != 0 then execute</code>.
+      This allows fine-grained control over which modules run for each wakeup scenario.
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ==================== Common Patterns ==================== -->
+<section id="common-params">
+<h2>Common Patterns Across Modules</h2>
+
+<div class="container-node">
+  <div class="container-name">PermitExecutionMask</div>
+  <div class="container-desc">Found in: TCS, DIAG, PNC, SrvcMgr, SPM, LNM, SOH, SSFM. Always INTEGER 0..255 with default 254. Used by SUSD to control module startup based on wakeup source.</div>
+</div>
+
+<div class="container-node">
+  <div class="container-name">GenerateInitRunnable + InitFuncPeriodicity</div>
+  <div class="container-desc">Found in: TCS, DIAG, SrvcMgr, and others. A BOOLEAN flag that enables generation of a one-shot init runnable, paired with a FLOAT periodicity (ms). When FALSE, init is called by BswM action list instead.</div>
+</div>
+
+<div class="container-node">
+  <div class="container-name">ServiceBased References</div>
+  <div class="container-desc">Found in: TCS, DIAG, SrvcMgr. Paired FOREIGN-REFs for DataTypeMappingSet + IMPLEMENTATION-DATA-TYPE-ELEMENT. These enable SOME/IP service-based communication as an alternative to signal-based COM. Presence activates service-based mode.</div>
+</div>
+
+<div class="container-node">
+  <div class="container-name">CHOICE-REFERENCE-DEF</div>
+  <div class="container-desc">Found in: TCS, DIAG, SrvcMgr, PNC, SSFM. Used when a reference can point to multiple target types (e.g., ComSignal OR ComGroupSignal, SdClientService OR SdServerService). The integrator selects which target type applies for their project.</div>
+</div>
+
+<div class="container-node">
+  <div class="container-name">Reliability Monitor / Detector Pattern (SOH)</div>
+  <div class="container-desc">SOH uses a highly consistent detector pattern repeated ~20 times: each detector has a Thresh_Init (INT, fault counter), TW_Thresh_Init (INT, time window in seconds), an NvM block reference for persistent storage, and a DcmDspData DID reference for diagnostic readout. Detectors are grouped under 5 Reliability Monitor categories (Reset, MemoryStatus, Communication, WatchdogManager, Platform).</div>
+</div>
+
+<div class="container-node">
+  <div class="container-name">Error Filter Pattern (SSFM)</div>
+  <div class="container-desc">SSFM uses reusable GeneralEventsFilter containers with FilterType (NONE/BLOCK/X_OF_Y), threshold X, and window Y parameters. Error handlers across all error categories reference these shared filters, allowing consistent error debouncing configuration.</div>
+</div>
+
+<div class="container-node">
+  <div class="container-name">NvM Block References</div>
+  <div class="container-desc">Found in: SOH (extensively), SSFM, SUSD, TCS. References to NvMBlockDescriptor containers for persistent data storage across power cycles. Used for DID data, counters, and configuration values that must survive reset.</div>
+</div>
+</section>
+
+<!-- ==================== Glossary ==================== -->
+<section id="glossary">
+<h2>Glossary</h2>
+<table class="param-table">
+  <tr><th style="width:220px">Term</th><th>Definition</th></tr>
+  <tr><td class="param-name">ECUC</td><td>ECU Configuration - AUTOSAR mechanism for compile-time and post-build parameter configuration.</td></tr>
+  <tr><td class="param-name">ParamDef / EcucParamDef</td><td>Parameter Definition file (.arxml) that declares all configurable parameters for a module.</td></tr>
+  <tr><td class="param-name">Container</td><td>Logical grouping of parameters in the ECUC hierarchy. Can contain parameters, references, and sub-containers.</td></tr>
+  <tr><td class="param-name">Multiplicity</td><td>How many instances of a container/parameter are allowed (e.g., 0..1 optional, 1..1 mandatory, 1..* one or more).</td></tr>
+  <tr><td class="param-name">VARIANT-PRE-COMPILE</td><td>Parameter is resolved at compile time and compiled into the binary.</td></tr>
+  <tr><td class="param-name">VARIANT-POST-BUILD</td><td>Parameter can be changed after compilation and loaded at runtime.</td></tr>
+  <tr><td class="param-name">ECUC-REFERENCE-DEF</td><td>A reference to a single specific AUTOSAR container type.</td></tr>
+  <tr><td class="param-name">ECUC-CHOICE-REFERENCE-DEF</td><td>A reference that can point to one of multiple container types (integrator chooses).</td></tr>
+  <tr><td class="param-name">ECUC-FOREIGN-REFERENCE-DEF</td><td>A reference to an AUTOSAR element outside the ECUC domain (e.g., system model elements).</td></tr>
+  <tr><td class="param-name">PermitExecution</td><td>Bitmask mechanism used by SUSD to control which SUM modules are allowed to execute based on wakeup source.</td></tr>
+  <tr><td class="param-name">BswM</td><td>Basic Software Mode Manager - AUTOSAR module that manages mode-dependent actions including init sequences.</td></tr>
+  <tr><td class="param-name">DCM</td><td>Diagnostic Communication Manager - handles diagnostic services (DIDs, RIDs).</td></tr>
+  <tr><td class="param-name">NvM</td><td>Non-Volatile Memory Manager - manages persistent data storage.</td></tr>
+  <tr><td class="param-name">DEM</td><td>Diagnostic Event Manager - manages DTCs (Diagnostic Trouble Codes).</td></tr>
+  <tr><td class="param-name">ComM</td><td>Communication Manager - manages communication channel states.</td></tr>
+  <tr><td class="param-name">WdgM</td><td>Watchdog Manager - supervises software execution timing and logical sequences.</td></tr>
+  <tr><td class="param-name">SecOC</td><td>Secure Onboard Communication - provides message authentication (MAC) for CAN/Ethernet PDUs.</td></tr>
+  <tr><td class="param-name">DTC</td><td>Diagnostic Trouble Code - standardized error codes stored by DEM and readable via diagnostics.</td></tr>
+  <tr><td class="param-name">DID</td><td>Data Identifier - diagnostic data element readable/writable via UDS services (e.g., F08F, E0B8).</td></tr>
+  <tr><td class="param-name">RID</td><td>Routine Identifier - diagnostic routine triggerable via UDS service 0x31 (e.g., RID 02C0).</td></tr>
+  <tr><td class="param-name">SSM</td><td>Startup/Shutdown Manager - SSFM sub-module managing serial data monitoring and startup sequences.</td></tr>
+  <tr><td class="param-name">ERRH</td><td>Error Handler - SSFM sub-module handling error DIDs, DTC aggregation, and error filtering.</td></tr>
+  <tr><td class="param-name">QoS</td><td>Quality of Service - signal quality indication interfaces used by SSFM for consolidated status reporting.</td></tr>
+</table>
+</section>
+
+</main>
+
+<script>
+function toggleModule(header) {
+  header.classList.toggle('open');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+function toggleTree(el) {
+  const header = el.closest('.pd-header');
+  const node = header.closest('.pd-node');
+  const body = node.querySelector(':scope > .pd-body');
+  const children = node.querySelector(':scope > .pd-children');
+  header.classList.toggle('active');
+  if (body) body.classList.toggle('open');
+  if (children) children.classList.toggle('hidden');
+}
+
+function filterAll(query) {
+  const q = query.toLowerCase().trim();
+  document.querySelectorAll('.module-section').forEach(section => {
+    if (!q) { section.style.display = ''; return; }
+    const text = section.textContent.toLowerCase();
+    section.style.display = text.includes(q) ? '' : 'none';
+  });
+  document.querySelectorAll('#common-params, #glossary').forEach(section => {
+    if (!q) { section.style.display = ''; return; }
+    const text = section.textContent.toLowerCase();
+    section.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+
+// Sidebar active state
+const links = document.querySelectorAll('nav.sidebar a[href^="#"]');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`nav.sidebar a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-80px 0px -70% 0px' });
+document.querySelectorAll('section[id]').forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,71 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION org::eclipse::xtend::util::stdlib::elementprops»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_FaultIndications_DataManager.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM Fault Indications Data Manager
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+«LET sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_ECUInfo AS ECUs-»
+«LET Ssfm_GetControllerECUInfos(ECUs, false) AS controllers-»
+
+#define SSFM_SSM_NUM_OF_SERIALDATAS «sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.size»u
+#define SSFM_CONVERT_MS_TO_US_UNIT	1000u
+#define SSFM_DTC_VALUE_LOW_BYTE_INVALID_DATA 0x83u
+
+extern Sum_Ssfm_SerialData Sum_Ssfm_SerialDatas[SSFM_SSM_NUM_OF_SERIALDATAS];
+«LET Ssfm_Get_AllComBasedSerialData_InvalidDataDemEvents(controllers, sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData) AS SIG_DEM_EVENTS-»
+«LET Ssfm_Get_AllServiceBasedSerialDatas_InvalidDataDemEvents(sSFM) AS SERVICE_DEM_EVENTS-»
+«LET Ssfm_Get_InvalidLINDemEvents(sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_GroupInfo.sum_Ssfm_LINInfo) AS LIN_DEM_EVENTS-»
+extern const Sum_Ssfm_DemEvent Sum_Ssfm_FxI_DemEvents[«SIG_DEM_EVENTS.size + SERVICE_DEM_EVENTS.size + LIN_DEM_EVENTS.size»];
+«ENDLET-»
+«ENDLET-»
+«ENDLET-»
+extern void Sum_Ssfm_FIM_Dem_CB_DTCStatusChanged(uint32 DTC, Dem_UdsStatusByteType DTCStatusOld, Dem_UdsStatusByteType DTCStatusNew);
+extern void Sum_Ssfm_FIM_Debouncer_MUX(Sum_Ssfm_Debouncer* debouncer_instance);
+extern void Sum_Ssfm_FxI_Debouncing_Handler(Sum_Ssfm_SerialData* serial_data, Sum_Ssfm_FxI_SerialData* FxI_handler);
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+
+/* EOF */
+«ENDLET-»«REM»Controllers«ENDREM»
+«ENDLET-»«REM»ECUs«ENDREM»
+«ENDFILE»
+«ENDDEFINE»

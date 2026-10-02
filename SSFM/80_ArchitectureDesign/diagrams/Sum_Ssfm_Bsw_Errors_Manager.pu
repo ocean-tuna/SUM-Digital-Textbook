@@ -1,0 +1,50 @@
+@startuml Sum_Ssfm_Bsw_Errors_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_Bsw_Errors_Manager"
+
+**Interfaces Legend**
+   //ri121 //: DemCallbackEventUdsStatusChanged 
+   //II166 //: Debounced Error
+   //II152 //: ERRH_ExecutionStatus
+   //II157 //: DisableDTCs
+   //II167 //: Undebounced Error
+   //II07 //: BUS_OFF_DTC_BswErrorEvent<n>
+   //pi135 //: BswError<n>_SetEventStatus
+	//II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)     
+endlegend
+
+note top of EC
+It is responsible for reading notifications about BSW errors and asking the DEM to set/clear the corresponding DTC accordingly. 
+It receives notifications about BSW errors through the GeneralCallbackEventStatusChanged. 
+It also notifies the SOH if particular types of bsw errors occur. 
+Moreover, it notifies confirmation of CAN BUS OFF dtcs to rest of the application.
+
+end note
+
+component [SSFM::Sum_Ssfm_Bsw_Errors_Manager] as EC{
+	portin ri121
+	portout pi135
+
+	[Sum_Ssfm_Bsw_Errors_Manager]  as E
+}
+   interface II166
+   interface II157
+   interface II167
+   interface II07
+   interface II152
+   interface II184
+
+
+  ri121 -> E
+  II166 -> E
+  II157 -> E
+  II152 ->E
+  E -> II167 
+  E -> II07
+  E -> pi135
+  II184 -> E
+
+@enduml

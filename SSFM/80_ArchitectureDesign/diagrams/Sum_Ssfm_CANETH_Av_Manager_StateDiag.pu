@@ -1,0 +1,23 @@
+@startuml Sum_Ssfm_CANETH_Av_Manager_StateDiag
+
+state Sum_Ssfm_CANETH_Av_Manager{
+	state SUM_SSFM_SigSts_Disabled
+	[*] --> SUM_SSFM_SigSts_Disabled
+
+state Partial_Network_Active{
+    state SUM_SSFM_SigSts_Uninitialized
+    state SUM_SSFM_SigSts_Available
+	state SUM_SSFM_SigSts_Unavailable
+
+SUM_SSFM_SigSts_Disabled-->Partial_Network_Active: (PN_SIG<X>_STATUS == ACTIVE) AND \n (DIAG_DISABLE_NORMAL_COMM == OFF) AND \n (SSM_C_DISABLE_<PDU NAME>== 1) AND \n (SPM_ServiceActivationStatus == ACTIVE)
+Partial_Network_Active-->SUM_SSFM_SigSts_Disabled: (PN_SIG<X>_STATUS == INACTIVE) OR \n (DIAG_DISABLE_NORMAL_COMM == ON) OR \n (SSM_C_DISABLE_<PDU NAME>== 1)  OR \n (SPM_ServiceActivationStatus == INACTIVE)   
+
+[*] --> SUM_SSFM_SigSts_Uninitialized
+SUM_SSFM_SigSts_Uninitialized --> SUM_SSFM_SigSts_Available: (SIG<X>_SUPERVISION == SIG_RCVD) AND \n ((SecOC_VerificationStatus == SECOC_VERIFICATIONSUCCESS) OR \n ((SecOC_VerificationStatus == SECOC_NO_VERIFICATION) AND (MAC AUthentication Disabled)))
+SUM_SSFM_SigSts_Uninitialized --> SUM_SSFM_SigSts_Unavailable: (SIG<X>_SUPERVISION == SIG_TIMEOUT) OR \n (Controller In Loss Of Comm or NodeSts received) 
+SUM_SSFM_SigSts_Unavailable --> SUM_SSFM_SigSts_Available: (SIG<X>_SUPERVISION != SIG_TIMEOUT) AND \n ((SecOC_VerificationStatus == SECOC_VERIFICATIONSUCCESS) OR \n ((SecOC_VerificationStatus == SECOC_NO_VERIFICATION) AND (MAC AUthentication Disabled))) \n AND (Controller not In Loss Of Comm nor NodeSts received)
+SUM_SSFM_SigSts_Available --> SUM_SSFM_SigSts_Unavailable: (SIG<X>_SUPERVISION == SIG_TIMEOUT) OR \n ((SecOC_VerificationStatus == SECOC_VERIFICATIONFAILURE) OR \n (SecOC_VerificationStatus == SECOC_FRESHNESSFAILURE) OR \n (SecOC_VerificationStatus == SECOC_AUTHENTICATIONBUILDFAILURE) OR \n (SecOC_VerificationStatus == SECOC_VERIFICATIONFAILURE_OVERWRITTEN) OR \n ((SecOC_VerificationStatus == SECOC_NO_VERIFICATION) AND (MAC AUthentication Enabled))) \n OR (Controller In Loss Of Comm or NodeSts received)                                              
+}
+
+
+@enduml 

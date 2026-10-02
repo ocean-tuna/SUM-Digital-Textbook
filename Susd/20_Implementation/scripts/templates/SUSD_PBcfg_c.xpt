@@ -1,0 +1,229 @@
+«IMPORT bsw»
+«IMPORT bsw::SUSDModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE SusdPBcfg_c FOR Autosar»
+«FILE "SUM_SUSD_PBcfg.c"»/*
+ *****************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SUSD
+ * Date        : Jun 25, 2026
+ * Revision    : 8.0.1_rc
+ * Description :
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+*/
+
+/*******************************************************************************
+*                                     Includes
+*******************************************************************************/
+/* PRQA S 0380 1 # less than 1024 macros are being used in this file verified  */
+#include "SUM_SUSD_Types.h"
+#include "SUM_SUSD_PBcfg.h"
+#include "Rte_SUSD.h"
+/*
+ *******************************************************************************
+ *                                  Definitions
+ *******************************************************************************
+*/
+
+/* The Calibration Functions for Under,Over voltage hysteresis and Shutdown
+    Permission Control for every SWC */
+«IF sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size > 0-»
+  CONST (SUSD_SWCRteInterfaces, RTE_CONST) SUSD_GaaRteSWCInterface[«sUSD.sUSDConfigSet.sUSD_C_SWCInfo.size»] =
+  {
+    «FOREACH this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo.sortBy(e|e.sUSD_SWCName) AS SWCInfo ITERATOR i SEPARATOR ','»
+      /* SUSD_C_SWCInfo_«i.counter1» - «SWCInfo.sUSD_SWCName»*/
+      {
+        /* SWC Permit Execution Interface */
+        «IF (sUSD.sUSDGeneral.sUSD_PermitExecAvailable == true)-»
+          &Rte_Write_PP_«SWCInfo.sUSD_SWCName»_SUSD_PermitExecution_SUSD_SWC_ExecutionStatus,
+        «ELSE-»
+          NULL_PTR,
+        «ENDIF-»
+
+        /* SWC Shutdown Permission Interface */
+        «IF (SWCInfo.sUSD_C_ShutdownPermControl == true )-»
+          &Rte_Read_RP_«SWCInfo.sUSD_SWCName»_SUSD_ShutdownPermission_SUSD_UserRequest,
+
+          /* blShutdownPermControl */
+          &Rte_CData_SUSD_PDP_SUSD_C_ShutdownPermControl_«SWCInfo.sUSD_SWCName»
+        «ELSE-»
+          NULL_PTR,
+
+          NULL_PTR
+        «ENDIF-»
+      }
+    «ENDFOREACH-»
+  };
+«ENDIF-»
+
+«FOREACH this.sUSD.sUSDConfigSet.sUSD_BatteryVoltageRange.sUSD_C_BatteryVoltageRange AS voltRange »
+  FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE) Rte_CData_SUSD_C_OverVoltage_hysteresis_«voltRange.shortName»(void);
+  FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE) Rte_CData_SUSD_C_UnderVoltage_hysteresis_«voltRange.shortName»(void);
+«ENDFOREACH-»
+FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE) Rte_CData_SUSD_C_DefaultOverVoltage_hysteresis(void);
+FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE) Rte_CData_SUSD_C_DefaultUnderVoltage_hysteresis(void);
+
+/* PRQA S 3469 EOF */
+/* PRQA S 1532 EOF # This function is generated, it can be used in the multiple files and cannot be turned into static as well as moved to static code */
+«IF (sUSD.sUSDGeneral.sUSD_RunCrankPlausibility_Supported) -»
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(Impl_PerToVoltage_0_26p5, RTE_CODE)
+  Rte_CData_SUSD_PDP_PercentageToVolConvFactor(void)
+  {
+    return Rte_CData_PDP_PercentageToVolConvFactor();
+  }
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(boolean, RTE_CODE)
+  Rte_CData_SUSD_PDP_RunCrankInputStuckHi_Enable(void) /* 1 */
+  {
+    return Rte_CData_PDP_RunCrankInputStuckHi_Enable();
+  }
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(uint16, RTE_CODE)
+  Rte_CData_SUSD_PDP_RunCrankInputStuckHi_FailCount(void) /* 1 */
+  {
+    return Rte_CData_PDP_RunCrankInputStuckHi_FailCount();
+  }
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(uint16, RTE_CODE)
+  Rte_CData_SUSD_PDP_RunCrankInputStuckHi_SampleCount(void) /* 1 */
+  {
+    return Rte_CData_PDP_RunCrankInputStuckHi_SampleCount();
+  }
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(boolean, RTE_CODE)
+  Rte_CData_SUSD_PDP_RunCrankInputStuckLow_Enable(void) /* 1 */
+  {
+    return Rte_CData_PDP_RunCrankInputStuckLow_Enable();
+  }
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(uint16, RTE_CODE)
+  Rte_CData_SUSD_PDP_RunCrankInputStuckLow_FailCount(void) /* 1 */
+  {
+    return Rte_CData_PDP_RunCrankInputStuckLow_FailCount();
+  }
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(uint16, RTE_CODE)
+  Rte_CData_SUSD_PDP_RunCrankInputStuckLow_SampleCount(void) /* 1 */
+  {
+    return Rte_CData_PDP_RunCrankInputStuckLow_SampleCount();
+  }
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(uint16, RTE_CODE)
+  Rte_CData_SUSD_PDP_RunCrankInputThresholdHigh(void) /* 1 */
+  {
+    return Rte_CData_PDP_RunCrankInputThresholdHigh();
+  }
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(uint16, RTE_CODE)
+  Rte_CData_SUSD_PDP_RunCrankInputThresholdLow(void) /* 1 */
+  {
+    return Rte_CData_PDP_RunCrankInputThresholdLow();
+  }
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(uint16, RTE_CODE)
+  Rte_CData_SUSD_PDP_RunCrankInput_DebounceTime(void) /* 1 */
+  {
+    return Rte_CData_PDP_RunCrankInput_DebounceTime();
+  }
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(RunCrankInputType, RTE_CODE)
+  Rte_CData_SUSD_PDP_SUSD_C_RunCrankInputType(void) /* 1 */
+  {
+    return Rte_CData_PDP_SUSD_C_RunCrankInputType();
+  }
+«ENDIF-»
+
+/* Function body emitted */
+«FOREACH this.sUSD.sUSDConfigSet.sUSD_BatteryVoltageRange.sUSD_C_BatteryVoltageRange AS voltRange »
+  FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE)
+  Rte_CData_SUSD_C_OverVoltage_hysteresis_«voltRange.shortName»(void) /* 1 */
+  {
+    return Rte_CData_PDP_SUSD_C_OverVoltage_hysteresis_«voltRange.shortName»();
+  }
+
+  FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE)
+  Rte_CData_SUSD_C_UnderVoltage_hysteresis_«voltRange.shortName»(void) /* 1 */
+  {
+    return Rte_CData_PDP_SUSD_C_UnderVoltage_hysteresis_«voltRange.shortName»();
+  }
+«ENDFOREACH-»
+FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE)
+Rte_CData_SUSD_C_DefaultOverVoltage_hysteresis(void) /* 1 */
+{
+  return Rte_CData_PDP_SUSD_DefaultOverVoltage_hysteresis();
+}
+
+FUNC(Impl_SUSD_C_VoltageHysteresis, RTE_CODE)
+Rte_CData_SUSD_C_DefaultUnderVoltage_hysteresis(void) /* 1 */
+{
+  return Rte_CData_PDP_SUSD_DefaultUnderVoltage_hysteresis();
+}
+
+«IF (sUSD.sUSDGeneral.sUSD_DisNvMWriteAvailable == true)-»
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(uint8, RTE_CODE)
+  Rte_CData_SUSD_PDP_SUSD_C_DisableNVMWrite_Voltage(void) /* 1 */
+  {
+    return Rte_CData_PDP_SUSD_C_DisableNVMWrite_Voltage();
+  }
+«ENDIF-»
+
+/* Function body emitted - SW-C is delivered as object-code. */
+/* PRQA S 1505 4 # Here for modularity */
+«FOREACH this.sUSD.sUSDConfigSet.sUSD_C_SWCInfo AS SWCInfo »
+  «IF (SWCInfo.sUSD_C_ShutdownPermControl == true )-»
+    FUNC(boolean, RTE_CODE)
+    Rte_CData_SUSD_PDP_SUSD_C_ShutdownPermControl_«SWCInfo.sUSD_SWCName»(void) /* 1 */
+    {
+      return Rte_CData_PDP_SUSD_C_ShutdownPermControl_«SWCInfo.sUSD_SWCName»();
+    }
+  «ENDIF-»
+«ENDFOREACH-»
+
+«IF (sUSD.sUSDGeneral.sUSD_PowerModing_Slave_Supported == true)-»
+  /* Function body emitted - SW-C is delivered as object-code. */
+  FUNC(uint16, RTE_CODE)
+  Rte_CData_SUSD_PDP_SUSD_C_RunningResetWaitTime(void) /* 1 */
+  {
+    return Rte_CData_PDP_SUSD_C_RunningResetWaitTime();
+  }
+«ENDIF-»
+
+/* Function body emitted - SW-C is delivered as object-code. */
+FUNC(uint8, RTE_CODE)
+Rte_CData_SUSD_PDP_k_AR_Active_Delay(void)
+{
+  return Rte_CData_PDP_k_AR_Active_Delay();
+}
+
+/* Function body emitted - SW-C is delivered as object-code. */
+FUNC(uint16, RTE_CODE)
+Rte_CData_SUSD_PDP_k_AR_Init_Delay(void)
+{
+  return Rte_CData_PDP_k_AR_Init_Delay();
+}
+/********************************** END OF FILE ******************************************************/
+
+«ENDFILE»
+«ENDDEFINE»

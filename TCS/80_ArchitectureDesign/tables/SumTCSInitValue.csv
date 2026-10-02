@@ -1,0 +1,5 @@
+6;8
+\cellcolor{ETASlightgray}\textbf{Name};SumTCSInitValue
+\cellcolor{ETASlightgray}\textbf{Type};TimeSyncMessageType
+\cellcolor{ETASlightgray}\textbf{Address};VAR_POWER_ON_CLEARED
+\cellcolor{ETASlightgray}\textbf{Implementation};STANDARD

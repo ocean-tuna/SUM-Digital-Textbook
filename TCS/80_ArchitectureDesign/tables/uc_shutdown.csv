@@ -1,0 +1,5 @@
+3;6;8;8
+\cellcolor{ETASlightgray}\textbf{Scenario No.};\cellcolor{ETASlightgray}\textbf{Arch. Requirement};\cellcolor{ETASlightgray}\textbf{Description};\cellcolor{ETASlightgray}\textbf{System Requirement}
+Pre-condition; \RequirementTag{ADS_TCS}{029}; Receive the permit execution; \Satisfies{SRS_TCS 009} \\ \Satisfies{SRS_TCS 010}
+Sequence; \RequirementTag{ADS_TCS}{030}; Save run-time values in NvM and vote for \\ shutdown; \Satisfies{SRS_TCS 013} \Satisfies{SRS_TCS 023}
+Post-Condition; \RequirementTag{ADS_TCS}{031}; Provide the shutdown permission; \Satisfies{SRS_TCS 012}

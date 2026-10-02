@@ -1,0 +1,5 @@
+8;10
+\cellcolor{ETASlightgray}\textbf{Name};check_offpowermode
+\cellcolor{ETASlightgray}\textbf{Parameters};void 
+\cellcolor{ETASlightgray}\textbf{Return};boolean
+\cellcolor{ETASlightgray}\textbf{Description};Checks if current Vehicle Power Mode is OFF

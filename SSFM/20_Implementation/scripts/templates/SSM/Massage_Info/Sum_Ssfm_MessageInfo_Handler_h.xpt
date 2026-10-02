@@ -1,0 +1,85 @@
+«IMPORT bsw»
+«IMPORT bsw::SSFMModule»
+«IMPORT bsw::Xfrm»
+«IMPORT bsw::Dem»
+«REM»*******************************************************************************************************************«ENDREM»
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+«EXTENSION Util::SSFM_Utils»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE Root FOR Autosar»
+	«EXPAND SSFM FOR ecu»
+«ENDDEFINE»
+«REM»*******************************************************************************************************************«ENDREM»
+«DEFINE SSFM FOR Ecu»
+«REM»*******************************************************************************************************************«ENDREM»
+«FILE "Sum_Ssfm_MessageInfo_Handler.h"»
+/*
+ ******************************************************************************
+ * BEGIN: Banner
+ *-----------------------------------------------------------------------------
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ *-----------------------------------------------------------------------------
+ *
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ *-----------------------------------------------------------------------------
+ *    Administrative Information (automatically filled in)
+ *-----------------------------------------------------------------------------
+ * Project     : GM SUM
+ * Component   : SUM_SSFM
+ * Date        : Jun 13, 2026
+ * Revision    : 8.0.1_Pr33
+ * Description : header file for SSFM Message Information Handler
+ *-----------------------------------------------------------------------------
+ * END: Banner
+ ******************************************************************************
+ */
+#ifndef SUM_SSFM_MESSAGE_INFO_HANDLER_H
+#define SUM_SSFM_MESSAGE_INFO_HANDLER_H
+
+/**
+ * @brief This macro indicates number of Disabled PDUs configured for calibration
+ */
+#define SSFM_SSM_NO_OF_DISABLEPDUS «sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_C_SsmDisable_Tx_PDU.size»u
+
+#define SSFM_SSM_NUM_OF_MESSAGE_INFO_GRP «sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData.select(e|Ssfm_IsMessageInfo(e)).size »u
+
+«IF sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_C_SsmDisable_Tx_PDU.size > 0»
+extern CONST(Sum_Ssfm_SsmPBCalibData, RTE_CODE) Sum_Ssfm_SsmDisablePDU[«sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_C_SsmDisable_Tx_PDU.size»];
+«ENDIF-»
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA»
+«IF Ssfm_IsPNCfg(SSFM_SERIAL_DATA) -»
+extern CONST (FP_Rte_Read_RP_PNC_RxStatus_Sig, RTE_CODE) Sum_Ssfm_PNC_RxStatus_«Ssfm_GetComSerialDataName(SSFM_SERIAL_DATA)-»[];
+«ENDIF-»
+«ENDFOREACH-»
+
+extern Sum_Ssfm_MessageInfoGroup Sum_Ssfm_MessageInfoGroups[SSFM_SSM_NUM_OF_MESSAGE_INFO_GRP];
+/**************************************************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************************************************
+ */
+extern FUNC(void, SUM_SSFM_SSM_CODE) Sum_Ssfm_SsmDisablePdu_Tx(void);
+
+«FOREACH sSFM.sum_Ssfm_ConfigSet.sum_Ssfm_SerialData AS SSFM_SERIAL_DATA-»
+extern FUNC (void, RTE_CODE) Sum_Ssfm_COMCbkTOut_«SSFM_SERIAL_DATA.Ssfm_GetSerialDataName()»(void);
+«ENDFOREACH-»
+
+extern boolean Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive(const Sum_Ssfm_SerialData* serialData);
+
+extern boolean Sum_Ssfm_Is_ServiceOrAtLeastOnePNActive_StabilityCheck(const Sum_Ssfm_SerialData* serialData);
+
+extern boolean Sum_Ssfm_Is_DisableNormalComm(const Sum_Ssfm_SerialData* serialData);
+
+extern boolean Sum_Ssfm_Is_DisablePdu_Rx(const Sum_Ssfm_SerialData* serialData);
+
+extern boolean Sum_Ssfm_Is_SecOC_VerificationSts_Failure(const Sum_Ssfm_SerialData* serialData);
+#endif
+/* EOF */
+«ENDFILE»
+«ENDDEFINE»

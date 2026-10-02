@@ -1,0 +1,79 @@
+«IMPORT bsw»
+«IMPORT bsw::SpmModule»
+
+«EXTENSION templates::mathlib»
+«EXTENSION org::eclipse::xtend::util::stdlib::io»
+
+«DEFINE Root FOR Autosar»
+	«EXPAND Spm FOR ecu»
+«ENDDEFINE»
+
+«DEFINE Spm FOR Ecu»
+
+«FILE "Sum_Spm_DevicePowerState.c"»
+/*
+ ***************************************************************************************************
+ * BEGIN:Header
+ ***************************************************************************************************
+ *                                 ETAS GmbH
+ *                      D-70469 Stuttgart, Borsigstr. 24
+ ***************************************************************************************************
+ * COPYRIGHT RESERVED, 2020 ETAS GmbH. All rights reserved.
+ * The reproduction, distribution and utilization of this document as well as
+ * the communication of its contents to others without explicit authorization
+ * is prohibited. Offenders will be held liable for the payment of damages.
+ * All rights reserved in the event of the grant of a patent, utility model or
+ * design.
+ ***************************************************************************************************
+ * Project     : GM SUM
+ * Component   : SUM_SPM
+ * Date        : Jun 15, 2026
+ * Revision    : 8.1.0_Pr33
+ * Description : Header for defining the SPM API for the device power state information
+ ***************************************************************************************************
+ * END:Header
+ ***************************************************************************************************
+*/
+
+#include "Sum_Spm_DevicePowerState.h"
+
+
+/* PRQA S 1532 EOF # Following function are defined here for modularity reason */
+
+/**
+ * @brief Updates the inter-runnable variable (IRV) with the current power state of all devices.
+ *
+ * This function collects the power states of all devices managed by the power manager and writes
+ * this information to an inter-runnable variable (IRV). The function iterates over each device
+ * and retrieves the power state, in order to be stored in the IRV. The IRV also stores the local
+ * state of the Spm instance.
+ * @param[in] void 
+ * @return void
+ */
+void Spm_DevicePowerState(void) {
+	uint8 i;
+
+	/* From the IRV can be removed the numberofItem and trgdvcip[]. */
+	Spm_DevicePowerStateInfo Spm_DevicePowerStateInfo_Write =
+	{
+		{«FOREACH spm.spmConfigSet.spmPgttEntries.spmTrgDvc AS pp-» 0, «ENDFOREACH» },
+		(uint8)SPM_Off,
+	};
+
+	/* Retrieve the local state of the SPM instance and the states of the configured target devices */
+	Spm_DevicePowerStateInfo_Write.Spm_LocalState = (uint8)Spm_GetState();
+	for(i = 0x00u; i < SPM_NUM_OF_PG_OUT_EDGE; i++){
+		Spm_DevicePowerStateInfo_Write.Spm_TrgDvcState[i] = (uint8)Spm_GetTrgDvcState(i);
+	}
+
+	/* [$Satisfies $DDS_SPM 0204] *//* [$Satisfies $DDS_SPM 0206] */
+	/* PRQA S 3469 1 # RTE exposes API as following. */
+	Rte_IrvWrite_RE_SPM_PowerManager_MainFunction_Spm_DevicePowerState(&Spm_DevicePowerStateInfo_Write);
+
+	return;
+}
+
+/* EOF */
+
+«ENDFILE»
+«ENDDEFINE»

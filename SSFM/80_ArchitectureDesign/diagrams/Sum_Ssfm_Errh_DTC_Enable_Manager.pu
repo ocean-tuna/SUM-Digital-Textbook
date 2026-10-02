@@ -1,0 +1,44 @@
+@startuml Sum_Ssfm_Errh_DTC_Enable_Manager
+top to bottom direction
+skinparam linetype ortho
+
+legend top left
+    "Sum_Ssfm_DTC_Enable_Manager" 
+   //ri130 //: ERRH_BswM_DisableDTCSetting
+   //ri142 //: DIAG_RmtPrgmOtaPsf
+   //pi157 //: DisableDTCs
+   //II184 //: Sum_Ssfm_Errh_GetDTCsDisabled (Sum_Ssfm_DTCsDisabled)
+endlegend
+
+
+component [SSFM::Sum_Ssfm_Errh_DTC_Enable_Manager] as EC{
+	portin pri130
+    portin pri142
+    portout ppi157
+    portout ppi158
+	[Runnable_SSFM_ERRH_ControlDTCSetting_EnableDTC/Disabled]  as E
+    [Runnable_SSFM_RemoteProgrammingOtaPsf_Status_Handler]  as D
+}
+
+skinparam interface {
+    BackgroundColor White
+    BorderColor White
+    FixCircleLabelOverlapping true
+     
+}
+
+interface ri130
+interface pi157
+interface pi157
+interface II184
+
+pri130 --up-( ri130 
+pri142 --up-( ri142
+pri130-> E
+pri142-> D
+E -> ppi157 
+D -> ppi157 
+D -> ppi158
+ppi157 --down0 pi157
+ppi158 --down0 II184
+@enduml

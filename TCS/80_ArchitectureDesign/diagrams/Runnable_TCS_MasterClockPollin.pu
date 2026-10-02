@@ -1,0 +1,16 @@
+@startuml Runnable_TCS_MasterClockPolling
+start
+
+if (permit_execution) is (true) then
+    :Call RTE API to check the <b>TimeSync</b>\n message reception;
+    if (message_received) is (true) then
+        :<b>Time_Management_FSM_state</b>=<i>SUM_TCS_TIME_INIT</i>;
+        :set <b>LocalTime_Clock</b> as value in message;
+        :set <b>TCSGlobalPrecisionTimer</b> to its \ninitial counting value;
+        :<b>TimeSynchronization_pending</b> = FALSE;
+    else (false)
+    endif
+else (false)
+endif
+end
+@enduml

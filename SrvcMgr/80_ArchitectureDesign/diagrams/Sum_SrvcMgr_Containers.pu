@@ -1,0 +1,32 @@
+@startuml Sum_SrvcMgr_Containers
+
+object SrvcMgr
+
+object Sum_SrvcMgr_General {
+    + Sum_SrvcMgr_PermitExecutionMask
+	+ Sum_SrvcMgr_ExecutionManagerPeriodicity
+	+ Sum_SrvcMgr_GenerateInitRunnable
+	+ Sum_SrvcMgr_InitFuncPeriodicity
+
+}
+
+object Sum_SrvcMgr_ConfigSet
+
+object Sum_SrvcMgr_DcmReferences{
+    + Sum_SrvcMgr_Did_E0CC_Ref
+	+ Sum_SrvcMgr_Did_E0CD_Ref
+	+ Sum_SrvcMgr_Did_E0CE_Ref
+	+ Sum_SrvcMgr_Rid_0612_Ref
+    + Sum_SrvcMgr_Rid_0654_Ref
+	+ Sum_SrvcMgr_Sig_PropSysActv_Ref
+	+ Sum_SrvcMgr_ServiceBased_PropSysActv_Ref
+	+ Sum_SrvcMgr_Sig_VehSpdAvgDrvn_Ref 
+	+ Sum_SrvcMgr_ServiceBased_VehSpdAvgDrvn_Ref  
+	+ Sum_SrvcMgr_ServiceBased_DataTypeMappingSet
+}
+
+SrvcMgr "1"*--"1" Sum_SrvcMgr_General
+SrvcMgr "1"*--"1" Sum_SrvcMgr_ConfigSet
+Sum_SrvcMgr_ConfigSet "1"*--"1" Sum_SrvcMgr_DcmReferences
+
+@enduml

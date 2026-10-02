@@ -1,0 +1,30 @@
+
+@startuml Srvcmgr_FlowDiagram_DisableService
+start
+    if (Service_ID match with one configured in the Sd?) then (yes)
+        :serviceHandleId = Sum_SrvcMgr_prv_GetSrvcHandleId(Service_ID);
+        if (The Service is a Client?) then (yes)
+            if(Sd_ClientServiceSetState(serviceHandleId, SD_CLIENT_SERVICE_RELEASED) == E_OK?) then (yes)
+                if(Sd_CalibrateServicesOff(&Service_ID, 1)  == E_OK) then (yen)
+                    #palegreen:return E_OK;
+                else (no)
+                    #pink:return E_NOT_OK;
+                endif
+            else(no)
+                #pink:return E_NOT_OK;
+            endif
+        else(no)
+            if(Sd_ServerServiceSetState(serviceHandleId, SD_SERVER_SERVICE_DOWN) == E_OK?) then (yes)
+                if(Sd_CalibrateServicesOff(&Service_ID, 1)  == E_OK) then (yen)
+                    #palegreen:return E_OK;
+                else (no)
+                    #pink:return E_NOT_OK;
+                endif
+            else(no)
+                #pink: return E_NOT_OK;
+            endif
+        endif
+    else (no)        
+        #pink:return E_NOT_OK;        
+    endif    
+@enduml

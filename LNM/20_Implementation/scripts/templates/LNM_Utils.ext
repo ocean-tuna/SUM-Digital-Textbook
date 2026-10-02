@@ -1,0 +1,27 @@
+import bsw;
+import bsw::LNMModule;
+
+extension templates::mathlib;
+extension org::eclipse::xtend::util::stdlib::elementprops;
+extension org::eclipse::xtend::util::stdlib::io;
+extension org::eclipse::xtend::util::stdlib::counter;
+extension org::eclipse::xtend::util::stdlib::cloning;
+
+Boolean sum_Lnm_ExistsRuleWithVPM(LNM lnm):
+	if lnm.lNM_General.sum_Lnm_ScheduleChannelUserFuncs_Enabled == false then (
+		lnm.lNM_Networks.lNMNetwork
+		.select(e | e.lNM_ActivationSignalType == "Rule")
+		.sum_LNM_Rule_ref.lNM_ConditionRef
+		.exists(e | e.lNM_InputRef.lNM_ScheduleSignalSource == "VPM")
+	) else
+		false
+;
+
+Boolean sum_Lnm_ActivationRuleIncludesVPM(LNM_Rule rule):
+	rule.lNM_ConditionRef.exists(e | e.lNM_InputRef.lNM_ScheduleSignalSource == "VPM")
+;
+
+List[LNM_InputRef] sum_Lnm_ActivationRuleSignalsExceptVPM(LNMNetwork network):
+	network.sum_LNM_Rule_ref.lNM_ConditionRef.lNM_InputRef
+	.select(e | e.lNM_ScheduleSignalSource != "VPM")
+;

@@ -1,0 +1,7 @@
+4; 8; @@V
+Parameter Name; \textbf{ComM_PNC_Ref}
+Description; Reference to ComM PNC reference.
+Multiplicity (upper..lower); 1..1
+Type; ECUC-REFERENCE-DEF
+Range; NA
+Default value; NA
